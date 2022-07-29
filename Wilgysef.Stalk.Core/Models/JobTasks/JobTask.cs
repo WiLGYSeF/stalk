@@ -29,13 +29,14 @@ public class JobTask
     protected JobTask() { }
 
     public JobTask Create(
+        Guid id,
         string uri,
         string? name = null,
         int priority = 0)
     {
         return new JobTask
         {
-            Id = Guid.NewGuid(),
+            Id = id,
             Name = name,
             State = JobTaskState.Inactive,
             Priority = priority,

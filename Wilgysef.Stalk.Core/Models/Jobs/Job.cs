@@ -24,12 +24,13 @@ public class Job
     protected Job() { }
 
     public Job Create(
+        Guid id,
         string? name = null,
         int priority = 0)
     {
         return new Job
         {
-            Id = Guid.NewGuid(),
+            Id = id,
             Name = name,
             State = JobState.Inactive,
             Priority = priority,
