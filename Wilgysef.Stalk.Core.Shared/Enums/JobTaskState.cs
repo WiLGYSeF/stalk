@@ -1,6 +1,6 @@
 ﻿using System.Runtime.Serialization;
 
-namespace Wilgysef.Stalk.Shared.Enums
+namespace Wilgysef.Stalk.Core.Shared.Enums
 {
     public enum JobTaskState
     {
