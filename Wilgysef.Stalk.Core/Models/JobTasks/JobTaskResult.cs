@@ -1,24 +1,43 @@
-﻿namespace Wilgysef.Stalk.Core.Models.JobTasks;
+﻿using Microsoft.EntityFrameworkCore;
+using Wilgysef.Stalk.Core.Shared.Enums;
 
+namespace Wilgysef.Stalk.Core.Models.JobTasks;
+
+[Owned]
 public class JobTaskResult
 {
+    public JobTaskResultType Type { get; protected set; }
+
+    public string Uri { get; protected set; }
+
+    public string? MetadataJson { get; protected set; }
+
     public string? ErrorCode { get; protected set; }
 
-    public string? Message { get; protected set; }
+    public string? ErrorMessage { get; protected set; }
 
-    public string? Detail { get; protected set; }
+    public string? ErrorDetail { get; protected set; }
 
     public bool IsSuccess => ErrorCode == null;
 
     protected JobTaskResult() { }
 
-    public JobTaskResult Create(string? errorCode = null, string? message = null, string? detail = null)
+    public JobTaskResult Create(
+        JobTaskResultType type,
+        string uri,
+        string? metadataJson = null,
+        string? errorCode = null,
+        string? errorMessage = null,
+        string? errorDetail = null)
     {
         return new JobTaskResult
         {
+            Type = type,
+            Uri = uri,
+            MetadataJson = metadataJson,
             ErrorCode = errorCode,
-            Message = message,
-            Detail = detail,
+            ErrorMessage = errorMessage,
+            ErrorDetail = errorDetail,
         };
     }
 }

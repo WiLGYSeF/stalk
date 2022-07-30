@@ -1,11 +1,21 @@
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
+using IdGen;
+using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
+using System.Data.Common;
+using System.Reflection;
+using Wilgysef.Stalk.EntityFrameworkCore;
+
+const int IdGeneratorId = 1;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+ConfigureDbContext();
+ConfigureSwagger();
+ConfigureDependencyInjection();
 
 var app = builder.Build();
 
@@ -23,3 +33,30 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+
+void ConfigureDbContext()
+{
+    builder.Services.AddDbContext<StalkDbContext>(opt =>
+    {
+        opt.UseSqlite("DataSource=abc.db");
+    });
+}
+
+void ConfigureSwagger()
+{
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
+}
+
+void ConfigureDependencyInjection()
+{
+    builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
+
+    builder.Host.ConfigureContainer<ContainerBuilder>(builder =>
+    {
+        var asm = Assembly.GetExecutingAssembly();
+        builder.RegisterAssemblyTypes(asm);
+    });
+
+    builder.Services.AddSingleton<IIdGenerator<long>>(new IdGenerator(IdGeneratorId, IdGeneratorOptions.Default));
+}

@@ -1,10 +1,13 @@
-﻿using Wilgysef.Stalk.Shared.Enums;
+﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Wilgysef.Stalk.Core.Shared.Enums;
 
 namespace Wilgysef.Stalk.Core.Models.JobTasks;
 
 public class JobTask
 {
-    public virtual Guid Id { get; protected set; }
+    [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
+    public virtual long Id { get; protected set; }
 
     public virtual string? Name { get; protected set; }
 
@@ -20,16 +23,14 @@ public class JobTask
 
     public virtual DateTime? Finished { get; protected set; }
 
-    public virtual JobTaskData Data { get; protected set; }
-
     public virtual JobTaskResult? Result { get; protected set; }
 
     public virtual JobTask? ParentTask { get; protected set; }
 
     protected JobTask() { }
 
-    public JobTask Create(
-        Guid id,
+    public static JobTask Create(
+        long id,
         string uri,
         string? name = null,
         int priority = 0)
