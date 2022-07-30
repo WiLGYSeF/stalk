@@ -17,6 +17,14 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wilgysef.Stalk.Plugins.Shar
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wilgysef.Stalk.Shared", "Wilgysef.Stalk.Shared\Wilgysef.Stalk.Shared.csproj", "{653934BD-AFBE-4DCF-BD49-5C10A217AEE8}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wilgysef.Stalk.WebApi.Tests", "Tests\Wilgysef.Stalk.WebApi.Tests\Wilgysef.Stalk.WebApi.Tests.csproj", "{97084016-A7AD-4266-8796-749DA3B5AA46}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Infrastructure", "Infrastructure", "{EAE7F40A-3A86-4E78-9CB8-F06284A3E677}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Downloaders", "Downloaders", "{B5CA580E-D84E-4A8A-BAEF-EE3E6FC7C8A1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wilgysef.Stalk.Downloaders.Shared", "Infrastructure\Downloaders\Wilgysef.Stalk.Downloaders.Shared\Wilgysef.Stalk.Downloaders.Shared.csproj", "{E92CECE4-897D-4BF2-8B54-5F28FC4CB810}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -43,6 +51,14 @@ Global
 		{653934BD-AFBE-4DCF-BD49-5C10A217AEE8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{653934BD-AFBE-4DCF-BD49-5C10A217AEE8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{653934BD-AFBE-4DCF-BD49-5C10A217AEE8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97084016-A7AD-4266-8796-749DA3B5AA46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97084016-A7AD-4266-8796-749DA3B5AA46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97084016-A7AD-4266-8796-749DA3B5AA46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97084016-A7AD-4266-8796-749DA3B5AA46}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E92CECE4-897D-4BF2-8B54-5F28FC4CB810}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E92CECE4-897D-4BF2-8B54-5F28FC4CB810}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E92CECE4-897D-4BF2-8B54-5F28FC4CB810}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E92CECE4-897D-4BF2-8B54-5F28FC4CB810}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -50,6 +66,9 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{45FC0FCD-6F9F-47ED-A941-1B0F14DDE1B3} = {DAD49A10-1561-42A9-9858-5D41E6DFDAEA}
 		{501A9EF3-A773-4DB0-BC84-8DFBD9BABBD8} = {2647EF06-050B-45D1-BD89-1BE03F335941}
+		{97084016-A7AD-4266-8796-749DA3B5AA46} = {DAD49A10-1561-42A9-9858-5D41E6DFDAEA}
+		{E92CECE4-897D-4BF2-8B54-5F28FC4CB810} = {B5CA580E-D84E-4A8A-BAEF-EE3E6FC7C8A1}
+		{B5CA580E-D84E-4A8A-BAEF-EE3E6FC7C8A1} = {EAE7F40A-3A86-4E78-9CB8-F06284A3E677}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {975B6EDC-28CD-42DA-AE1B-C8FBD1666827}
