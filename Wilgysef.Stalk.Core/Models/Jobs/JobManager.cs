@@ -1,4 +1,6 @@
-﻿using Wilgysef.Stalk.Core.Models.JobTasks;
+﻿using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
+using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 
@@ -23,14 +25,36 @@ public class JobManager : IJobManager
 
     public async Task<Job> GetJobAsync(long id)
     {
-        // TODO: Include()?
-        var entity = await _dbContext.Jobs.FindAsync(id);
+        var entity = await GetJobs()
+            .Where(j => j.Id == id)
+            .SingleOrDefaultAsync();
         if (entity == null)
         {
             throw new EntityNotFoundException(nameof(Job), id);
         }
 
         return entity;
+    }
+
+    public async Task<List<Job>> GetJobsAsync()
+    {
+        return await GetJobs().ToListAsync();
+    }
+
+    public async Task<List<Job>> GetUnfinishedJobsAsync()
+    {
+        return await GetJobs()
+            .Where(Expression.Lambda<Func<Job, bool>>(Expression.Negate(Job.IsDoneExpression)))
+            .ToListAsync();
+    }
+
+    public async Task<Job?> GetNextPriorityJobAsync()
+    {
+        return await GetJobs()
+            .Where(Job.IsQueuedExpression)
+            .OrderByDescending(j => j.Priority)
+            .ThenBy(j => j.Started)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<Job> UpdateJobAsync(Job job)
@@ -90,6 +114,11 @@ public class JobManager : IJobManager
 
     private async Task StopJobNoSaveAsync(Job job, bool force = false)
     {
+        if (job.IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
         if (job.IsActive)
         {
             await PauseJobNoSaveAsync(job, force);
@@ -101,6 +130,11 @@ public class JobManager : IJobManager
 
     private async Task PauseJobNoSaveAsync(Job job, bool force = false)
     {
+        if (job.IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
         if (job.IsActive)
         {
             // TODO: stop job
@@ -112,6 +146,11 @@ public class JobManager : IJobManager
 
     private async Task StopJobTaskNoSaveAsync(Job job, JobTask task, bool force = false)
     {
+        if (task.IsDone)
+        {
+            throw new JobTaskAlreadyDoneException();
+        }
+
         if (task.IsActive)
         {
             await PauseJobTaskNoSaveAsync(job, task, force);
@@ -123,6 +162,11 @@ public class JobManager : IJobManager
 
     private async Task PauseJobTaskNoSaveAsync(Job job, JobTask task, bool force = false)
     {
+        if (task.IsDone)
+        {
+            throw new JobTaskAlreadyDoneException();
+        }
+
         if (task.IsActive)
         {
             // TODO: stop job task
@@ -130,5 +174,11 @@ public class JobManager : IJobManager
 
             task.ChangeState(JobTaskState.Paused);
         }
+    }
+
+    private IQueryable<Job> GetJobs()
+    {
+        return _dbContext.Jobs
+            .Include(j => j.Tasks);
     }
 }

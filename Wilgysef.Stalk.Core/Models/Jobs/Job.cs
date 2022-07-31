@@ -1,9 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq.Expressions;
 using System.Text;
 using System.Text.Json;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Shared.Exceptions;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;
 
@@ -27,14 +29,29 @@ public class Job
     public virtual ICollection<JobTask> Tasks { get; protected set; }
 
     [NotMapped]
-    public bool IsActive => State == JobState.Active
-        || State == JobState.Cancelling
-        || State == JobState.Pausing;
+    public bool IsActive => IsActiveExpression.Compile()(this);
 
     [NotMapped]
-    public bool IsDone => State == JobState.Completed
-        || State == JobState.Failed
-        || State == JobState.Cancelled;
+    public bool IsDone => IsDoneExpression.Compile()(this);
+
+    [NotMapped]
+    public bool IsQueued => IsQueuedExpression.Compile()(this);
+
+    [NotMapped]
+    internal static Expression<Func<Job, bool>> IsActiveExpression =>
+        j => j.State == JobState.Active
+            || j.State == JobState.Cancelling
+            || j.State == JobState.Pausing;
+
+    [NotMapped]
+    internal static Expression<Func<Job, bool>> IsDoneExpression =>
+        j => j.State == JobState.Completed
+            || j.State == JobState.Failed
+            || j.State == JobState.Cancelled;
+
+    [NotMapped]
+    internal static Expression<Func<Job, bool>> IsQueuedExpression =>
+        j => j.State == JobState.Inactive;
 
     protected Job() { }
 
@@ -54,6 +71,11 @@ public class Job
 
     public void ChangePriority(int priority)
     {
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
         if (Priority != priority)
         {
             Priority = priority;
@@ -62,6 +84,11 @@ public class Job
 
     public void ChangeConfig(JobConfig config)
     {
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
         var serialized = Encoding.UTF8.GetString(
             JsonSerializer.SerializeToUtf8Bytes(config, new JsonSerializerOptions
             {
@@ -76,6 +103,11 @@ public class Job
 
     public void AddTask(JobTask task)
     {
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
         Tasks.Add(task);
     }
 
@@ -89,11 +121,21 @@ public class Job
 
     internal void Start()
     {
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
         Started = DateTime.Now;
     }
 
     internal void Finish()
     {
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
         Finished = DateTime.Now;
     }
 }

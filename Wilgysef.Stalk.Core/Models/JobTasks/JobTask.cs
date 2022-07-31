@@ -1,6 +1,8 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq.Expressions;
 using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Shared.Exceptions;
 
 namespace Wilgysef.Stalk.Core.Models.JobTasks;
 
@@ -34,14 +36,23 @@ public class JobTask
     public virtual JobTask? ParentTask { get; protected set; }
 
     [NotMapped]
-    public bool IsActive => State == JobTaskState.Active
-        || State == JobTaskState.Cancelling
-        || State == JobTaskState.Pausing;
+    public bool IsActive => IsActiveExpression.Compile()(this);
 
     [NotMapped]
-    public bool IsDone => State == JobTaskState.Completed
-        || State == JobTaskState.Failed
-        || State == JobTaskState.Cancelled;
+    public bool IsDone => IsDoneExpression.Compile()(this);
+
+    [NotMapped]
+    internal static Expression<Func<JobTask, bool>> IsActiveExpression => 
+        t => t.State == JobTaskState.Active
+            || t.State == JobTaskState.Cancelling
+            || t.State == JobTaskState.Pausing;
+
+    [NotMapped]
+    internal static Expression<Func<JobTask, bool>> IsDoneExpression =>
+        t => t.State == JobTaskState.Completed
+            || t.State == JobTaskState.Failed
+            || t.State == JobTaskState.Cancelled;
+
 
     protected JobTask() { }
 
@@ -73,11 +84,21 @@ public class JobTask
 
     internal void Start()
     {
+        if (IsDone)
+        {
+            throw new JobTaskAlreadyDoneException();
+        }
+
         Started = DateTime.Now;
     }
 
     internal void Finish()
     {
+        if (IsDone)
+        {
+            throw new JobTaskAlreadyDoneException();
+        }
+
         Finished = DateTime.Now;
     }
 }

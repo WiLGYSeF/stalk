@@ -9,6 +9,8 @@ public interface IJobManager : ITransientDependency
 
     Task<Job> GetJobAsync(long id);
 
+    Task<List<Job>> GetJobsAsync();
+
     Task<Job> UpdateJobAsync(Job job);
 
     Task DeleteJobAsync(Job job, bool force = false);
