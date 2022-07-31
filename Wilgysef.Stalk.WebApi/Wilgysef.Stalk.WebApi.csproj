@@ -23,4 +23,8 @@
     <ProjectReference Include="..\Wilgysef.Stalk.Application\Wilgysef.Stalk.Application.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="Wilgysef.Stalk.WebApi.Tests"/>
+  </ItemGroup>
+
 </Project>

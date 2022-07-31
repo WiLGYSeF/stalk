@@ -68,9 +68,11 @@ void ConfigureDependencyInjection()
     {
         builder.Register(c => new IdGenerator(IdGeneratorId, IdGeneratorOptions.Default))
             .As<IIdGenerator<long>>()
-            .InstancePerLifetimeScope();
+            .SingleInstance();
 
-        foreach (var (implementation, service) in DependencyInjectionRegistration.GetTransientServiceImplementations(Assembly.GetEntryAssembly()))
+        var assembly = Assembly.GetExecutingAssembly();
+
+        foreach (var (implementation, service) in ServiceRegistration.GetTransientServiceImplementations(assembly))
         {
             builder.RegisterType(implementation)
                 .As(service)
@@ -78,7 +80,7 @@ void ConfigureDependencyInjection()
                 .InstancePerDependency();
         }
 
-        foreach (var (implementation, service) in DependencyInjectionRegistration.GetScopedServiceImplementations(Assembly.GetEntryAssembly()))
+        foreach (var (implementation, service) in ServiceRegistration.GetScopedServiceImplementations(assembly))
         {
             builder.RegisterType(implementation)
                 .As(service)
@@ -86,7 +88,7 @@ void ConfigureDependencyInjection()
                 .InstancePerLifetimeScope();
         }
 
-        foreach (var (implementation, service) in DependencyInjectionRegistration.GetSingletonServiceImplementations(Assembly.GetEntryAssembly()))
+        foreach (var (implementation, service) in ServiceRegistration.GetSingletonServiceImplementations(assembly))
         {
             builder.RegisterType(implementation)
                 .As(service)
@@ -95,3 +97,5 @@ void ConfigureDependencyInjection()
         }
     });
 }
+
+public partial class Program { }

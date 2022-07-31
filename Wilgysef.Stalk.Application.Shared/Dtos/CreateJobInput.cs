@@ -2,5 +2,5 @@
 
 public class CreateJobInput
 {
-    public string Name { get; set; }
+    public string? Name { get; set; }
 }

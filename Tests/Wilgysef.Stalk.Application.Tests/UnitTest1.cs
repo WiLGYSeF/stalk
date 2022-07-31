@@ -1,4 +1,4 @@
-namespace Wilgysef.Stalk.WebApi.Tests
+namespace Wilgysef.Stalk.Application.Tests
 {
     public class UnitTest1
     {

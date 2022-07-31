@@ -6,7 +6,7 @@ using Wilgysef.Stalk.Core.Shared.Interfaces;
 
 namespace Wilgysef.Stalk.Core.Shared
 {
-    public static class DependencyInjectionRegistration
+    public static class ServiceRegistration
     {
         public static IEnumerable<(Type Implementation, Type Service)> GetTransientServiceImplementations(Assembly assembly)
         {
