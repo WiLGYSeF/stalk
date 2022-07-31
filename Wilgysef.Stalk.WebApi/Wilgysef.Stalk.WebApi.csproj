@@ -20,7 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Infrastructure\Wilgysef.Stalk.EntityFrameworkCore\Wilgysef.Stalk.EntityFrameworkCore.csproj" />
-    <ProjectReference Include="..\Wilgysef.Stalk.Application.Shared\Wilgysef.Stalk.Application.Shared.csproj" />
+    <ProjectReference Include="..\Wilgysef.Stalk.Application\Wilgysef.Stalk.Application.csproj" />
   </ItemGroup>
 
 </Project>

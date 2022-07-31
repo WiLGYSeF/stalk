@@ -1,22 +1,31 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using IdGen;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using System.Data.Common;
 using System.Reflection;
-using Wilgysef.Stalk.Core.Shared.Interfaces;
+using Wilgysef.Stalk.Application;
+using Wilgysef.Stalk.Core;
+using Wilgysef.Stalk.Core.Shared;
+
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 const int IdGeneratorId = 1;
+
+// used for project reference so the assembly is loaded when registering dependency injection
+// is there a better way to do this?
+var DependsOn = new[]
+{
+    typeof(ApplicationModule),
+    typeof(CoreModule),
+};
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
+ConfigureDependencyInjection();
 ConfigureDbContext();
 ConfigureSwagger();
-ConfigureDependencyInjection();
 
 var app = builder.Build();
 
@@ -51,29 +60,38 @@ void ConfigureSwagger()
 
 void ConfigureDependencyInjection()
 {
+    builder.Services.AddAutofac();
+
     builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
     builder.Host.ConfigureContainer<ContainerBuilder>(builder =>
     {
-        builder.RegisterAssemblyTypes(AppDomain.CurrentDomain.GetAssemblies())
-            .Where(t => t.IsAssignableTo<ITransientDependency>())
-            .AsImplementedInterfaces()
-            .InstancePerDependency();
-        builder.RegisterAssemblyTypes(AppDomain.CurrentDomain.GetAssemblies())
-            .Where(t => t.IsAssignableTo<IScopedDependency>())
-            .AsImplementedInterfaces()
-            .InstancePerRequest();
+        builder.Register(c => new IdGenerator(IdGeneratorId, IdGeneratorOptions.Default))
+            .As<IIdGenerator<long>>()
+            .InstancePerLifetimeScope();
 
-        //builder.RegisterAssemblyTypes(AppDomain.CurrentDomain.GetAssemblies())
-        //    .AsClosedTypesOf(typeof(ITransientDependency))
-        //    .InstancePerDependency();
-        //builder.RegisterAssemblyTypes(AppDomain.CurrentDomain.GetAssemblies())
-        //    .AsClosedTypesOf(typeof(IScopedDependency))
-        //    .InstancePerRequest();
-        //builder.RegisterAssemblyTypes(AppDomain.CurrentDomain.GetAssemblies())
-        //    .AsClosedTypesOf(typeof(ISingletonDependency))
-        //    .InstancePerLifetimeScope();
+        foreach (var (implementation, service) in DependencyInjectionRegistration.GetTransientServiceImplementations(Assembly.GetEntryAssembly()))
+        {
+            builder.RegisterType(implementation)
+                .As(service)
+                .PropertiesAutowired()
+                .InstancePerDependency();
+        }
+
+        foreach (var (implementation, service) in DependencyInjectionRegistration.GetScopedServiceImplementations(Assembly.GetEntryAssembly()))
+        {
+            builder.RegisterType(implementation)
+                .As(service)
+                .PropertiesAutowired()
+                .InstancePerLifetimeScope();
+        }
+
+        foreach (var (implementation, service) in DependencyInjectionRegistration.GetSingletonServiceImplementations(Assembly.GetEntryAssembly()))
+        {
+            builder.RegisterType(implementation)
+                .As(service)
+                .PropertiesAutowired()
+                .SingleInstance();
+        }
     });
-
-    builder.Services.AddSingleton<IIdGenerator<long>>(new IdGenerator(IdGeneratorId, IdGeneratorOptions.Default));
 }
