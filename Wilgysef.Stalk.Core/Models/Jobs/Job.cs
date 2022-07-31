@@ -1,5 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text;
+using System.Text.Json;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 
@@ -22,7 +24,17 @@ public class Job
 
     public virtual string? ConfigJson { get; protected set; }
 
-    public virtual ICollection<JobTask> Tasks { get; protected set; } = new List<JobTask>();
+    public virtual ICollection<JobTask> Tasks { get; protected set; }
+
+    [NotMapped]
+    public bool IsActive => State == JobState.Active
+        || State == JobState.Cancelling
+        || State == JobState.Pausing;
+
+    [NotMapped]
+    public bool IsDone => State == JobState.Completed
+        || State == JobState.Failed
+        || State == JobState.Cancelled;
 
     protected Job() { }
 
@@ -48,12 +60,39 @@ public class Job
         }
     }
 
-    public void Start()
+    public void ChangeConfig(JobConfig config)
+    {
+        var serialized = Encoding.UTF8.GetString(
+            JsonSerializer.SerializeToUtf8Bytes(config, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            }));
+
+        if (ConfigJson != serialized)
+        {
+            ConfigJson = serialized;
+        }
+    }
+
+    public void AddTask(JobTask task)
+    {
+        Tasks.Add(task);
+    }
+
+    internal void ChangeState(JobState state)
+    {
+        if (State != state)
+        {
+            State = state;
+        }
+    }
+
+    internal void Start()
     {
         Started = DateTime.Now;
     }
 
-    public void Finish()
+    internal void Finish()
     {
         Finished = DateTime.Now;
     }

@@ -33,6 +33,16 @@ public class JobTask
 
     public virtual JobTask? ParentTask { get; protected set; }
 
+    [NotMapped]
+    public bool IsActive => State == JobTaskState.Active
+        || State == JobTaskState.Cancelling
+        || State == JobTaskState.Pausing;
+
+    [NotMapped]
+    public bool IsDone => State == JobTaskState.Completed
+        || State == JobTaskState.Failed
+        || State == JobTaskState.Cancelled;
+
     protected JobTask() { }
 
     public static JobTask Create(
@@ -53,12 +63,20 @@ public class JobTask
         };
     }
 
-    public void Start()
+    internal void ChangeState(JobTaskState state)
+    {
+        if (State != state)
+        {
+            State = state;
+        }
+    }
+
+    internal void Start()
     {
         Started = DateTime.Now;
     }
 
-    public void Finish()
+    internal void Finish()
     {
         Finished = DateTime.Now;
     }
