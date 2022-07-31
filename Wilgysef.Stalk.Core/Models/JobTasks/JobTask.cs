@@ -17,7 +17,13 @@ public class JobTask
 
     public virtual string Uri { get; protected set; }
 
-    public virtual JobTaskType? Type { get; protected set; }
+    public virtual string? ItemId { get; protected set; }
+
+    public virtual string? ItemData { get; protected set; }
+
+    public virtual string? MetadataJson { get; protected set; }
+
+    public virtual JobTaskType Type { get; protected set; }
 
     public virtual DateTime? Started { get; protected set; }
 
@@ -33,7 +39,8 @@ public class JobTask
         long id,
         string uri,
         string? name = null,
-        int priority = 0)
+        int priority = 0,
+        JobTaskType type = JobTaskType.Extract)
     {
         return new JobTask
         {
@@ -42,6 +49,17 @@ public class JobTask
             State = JobTaskState.Inactive,
             Priority = priority,
             Uri = uri,
+            Type = type,
         };
+    }
+
+    public void Start()
+    {
+        Started = DateTime.Now;
+    }
+
+    public void Finish()
+    {
+        Finished = DateTime.Now;
     }
 }

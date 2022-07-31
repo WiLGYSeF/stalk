@@ -1,5 +1,8 @@
-﻿namespace Wilgysef.Stalk.Core.Models.Jobs;
+﻿using Wilgysef.Stalk.Core.Shared.Interfaces;
 
-public interface IJobManager
+namespace Wilgysef.Stalk.Core.Models.Jobs;
+
+public interface IJobManager : ITransientDependency
 {
+    Task<Job> CreateJobAsync(Job job);
 }

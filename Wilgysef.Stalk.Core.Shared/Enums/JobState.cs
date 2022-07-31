@@ -31,5 +31,15 @@
         /// Job is in process of cancelling.
         /// </summary>
         Cancelling,
+
+        /// <summary>
+        /// Job is paused.
+        /// </summary>
+        Paused,
+
+        /// <summary>
+        /// Job is pausing.
+        /// </summary>
+        Pausing,
     }
 }

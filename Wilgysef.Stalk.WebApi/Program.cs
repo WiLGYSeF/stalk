@@ -5,6 +5,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.Data.Common;
 using System.Reflection;
+using Wilgysef.Stalk.Core.Shared.Interfaces;
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 const int IdGeneratorId = 1;
@@ -54,8 +55,24 @@ void ConfigureDependencyInjection()
 
     builder.Host.ConfigureContainer<ContainerBuilder>(builder =>
     {
-        var asm = Assembly.GetExecutingAssembly();
-        builder.RegisterAssemblyTypes(asm);
+        builder.RegisterAssemblyTypes(AppDomain.CurrentDomain.GetAssemblies())
+            .Where(t => t.IsAssignableTo<ITransientDependency>())
+            .AsImplementedInterfaces()
+            .InstancePerDependency();
+        builder.RegisterAssemblyTypes(AppDomain.CurrentDomain.GetAssemblies())
+            .Where(t => t.IsAssignableTo<IScopedDependency>())
+            .AsImplementedInterfaces()
+            .InstancePerRequest();
+
+        //builder.RegisterAssemblyTypes(AppDomain.CurrentDomain.GetAssemblies())
+        //    .AsClosedTypesOf(typeof(ITransientDependency))
+        //    .InstancePerDependency();
+        //builder.RegisterAssemblyTypes(AppDomain.CurrentDomain.GetAssemblies())
+        //    .AsClosedTypesOf(typeof(IScopedDependency))
+        //    .InstancePerRequest();
+        //builder.RegisterAssemblyTypes(AppDomain.CurrentDomain.GetAssemblies())
+        //    .AsClosedTypesOf(typeof(ISingletonDependency))
+        //    .InstancePerLifetimeScope();
     });
 
     builder.Services.AddSingleton<IIdGenerator<long>>(new IdGenerator(IdGeneratorId, IdGeneratorOptions.Default));

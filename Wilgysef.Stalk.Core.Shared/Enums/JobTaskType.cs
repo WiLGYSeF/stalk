@@ -2,9 +2,7 @@
 {
     public enum JobTaskType
     {
-        List,
-
-        Fetch,
+        Extract,
 
         Download,
     }

@@ -39,4 +39,22 @@ public class Job
             Priority = priority,
         };
     }
+
+    public void ChangePriority(int priority)
+    {
+        if (Priority != priority)
+        {
+            Priority = priority;
+        }
+    }
+
+    public void Start()
+    {
+        Started = DateTime.Now;
+    }
+
+    public void Finish()
+    {
+        Finished = DateTime.Now;
+    }
 }

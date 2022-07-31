@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Wilgysef.Stalk.Core.Shared\Wilgysef.Stalk.Core.Shared.csproj" />
+  </ItemGroup>
+
 </Project>
