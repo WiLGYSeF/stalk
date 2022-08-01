@@ -103,6 +103,23 @@ public class JobManager : IJobManager
         await _dbContext.SaveChangesAsync();
     }
 
+    public async Task SetJobActiveAsync(Job job)
+    {
+        job.ChangeState(JobState.Active);
+
+        _dbContext.Jobs.Update(job);
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task SetJobDoneAsync(Job job)
+    {
+        var completed = !job.HasUnfinishedTasks;
+        job.ChangeState(completed ? JobState.Completed : JobState.Failed);
+
+        _dbContext.Jobs.Update(job);
+        await _dbContext.SaveChangesAsync();
+    }
+
     public async Task DeleteJobTaskAsync(Job job, JobTask task, bool force = false)
     {
         await StopJobTaskNoSaveAsync(job, task, force);
@@ -152,7 +169,6 @@ public class JobManager : IJobManager
             await PauseJobNoSaveAsync(job, force);
 
             job.ChangeState(JobState.Cancelled);
-            job.Finish();
         }
     }
 

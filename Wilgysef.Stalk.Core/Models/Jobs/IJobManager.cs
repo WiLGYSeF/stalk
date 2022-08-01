@@ -21,6 +21,10 @@ public interface IJobManager : ITransientDependency
 
     Task UnpauseJobAsync(Job job);
 
+    Task SetJobActiveAsync(Job job);
+
+    Task SetJobDoneAsync(Job job);
+
     Task DeleteJobTaskAsync(Job job, JobTask task, bool force = false);
 
     Task StopJobTaskAsync(Job job, JobTask task, bool force = false);
