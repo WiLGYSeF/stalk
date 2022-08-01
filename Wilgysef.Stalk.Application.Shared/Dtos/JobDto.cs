@@ -18,5 +18,5 @@ public class JobDto
 
     public string? ConfigJson { get; set; }
 
-    //public ICollection<JobTaskDto> Tasks { get; set; }
+    public ICollection<JobTaskDto> Tasks { get; set; }
 }

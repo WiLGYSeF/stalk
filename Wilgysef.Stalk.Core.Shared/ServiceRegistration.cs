@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Reflection;
 using System.Linq;
+using System.Reflection;
 using Wilgysef.Stalk.Core.Shared.Interfaces;
 
 namespace Wilgysef.Stalk.Core.Shared
@@ -50,15 +50,15 @@ namespace Wilgysef.Stalk.Core.Shared
                 .Select(t => (t, t.GetInterfaces().SingleOrDefault(i => InterfaceSelector(t, i))));
         }
 
+        public static IEnumerable<Assembly> GetAssemblies(Assembly assembly)
+        {
+            return GetAssemblies(assembly, _ => true);
+        }
+
         private static bool InterfaceSelector(Type implementation, Type @interface) => implementation.Name == @interface.Name
             || (@interface.Name.StartsWith("I") && implementation.Name == @interface.Name.Substring(1));
 
         private static bool IsEligibleAssembly(Assembly assembly) => assembly.FullName != null && assembly.FullName.StartsWith("Wilgysef");
-
-        private static IEnumerable<Assembly> GetAssemblies(Assembly assembly)
-        {
-            return GetAssemblies(assembly, _ => true);
-        }
 
         private static IEnumerable<Assembly> GetAssemblies(Assembly assembly, Func<Assembly, bool> filter)
         {

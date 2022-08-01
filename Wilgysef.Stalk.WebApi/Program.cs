@@ -1,5 +1,6 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using AutoMapper.Contrib.Autofac.DependencyInjection;
 using IdGen;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
@@ -64,13 +65,15 @@ void ConfigureDependencyInjection()
 
     builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
-    builder.Host.ConfigureContainer<ContainerBuilder>(builder =>
+    builder.Host.ConfigureContainer<ContainerBuilder>((context, builder) =>
     {
+        var assembly = Assembly.GetExecutingAssembly();
+
+        builder.RegisterAutoMapper(true, ServiceRegistration.GetAssemblies(assembly).ToArray());
+
         builder.Register(c => new IdGenerator(IdGeneratorId, IdGeneratorOptions.Default))
             .As<IIdGenerator<long>>()
             .SingleInstance();
-
-        var assembly = Assembly.GetExecutingAssembly();
 
         foreach (var (implementation, service) in ServiceRegistration.GetTransientServiceImplementations(assembly))
         {

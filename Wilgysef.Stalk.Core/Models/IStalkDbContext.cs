@@ -8,10 +8,10 @@ namespace Wilgysef.Stalk.Core.Models;
 public interface IStalkDbContext : IScopedDependency
 {
     DbSet<Job> Jobs { get; set; }
-    
+
     DbSet<JobTask> JobTasks { get; set; }
 
     int SaveChanges();
-    
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

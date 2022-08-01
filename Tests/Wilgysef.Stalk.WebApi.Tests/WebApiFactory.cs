@@ -3,7 +3,6 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data.Common;
-using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 namespace Wilgysef.Stalk.WebApi.Tests;
@@ -21,8 +20,6 @@ public class WebApiFactory : IDisposable
 
             using var context = new StalkDbContext(SetOptions().Options);
             context.Database.EnsureCreated();
-            context.Jobs.Add(Job.Create(1234));
-            context.SaveChanges();
         }
 
         return new WebApplicationFactory<Program>()
@@ -40,6 +37,8 @@ public class WebApiFactory : IDisposable
 
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
+
         if (_connection != null)
         {
             _connection.Dispose();

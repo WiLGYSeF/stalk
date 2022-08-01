@@ -1,6 +1,6 @@
 ﻿using IdGen;
 using Microsoft.AspNetCore.Mvc;
-using Wilgysef.Stalk.Application.Shared.Dtos;
+using Wilgysef.Stalk.Application.Shared.Dtos.JobAppService;
 using Wilgysef.Stalk.Application.Shared.Services;
 
 namespace Wilgysef.Stalk.WebApi.Controllers;

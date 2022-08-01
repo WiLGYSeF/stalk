@@ -42,7 +42,7 @@ public class JobTask
     public bool IsDone => IsDoneExpression.Compile()(this);
 
     [NotMapped]
-    internal static Expression<Func<JobTask, bool>> IsActiveExpression => 
+    internal static Expression<Func<JobTask, bool>> IsActiveExpression =>
         t => t.State == JobTaskState.Active
             || t.State == JobTaskState.Cancelling
             || t.State == JobTaskState.Pausing;

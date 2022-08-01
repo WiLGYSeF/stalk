@@ -1,8 +1,11 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using AutoMapper.Contrib.Autofac.DependencyInjection;
 using IdGen;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using System.Data.Common;
 using System.Reflection;
 using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Core;
@@ -21,36 +24,51 @@ namespace Wilgysef.Stalk.TestBase
 
         private const int IdGeneratorId = 1;
 
-        public static T? GetService<T>() where T : notnull
+        private DbConnection? _connection;
+
+        public T? GetService<T>() where T : notnull
         {
             var provider = GetProvider();
             return provider.GetService<T>();
         }
 
-        public static T GetRequiredService<T>() where T : notnull
+        public T GetRequiredService<T>() where T : notnull
         {
             var provider = GetProvider();
             return provider.GetRequiredService<T>();
         }
 
-        private static IServiceProvider GetProvider()
+        private IServiceProvider GetProvider()
         {
             var provider = new AutofacServiceProviderFactory();
             var services = new ServiceCollection();
 
+            if (_connection == null)
+            {
+                _connection = new SqliteConnection("DataSource=:memory:");
+                _connection.Open();
+
+                using var context = new StalkDbContext(new DbContextOptionsBuilder<StalkDbContext>()
+                    .UseSqlite(_connection)
+                    .Options);
+                context.Database.EnsureCreated();
+            }
+
             services.AddDbContext<StalkDbContext>(opt =>
             {
-                opt.UseSqlite("DataSource=:memory:");
+                opt.UseSqlite(_connection);
             });
 
             var builder = new ContainerBuilder();
             builder.Populate(services);
 
+            var assembly = Assembly.GetExecutingAssembly();
+
+            builder.RegisterAutoMapper(true, ServiceRegistration.GetAssemblies(assembly).ToArray());
+
             builder.Register(c => new IdGenerator(IdGeneratorId, IdGeneratorOptions.Default))
                 .As<IIdGenerator<long>>()
                 .SingleInstance();
-
-            var assembly = Assembly.GetExecutingAssembly();
 
             foreach (var (implementation, service) in ServiceRegistration.GetTransientServiceImplementations(assembly))
             {
