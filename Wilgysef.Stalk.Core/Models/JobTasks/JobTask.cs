@@ -31,6 +31,8 @@ public class JobTask
 
     public virtual DateTime? Finished { get; protected set; }
 
+    public virtual DateTime? DelayedUntil { get; protected set; }
+
     public virtual JobTaskResult? Result { get; protected set; }
 
     public virtual JobTask? ParentTask { get; protected set; }
@@ -40,6 +42,9 @@ public class JobTask
 
     [NotMapped]
     public bool IsDone => IsDoneExpression.Compile()(this);
+
+    [NotMapped]
+    public bool IsQueued => IsQueuedExpression.Compile()(this);
 
     [NotMapped]
     internal static Expression<Func<JobTask, bool>> IsActiveExpression =>
@@ -53,6 +58,9 @@ public class JobTask
             || t.State == JobTaskState.Failed
             || t.State == JobTaskState.Cancelled;
 
+    [NotMapped]
+    internal static Expression<Func<JobTask, bool>> IsQueuedExpression =>
+        j => j.State == JobTaskState.Inactive;
 
     protected JobTask() { }
 
@@ -76,9 +84,16 @@ public class JobTask
 
     internal void ChangeState(JobTaskState state)
     {
-        if (State != state)
+        if (State == state)
         {
-            State = state;
+            return;
+        }
+
+        State = state;
+
+        if (state != JobTaskState.Paused)
+        {
+            DelayUntil(null);
         }
     }
 
@@ -100,5 +115,10 @@ public class JobTask
         }
 
         Finished = DateTime.Now;
+    }
+
+    internal void DelayUntil(DateTime? dateTime)
+    {
+        DelayedUntil = dateTime;
     }
 }

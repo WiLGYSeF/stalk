@@ -52,6 +52,8 @@ public class JobManager : IJobManager
     {
         return await GetJobs()
             .Where(Job.IsQueuedExpression)
+            .Where(j => j.Tasks.AsQueryable()
+                .Any(JobTask.IsQueuedExpression))
             .OrderByDescending(j => j.Priority)
             .ThenBy(j => j.Started)
             .FirstOrDefaultAsync();
@@ -88,6 +90,19 @@ public class JobManager : IJobManager
         await _dbContext.SaveChangesAsync();
     }
 
+    public async Task UnpauseJobAsync(Job job)
+    {
+        if (job.State != JobState.Paused)
+        {
+            throw new JobNotPausedException();
+        }
+
+        job.ChangeState(JobState.Inactive);
+
+        _dbContext.Jobs.Update(job);
+        await _dbContext.SaveChangesAsync();
+    }
+
     public async Task DeleteJobTaskAsync(Job job, JobTask task, bool force = false)
     {
         await StopJobTaskNoSaveAsync(job, task, force);
@@ -107,6 +122,19 @@ public class JobManager : IJobManager
     public async Task PauseJobTaskAsync(Job job, JobTask task, bool force = false)
     {
         await PauseJobTaskNoSaveAsync(job, task, force);
+
+        _dbContext.JobTasks.Update(task);
+        await _dbContext.SaveChangesAsync();
+    }
+
+    public async Task UnpauseJobTaskAsync(JobTask task)
+    {
+        if (task.State != JobTaskState.Paused)
+        {
+            throw new JobTaskNotPausedException();
+        }
+
+        task.ChangeState(JobTaskState.Inactive);
 
         _dbContext.JobTasks.Update(task);
         await _dbContext.SaveChangesAsync();

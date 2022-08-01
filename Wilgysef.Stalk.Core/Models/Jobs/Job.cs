@@ -24,6 +24,8 @@ public class Job
 
     public virtual DateTime? Finished { get; protected set; }
 
+    public virtual DateTime? DelayedUntil { get; protected set; }
+
     public virtual string? ConfigJson { get; protected set; }
 
     public virtual ICollection<JobTask> Tasks { get; protected set; }
@@ -113,9 +115,16 @@ public class Job
 
     internal void ChangeState(JobState state)
     {
-        if (State != state)
+        if (State == state)
         {
-            State = state;
+            return;
+        }
+
+        State = state;
+
+        if (state != JobState.Paused)
+        {
+            DelayUntil(null);
         }
     }
 
@@ -137,5 +146,10 @@ public class Job
         }
 
         Finished = DateTime.Now;
+    }
+
+    internal void DelayUntil(DateTime? dateTime)
+    {
+        DelayedUntil = dateTime;
     }
 }
