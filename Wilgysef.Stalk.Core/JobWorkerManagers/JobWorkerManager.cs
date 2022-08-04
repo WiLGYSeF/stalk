@@ -11,6 +11,7 @@ public class JobWorkerManager : IJobWorkerManager
     private int WorkerLimit { get; set; } = 4;
 
     private readonly List<JobWorker> _jobWorkers = new();
+    private readonly Dictionary<JobWorker, CancellationTokenSource> _jobWorkerCancellationTokenSources = new();
 
     private readonly IJobWorkerFactory _jobWorkerFactory;
 
@@ -20,7 +21,7 @@ public class JobWorkerManager : IJobWorkerManager
         _jobWorkerFactory = jobWorkerFactory;
     }
 
-    public bool StartJob(Job job)
+    public bool StartJobWorker(Job job)
     {
         if (_jobWorkers.Count >= WorkerLimit)
         {
@@ -28,10 +29,13 @@ public class JobWorkerManager : IJobWorkerManager
         }
 
         var worker = _jobWorkerFactory.CreateWorker(job);
+        var cancellationTokenSource = new CancellationTokenSource();
+
         _jobWorkers.Add(worker);
+        _jobWorkerCancellationTokenSources.Add(cancellationTokenSource);
 
         // do not await
-        worker.Work();
+        worker.Work(cancellationTokenSource.Token);
 
         return true;
     }

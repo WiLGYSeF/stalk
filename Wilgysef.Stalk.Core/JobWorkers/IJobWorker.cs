@@ -7,5 +7,5 @@ public interface IJobWorker
 {
     JobWorker WithJob(Job job);
 
-    Task Work();
+    Task Work(CancellationToken? cancellationToken = null);
 }

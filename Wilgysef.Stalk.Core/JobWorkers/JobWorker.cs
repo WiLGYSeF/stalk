@@ -21,7 +21,7 @@ public class JobWorker : IJobWorker
         return this;
     }
 
-    public async Task Work()
+    public async Task Work(CancellationToken? cancellationToken = null)
     {
         await _jobManager.SetJobActiveAsync(Job);
 
