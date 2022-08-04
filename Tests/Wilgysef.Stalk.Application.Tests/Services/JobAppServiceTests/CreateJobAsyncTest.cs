@@ -26,7 +26,7 @@ public class CreateJobAsyncTest : BaseTest
         var job = await _jobAppService.CreateJobAsync(input);
 
         job.Name.ShouldBe(input.Name);
-        job.State.ShouldBe(JobState.Inactive);
+        job.State.ShouldBe(JobState.Inactive.ToString().ToLower());
         job.Priority.ShouldBe(0);
         job.Started.ShouldBeNull();
         job.Finished.ShouldBeNull();

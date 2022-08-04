@@ -1,5 +1,5 @@
-﻿using IdGen;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
+using Wilgysef.Stalk.Application.Shared.Dtos;
 using Wilgysef.Stalk.Application.Shared.Dtos.JobAppService;
 using Wilgysef.Stalk.Application.Shared.Services;
 
@@ -10,20 +10,23 @@ namespace Wilgysef.Stalk.WebApi.Controllers;
 public class JobController : ControllerBase
 {
     private readonly IJobAppService _jobAppService;
-    private readonly IIdGenerator<long> _idGenerator;
 
     public JobController(
-        IJobAppService jobAppService,
-        IIdGenerator<long> idGenerator)
+        IJobAppService jobAppService)
     {
         _jobAppService = jobAppService;
-        _idGenerator = idGenerator;
     }
 
     [HttpPost]
-    public async Task CreateJob(CreateJobInput input)
+    public async Task<JobDto> CreateJobAsync(CreateJobInput input)
     {
-        var a = _idGenerator.CreateId();
-        await _jobAppService.CreateJobAsync(input);
+        return await _jobAppService.CreateJobAsync(input);
+    }
+
+    [HttpPost("{id}/stop")]
+    public async Task<JobDto> StopJobAsync(long id, StopJobInput input)
+    {
+        input.Id = id;
+        return await _jobAppService.StopJobAsync(input);
     }
 }

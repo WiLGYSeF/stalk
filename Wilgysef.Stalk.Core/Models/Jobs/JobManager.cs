@@ -66,40 +66,25 @@ public class JobManager : IJobManager
         return entity.Entity;
     }
 
-    public async Task DeleteJobAsync(Job job, bool force = false)
+    public async Task DeleteJobAsync(Job job)
     {
-        await StopJobNoSaveAsync(job, force);
+        if (job.IsActive)
+        {
+            throw new JobActiveException();
+        }
 
         _dbContext.Jobs.Remove(job);
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task StopJobAsync(Job job, bool force = false)
+    public async Task DeleteJobTaskAsync(JobTask task)
     {
-        await StopJobNoSaveAsync(job, force);
-
-        _dbContext.Jobs.Update(job);
-        await _dbContext.SaveChangesAsync();
-    }
-
-    public async Task PauseJobAsync(Job job, bool force = false)
-    {
-        await PauseJobNoSaveAsync(job, force);
-
-        _dbContext.Jobs.Update(job);
-        await _dbContext.SaveChangesAsync();
-    }
-
-    public async Task UnpauseJobAsync(Job job)
-    {
-        if (job.State != JobState.Paused)
+        if (task.IsActive)
         {
-            throw new JobNotPausedException();
+            throw new JobTaskActiveException();
         }
 
-        job.ChangeState(JobState.Inactive);
-
-        _dbContext.Jobs.Update(job);
+        _dbContext.JobTasks.Remove(task);
         await _dbContext.SaveChangesAsync();
     }
 
@@ -111,113 +96,24 @@ public class JobManager : IJobManager
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task SetJobDoneAsync(Job job)
+    public async Task SetJobDoneAsync(Job job, bool cancelled = false)
     {
-        var completed = !job.HasUnfinishedTasks;
-        job.ChangeState(completed ? JobState.Completed : JobState.Failed);
+        JobState state;
+        if (!cancelled)
+        {
+            state = !job.HasUnfinishedTasks
+                ? JobState.Completed
+                : JobState.Failed;
+        }
+        else
+        {
+            state = JobState.Cancelled;
+        }
+
+        job.ChangeState(state);
 
         _dbContext.Jobs.Update(job);
         await _dbContext.SaveChangesAsync();
-    }
-
-    public async Task DeleteJobTaskAsync(Job job, JobTask task, bool force = false)
-    {
-        await StopJobTaskNoSaveAsync(job, task, force);
-
-        _dbContext.JobTasks.Remove(task);
-        await _dbContext.SaveChangesAsync();
-    }
-
-    public async Task StopJobTaskAsync(Job job, JobTask task, bool force = false)
-    {
-        await StopJobTaskNoSaveAsync(job, task, force);
-
-        _dbContext.JobTasks.Update(task);
-        await _dbContext.SaveChangesAsync();
-    }
-
-    public async Task PauseJobTaskAsync(Job job, JobTask task, bool force = false)
-    {
-        await PauseJobTaskNoSaveAsync(job, task, force);
-
-        _dbContext.JobTasks.Update(task);
-        await _dbContext.SaveChangesAsync();
-    }
-
-    public async Task UnpauseJobTaskAsync(JobTask task)
-    {
-        if (task.State != JobTaskState.Paused)
-        {
-            throw new JobTaskNotPausedException();
-        }
-
-        task.ChangeState(JobTaskState.Inactive);
-
-        _dbContext.JobTasks.Update(task);
-        await _dbContext.SaveChangesAsync();
-    }
-
-    private async Task StopJobNoSaveAsync(Job job, bool force = false)
-    {
-        if (job.IsDone)
-        {
-            throw new JobAlreadyDoneException();
-        }
-
-        if (job.IsActive)
-        {
-            await PauseJobNoSaveAsync(job, force);
-
-            job.ChangeState(JobState.Cancelled);
-        }
-    }
-
-    private async Task PauseJobNoSaveAsync(Job job, bool force = false)
-    {
-        if (job.IsDone)
-        {
-            throw new JobAlreadyDoneException();
-        }
-
-        if (job.IsActive)
-        {
-            // TODO: stop job
-            // TODO: nonblock?
-
-            job.ChangeState(JobState.Paused);
-        }
-    }
-
-    private async Task StopJobTaskNoSaveAsync(Job job, JobTask task, bool force = false)
-    {
-        if (task.IsDone)
-        {
-            throw new JobTaskAlreadyDoneException();
-        }
-
-        if (task.IsActive)
-        {
-            await PauseJobTaskNoSaveAsync(job, task, force);
-
-            task.ChangeState(JobTaskState.Cancelled);
-            task.Finish();
-        }
-    }
-
-    private async Task PauseJobTaskNoSaveAsync(Job job, JobTask task, bool force = false)
-    {
-        if (task.IsDone)
-        {
-            throw new JobTaskAlreadyDoneException();
-        }
-
-        if (task.IsActive)
-        {
-            // TODO: stop job task
-            // TODO: nonblock?
-
-            task.ChangeState(JobTaskState.Paused);
-        }
     }
 
     private IQueryable<Job> GetJobs()

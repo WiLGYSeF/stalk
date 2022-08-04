@@ -9,7 +9,8 @@ public class JobAutoMapperProfile : Profile
 {
     public JobAutoMapperProfile()
     {
-        CreateMap<Job, JobDto>();
+        CreateMap<Job, JobDto>()
+            .ForMember(dto => dto.State, opt => opt.MapFrom(j => j.State.ToString().ToLower()));
 
         CreateMap<JobTask, JobTaskDto>();
 

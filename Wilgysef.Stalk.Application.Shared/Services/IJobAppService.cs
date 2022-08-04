@@ -7,4 +7,6 @@ namespace Wilgysef.Stalk.Application.Shared.Services;
 public interface IJobAppService : ITransientDependency
 {
     Task<JobDto> CreateJobAsync(CreateJobInput input);
+
+    Task<JobDto> StopJobAsync(StopJobInput input);
 }

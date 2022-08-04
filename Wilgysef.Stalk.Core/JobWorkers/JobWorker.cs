@@ -1,5 +1,5 @@
-﻿using Wilgysef.Stalk.Core.Models.Jobs;
-using Wilgysef.Stalk.Core.Shared.Enums;
+﻿using System.Diagnostics;
+using Wilgysef.Stalk.Core.Models.Jobs;
 
 namespace Wilgysef.Stalk.Core.JobWorkers;
 
@@ -21,13 +21,18 @@ public class JobWorker : IJobWorker
         return this;
     }
 
-    public async Task Work(CancellationToken? cancellationToken = null)
+    public async Task WorkAsync(CancellationToken? cancellationToken = null)
     {
-        await _jobManager.SetJobActiveAsync(Job);
+        await _jobManager.SetJobActiveAsync(Job!);
 
-        await Task.Delay(2000);
+        while (!cancellationToken.HasValue || !cancellationToken.Value.IsCancellationRequested)
+        {
+            Debug.WriteLine($"{Job!.Id}: doing work...");
+            await Task.Delay(1000);
+        }
 
-        if (!Job.HasUnfinishedTasks)
+        // TODO: fix
+        if (!Job.HasUnfinishedTasks || cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
         {
             await _jobManager.SetJobDoneAsync(Job);
         }

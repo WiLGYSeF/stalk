@@ -6,4 +6,6 @@ namespace Wilgysef.Stalk.Core.JobWorkerManagers;
 public interface IJobWorkerManager : ISingletonDependency
 {
     bool StartJobWorker(Job job);
+
+    Task<bool> StopJobWorker(Job job, bool awaitTask);
 }

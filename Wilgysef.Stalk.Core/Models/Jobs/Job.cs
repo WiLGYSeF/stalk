@@ -157,11 +157,6 @@ public class Job
 
     internal void Finish()
     {
-        if (IsDone)
-        {
-            throw new JobAlreadyDoneException();
-        }
-
         Finished = DateTime.Now;
     }
 
