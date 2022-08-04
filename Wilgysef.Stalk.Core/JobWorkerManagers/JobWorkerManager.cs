@@ -32,7 +32,7 @@ public class JobWorkerManager : IJobWorkerManager
         var cancellationTokenSource = new CancellationTokenSource();
 
         _jobWorkers.Add(worker);
-        _jobWorkerCancellationTokenSources.Add(cancellationTokenSource);
+        _jobWorkerCancellationTokenSources.Add(worker, cancellationTokenSource);
 
         // do not await
         worker.Work(cancellationTokenSource.Token);
