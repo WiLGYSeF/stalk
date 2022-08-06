@@ -11,6 +11,8 @@ public interface IJobManager : ITransientDependency
 
     Task<List<Job>> GetJobsAsync();
 
+    Task<Job?> GetNextPriorityJobAsync();
+
     Task<Job> UpdateJobAsync(Job job);
 
     Task DeleteJobAsync(Job job);

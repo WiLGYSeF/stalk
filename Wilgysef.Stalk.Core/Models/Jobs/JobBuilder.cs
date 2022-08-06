@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Wilgysef.Stalk.Core.Models.JobTasks;
+﻿using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;

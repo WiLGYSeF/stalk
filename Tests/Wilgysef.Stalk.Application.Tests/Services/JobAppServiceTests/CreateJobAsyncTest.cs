@@ -1,5 +1,4 @@
 ﻿using Shouldly;
-using Wilgysef.Stalk.Application.Commands;
 using Wilgysef.Stalk.Application.Contracts.Commands.Jobs;
 using Wilgysef.Stalk.Application.Contracts.Dtos;
 using Wilgysef.Stalk.Core.Shared.Cqrs;

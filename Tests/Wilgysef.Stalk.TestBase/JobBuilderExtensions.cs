@@ -1,4 +1,5 @@
 ﻿using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 
 namespace Wilgysef.Stalk.TestBase;
@@ -12,7 +13,8 @@ public static class JobBuilderExtensions
 
     public static JobBuilder WithRandomInitializedState(this JobBuilder builder, JobState state)
     {
-        return builder.WithState(state)
+        return builder.WithRandomId()
+            .WithState(state)
             .WithRandomStartFinishTimes();
     }
 
@@ -45,5 +47,16 @@ public static class JobBuilderExtensions
         return builder
             .WithStartedTime(startTime)
             .WithFinishedTime(endTime);
+    }
+
+    public static JobBuilder WithRandomTasks(this JobBuilder builder, JobTaskState taskState, int count)
+    {
+        for (var i = 0; i < count; i++)
+        {
+            var taskBuilder = new JobTaskBuilder();
+            builder.WithTasks(taskBuilder.WithRandomInitializedState(taskState).Create());
+        }
+
+        return builder;
     }
 }

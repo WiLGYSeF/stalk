@@ -17,15 +17,11 @@ public class DeactivateJobsAsyncTest : BaseTest
     [Fact]
     public async Task Deactivates_Jobs()
     {
-        var builder = new JobBuilder();
         var jobs = new List<Job>();
 
         foreach (var state in RandomValues.EnumValues<JobState>())
         {
-            jobs.Add(builder
-                .WithRandomId()
-                .WithRandomInitializedState(state)
-                .Create());
+            jobs.Add(new JobBuilder().WithRandomInitializedState(state).Create());
         }
 
         foreach (var job in jobs)
@@ -40,7 +36,7 @@ public class DeactivateJobsAsyncTest : BaseTest
         foreach (var result in jobResults)
         {
             var job = jobs.Single(j => j.Id == result.Id);
-            
+
             switch (job.State)
             {
                 case JobState.Active:
