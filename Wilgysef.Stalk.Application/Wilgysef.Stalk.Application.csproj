@@ -19,8 +19,4 @@
     <ProjectReference Include="..\Wilgysef.Stalk.Core\Wilgysef.Stalk.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Commands\Jobs\" />
-  </ItemGroup>
-
 </Project>

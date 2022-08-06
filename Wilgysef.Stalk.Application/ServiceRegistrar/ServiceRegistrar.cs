@@ -52,13 +52,6 @@ public class ServiceRegistrar
             .InstancePerDependency();
     }
 
-    private IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle> RegisterAssemblyTypes<T>(
-        ContainerBuilder builder,
-        params Assembly[] assemblies)
-    {
-        return RegisterAssemblyTypes(typeof(T), builder, assemblies);
-    }
-
     private IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle> RegisterAssemblyTypes(
         Type type,
         ContainerBuilder builder,
@@ -68,6 +61,13 @@ public class ServiceRegistrar
             .Where(t => t.GetInterfaces().Any(i => i.IsAssignableFrom(type)))
             .AsImplementedInterfaces()
             .PropertiesAutowired();
+    }
+
+    private IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle> RegisterAssemblyTypes<T>(
+        ContainerBuilder builder,
+        params Assembly[] assemblies)
+    {
+        return RegisterAssemblyTypes(typeof(T), builder, assemblies);
     }
 
     private bool EligibleAssemblyFilter(Assembly assembly) => assembly.FullName != null && assembly.FullName.StartsWith("Wilgysef");

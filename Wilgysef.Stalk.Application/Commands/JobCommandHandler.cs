@@ -7,8 +7,7 @@ using Wilgysef.Stalk.Core.Shared.Cqrs;
 
 namespace Wilgysef.Stalk.Application.Commands;
 
-public class JobCommandHandler
-    : ApplicationCommand,
+public class JobCommandHandler : CommandQuery,
     ICommandHandler<CreateJob, JobDto>,
     ICommandHandler<StopJob, JobDto>
 {
