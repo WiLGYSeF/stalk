@@ -124,7 +124,7 @@ public class JobTask
             ItemData = itemData,
             Type = type,
             Started = started,
-            Finished = finished,
+            DelayedUntil = delayedUntil,
             Result = result,
             ParentTask = parentTask,
         };
@@ -157,8 +157,7 @@ public class JobTask
             task.Finish(finished.Value);
         }
 
-        task.ChangeMetadata(metadata);
-        task.DelayUntil(delayedUntil);
+        task.SetMetadata(metadata);
 
         return task;
     }
@@ -171,34 +170,7 @@ public class JobTask
             throw new JobTaskAlreadyDoneException();
         }
 
-        if (metadata == null)
-        {
-            if (MetadataJson != null)
-            {
-                MetadataJson = null;
-            }
-            return;
-        }
-
-        using var jsonDocument = JsonSerializer.SerializeToDocument(metadata, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        });
-
-        using var stream = new MemoryStream();
-        using var writer = new Utf8JsonWriter(stream);
-
-        if (jsonDocument.RootElement.ValueKind != JsonValueKind.Object)
-        {
-            throw new ArgumentException("Metadata must serialize to a JSON object.", nameof(metadata));
-        }
-
-        var metadataJson = Encoding.UTF8.GetString(stream.ToArray());
-
-        if (MetadataJson != metadataJson)
-        {
-            MetadataJson = metadataJson;
-        }
+        SetMetadata(metadata);
     }
 
     internal void ChangeState(JobTaskState state)
@@ -227,6 +199,38 @@ public class JobTask
         if (state == JobTaskState.Active)
         {
             DelayUntil(null);
+        }
+    }
+
+    internal void SetMetadata(object? metadata)
+    {
+        if (metadata == null)
+        {
+            if (MetadataJson != null)
+            {
+                MetadataJson = null;
+            }
+            return;
+        }
+
+        using var jsonDocument = JsonSerializer.SerializeToDocument(metadata, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        });
+
+        using var stream = new MemoryStream();
+        using var writer = new Utf8JsonWriter(stream);
+
+        if (jsonDocument.RootElement.ValueKind != JsonValueKind.Object)
+        {
+            throw new ArgumentException("Metadata must serialize to a JSON object.", nameof(metadata));
+        }
+
+        var metadataJson = Encoding.UTF8.GetString(stream.ToArray());
+
+        if (MetadataJson != metadataJson)
+        {
+            MetadataJson = metadataJson;
         }
     }
 

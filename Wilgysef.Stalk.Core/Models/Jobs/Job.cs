@@ -133,6 +133,7 @@ public class Job
             State = state,
             Priority = priority,
             Started = started,
+            DelayedUntil = delayedUntil,
             Tasks = tasks,
         };
 
@@ -151,8 +152,7 @@ public class Job
             job.Finish(finished.Value);
         }
 
-        job.ChangeConfig(config);
-        job.DelayUntil(delayedUntil);
+        job.SetConfig(config);
 
         return job;
     }
@@ -177,25 +177,7 @@ public class Job
             throw new JobAlreadyDoneException();
         }
 
-        if (config == null)
-        {
-            if (ConfigJson != null)
-            {
-                ConfigJson = null;
-            }
-            return;
-        }
-
-        var serialized = Encoding.UTF8.GetString(
-            JsonSerializer.SerializeToUtf8Bytes(config, new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            }));
-
-        if (ConfigJson != serialized)
-        {
-            ConfigJson = serialized;
-        }
+        SetConfig(config);
     }
 
     public void AddTask(JobTask task)
@@ -237,6 +219,29 @@ public class Job
         }
     }
 
+    internal void SetConfig(JobConfig? config)
+    {
+        if (config == null)
+        {
+            if (ConfigJson != null)
+            {
+                ConfigJson = null;
+            }
+            return;
+        }
+
+        var serialized = Encoding.UTF8.GetString(
+            JsonSerializer.SerializeToUtf8Bytes(config, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            }));
+
+        if (ConfigJson != serialized)
+        {
+            ConfigJson = serialized;
+        }
+    }
+
     internal void Start(DateTime? dateTime = null)
     {
         if (IsDone)
@@ -252,6 +257,11 @@ public class Job
 
     internal void Finish(DateTime? dateTime = null)
     {
+        if (Finished.HasValue)
+        {
+            return;
+        }
+
         dateTime ??= DateTime.Now;
 
         if (Started > dateTime)
@@ -259,10 +269,7 @@ public class Job
             throw new ArgumentException("Finish time cannot be earlier than start time.", nameof(dateTime));
         }
 
-        if (!Finished.HasValue)
-        {
-            Finished = dateTime.Value;
-        }
+        Finished = dateTime.Value;
     }
 
     internal void DelayUntil(DateTime? dateTime)
