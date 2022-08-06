@@ -8,14 +8,14 @@ namespace Wilgysef.Stalk.Core.Models.Jobs;
 public class JobStateManager : IJobStateManager
 {
     private readonly IJobManager _jobManager;
-    private readonly IJobWorkerManager _jobWorkerManager;
+    private readonly IJobWorkerService _jobWorkerService;
 
     public JobStateManager(
         IJobManager jobManager,
-        IJobWorkerManager jobWorkerManager)
+        IJobWorkerService jobWorkerService)
     {
         _jobManager = jobManager;
-        _jobWorkerManager = jobWorkerManager;
+        _jobWorkerService = jobWorkerService;
     }
 
     public async Task StopJobAsync(Job job, bool blocking = false)
@@ -90,7 +90,7 @@ public class JobStateManager : IJobStateManager
 
         if (job.IsActive)
         {
-            await _jobWorkerManager.StopJobWorker(job, blocking);
+            await _jobWorkerService.StopJobWorker(job, blocking);
 
             job.ChangeState(JobState.Paused);
         }

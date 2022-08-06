@@ -3,7 +3,7 @@ using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.JobWorkerManagers;
 
-public interface IJobWorkerManager : ISingletonDependency
+public interface IJobWorkerService : ISingletonDependency
 {
     bool StartJobWorker(Job job);
 

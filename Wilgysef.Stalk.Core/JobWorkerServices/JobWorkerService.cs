@@ -4,7 +4,7 @@ using Wilgysef.Stalk.Core.Models.Jobs;
 
 namespace Wilgysef.Stalk.Core.JobWorkerManagers;
 
-public class JobWorkerManager : IJobWorkerManager
+public class JobWorkerService : IJobWorkerService
 {
     public IReadOnlyCollection<JobWorker> Workers => _jobWorkers;
 
@@ -15,7 +15,7 @@ public class JobWorkerManager : IJobWorkerManager
 
     private readonly IJobWorkerFactory _jobWorkerFactory;
 
-    public JobWorkerManager(
+    public JobWorkerService(
         IJobWorkerFactory jobWorkerFactory)
     {
         _jobWorkerFactory = jobWorkerFactory;

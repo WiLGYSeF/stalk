@@ -15,6 +15,7 @@ public class JobWorkerFactory : IJobWorkerFactory
 
     public JobWorker CreateWorker(Job job)
     {
+        // TODO: this probably needs to be a service locator since we need to drop the db context when not in use
         var jobWorker = new JobWorker(_jobManager);
         jobWorker.WithJob(job);
         return jobWorker;
