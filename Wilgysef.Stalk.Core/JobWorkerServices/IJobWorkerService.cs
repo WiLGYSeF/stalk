@@ -7,5 +7,5 @@ public interface IJobWorkerService : ISingletonDependency
 {
     bool StartJobWorker(Job job);
 
-    Task<bool> StopJobWorker(Job job, bool awaitTask);
+    Task<bool> StopJobWorker(Job job);
 }

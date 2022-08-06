@@ -41,7 +41,7 @@ public class JobWorkerService : IJobWorkerService
         return true;
     }
 
-    public async Task<bool> StopJobWorker(Job job, bool awaitTask)
+    public async Task<bool> StopJobWorker(Job job)
     {
         var worker = _jobWorkers.SingleOrDefault(w => w.Job != null && w.Job.Id == job.Id);
         if (worker == null)
@@ -52,10 +52,7 @@ public class JobWorkerService : IJobWorkerService
         var objects = _jobWorkerObjects[worker];
         objects.CancellationTokenSource.Cancel();
 
-        if (awaitTask)
-        {
-            await objects.Task;
-        }
+        await objects.Task;
         return true;
     }
 

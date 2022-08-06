@@ -91,6 +91,15 @@ public class JobTask
 
         State = state;
 
+        if (IsActive && !Started.HasValue)
+        {
+            Start();
+        }
+        else if (IsDone)
+        {
+            Finish();
+        }
+
         if (state != JobTaskState.Paused)
         {
             DelayUntil(null);

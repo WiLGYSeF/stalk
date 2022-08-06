@@ -9,7 +9,8 @@ namespace Wilgysef.Stalk.Application.Commands;
 
 public class JobCommandHandler : CommandQuery,
     ICommandHandler<CreateJob, JobDto>,
-    ICommandHandler<StopJob, JobDto>
+    ICommandHandler<StopJob, JobDto>,
+    ICommandHandler<DeleteJob, JobDto>
 {
     private readonly IJobManager _jobManager;
     private readonly IJobStateManager _jobStateManager;
@@ -34,6 +35,7 @@ public class JobCommandHandler : CommandQuery,
             _idGenerator.CreateId(),
             command.Name));
 
+        // TODO: remove
         _jobWorkerService.StartJobWorker(job);
 
         return Mapper.Map<JobDto>(job);
@@ -43,7 +45,19 @@ public class JobCommandHandler : CommandQuery,
     {
         var job = await _jobManager.GetJobAsync(command.Id);
 
+        // TODO: do not await
         await _jobStateManager.StopJobAsync(job);
+
+        return Mapper.Map<JobDto>(job);
+    }
+
+    public async Task<JobDto> HandleCommandAsync(DeleteJob command)
+    {
+        var job = await _jobManager.GetJobAsync(command.Id);
+
+        // TODO: do not await
+        await _jobStateManager.StopJobAsync(job);
+        await _jobManager.DeleteJobAsync(job);
 
         return Mapper.Map<JobDto>(job);
     }
