@@ -1,7 +1,11 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq.Expressions;
+using System.Text;
+using System.Text.Json;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Shared.Exceptions;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;
 
@@ -20,9 +24,36 @@ public class Job
 
     public virtual DateTime? Finished { get; protected set; }
 
+    public virtual DateTime? DelayedUntil { get; protected set; }
+
     public virtual string? ConfigJson { get; protected set; }
 
-    public virtual ICollection<JobTask> Tasks { get; protected set; } = new List<JobTask>();
+    public virtual ICollection<JobTask> Tasks { get; protected set; }
+
+    [NotMapped]
+    public bool IsActive => IsActiveExpression.Compile()(this);
+
+    [NotMapped]
+    public bool IsDone => IsDoneExpression.Compile()(this);
+
+    [NotMapped]
+    public bool IsQueued => IsQueuedExpression.Compile()(this);
+
+    [NotMapped]
+    internal static Expression<Func<Job, bool>> IsActiveExpression =>
+        j => j.State == JobState.Active
+            || j.State == JobState.Cancelling
+            || j.State == JobState.Pausing;
+
+    [NotMapped]
+    internal static Expression<Func<Job, bool>> IsDoneExpression =>
+        j => j.State == JobState.Completed
+            || j.State == JobState.Failed
+            || j.State == JobState.Cancelled;
+
+    [NotMapped]
+    internal static Expression<Func<Job, bool>> IsQueuedExpression =>
+        j => j.State == JobState.Inactive;
 
     protected Job() { }
 
@@ -38,5 +69,87 @@ public class Job
             State = JobState.Inactive,
             Priority = priority,
         };
+    }
+
+    public void ChangePriority(int priority)
+    {
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
+        if (Priority != priority)
+        {
+            Priority = priority;
+        }
+    }
+
+    public void ChangeConfig(JobConfig config)
+    {
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
+        var serialized = Encoding.UTF8.GetString(
+            JsonSerializer.SerializeToUtf8Bytes(config, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            }));
+
+        if (ConfigJson != serialized)
+        {
+            ConfigJson = serialized;
+        }
+    }
+
+    public void AddTask(JobTask task)
+    {
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
+        Tasks.Add(task);
+    }
+
+    internal void ChangeState(JobState state)
+    {
+        if (State == state)
+        {
+            return;
+        }
+
+        State = state;
+
+        if (state != JobState.Paused)
+        {
+            DelayUntil(null);
+        }
+    }
+
+    internal void Start()
+    {
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
+        Started = DateTime.Now;
+    }
+
+    internal void Finish()
+    {
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
+        Finished = DateTime.Now;
+    }
+
+    internal void DelayUntil(DateTime? dateTime)
+    {
+        DelayedUntil = dateTime;
     }
 }

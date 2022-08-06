@@ -11,7 +11,7 @@ using Wilgysef.Stalk.EntityFrameworkCore;
 namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
 {
     [DbContext(typeof(StalkDbContext))]
-    [Migration("20220730030345_InitialMigration")]
+    [Migration("20220801032909_InitialMigration")]
     partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,6 +25,9 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("ConfigJson")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("DelayedUntil")
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime?>("Finished")
@@ -52,11 +55,23 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                     b.Property<long>("Id")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("DelayedUntil")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime?>("Finished")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ItemData")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("ItemId")
                         .HasColumnType("TEXT");
 
                     b.Property<long?>("JobId")
                         .HasColumnType("INTEGER");
+
+                    b.Property<string>("MetadataJson")
+                        .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
                         .HasColumnType("TEXT");
@@ -73,7 +88,7 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                     b.Property<int>("State")
                         .HasColumnType("INTEGER");
 
-                    b.Property<int?>("Type")
+                    b.Property<int>("Type")
                         .HasColumnType("INTEGER");
 
                     b.Property<string>("Uri")
@@ -111,16 +126,6 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                                 .HasColumnType("TEXT");
 
                             b1.Property<string>("ErrorMessage")
-                                .HasColumnType("TEXT");
-
-                            b1.Property<string>("MetadataJson")
-                                .HasColumnType("TEXT");
-
-                            b1.Property<int>("Type")
-                                .HasColumnType("INTEGER");
-
-                            b1.Property<string>("Uri")
-                                .IsRequired()
                                 .HasColumnType("TEXT");
 
                             b1.HasKey("JobTaskId");

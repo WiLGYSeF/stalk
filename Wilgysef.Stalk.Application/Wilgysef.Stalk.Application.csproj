@@ -6,4 +6,13 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="11.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Wilgysef.Stalk.Application.Shared\Wilgysef.Stalk.Application.Shared.csproj" />
+    <ProjectReference Include="..\Wilgysef.Stalk.Core\Wilgysef.Stalk.Core.csproj" />
+  </ItemGroup>
+
 </Project>
