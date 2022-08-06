@@ -23,7 +23,7 @@ public class JobStateManager : IJobStateManager
 
     public async Task StopJobAsync(Job job)
     {
-        if (job.IsDone)
+        if (job.IsFinished)
         {
             throw new JobAlreadyDoneException();
         }
@@ -59,7 +59,7 @@ public class JobStateManager : IJobStateManager
 
     public async Task StopJobTaskAsync(Job job, JobTask task)
     {
-        if (task.IsDone)
+        if (task.IsFinished)
         {
             throw new JobTaskAlreadyDoneException();
         }

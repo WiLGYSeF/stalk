@@ -96,21 +96,11 @@ public class JobManager : IJobManager
         await _dbContext.SaveChangesAsync();
     }
 
-    public async Task SetJobDoneAsync(Job job, bool cancelled = false)
+    public async Task SetJobDoneAsync(Job job)
     {
-        JobState state;
-        if (!cancelled)
-        {
-            state = !job.HasUnfinishedTasks
-                ? JobState.Completed
-                : JobState.Failed;
-        }
-        else
-        {
-            state = JobState.Cancelled;
-        }
-
-        job.ChangeState(state);
+        job.ChangeState(!job.HasUnfinishedTasks
+            ? JobState.Completed
+            : JobState.Failed);
 
         _dbContext.Jobs.Update(job);
         await _dbContext.SaveChangesAsync();

@@ -19,5 +19,5 @@ public interface IJobManager : ITransientDependency
 
     Task SetJobActiveAsync(Job job);
 
-    Task SetJobDoneAsync(Job job, bool cancelled = false);
+    Task SetJobDoneAsync(Job job);
 }

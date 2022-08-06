@@ -41,6 +41,9 @@ public class JobTask
     public bool IsActive => IsActiveExpression.Compile()(this);
 
     [NotMapped]
+    public bool IsFinished => IsFinishedExpression.Compile()(this);
+
+    [NotMapped]
     public bool IsDone => IsDoneExpression.Compile()(this);
 
     [NotMapped]
@@ -51,6 +54,11 @@ public class JobTask
         t => t.State == JobTaskState.Active
             || t.State == JobTaskState.Cancelling
             || t.State == JobTaskState.Pausing;
+
+    [NotMapped]
+    internal static Expression<Func<JobTask, bool>> IsFinishedExpression =>
+        t => t.State == JobTaskState.Completed
+            || t.State == JobTaskState.Failed;
 
     [NotMapped]
     internal static Expression<Func<JobTask, bool>> IsDoneExpression =>
@@ -118,12 +126,10 @@ public class JobTask
 
     internal void Finish()
     {
-        if (IsDone)
+        if (!Finished.HasValue)
         {
-            throw new JobTaskAlreadyDoneException();
+            Finished = DateTime.Now;
         }
-
-        Finished = DateTime.Now;
     }
 
     internal void DelayUntil(DateTime? dateTime)

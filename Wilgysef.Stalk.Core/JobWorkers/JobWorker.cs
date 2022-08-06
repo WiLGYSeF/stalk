@@ -31,8 +31,7 @@ public class JobWorker : IJobWorker
             await Task.Delay(1000);
         }
 
-        // TODO: fix
-        if (!Job.HasUnfinishedTasks || cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
+        if (!Job!.HasUnfinishedTasks && (!cancellationToken.HasValue || !cancellationToken.Value.IsCancellationRequested))
         {
             await _jobManager.SetJobDoneAsync(Job);
         }
