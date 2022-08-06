@@ -1,25 +1,9 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using AutoMapper.Contrib.Autofac.DependencyInjection;
-using IdGen;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
-using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
-using Wilgysef.Stalk.Core;
-using Wilgysef.Stalk.Core.Shared;
 
 using Wilgysef.Stalk.EntityFrameworkCore;
-
-const int IdGeneratorId = 1;
-
-// used for project reference so the assembly is loaded when registering dependency injection
-// is there a better way to do this?
-var DependsOn = new[]
-{
-    typeof(ApplicationModule),
-    typeof(CoreModule),
-};
 
 var builder = WebApplication.CreateBuilder(args);
 

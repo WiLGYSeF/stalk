@@ -1,4 +1,6 @@
 ﻿using Autofac;
+using Autofac.Builder;
+using Autofac.Features.Scanning;
 using AutoMapper.Contrib.Autofac.DependencyInjection;
 using IdGen;
 using System.Reflection;
@@ -11,6 +13,8 @@ namespace Wilgysef.Stalk.Application.ServiceRegistrar;
 
 public class ServiceRegistrar
 {
+    // used for project reference so the assembly is loaded when registering dependency injection
+    // is there a better way to do this?
     private static readonly Type[] DependsOn = new[]
     {
         typeof(ApplicationModule),
@@ -23,11 +27,11 @@ public class ServiceRegistrar
     /// <summary>
     /// Register application dependencies.
     /// </summary>
-    /// <param name="builder"></param>
+    /// <param name="builder">Container builder.</param>
     public void RegisterApplication(ContainerBuilder builder)
     {
-        var assembly = Assembly.GetExecutingAssembly();
-        var assemblies = GetAssemblies(assembly, EligibleAssemblyFilter).ToArray();
+        var assemblies = GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter)
+            .ToArray();
 
         builder.RegisterAutoMapper(true, assemblies);
 
@@ -35,35 +39,35 @@ public class ServiceRegistrar
             .As<IIdGenerator<long>>()
             .SingleInstance();
 
-        builder.RegisterAssemblyTypes(assemblies)
-            .Where(t => t.GetInterfaces().Any(i => i.IsAssignableFrom(typeof(ITransientDependency))))
-            .AsImplementedInterfaces()
-            .PropertiesAutowired()
+        RegisterAssemblyTypes<ITransientDependency>(builder, assemblies)
             .InstancePerDependency();
-
-        builder.RegisterAssemblyTypes(assemblies)
-            .Where(t => t.GetInterfaces().Any(i => i.IsAssignableFrom(typeof(IScopedDependency))))
-            .AsImplementedInterfaces()
-            .PropertiesAutowired()
+        RegisterAssemblyTypes<IScopedDependency>(builder, assemblies)
             .InstancePerLifetimeScope();
-
-        builder.RegisterAssemblyTypes(assemblies)
-            .Where(t => t.GetInterfaces().Any(i => i.IsAssignableFrom(typeof(ISingletonDependency))))
-            .AsImplementedInterfaces()
-            .PropertiesAutowired()
+        RegisterAssemblyTypes<ISingletonDependency>(builder, assemblies)
             .SingleInstance();
 
-        builder.RegisterAssemblyTypes(assemblies)
-            .Where(t => t.GetInterfaces().Any(i => i.IsAssignableFrom(typeof(ICommandHandler<,>))))
-            .AsImplementedInterfaces()
-            .PropertiesAutowired()
+        RegisterAssemblyTypes(typeof(ICommandHandler<,>), builder, assemblies)
             .InstancePerDependency();
+        RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, assemblies)
+            .InstancePerDependency();
+    }
 
-        builder.RegisterAssemblyTypes(assemblies)
-            .Where(t => t.GetInterfaces().Any(i => i.IsAssignableFrom(typeof(IQueryHandler<,>))))
+    private IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle> RegisterAssemblyTypes<T>(
+        ContainerBuilder builder,
+        params Assembly[] assemblies)
+    {
+        return RegisterAssemblyTypes(typeof(T), builder, assemblies);
+    }
+
+    private IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle> RegisterAssemblyTypes(
+        Type type,
+        ContainerBuilder builder,
+        params Assembly[] assemblies)
+    {
+        return builder.RegisterAssemblyTypes(assemblies)
+            .Where(t => t.GetInterfaces().Any(i => i.IsAssignableFrom(type)))
             .AsImplementedInterfaces()
-            .PropertiesAutowired()
-            .InstancePerDependency();
+            .PropertiesAutowired();
     }
 
     private bool EligibleAssemblyFilter(Assembly assembly) => assembly.FullName != null && assembly.FullName.StartsWith("Wilgysef");
