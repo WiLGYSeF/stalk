@@ -28,6 +28,29 @@ public class Job
 
     public virtual string? ConfigJson { get; protected set; }
 
+    [NotMapped]
+    public JobConfig? Config
+    {
+        get
+        {
+            if (ConfigJson == null)
+            {
+                return null;
+            }
+
+            var config = JsonSerializer.Deserialize<JobConfig>(ConfigJson);
+            if (config == null)
+            {
+                throw new InvalidOperationException($"{nameof(ConfigJson)} is not valid config.");
+            }
+            return config;
+        }
+        set
+        {
+            ChangeConfig(value);
+        }
+    }
+
     public virtual ICollection<JobTask> Tasks { get; protected set; } = new List<JobTask>();
 
     [NotMapped]
@@ -87,6 +110,53 @@ public class Job
         };
     }
 
+    internal static Job Create(
+        long id,
+        string? name,
+        JobState state,
+        int priority,
+        DateTime? started,
+        DateTime? finished,
+        DateTime? delayedUntil,
+        JobConfig? config,
+        ICollection<JobTask> tasks)
+    {
+        if (!started.HasValue && state != JobState.Inactive)
+        {
+            throw new ArgumentNullException(nameof(started), "Start time cannot be null for a non-inactive job.");
+        }
+
+        var job = new Job
+        {
+            Id = id,
+            Name = name,
+            State = state,
+            Priority = priority,
+            Started = started,
+            Tasks = tasks,
+        };
+
+        if (!finished.HasValue && job.IsDone || finished.HasValue && !job.IsDone)
+        {
+            throw new ArgumentException("Finish time must be set only for a done job.", nameof(finished));
+        }
+
+        if (delayedUntil.HasValue && job.State == JobState.Active)
+        {
+            throw new ArgumentException("Delayed until cannot be set for an active job.", nameof(delayedUntil));
+        }
+
+        if (finished.HasValue)
+        {
+            job.Finish(finished.Value);
+        }
+
+        job.ChangeConfig(config);
+        job.DelayUntil(delayedUntil);
+
+        return job;
+    }
+
     public void ChangePriority(int priority)
     {
         if (IsDone)
@@ -100,11 +170,20 @@ public class Job
         }
     }
 
-    public void ChangeConfig(JobConfig config)
+    public void ChangeConfig(JobConfig? config)
     {
         if (IsDone)
         {
             throw new JobAlreadyDoneException();
+        }
+
+        if (config == null)
+        {
+            if (ConfigJson != null)
+            {
+                ConfigJson = null;
+            }
+            return;
         }
 
         var serialized = Encoding.UTF8.GetString(
@@ -131,6 +210,11 @@ public class Job
 
     internal void ChangeState(JobState state)
     {
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
         if (State == state)
         {
             return;
@@ -147,32 +231,47 @@ public class Job
             Finish();
         }
 
-        if (state != JobState.Paused)
+        if (state == JobState.Active)
         {
             DelayUntil(null);
         }
     }
 
-    internal void Start()
+    internal void Start(DateTime? dateTime = null)
     {
         if (IsDone)
         {
             throw new JobAlreadyDoneException();
         }
 
-        Started = DateTime.Now;
+        if (!Started.HasValue)
+        {
+            Started = dateTime ?? DateTime.Now;
+        }
     }
 
-    internal void Finish()
+    internal void Finish(DateTime? dateTime = null)
     {
+        dateTime ??= DateTime.Now;
+
+        if (Started > dateTime)
+        {
+            throw new ArgumentException("Finish time cannot be earlier than start time.", nameof(dateTime));
+        }
+
         if (!Finished.HasValue)
         {
-            Finished = DateTime.Now;
+            Finished = dateTime.Value;
         }
     }
 
     internal void DelayUntil(DateTime? dateTime)
     {
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
         DelayedUntil = dateTime;
     }
 }

@@ -29,8 +29,8 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// TODO: remove debug
 var context = app.Services.GetRequiredService<IComponentContext>();
-
 var services = context.ComponentRegistry.Registrations
     .Where(r => r.Services.Any(s => s.Description.StartsWith("Wilgysef")))
     .ToList();
@@ -42,6 +42,7 @@ app.Run();
 
 void ConfigureDbContext()
 {
+    // TODO: move to registrar
     builder.Services.AddDbContext<StalkDbContext>(opt =>
     {
         opt.UseSqlite("DataSource=abc.db");
