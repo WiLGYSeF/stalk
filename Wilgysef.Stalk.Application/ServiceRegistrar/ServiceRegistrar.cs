@@ -50,6 +50,10 @@ public class ServiceRegistrar
             .InstancePerDependency();
         RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, assemblies)
             .InstancePerDependency();
+
+        builder.RegisterType<Startup>()
+            .AsSelf()
+            .SingleInstance();
     }
 
     private IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle> RegisterAssemblyTypes(

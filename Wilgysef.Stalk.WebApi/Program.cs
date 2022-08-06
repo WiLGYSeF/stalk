@@ -1,6 +1,7 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
 
 using Wilgysef.Stalk.EntityFrameworkCore;
@@ -33,6 +34,9 @@ var context = app.Services.GetRequiredService<IComponentContext>();
 var services = context.ComponentRegistry.Registrations
     .Where(r => r.Services.Any(s => s.Description.StartsWith("Wilgysef")))
     .ToList();
+
+var appStartup = app.Services.GetRequiredService<Startup>();
+await appStartup.StartAsync();
 
 app.Run();
 

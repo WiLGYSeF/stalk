@@ -106,6 +106,32 @@ public class JobManager : IJobManager
         await _dbContext.SaveChangesAsync();
     }
 
+    public async Task DeactivateJobsAsync()
+    {
+        var jobs = await GetJobs().ToListAsync();
+
+        foreach (var job in jobs)
+        {
+            switch (job.State)
+            {
+                case JobState.Active:
+                    job.ChangeState(JobState.Inactive);
+                    break;
+                case JobState.Cancelling:
+                    job.ChangeState(JobState.Cancelled);
+                    break;
+                case JobState.Pausing:
+                    job.ChangeState(JobState.Paused);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        _dbContext.Jobs.UpdateRange(jobs);
+        await _dbContext.SaveChangesAsync();
+    }
+
     private IQueryable<Job> GetJobs()
     {
         return _dbContext.Jobs

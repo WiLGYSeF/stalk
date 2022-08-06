@@ -20,4 +20,6 @@ public interface IJobManager : ITransientDependency
     Task SetJobActiveAsync(Job job);
 
     Task SetJobDoneAsync(Job job);
+
+    Task DeactivateJobsAsync();
 }
