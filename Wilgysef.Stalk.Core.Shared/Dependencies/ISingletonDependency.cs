@@ -1,4 +1,4 @@
-﻿namespace Wilgysef.Stalk.Core.Shared.Interfaces
+﻿namespace Wilgysef.Stalk.Core.Shared.Dependencies
 {
     public interface ISingletonDependency
     {

@@ -28,7 +28,7 @@ public class Job
 
     public virtual string? ConfigJson { get; protected set; }
 
-    public virtual ICollection<JobTask> Tasks { get; protected set; }
+    public virtual ICollection<JobTask> Tasks { get; protected set; } = new List<JobTask>();
 
     [NotMapped]
     public bool IsActive => IsActiveExpression.Compile()(this);
@@ -38,6 +38,9 @@ public class Job
 
     [NotMapped]
     public bool IsQueued => IsQueuedExpression.Compile()(this);
+
+    [NotMapped]
+    public bool HasUnfinishedTasks => Tasks.Any(t => !t.IsDone);
 
     [NotMapped]
     internal static Expression<Func<Job, bool>> IsActiveExpression =>
@@ -54,6 +57,11 @@ public class Job
     [NotMapped]
     internal static Expression<Func<Job, bool>> IsQueuedExpression =>
         j => j.State == JobState.Inactive;
+
+    [NotMapped]
+    internal static Expression<Func<Job, bool>> HasUnfinishedTasksExpression =>
+        j => j.Tasks.AsQueryable().Any(
+            Expression.Lambda<Func<JobTask, bool>>(Expression.Negate(JobTask.IsDoneExpression)));
 
     protected Job() { }
 
@@ -122,6 +130,15 @@ public class Job
 
         State = state;
 
+        if (IsActive && !Started.HasValue)
+        {
+            Start();
+        }
+        else if (IsDone)
+        {
+            Finish();
+        }
+
         if (state != JobState.Paused)
         {
             DelayUntil(null);
@@ -140,11 +157,6 @@ public class Job
 
     internal void Finish()
     {
-        if (IsDone)
-        {
-            throw new JobAlreadyDoneException();
-        }
-
         Finished = DateTime.Now;
     }
 

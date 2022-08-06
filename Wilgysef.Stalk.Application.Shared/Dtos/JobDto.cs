@@ -1,14 +1,12 @@
-﻿using Wilgysef.Stalk.Core.Shared.Enums;
-
-namespace Wilgysef.Stalk.Application.Shared.Dtos;
+﻿namespace Wilgysef.Stalk.Application.Shared.Dtos;
 
 public class JobDto
 {
-    public long Id { get; set; }
+    public string Id { get; set; }
 
     public string? Name { get; set; }
 
-    public JobState State { get; set; }
+    public string State { get; set; }
 
     public int Priority { get; set; }
 

@@ -1,5 +1,5 @@
 ﻿using Wilgysef.Stalk.Core.Models.JobTasks;
-using Wilgysef.Stalk.Core.Shared.Interfaces;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;
 
@@ -13,19 +13,11 @@ public interface IJobManager : ITransientDependency
 
     Task<Job> UpdateJobAsync(Job job);
 
-    Task DeleteJobAsync(Job job, bool force = false);
+    Task DeleteJobAsync(Job job);
 
-    Task StopJobAsync(Job job, bool force = false);
+    Task DeleteJobTaskAsync(JobTask task);
 
-    Task PauseJobAsync(Job job, bool force = false);
+    Task SetJobActiveAsync(Job job);
 
-    Task UnpauseJobAsync(Job job);
-
-    Task DeleteJobTaskAsync(Job job, JobTask task, bool force = false);
-
-    Task StopJobTaskAsync(Job job, JobTask task, bool force = false);
-
-    Task PauseJobTaskAsync(Job job, JobTask task, bool force = false);
-
-    Task UnpauseJobTaskAsync(JobTask task);
+    Task SetJobDoneAsync(Job job, bool cancelled = false);
 }
