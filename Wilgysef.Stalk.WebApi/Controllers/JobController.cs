@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Wilgysef.Stalk.Application.Shared.Dtos;
-using Wilgysef.Stalk.Application.Shared.Dtos.JobAppService;
-using Wilgysef.Stalk.Application.Shared.Services;
+using Wilgysef.Stalk.Application.Commands;
+using Wilgysef.Stalk.Application.Contracts.Commands.Jobs;
+using Wilgysef.Stalk.Application.Contracts.Dtos;
+using Wilgysef.Stalk.Core.Shared.Cqrs;
 
 namespace Wilgysef.Stalk.WebApi.Controllers;
 
@@ -9,24 +10,26 @@ namespace Wilgysef.Stalk.WebApi.Controllers;
 [ApiController]
 public class JobController : ControllerBase
 {
-    private readonly IJobAppService _jobAppService;
+    private readonly ICommandHandler<CreateJob, JobDto> _createJobCommandHandler;
+    private readonly ICommandHandler<StopJob, JobDto> _stopJobCommandHandler;
 
     public JobController(
-        IJobAppService jobAppService)
+        ICommandHandler<CreateJob, JobDto> createJobCommandHandler,
+        ICommandHandler<StopJob, JobDto> stopJobCommandHandler)
     {
-        _jobAppService = jobAppService;
+        _createJobCommandHandler = createJobCommandHandler;
+        _stopJobCommandHandler = stopJobCommandHandler;
     }
 
     [HttpPost]
-    public async Task<JobDto> CreateJobAsync(CreateJobInput input)
+    public async Task<JobDto> CreateJobAsync(CreateJob command)
     {
-        return await _jobAppService.CreateJobAsync(input);
+        return await _createJobCommandHandler.HandleCommandAsync(command);
     }
 
     [HttpPost("{id}/stop")]
-    public async Task<JobDto> StopJobAsync(long id, StopJobInput input)
+    public async Task<JobDto> StopJobAsync(long id)
     {
-        input.Id = id;
-        return await _jobAppService.StopJobAsync(input);
+        return await _stopJobCommandHandler.HandleCommandAsync(new StopJob(id));
     }
 }

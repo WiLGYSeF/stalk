@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Wilgysef.Stalk.Application.Shared.Dtos;
+using Wilgysef.Stalk.Application.Contracts.Dtos;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 

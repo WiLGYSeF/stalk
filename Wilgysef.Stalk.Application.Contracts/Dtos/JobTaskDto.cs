@@ -1,6 +1,6 @@
 ﻿using Wilgysef.Stalk.Core.Shared.Enums;
 
-namespace Wilgysef.Stalk.Application.Shared.Dtos;
+namespace Wilgysef.Stalk.Application.Contracts.Dtos;
 
 public class JobTaskDto
 {

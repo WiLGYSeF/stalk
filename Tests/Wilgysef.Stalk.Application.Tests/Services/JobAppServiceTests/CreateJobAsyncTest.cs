@@ -1,6 +1,8 @@
 ﻿using Shouldly;
-using Wilgysef.Stalk.Application.Shared.Dtos.JobAppService;
-using Wilgysef.Stalk.Application.Shared.Services;
+using Wilgysef.Stalk.Application.Commands;
+using Wilgysef.Stalk.Application.Contracts.Commands.Jobs;
+using Wilgysef.Stalk.Application.Contracts.Dtos;
+using Wilgysef.Stalk.Core.Shared.Cqrs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.TestBase;
 
@@ -8,24 +10,21 @@ namespace Wilgysef.Stalk.Application.Tests.Services.JobAppServiceTests;
 
 public class CreateJobAsyncTest : BaseTest
 {
-    private readonly IJobAppService _jobAppService;
+    private readonly ICommandHandler<CreateJob, JobDto> _createJobCommandHandler;
 
     public CreateJobAsyncTest()
     {
-        _jobAppService = GetRequiredService<IJobAppService>();
+        _createJobCommandHandler = GetRequiredService<ICommandHandler<CreateJob, JobDto>>();
     }
 
     [Fact]
     public async Task Create_Job()
     {
-        var input = new CreateJobInput
-        {
-            Name = "test",
-        };
+        var command = new CreateJob("test");
 
-        var job = await _jobAppService.CreateJobAsync(input);
+        var job = await _createJobCommandHandler.HandleCommandAsync(command);
 
-        job.Name.ShouldBe(input.Name);
+        job.Name.ShouldBe(command.Name);
         job.State.ShouldBe(JobState.Inactive.ToString().ToLower());
         job.Priority.ShouldBe(0);
         job.Started.ShouldBeNull();

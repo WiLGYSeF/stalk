@@ -27,11 +27,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.Stalk.EntityFramew
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.Stalk.Application", "Wilgysef.Stalk.Application\Wilgysef.Stalk.Application.csproj", "{1DB0DB82-06E5-4D19-A075-ECFF8D0ACFEC}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.Stalk.Application.Shared", "Wilgysef.Stalk.Application.Shared\Wilgysef.Stalk.Application.Shared.csproj", "{71BDB1D0-A409-4A0C-A5A1-329AD61E4882}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.Stalk.Application.Contracts", "Wilgysef.Stalk.Application.Contracts\Wilgysef.Stalk.Application.Contracts.csproj", "{71BDB1D0-A409-4A0C-A5A1-329AD61E4882}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.Stalk.Application.Tests", "Tests\Wilgysef.Stalk.Application.Tests\Wilgysef.Stalk.Application.Tests.csproj", "{593CF975-6345-4A4E-9987-2DA86013B80C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wilgysef.Stalk.TestBase", "Tests\Wilgysef.Stalk.TestBase\Wilgysef.Stalk.TestBase.csproj", "{45725084-23C6-4137-882B-784CD203CCC8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.Stalk.TestBase", "Tests\Wilgysef.Stalk.TestBase\Wilgysef.Stalk.TestBase.csproj", "{45725084-23C6-4137-882B-784CD203CCC8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

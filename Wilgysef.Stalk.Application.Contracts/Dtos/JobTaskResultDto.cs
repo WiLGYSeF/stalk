@@ -1,4 +1,4 @@
-﻿namespace Wilgysef.Stalk.Application.Shared.Dtos;
+﻿namespace Wilgysef.Stalk.Application.Contracts.Dtos;
 
 public class JobTaskResultDto
 {

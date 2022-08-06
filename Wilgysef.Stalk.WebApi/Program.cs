@@ -44,6 +44,12 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+var context = app.Services.GetRequiredService<IComponentContext>();
+
+var services = context.ComponentRegistry.Registrations
+    .Where(r => r.Services.Any(s => s.Description.StartsWith("Wilgysef")))
+    .ToList();
+
 app.Run();
 
 void ConfigureDbContext()
@@ -68,38 +74,8 @@ void ConfigureDependencyInjection()
 
     builder.Host.ConfigureContainer<ContainerBuilder>((context, builder) =>
     {
-        var assembly = Assembly.GetExecutingAssembly();
         var serviceRegistrar = new ServiceRegistrar();
-
-        builder.RegisterAutoMapper(true, serviceRegistrar.GetAssemblies(assembly).ToArray());
-
-        builder.Register(c => new IdGenerator(IdGeneratorId, IdGeneratorOptions.Default))
-            .As<IIdGenerator<long>>()
-            .SingleInstance();
-
-        foreach (var (implementation, service) in serviceRegistrar.GetTransientServiceImplementations(assembly))
-        {
-            builder.RegisterType(implementation)
-                .As(service)
-                .PropertiesAutowired()
-                .InstancePerDependency();
-        }
-
-        foreach (var (implementation, service) in serviceRegistrar.GetScopedServiceImplementations(assembly))
-        {
-            builder.RegisterType(implementation)
-                .As(service)
-                .PropertiesAutowired()
-                .InstancePerLifetimeScope();
-        }
-
-        foreach (var (implementation, service) in serviceRegistrar.GetSingletonServiceImplementations(assembly))
-        {
-            builder.RegisterType(implementation)
-                .As(service)
-                .PropertiesAutowired()
-                .SingleInstance();
-        }
+        serviceRegistrar.RegisterApplication(builder);
     });
 }
 
