@@ -6,7 +6,8 @@ using Wilgysef.Stalk.Core.Shared.Cqrs;
 namespace Wilgysef.Stalk.Application.Queries;
 
 public class JobQueryHandler : Query,
-    IQueryHandler<GetJob, JobDto>
+    IQueryHandler<GetJob, JobDto>,
+    IQueryHandler<GetJobs, JobListDto>
 {
     private readonly IJobManager _jobManager;
 
@@ -21,5 +22,16 @@ public class JobQueryHandler : Query,
         var job = await _jobManager.GetJobAsync(query.Id);
 
         return Mapper.Map<JobDto>(job);
+    }
+
+    public async Task<JobListDto> HandleQueryAsync(GetJobs query)
+    {
+        // TODO: query
+        var jobs = await _jobManager.GetJobsAsync();
+
+        return new JobListDto
+        {
+            Jobs = Mapper.Map<ICollection<JobDto>>(jobs)
+        };
     }
 }

@@ -2,11 +2,11 @@
 
 namespace Wilgysef.Stalk.Application.Contracts.Commands.Jobs;
 
-public class StopJob : ICommand
+public class PauseJob : ICommand
 {
-    public long Id { get; }
+    public long Id { get; set; }
 
-    public StopJob(long id)
+    public PauseJob(long id)
     {
         Id = id;
     }
