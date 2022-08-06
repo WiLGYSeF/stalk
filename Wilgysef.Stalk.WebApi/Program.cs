@@ -5,6 +5,7 @@ using IdGen;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 using Wilgysef.Stalk.Application;
+using Wilgysef.Stalk.Application.ServiceRegistrar;
 using Wilgysef.Stalk.Core;
 using Wilgysef.Stalk.Core.Shared;
 
@@ -68,14 +69,15 @@ void ConfigureDependencyInjection()
     builder.Host.ConfigureContainer<ContainerBuilder>((context, builder) =>
     {
         var assembly = Assembly.GetExecutingAssembly();
+        var serviceRegistrar = new ServiceRegistrar();
 
-        builder.RegisterAutoMapper(true, ServiceRegistration.GetAssemblies(assembly).ToArray());
+        builder.RegisterAutoMapper(true, serviceRegistrar.GetAssemblies(assembly).ToArray());
 
         builder.Register(c => new IdGenerator(IdGeneratorId, IdGeneratorOptions.Default))
             .As<IIdGenerator<long>>()
             .SingleInstance();
 
-        foreach (var (implementation, service) in ServiceRegistration.GetTransientServiceImplementations(assembly))
+        foreach (var (implementation, service) in serviceRegistrar.GetTransientServiceImplementations(assembly))
         {
             builder.RegisterType(implementation)
                 .As(service)
@@ -83,7 +85,7 @@ void ConfigureDependencyInjection()
                 .InstancePerDependency();
         }
 
-        foreach (var (implementation, service) in ServiceRegistration.GetScopedServiceImplementations(assembly))
+        foreach (var (implementation, service) in serviceRegistrar.GetScopedServiceImplementations(assembly))
         {
             builder.RegisterType(implementation)
                 .As(service)
@@ -91,7 +93,7 @@ void ConfigureDependencyInjection()
                 .InstancePerLifetimeScope();
         }
 
-        foreach (var (implementation, service) in ServiceRegistration.GetSingletonServiceImplementations(assembly))
+        foreach (var (implementation, service) in serviceRegistrar.GetSingletonServiceImplementations(assembly))
         {
             builder.RegisterType(implementation)
                 .As(service)
