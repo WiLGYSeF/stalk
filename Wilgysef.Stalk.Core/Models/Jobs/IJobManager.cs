@@ -17,8 +17,6 @@ public interface IJobManager : ITransientDependency
 
     Task DeleteJobAsync(Job job);
 
-    Task DeleteJobTaskAsync(JobTask task);
-
     Task SetJobActiveAsync(Job job);
 
     Task SetJobDoneAsync(Job job);
