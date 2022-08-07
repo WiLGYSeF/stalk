@@ -132,6 +132,11 @@ public class Job
             throw new ArgumentException("Delayed until cannot be set for an active job.", nameof(delayedUntil));
         }
 
+        if (delayedUntil.HasValue && job.State == JobState.Inactive)
+        {
+            job.ChangeState(JobState.Paused);
+        }
+
         if (finished.HasValue)
         {
             job.Finish(finished.Value);

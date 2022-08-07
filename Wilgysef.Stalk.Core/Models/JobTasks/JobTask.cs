@@ -160,6 +160,11 @@ public class JobTask
             throw new ArgumentException("Result success status does not match task state.", nameof(result));
         }
 
+        if (delayedUntil.HasValue && task.State == JobTaskState.Inactive)
+        {
+            task.ChangeState(JobTaskState.Paused);
+        }
+
         if (finished.HasValue)
         {
             task.Finish(finished.Value);

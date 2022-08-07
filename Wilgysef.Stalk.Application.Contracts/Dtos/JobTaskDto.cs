@@ -26,7 +26,9 @@ public class JobTaskDto
 
     public DateTime? Finished { get; set; }
 
-    public JobTaskResultDto? Result { get; set; }
+    public DateTime? DelayedUntil { get; set; }
+
+    public JobTaskResultDto Result { get; set; }
 
     public JobTaskDto? ParentTask { get; set; }
 }
