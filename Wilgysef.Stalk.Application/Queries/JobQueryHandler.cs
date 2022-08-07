@@ -2,6 +2,7 @@
 using Wilgysef.Stalk.Application.Contracts.Queries.Jobs;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Cqrs;
+using Wilgysef.Stalk.Core.Specifications;
 
 namespace Wilgysef.Stalk.Application.Queries;
 
@@ -27,7 +28,8 @@ public class JobQueryHandler : Query,
     public async Task<JobListDto> HandleQueryAsync(GetJobs query)
     {
         // TODO: query
-        var jobs = await _jobManager.GetJobsAsync();
+        var jobs = await _jobManager.GetJobsAsync(
+            new JobQuerySpecification(Mapper.Map<JobQuery>(query)));
 
         return new JobListDto
         {

@@ -1,33 +1,33 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Ardalis.Specification;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
+using Wilgysef.Stalk.Core.Specifications;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;
 
 public class JobManager : IJobManager
 {
-    private readonly IStalkDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
 
     public JobManager(
-        IStalkDbContext dbContext)
+        IUnitOfWork unitOfWork)
     {
-        _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Job> CreateJobAsync(Job job)
     {
-        var entity = (await _dbContext.Jobs.AddAsync(job)).Entity;
-        await _dbContext.SaveChangesAsync();
+        var entity = await _unitOfWork.JobRepository.AddAsync(job);
+        await _unitOfWork.SaveChangesAsync();
         return entity;
     }
 
     public async Task<Job> GetJobAsync(long id)
     {
-        var entity = await GetJobs()
-            .Where(j => j.Id == id)
-            .SingleOrDefaultAsync();
+        var entity = await _unitOfWork.JobRepository.FindAsync(id);
         if (entity == null)
         {
             throw new EntityNotFoundException(nameof(Job), id);
@@ -38,34 +38,24 @@ public class JobManager : IJobManager
 
     public async Task<List<Job>> GetJobsAsync()
     {
-        return await GetJobs()
-            .OrderBy(j => j.Id)
-            .ToListAsync();
+        return await _unitOfWork.JobRepository.ListAsync();
     }
 
-    public async Task<List<Job>> GetUnfinishedJobsAsync()
+    public async Task<List<Job>> GetJobsAsync(ISpecification<Job> specification)
     {
-        return await GetJobs()
-            .Where(Expression.Lambda<Func<Job, bool>>(Expression.Negate(Job.IsDoneExpression)))
-            .ToListAsync();
+        return await _unitOfWork.JobRepository.ListAsync(specification);
     }
 
     public async Task<Job?> GetNextPriorityJobAsync()
     {
-        return await GetJobs()
-            .Where(Job.IsQueuedExpression)
-            .Where(j => j.Tasks.AsQueryable()
-                .Any(JobTask.IsQueuedExpression))
-            .OrderByDescending(j => j.Priority)
-            .ThenBy(j => j.Started)
-            .FirstOrDefaultAsync();
+        return await _unitOfWork.JobRepository.FirstOrDefaultAsync(new QueuedJobsSpecification());
     }
 
     public async Task<Job> UpdateJobAsync(Job job)
     {
-        var entity = _dbContext.Jobs.Update(job);
-        await _dbContext.SaveChangesAsync();
-        return entity.Entity;
+        var entity = _unitOfWork.JobRepository.Update(job);
+        await _unitOfWork.SaveChangesAsync();
+        return entity;
     }
 
     public async Task DeleteJobAsync(Job job)
@@ -75,27 +65,16 @@ public class JobManager : IJobManager
             throw new JobActiveException();
         }
 
-        _dbContext.Jobs.Remove(job);
-        await _dbContext.SaveChangesAsync();
-    }
-
-    public async Task DeleteJobTaskAsync(JobTask task)
-    {
-        if (task.IsActive)
-        {
-            throw new JobTaskActiveException();
-        }
-
-        _dbContext.JobTasks.Remove(task);
-        await _dbContext.SaveChangesAsync();
+        _unitOfWork.JobRepository.Remove(job);
+        await _unitOfWork.SaveChangesAsync();
     }
 
     public async Task SetJobActiveAsync(Job job)
     {
         job.ChangeState(JobState.Active);
 
-        _dbContext.Jobs.Update(job);
-        await _dbContext.SaveChangesAsync();
+        _unitOfWork.JobRepository.Update(job);
+        await _unitOfWork.SaveChangesAsync();
     }
 
     public async Task SetJobDoneAsync(Job job)
@@ -104,13 +83,13 @@ public class JobManager : IJobManager
             ? JobState.Completed
             : JobState.Failed);
 
-        _dbContext.Jobs.Update(job);
-        await _dbContext.SaveChangesAsync();
+        _unitOfWork.JobRepository.Update(job);
+        await _unitOfWork.SaveChangesAsync();
     }
 
     public async Task DeactivateJobsAsync()
     {
-        var jobs = await GetJobs().ToListAsync();
+        var jobs = await _unitOfWork.JobRepository.ListAsync();
 
         foreach (var job in jobs)
         {
@@ -130,13 +109,7 @@ public class JobManager : IJobManager
             }
         }
 
-        _dbContext.Jobs.UpdateRange(jobs);
-        await _dbContext.SaveChangesAsync();
-    }
-
-    private IQueryable<Job> GetJobs()
-    {
-        return _dbContext.Jobs
-            .Include(j => j.Tasks);
+        _unitOfWork.JobRepository.UpdateRange(jobs);
+        await _unitOfWork.SaveChangesAsync();
     }
 }

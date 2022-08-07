@@ -6,7 +6,6 @@
         Name,
         State,
         Priority,
-        Uri,
         Started,
         Finished,
         TaskCount,
