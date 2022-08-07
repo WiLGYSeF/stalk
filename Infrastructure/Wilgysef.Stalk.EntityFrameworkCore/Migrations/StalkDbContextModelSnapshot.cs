@@ -126,6 +126,9 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                             b1.Property<string>("ErrorMessage")
                                 .HasColumnType("TEXT");
 
+                            b1.Property<bool?>("Success")
+                                .HasColumnType("INTEGER");
+
                             b1.HasKey("JobTaskId");
 
                             b1.ToTable("JobTasks");
@@ -136,7 +139,8 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
 
                     b.Navigation("ParentTask");
 
-                    b.Navigation("Result");
+                    b.Navigation("Result")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Wilgysef.Stalk.Core.Models.Jobs.Job", b =>

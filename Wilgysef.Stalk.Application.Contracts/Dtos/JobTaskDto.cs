@@ -4,11 +4,11 @@ namespace Wilgysef.Stalk.Application.Contracts.Dtos;
 
 public class JobTaskDto
 {
-    public long Id { get; set; }
+    public string Id { get; set; }
 
     public string? Name { get; set; }
 
-    public JobTaskState State { get; set; }
+    public string State { get; set; }
 
     public int Priority { get; set; }
 
@@ -20,17 +20,15 @@ public class JobTaskDto
 
     public string? MetadataJson { get; set; }
 
-    public JobTaskType Type { get; set; }
+    public string Type { get; set; }
 
     public DateTime? Started { get; set; }
 
     public DateTime? Finished { get; set; }
 
-    public JobTaskResultDto? Result { get; set; }
+    public DateTime? DelayedUntil { get; set; }
+
+    public JobTaskResultDto Result { get; set; }
 
     public JobTaskDto? ParentTask { get; set; }
-
-    public bool IsActive { get; set; }
-
-    public bool IsDone { get; set; }
 }

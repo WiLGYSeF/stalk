@@ -1,6 +1,9 @@
-﻿using Shouldly;
+﻿using AutoMapper;
+using Shouldly;
+using Wilgysef.Stalk.Application.Contracts.Dtos;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Utilities;
 using Wilgysef.Stalk.TestBase;
 
 namespace Wilgysef.Stalk.Core.Tests.JobManagerTests;
@@ -8,29 +11,24 @@ namespace Wilgysef.Stalk.Core.Tests.JobManagerTests;
 public class DeactivateJobsAsyncTest : BaseTest
 {
     private readonly IJobManager _jobManager;
+    private readonly IMapper _mapper;
 
     public DeactivateJobsAsyncTest()
     {
         _jobManager = GetRequiredService<IJobManager>();
+        _mapper = GetRequiredService<IMapper>();
     }
 
     [Fact]
     public async Task Deactivates_Jobs()
     {
-        var builder = new JobBuilder();
-        var jobs = new List<Job>();
+        var jobDtos = new List<JobDto>();
 
         foreach (var state in RandomValues.EnumValues<JobState>())
         {
-            jobs.Add(builder
-                .WithRandomId()
-                .WithRandomInitializedState(state)
-                .Create());
-        }
-
-        foreach (var job in jobs)
-        {
+            var job = new JobBuilder().WithRandomInitializedState(state).Create();
             await _jobManager.CreateJobAsync(job);
+            jobDtos.Add(_mapper.Map<JobDto>(job));
         }
 
         await _jobManager.DeactivateJobsAsync();
@@ -39,9 +37,11 @@ public class DeactivateJobsAsyncTest : BaseTest
 
         foreach (var result in jobResults)
         {
-            var job = jobs.Single(j => j.Id == result.Id);
-            
-            switch (job.State)
+            var dto = jobDtos.Single(j => j.Id == result.Id.ToString());
+
+            var state = EnumUtils.Parse<JobState>(dto.State);
+
+            switch (state)
             {
                 case JobState.Active:
                     result.State.ShouldBe(JobState.Inactive);
@@ -53,7 +53,7 @@ public class DeactivateJobsAsyncTest : BaseTest
                     result.State.ShouldBe(JobState.Paused);
                     break;
                 default:
-                    result.State.ShouldBe(job.State);
+                    result.State.ShouldBe(state);
                     break;
             }
         }

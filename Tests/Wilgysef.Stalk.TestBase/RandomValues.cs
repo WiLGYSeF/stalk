@@ -19,7 +19,7 @@ public static class RandomValues
 
     public static long RandomLong()
     {
-        return BitConverter.ToInt64(RandomNumberGenerator.GetBytes(sizeof(ulong)));
+        return Math.Abs(BitConverter.ToInt64(RandomNumberGenerator.GetBytes(sizeof(long))));
     }
 
     public static long RandomLong(long toExclusive)
@@ -90,7 +90,29 @@ public static class RandomValues
 
     public static long RandomJobId()
     {
-        return RandomLong(1, long.MaxValue);
+        return RandomLong(1, 1_000_000_000L);
+    }
+
+    public static long RandomJobTaskId()
+    {
+        return RandomLong(1, 1_000_000_000L);
+    }
+
+    public static string RandomUri(
+        string? schema = null,
+        string? domain = null,
+        string? path = null)
+    {
+        schema ??= "https://";
+        domain ??= RandomString(8) + ".com";
+        path ??= RandomString(16);
+
+        if (!path.StartsWith('/'))
+        {
+            path = '/' + path;
+        }
+
+        return schema + domain + path;
     }
 
     public enum DateTimePrecision

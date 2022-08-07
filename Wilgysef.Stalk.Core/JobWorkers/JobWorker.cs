@@ -27,11 +27,16 @@ public class JobWorker : IJobWorker
 
         while (!cancellationToken.HasValue || !cancellationToken.Value.IsCancellationRequested)
         {
-            Debug.WriteLine($"{Job!.Id}: doing work...");
-            await Task.Delay(1000);
+            Debug.WriteLine($"{Job!.Id}: {DateTime.Now} doing work...");
+            await Task.Delay(2000);
         }
 
-        if (!Job!.HasUnfinishedTasks && (!cancellationToken.HasValue || !cancellationToken.Value.IsCancellationRequested))
+        if (cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
+        {
+            return;
+        }
+
+        if (!Job!.HasUnfinishedTasks)
         {
             await _jobManager.SetJobDoneAsync(Job);
         }

@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -42,6 +43,7 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                     Started = table.Column<DateTime>(type: "TEXT", nullable: true),
                     Finished = table.Column<DateTime>(type: "TEXT", nullable: true),
                     DelayedUntil = table.Column<DateTime>(type: "TEXT", nullable: true),
+                    Result_Success = table.Column<bool>(type: "INTEGER", nullable: true),
                     Result_ErrorCode = table.Column<string>(type: "TEXT", nullable: true),
                     Result_ErrorMessage = table.Column<string>(type: "TEXT", nullable: true),
                     Result_ErrorDetail = table.Column<string>(type: "TEXT", nullable: true),

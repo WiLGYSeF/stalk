@@ -27,7 +27,7 @@ public class JobTask
 
     public virtual string? MetadataJson { get; protected set; }
 
-    public virtual JobTaskType Type { get; protected set; }
+    public virtual JobTaskType Type { get; protected set; } = JobTaskType.Extract;
 
     public virtual DateTime? Started { get; protected set; }
 
@@ -35,12 +35,15 @@ public class JobTask
 
     public virtual DateTime? DelayedUntil { get; protected set; }
 
-    public virtual JobTaskResult? Result { get; protected set; }
+    public virtual JobTaskResult Result { get; protected set; }
 
     public virtual JobTask? ParentTask { get; protected set; }
 
     [NotMapped]
     public bool IsActive => IsActiveExpression.Compile()(this);
+
+    [NotMapped]
+    public bool IsTransitioning => IsTransitioningExpression.Compile()(this);
 
     [NotMapped]
     public bool IsFinished => IsFinishedExpression.Compile()(this);
@@ -55,6 +58,11 @@ public class JobTask
     internal static Expression<Func<JobTask, bool>> IsActiveExpression =>
         t => t.State == JobTaskState.Active
             || t.State == JobTaskState.Cancelling
+            || t.State == JobTaskState.Pausing;
+
+    [NotMapped]
+    internal static Expression<Func<JobTask, bool>> IsTransitioningExpression =>
+        t => t.State == JobTaskState.Cancelling
             || t.State == JobTaskState.Pausing;
 
     [NotMapped]
@@ -125,7 +133,7 @@ public class JobTask
             Type = type,
             Started = started,
             DelayedUntil = delayedUntil,
-            Result = result,
+            Result = result ?? JobTaskResult.Create(),
             ParentTask = parentTask,
         };
 
@@ -141,15 +149,20 @@ public class JobTask
             throw new ArgumentException("Delayed until cannot be set for an active task.", nameof(delayedUntil));
         }
 
-        if (result == null && task.IsFinished || result != null && !task.IsFinished)
+        if (!task.Result.Success.HasValue && task.IsFinished
+            || task.Result.Success.HasValue && !task.IsFinished)
         {
             throw new ArgumentException("Result must be set only for a finished task.", nameof(result));
         }
-        if (result != null
-            && (result.IsSuccess && task.State == JobTaskState.Failed
-                || !result.IsSuccess && task.State == JobTaskState.Completed))
+        if (task.State == JobTaskState.Failed && task.Result.Success!.Value
+            || task.State == JobTaskState.Completed && !task.Result.Success!.Value)
         {
             throw new ArgumentException("Result success status does not match task state.", nameof(result));
+        }
+
+        if (delayedUntil.HasValue && task.State == JobTaskState.Inactive)
+        {
+            task.ChangeState(JobTaskState.Paused);
         }
 
         if (finished.HasValue)

@@ -3,6 +3,7 @@ using Wilgysef.Stalk.Application.Contracts.Commands.Jobs;
 using Wilgysef.Stalk.Application.Contracts.Dtos;
 using Wilgysef.Stalk.Core.JobWorkerManagers;
 using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Cqrs;
 
 namespace Wilgysef.Stalk.Application.Commands;
@@ -33,12 +34,26 @@ public class JobCommandHandler : CommandQuery,
 
     public async Task<JobDto> HandleCommandAsync(CreateJob command)
     {
-        var job = await _jobManager.CreateJobAsync(Job.Create(
-            _idGenerator.CreateId(),
-            command.Name));
+        var builder = new JobBuilder().WithId(_idGenerator.CreateId())
+            .WithName(command.Name)
+            .WithPriority(command.Priority)
+            .WithDelayedUntilTime(command.DelayedUntil)
+            .WithConfig(Mapper.Map<JobConfig>(command.Config));
+
+        foreach (var task in command.Tasks)
+        {
+            var taskBuilder = new JobTaskBuilder().WithId(_idGenerator.CreateId())
+                .WithName(task.Name)
+                .WithPriority(task.Priority)
+                .WithUri(task.Uri)
+                .WithDelayedUntilTime(task.DelayedUntil);
+            builder.WithTasks(taskBuilder.Create());
+        }
+
+        var job = await _jobManager.CreateJobAsync(builder.Create());
 
         // TODO: remove
-        _jobWorkerService.StartJobWorker(job);
+        //_jobWorkerService.StartJobWorker(job);
 
         return Mapper.Map<JobDto>(job);
     }

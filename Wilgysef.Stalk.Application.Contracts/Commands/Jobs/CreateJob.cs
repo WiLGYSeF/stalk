@@ -1,13 +1,31 @@
-﻿using Wilgysef.Stalk.Core.Shared.Cqrs;
+﻿using Wilgysef.Stalk.Application.Contracts.Dtos;
+using Wilgysef.Stalk.Core.Shared.Cqrs;
 
 namespace Wilgysef.Stalk.Application.Contracts.Commands.Jobs;
 
 public class CreateJob : ICommand
 {
-    public string? Name { get; set; }
+    public string? Name { get; }
 
-    public CreateJob(string? name)
+    public int Priority { get; }
+
+    public DateTime? DelayedUntil { get; }
+
+    public JobConfigDto Config { get; }
+
+    public ICollection<CreateJobTaskDto> Tasks { get; }
+
+    public CreateJob(
+        string? name,
+        JobConfigDto config,
+        ICollection<CreateJobTaskDto> tasks,
+        int priority = 0,
+        DateTime? delayedUntil = null)
     {
         Name = name;
+        Config = config;
+        Tasks = tasks;
+        Priority = priority;
+        DelayedUntil = delayedUntil;
     }
 }

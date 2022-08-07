@@ -27,6 +27,11 @@ public class JobStateManager : IJobStateManager
         {
             throw new JobAlreadyDoneException();
         }
+        if (job.IsTransitioning)
+        {
+            // TODO: take over pause with cancel
+            return;
+        }
 
         if (job.IsActive)
         {
@@ -47,9 +52,13 @@ public class JobStateManager : IJobStateManager
 
     public async Task UnpauseJobAsync(Job job)
     {
-        if (job.State != JobState.Paused)
+        if (job.IsDone)
         {
-            throw new JobNotPausedException();
+            throw new JobAlreadyDoneException();
+        }
+        if (job.IsActive)
+        {
+            return;
         }
 
         job.ChangeState(JobState.Inactive);
@@ -62,6 +71,11 @@ public class JobStateManager : IJobStateManager
         if (task.IsFinished)
         {
             throw new JobTaskAlreadyDoneException();
+        }
+        if (task.IsTransitioning)
+        {
+            // TODO: take over pause with cancel
+            return;
         }
 
         if (task.IsActive)
@@ -83,9 +97,13 @@ public class JobStateManager : IJobStateManager
 
     public async Task UnpauseJobTaskAsync(Job job, JobTask task)
     {
-        if (task.State != JobTaskState.Paused)
+        if (task.IsDone)
         {
-            throw new JobTaskNotPausedException();
+            throw new JobTaskAlreadyDoneException();
+        }
+        if (task.IsActive)
+        {
+            return;
         }
 
         task.ChangeState(JobTaskState.Inactive);
@@ -98,6 +116,10 @@ public class JobStateManager : IJobStateManager
         if (job.IsDone)
         {
             throw new JobAlreadyDoneException();
+        }
+        if (job.IsTransitioning)
+        {
+            return;
         }
 
         if (job.IsActive)
@@ -123,6 +145,10 @@ public class JobStateManager : IJobStateManager
         if (task.IsDone)
         {
             throw new JobTaskAlreadyDoneException();
+        }
+        if (task.IsTransitioning)
+        {
+            return;
         }
 
         if (task.IsActive)

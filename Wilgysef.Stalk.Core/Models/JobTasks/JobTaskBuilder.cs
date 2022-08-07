@@ -8,7 +8,7 @@ public class JobTaskBuilder
 
     public string? Name { get; set; }
 
-    public JobTaskState State { get; set; }
+    public JobTaskState State { get; set; } = JobTaskState.Inactive;
 
     public int Priority { get; set; }
 
@@ -20,7 +20,7 @@ public class JobTaskBuilder
 
     public object? Metadata { get; set; }
 
-    public JobTaskType Type { get; set; }
+    public JobTaskType Type { get; set; } = JobTaskType.Extract;
 
     public DateTime? Started { get; set; }
 
@@ -28,7 +28,7 @@ public class JobTaskBuilder
 
     public DateTime? DelayedUntil { get; set; }
 
-    public JobTaskResult? Result { get; set; }
+    public JobTaskResult Result { get; set; } = JobTaskResult.Create();
 
     public JobTask? ParentTask { get; set; }
 

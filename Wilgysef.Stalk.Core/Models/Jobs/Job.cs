@@ -28,33 +28,13 @@ public class Job
 
     public virtual string? ConfigJson { get; protected set; }
 
-    [NotMapped]
-    public JobConfig? Config
-    {
-        get
-        {
-            if (ConfigJson == null)
-            {
-                return null;
-            }
-
-            var config = JsonSerializer.Deserialize<JobConfig>(ConfigJson);
-            if (config == null)
-            {
-                throw new InvalidOperationException($"{nameof(ConfigJson)} is not valid config.");
-            }
-            return config;
-        }
-        set
-        {
-            ChangeConfig(value);
-        }
-    }
-
     public virtual ICollection<JobTask> Tasks { get; protected set; } = new List<JobTask>();
 
     [NotMapped]
     public bool IsActive => IsActiveExpression.Compile()(this);
+
+    [NotMapped]
+    public bool IsTransitioning => IsTransitioningExpression.Compile()(this);
 
     [NotMapped]
     public bool IsFinished => IsFinishedExpression.Compile()(this);
@@ -72,6 +52,11 @@ public class Job
     internal static Expression<Func<Job, bool>> IsActiveExpression =>
         j => j.State == JobState.Active
             || j.State == JobState.Cancelling
+            || j.State == JobState.Pausing;
+
+    [NotMapped]
+    internal static Expression<Func<Job, bool>> IsTransitioningExpression =>
+        j => j.State == JobState.Cancelling
             || j.State == JobState.Pausing;
 
     [NotMapped]
@@ -147,6 +132,11 @@ public class Job
             throw new ArgumentException("Delayed until cannot be set for an active job.", nameof(delayedUntil));
         }
 
+        if (delayedUntil.HasValue && job.State == JobState.Inactive)
+        {
+            job.ChangeState(JobState.Paused);
+        }
+
         if (finished.HasValue)
         {
             job.Finish(finished.Value);
@@ -190,6 +180,21 @@ public class Job
         Tasks.Add(task);
     }
 
+    public JobConfig GetConfig()
+    {
+        if (ConfigJson == null)
+        {
+            return new JobConfig();
+        }
+
+        var config = JsonSerializer.Deserialize<JobConfig>(ConfigJson);
+        if (config == null)
+        {
+            throw new InvalidOperationException($"{nameof(ConfigJson)} is not valid config.");
+        }
+        return config;
+    }
+
     internal void ChangeState(JobState state)
     {
         if (IsDone)
@@ -221,14 +226,7 @@ public class Job
 
     internal void SetConfig(JobConfig? config)
     {
-        if (config == null)
-        {
-            if (ConfigJson != null)
-            {
-                ConfigJson = null;
-            }
-            return;
-        }
+        config ??= new JobConfig();
 
         var serialized = Encoding.UTF8.GetString(
             JsonSerializer.SerializeToUtf8Bytes(config, new JsonSerializerOptions

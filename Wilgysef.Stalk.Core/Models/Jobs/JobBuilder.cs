@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Wilgysef.Stalk.Core.Models.JobTasks;
+﻿using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;
@@ -10,7 +9,7 @@ public class JobBuilder
 
     public string? Name { get; set; }
 
-    public JobState State { get; set; }
+    public JobState State { get; set; } = JobState.Inactive;
 
     public int Priority { get; set; }
 
@@ -20,7 +19,7 @@ public class JobBuilder
 
     public DateTime? DelayedUntil { get; set; }
 
-    public JobConfig? Config { get; set; }
+    public JobConfig Config { get; set; } = new();
 
     public List<JobTask> Tasks { get; set; } = new List<JobTask>();
 
@@ -40,7 +39,7 @@ public class JobBuilder
         Started = job.Started;
         Finished = job.Finished;
         DelayedUntil = job.DelayedUntil;
-        Config = job.Config;
+        Config = job.GetConfig();
         Tasks = job.Tasks.Select(t => new JobTaskBuilder(t).Create()).ToList();
         return this;
     }

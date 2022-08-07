@@ -11,7 +11,7 @@ using Wilgysef.Stalk.EntityFrameworkCore;
 namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
 {
     [DbContext(typeof(StalkDbContext))]
-    [Migration("20220801032909_InitialMigration")]
+    [Migration("20220807142621_InitialMigration")]
     partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -128,6 +128,9 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                             b1.Property<string>("ErrorMessage")
                                 .HasColumnType("TEXT");
 
+                            b1.Property<bool?>("Success")
+                                .HasColumnType("INTEGER");
+
                             b1.HasKey("JobTaskId");
 
                             b1.ToTable("JobTasks");
@@ -138,7 +141,8 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
 
                     b.Navigation("ParentTask");
 
-                    b.Navigation("Result");
+                    b.Navigation("Result")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Wilgysef.Stalk.Core.Models.Jobs.Job", b =>
