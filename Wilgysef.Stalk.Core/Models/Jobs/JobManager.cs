@@ -38,7 +38,9 @@ public class JobManager : IJobManager
 
     public async Task<List<Job>> GetJobsAsync()
     {
-        return await GetJobs().ToListAsync();
+        return await GetJobs()
+            .OrderBy(j => j.Id)
+            .ToListAsync();
     }
 
     public async Task<List<Job>> GetUnfinishedJobsAsync()
