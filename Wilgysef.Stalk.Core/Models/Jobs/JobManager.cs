@@ -27,7 +27,7 @@ public class JobManager : IJobManager
 
     public async Task<Job> GetJobAsync(long id)
     {
-        var entity = await _unitOfWork.JobRepository.FindAsync(id);
+        var entity = await _unitOfWork.JobRepository.FirstOrDefaultAsync(new JobSingleSpecification(id));
         if (entity == null)
         {
             throw new EntityNotFoundException(nameof(Job), id);

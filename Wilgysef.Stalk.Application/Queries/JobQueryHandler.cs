@@ -27,7 +27,6 @@ public class JobQueryHandler : Query,
 
     public async Task<JobListDto> HandleQueryAsync(GetJobs query)
     {
-        // TODO: query
         var jobs = await _jobManager.GetJobsAsync(
             new JobQuerySpecification(Mapper.Map<JobQuery>(query)));
 
