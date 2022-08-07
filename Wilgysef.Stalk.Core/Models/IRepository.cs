@@ -14,6 +14,22 @@ public interface IRepository<T> : IScopedDependency where T : class
 
     #endregion
 
+    #region List
+
+    List<T> List();
+
+    Task<List<T>> ListAsync();
+
+    #endregion
+
+    #region Count
+
+    int Count();
+
+    Task<int> CountAsync();
+
+    #endregion
+
     #region Add
 
     T Add(T entity);

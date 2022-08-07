@@ -1,8 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Ardalis.Specification;
+using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
+using Wilgysef.Stalk.Core.Specifications;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;
 
@@ -36,27 +38,17 @@ public class JobManager : IJobManager
 
     public async Task<List<Job>> GetJobsAsync()
     {
-        return await _unitOfWork.JobRepository.GetJobs()
-            .OrderBy(j => j.Id)
-            .ToListAsync();
+        return await _unitOfWork.JobRepository.ListAsync();
     }
 
-    public async Task<List<Job>> GetUnfinishedJobsAsync()
+    public async Task<List<Job>> GetJobsAsync(ISpecification<Job> specification)
     {
-        return await _unitOfWork.JobRepository.GetJobs()
-            .Where(Expression.Lambda<Func<Job, bool>>(Expression.Negate(Job.IsDoneExpression)))
-            .ToListAsync();
+        return await _unitOfWork.JobRepository.ListAsync(specification);
     }
 
     public async Task<Job?> GetNextPriorityJobAsync()
     {
-        return await _unitOfWork.JobRepository.GetJobs()
-            .Where(Job.IsQueuedExpression)
-            .Where(j => j.Tasks.AsQueryable()
-                .Any(JobTask.IsQueuedExpression))
-            .OrderByDescending(j => j.Priority)
-            .ThenBy(j => j.Started)
-            .FirstOrDefaultAsync();
+        return await _unitOfWork.JobRepository.FirstOrDefaultAsync(new QueuedJobsSpecification());
     }
 
     public async Task<Job> UpdateJobAsync(Job job)
@@ -97,7 +89,7 @@ public class JobManager : IJobManager
 
     public async Task DeactivateJobsAsync()
     {
-        var jobs = await _unitOfWork.JobRepository.GetJobs().ToListAsync();
+        var jobs = await _unitOfWork.JobRepository.ListAsync();
 
         foreach (var job in jobs)
         {

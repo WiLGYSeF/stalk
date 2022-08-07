@@ -11,10 +11,4 @@ public class JobRepository : GenericRepository<Job>, IJobRepository
     {
         _dbSet = dbSet;
     }
-
-    public IQueryable<Job> GetJobs()
-    {
-        return _dbSet
-            .Include(j => j.Tasks);
-    }
 }

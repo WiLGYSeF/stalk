@@ -1,7 +1,5 @@
 ﻿namespace Wilgysef.Stalk.Core.Models.Jobs;
 
-public interface IJobRepository : IRepository<Job>
+public interface IJobRepository : IRepository<Job>, ISpecificationRepository<Job>
 {
-    // TODO: replace with specification
-    IQueryable<Job> GetJobs();
 }
