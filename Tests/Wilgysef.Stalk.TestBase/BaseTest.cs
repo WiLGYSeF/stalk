@@ -4,40 +4,25 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data.Common;
-using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
-using Wilgysef.Stalk.Core;
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 namespace Wilgysef.Stalk.TestBase;
 
 public class BaseTest
 {
-    private static Type[] DependsOn = new[]
-    {
-        typeof(ApplicationModule),
-        typeof(CoreModule),
-    };
-
-    private const int IdGeneratorId = 1;
-
     private IServiceProvider? _serviceProvider;
     private IServiceProvider ServiceProvider
     {
-        get
-        {
-            if (_serviceProvider == null)
-            {
-                _serviceProvider = GetServiceProvider();
-            }
-            return _serviceProvider;
-        }
+        get => _serviceProvider ??= GetServiceProvider();
         set => _serviceProvider = value;
     }
 
     private DbConnection? _connection;
 
     private List<(Type Implementation, Type Service, ServiceRegistrationType RegistrationType)> _replaceServices = new();
+
+    #region Service Registration
 
     public T? GetService<T>() where T : notnull
     {
@@ -171,4 +156,6 @@ public class BaseTest
         Scoped,
         Singleton,
     }
+
+    #endregion
 }
