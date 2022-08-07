@@ -8,13 +8,13 @@ using Wilgysef.Stalk.TestBase;
 
 namespace Wilgysef.Stalk.Application.Tests.Commands.Jobs;
 
-public class CreateJobAsyncTest : BaseTest
+public class CreateJobTest : BaseTest
 {
     private readonly ICommandHandler<CreateJob, JobDto> _createJobCommandHandler;
 
     private readonly IMapper _mapper;
 
-    public CreateJobAsyncTest()
+    public CreateJobTest()
     {
         _createJobCommandHandler = GetRequiredService<ICommandHandler<CreateJob, JobDto>>();
 
