@@ -1,6 +1,4 @@
-﻿using Moq;
-using Shouldly;
-using Wilgysef.Stalk.Core.JobWorkerManagers;
+﻿using Shouldly;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
@@ -19,39 +17,37 @@ public class UnpauseJobAsyncTest : BaseTest
         _jobStateManager = GetRequiredService<IJobStateManager>();
     }
 
-    [Fact]
-    public async Task Unpause_Job()
+    [Theory]
+    [InlineData(JobState.Active, false, false)]
+    [InlineData(JobState.Inactive, false, false)]
+    [InlineData(JobState.Completed, false, true)]
+    [InlineData(JobState.Failed, false, true)]
+    [InlineData(JobState.Cancelled, false, true)]
+    [InlineData(JobState.Cancelling, false, false)]
+    [InlineData(JobState.Paused, true, false)]
+    [InlineData(JobState.Pausing, false, false)]
+    public async Task Unpause_Job(JobState state, bool change, bool throwsException)
     {
-        var job = new JobBuilder().WithRandomInitializedState(JobState.Paused).Create();
+        var job = new JobBuilder().WithRandomInitializedState(state).Create();
 
         await _jobManager.CreateJobAsync(job);
+
+        if (throwsException)
+        {
+            await Should.ThrowAsync<JobAlreadyDoneException>(_jobStateManager.UnpauseJobAsync(job));
+            return;
+        }
 
         await _jobStateManager.UnpauseJobAsync(job);
 
-        job = await _jobManager.GetJobAsync(job.Id);
-        job.State.ShouldBe(JobState.Inactive);
-    }
-
-    [Fact]
-    public async Task Unpause_Done_Job()
-    {
-        var job = new JobBuilder().WithRandomInitializedState(JobState.Completed).Create();
-
-        await _jobManager.CreateJobAsync(job);
-
-        await Should.ThrowAsync<JobAlreadyDoneException>(_jobStateManager.UnpauseJobAsync(job));
-    }
-
-    [Fact]
-    public async Task Unpause_Job_Inactive()
-    {
-        var job = new JobBuilder().WithRandomInitializedState(JobState.Inactive).Create();
-
-        await _jobManager.CreateJobAsync(job);
-
-        await _jobStateManager.UnpauseJobAsync(job);
-
-        job = await _jobManager.GetJobAsync(job.Id);
-        job.State.ShouldBe(JobState.Inactive);
+        if (change)
+        {
+            job = await _jobManager.GetJobAsync(job.Id);
+            job.State.ShouldBe(JobState.Inactive);
+        }
+        else
+        {
+            job.State.ShouldBe(state);
+        }
     }
 }

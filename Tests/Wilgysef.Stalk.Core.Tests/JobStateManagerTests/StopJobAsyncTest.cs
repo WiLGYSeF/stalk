@@ -1,10 +1,5 @@
 ﻿using Moq;
 using Shouldly;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Wilgysef.Stalk.Core.JobWorkerManagers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
@@ -37,48 +32,71 @@ public class StopJobAsyncTest : BaseTest
         _jobStateManager = GetRequiredService<IJobStateManager>();
     }
 
-    [Fact]
-    public async Task Stop_Job()
+    [Theory]
+    [InlineData(JobState.Active, true, true, false)]
+    [InlineData(JobState.Inactive, true, true, false)]
+    [InlineData(JobState.Completed, false, false, true)]
+    [InlineData(JobState.Failed, false, false, true)]
+    [InlineData(JobState.Cancelled, false, false, true)]
+    [InlineData(JobState.Cancelling, false, false, false)]
+    [InlineData(JobState.Paused, false, false, false)]
+    [InlineData(JobState.Pausing, false, false, false)]
+    public async Task Stop_Job(JobState state, bool intermediaryChange, bool change, bool throwsException)
     {
-        var job = new JobBuilder().WithRandomInitializedState(JobState.Active).Create();
+        var job = new JobBuilder().WithRandomInitializedState(state).Create();
 
         await _jobManager.CreateJobAsync(job);
+
+        if (throwsException)
+        {
+            _manualResetEventSlimOuter.Set();
+            await Should.ThrowAsync<JobAlreadyDoneException>(_jobStateManager.StopJobAsync(job));
+            return;
+        }
 
         var task = Task.Run(async () => await _jobStateManager.StopJobAsync(job));
+
+        // timeout
+        var setTask = Task.Run(async () =>
+        {
+            await Task.Delay(200);
+            _manualResetEventSlimInner.Set();
+        });
+
         _manualResetEventSlimInner.Wait();
-        
-        job = await _jobManager.GetJobAsync(job.Id);
-        job.State.ShouldBe(JobState.Cancelling);
-        
+
+        if (intermediaryChange)
+        {
+            job = await _jobManager.GetJobAsync(job.Id);
+
+            try
+            {
+                job.State.ShouldBe(JobState.Cancelling);
+            }
+            catch
+            {
+                job.State.ShouldBe(JobState.Cancelled);
+            }
+        }
+
         _manualResetEventSlimOuter.Set();
         await task;
-        
-        job = await _jobManager.GetJobAsync(job.Id);
-        job.State.ShouldBe(JobState.Cancelled);
-    }
 
-    [Fact]
-    public async Task Stop_Done_Job()
-    {
-        var job = new JobBuilder().WithRandomInitializedState(JobState.Completed).Create();
-
-        await _jobManager.CreateJobAsync(job);
-
-        _manualResetEventSlimOuter.Set();
-        await Should.ThrowAsync<JobAlreadyDoneException>(_jobStateManager.StopJobAsync(job));
-    }
-
-    [Fact]
-    public async Task Stop_Job_Inactive()
-    {
-        var job = new JobBuilder().WithRandomInitializedState(JobState.Inactive).Create();
-
-        await _jobManager.CreateJobAsync(job);
-
-        _manualResetEventSlimOuter.Set();
-        await _jobStateManager.StopJobAsync(job);
-
-        job = await _jobManager.GetJobAsync(job.Id);
-        job.State.ShouldBe(JobState.Cancelled);
+        if (change)
+        {
+            job = await _jobManager.GetJobAsync(job.Id);
+            job.State.ShouldBe(JobState.Cancelled);
+        }
+        else
+        {
+            if (state == JobState.Paused)
+            {
+                job.State.ShouldBe(JobState.Cancelled);
+            }
+            else
+            {
+                job.State.ShouldBe(state);
+            }
+        }
     }
 }

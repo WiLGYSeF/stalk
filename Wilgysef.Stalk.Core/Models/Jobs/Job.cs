@@ -57,6 +57,9 @@ public class Job
     public bool IsActive => IsActiveExpression.Compile()(this);
 
     [NotMapped]
+    public bool IsTransitioning => IsTransitioningExpression.Compile()(this);
+
+    [NotMapped]
     public bool IsFinished => IsFinishedExpression.Compile()(this);
 
     [NotMapped]
@@ -72,6 +75,11 @@ public class Job
     internal static Expression<Func<Job, bool>> IsActiveExpression =>
         j => j.State == JobState.Active
             || j.State == JobState.Cancelling
+            || j.State == JobState.Pausing;
+
+    [NotMapped]
+    internal static Expression<Func<Job, bool>> IsTransitioningExpression =>
+        j => j.State == JobState.Cancelling
             || j.State == JobState.Pausing;
 
     [NotMapped]
