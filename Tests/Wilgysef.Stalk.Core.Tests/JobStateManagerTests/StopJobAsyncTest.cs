@@ -13,8 +13,8 @@ public class StopJobAsyncTest : BaseTest
     private readonly IJobManager _jobManager;
     private readonly IJobStateManager _jobStateManager;
 
-    private readonly ManualResetEventSlim _manualResetEventSlimOuter = new ManualResetEventSlim();
-    private readonly ManualResetEventSlim _manualResetEventSlimInner = new ManualResetEventSlim();
+    private readonly ManualResetEventSlim _manualResetEventSlimOuter = new();
+    private readonly ManualResetEventSlim _manualResetEventSlimInner = new();
 
     public StopJobAsyncTest()
     {
@@ -82,9 +82,10 @@ public class StopJobAsyncTest : BaseTest
         _manualResetEventSlimOuter.Set();
         await task;
 
+        job = await _jobManager.GetJobAsync(job.Id);
+
         if (change)
         {
-            job = await _jobManager.GetJobAsync(job.Id);
             job.State.ShouldBe(JobState.Cancelled);
         }
         else

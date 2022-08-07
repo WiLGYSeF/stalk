@@ -146,7 +146,7 @@ public class JobStateManager : IJobStateManager
         {
             throw new JobTaskAlreadyDoneException();
         }
-        if (job.IsTransitioning)
+        if (task.IsTransitioning)
         {
             return;
         }

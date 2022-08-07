@@ -39,10 +39,10 @@ public class UnpauseJobAsyncTest : BaseTest
         }
 
         await _jobStateManager.UnpauseJobAsync(job);
+        job = await _jobManager.GetJobAsync(job.Id);
 
         if (change)
         {
-            job = await _jobManager.GetJobAsync(job.Id);
             job.State.ShouldBe(JobState.Inactive);
         }
         else
