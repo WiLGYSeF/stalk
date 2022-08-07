@@ -24,9 +24,7 @@ public class CreateJobTest : BaseTest
     [Fact]
     public async Task Create_Job()
     {
-        var command = new CreateJobBuilder(_mapper)
-            .WithRandom()
-            .Create();
+        var command = new CreateJobBuilder(_mapper).WithRandom().Create();
 
         var job = await _createJobCommandHandler.HandleCommandAsync(command);
 
@@ -41,7 +39,7 @@ public class CreateJobTest : BaseTest
         job.Tasks.Count.ShouldBe(command.Tasks.Count);
         foreach (var task in job.Tasks)
         {
-            var expectedTask = command.Tasks.Single(t => t.Name == task.Name);
+            var expectedTask = command.Tasks.Single(t => t.Uri == task.Uri);
             task.Name.ShouldBe(expectedTask.Name);
             task.State.ShouldBe(JobTaskState.Inactive.ToString().ToLower());
             task.Priority.ShouldBe(expectedTask.Priority);
