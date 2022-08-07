@@ -2,7 +2,7 @@
 
 public class JobTaskResultDto
 {
-    public bool Success { get; set; }
+    public bool? Success { get; set; }
 
     public string? ErrorCode { get; set; }
 

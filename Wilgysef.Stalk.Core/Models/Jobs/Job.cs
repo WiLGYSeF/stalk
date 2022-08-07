@@ -28,29 +28,6 @@ public class Job
 
     public virtual string? ConfigJson { get; protected set; }
 
-    [NotMapped]
-    public JobConfig? Config
-    {
-        get
-        {
-            if (ConfigJson == null)
-            {
-                return null;
-            }
-
-            var config = JsonSerializer.Deserialize<JobConfig>(ConfigJson);
-            if (config == null)
-            {
-                throw new InvalidOperationException($"{nameof(ConfigJson)} is not valid config.");
-            }
-            return config;
-        }
-        set
-        {
-            ChangeConfig(value);
-        }
-    }
-
     public virtual ICollection<JobTask> Tasks { get; protected set; } = new List<JobTask>();
 
     [NotMapped]
@@ -198,6 +175,21 @@ public class Job
         Tasks.Add(task);
     }
 
+    public JobConfig GetConfig()
+    {
+        if (ConfigJson == null)
+        {
+            return new JobConfig();
+        }
+
+        var config = JsonSerializer.Deserialize<JobConfig>(ConfigJson);
+        if (config == null)
+        {
+            throw new InvalidOperationException($"{nameof(ConfigJson)} is not valid config.");
+        }
+        return config;
+    }
+
     internal void ChangeState(JobState state)
     {
         if (IsDone)
@@ -229,14 +221,7 @@ public class Job
 
     internal void SetConfig(JobConfig? config)
     {
-        if (config == null)
-        {
-            if (ConfigJson != null)
-            {
-                ConfigJson = null;
-            }
-            return;
-        }
+        config ??= new JobConfig();
 
         var serialized = Encoding.UTF8.GetString(
             JsonSerializer.SerializeToUtf8Bytes(config, new JsonSerializerOptions

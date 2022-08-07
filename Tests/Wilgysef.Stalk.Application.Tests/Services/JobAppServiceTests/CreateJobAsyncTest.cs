@@ -19,7 +19,8 @@ public class CreateJobAsyncTest : BaseTest
     [Fact]
     public async Task Create_Job()
     {
-        var command = new CreateJob("test");
+        var config = new JobConfigDto();
+        var command = new CreateJob("test", config, Array.Empty<CreateJobTaskDto>());
 
         var job = await _createJobCommandHandler.HandleCommandAsync(command);
 
@@ -29,7 +30,7 @@ public class CreateJobAsyncTest : BaseTest
         job.Started.ShouldBeNull();
         job.Finished.ShouldBeNull();
         job.DelayedUntil.ShouldBeNull();
-        job.ConfigJson.ShouldBeNull();
+        job.Config.ShouldBeEquivalentTo(config);
         job.Tasks.ShouldBeEmpty();
     }
 }

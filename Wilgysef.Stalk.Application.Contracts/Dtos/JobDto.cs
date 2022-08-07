@@ -16,7 +16,7 @@ public class JobDto
 
     public DateTime? DelayedUntil { get; set; }
 
-    public string? ConfigJson { get; set; }
+    public JobConfigDto Config { get; set; }
 
     public ICollection<JobTaskDto> Tasks { get; set; }
 }
