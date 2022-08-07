@@ -47,9 +47,9 @@ public class JobStateManager : IJobStateManager
 
     public async Task UnpauseJobAsync(Job job)
     {
-        if (job.State != JobState.Paused)
+        if (job.IsDone)
         {
-            throw new JobNotPausedException();
+            throw new JobAlreadyDoneException();
         }
 
         job.ChangeState(JobState.Inactive);

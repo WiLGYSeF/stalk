@@ -21,6 +21,7 @@ public class BaseTest
     private DbConnection? _connection;
 
     private List<(Type Implementation, Type Service, ServiceRegistrationType RegistrationType)> _replaceServices = new();
+    private List<(object Implementation, Type Service)> _replaceServiceInstances = new();
 
     #region Service Registration
 
@@ -67,6 +68,13 @@ public class BaseTest
         ReplaceSingletonService(typeof(TImplementation), typeof(TService));
     }
 
+    public void ReplaceServiceInstance<TImplementation, TService>(TImplementation instance)
+        where TImplementation : class
+        where TService : notnull
+    {
+        ReplaceServiceInstance(instance, typeof(TService));
+    }
+
     public void ReplaceService(Type implementation, Type service)
     {
         ReplaceTransientService(implementation, service);
@@ -87,6 +95,12 @@ public class BaseTest
     public void ReplaceSingletonService(Type implementation, Type service)
     {
         _replaceServices.Add((implementation, service, ServiceRegistrationType.Singleton));
+        _serviceProvider = null;
+    }
+
+    public void ReplaceServiceInstance<T>(T implementation, Type service) where T : class
+    {
+        _replaceServiceInstances.Add((implementation, service));
         _serviceProvider = null;
     }
 
@@ -145,6 +159,14 @@ public class BaseTest
                 ServiceRegistrationType.Singleton => registration.SingleInstance(),
                 _ => throw new NotImplementedException(),
             };
+        }
+
+        foreach (var (implementation, service) in _replaceServiceInstances)
+        {
+            var registration = builder.RegisterInstance(implementation)
+                .As(service)
+                .PropertiesAutowired()
+                .SingleInstance();
         }
 
         return builder;

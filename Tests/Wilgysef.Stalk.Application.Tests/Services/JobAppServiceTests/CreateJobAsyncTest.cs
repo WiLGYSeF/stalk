@@ -28,6 +28,7 @@ public class CreateJobAsyncTest : BaseTest
         job.Priority.ShouldBe(0);
         job.Started.ShouldBeNull();
         job.Finished.ShouldBeNull();
+        job.DelayedUntil.ShouldBeNull();
         job.ConfigJson.ShouldBeNull();
         job.Tasks.ShouldBeEmpty();
     }
