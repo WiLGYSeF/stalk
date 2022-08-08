@@ -53,7 +53,7 @@ public class JobCommandHandler : CommandQuery,
         var job = await _jobManager.CreateJobAsync(builder.Create());
 
         // TODO: remove
-        //_jobWorkerService.StartJobWorker(job);
+        _jobWorkerService.StartJobWorker(job);
 
         return Mapper.Map<JobDto>(job);
     }

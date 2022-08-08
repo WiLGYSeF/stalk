@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Core.JobWorkers;
 
@@ -7,12 +8,12 @@ public class JobWorker : IJobWorker
 {
     public Job? Job { get; private set; }
 
-    private readonly IJobManager _jobManager;
+    private readonly IServiceLocator _serviceLocator;
 
     public JobWorker(
-        IJobManager jobManager)
+        IServiceLocator serviceLocator)
     {
-        _jobManager = jobManager;
+        _serviceLocator = serviceLocator;
     }
 
     public JobWorker WithJob(Job job)
@@ -23,7 +24,10 @@ public class JobWorker : IJobWorker
 
     public async Task WorkAsync(CancellationToken? cancellationToken = null)
     {
-        await _jobManager.SetJobActiveAsync(Job!);
+        // TODO: service locator is used because the scope is disposed on original thread, find a better way?
+        // TODO: dispose?
+        var jobManager = _serviceLocator.GetService<IJobManager>();
+        await jobManager.SetJobActiveAsync(Job!);
 
         while (!cancellationToken.HasValue || !cancellationToken.Value.IsCancellationRequested)
         {
@@ -38,7 +42,7 @@ public class JobWorker : IJobWorker
 
         if (!Job!.HasUnfinishedTasks)
         {
-            await _jobManager.SetJobDoneAsync(Job);
+            await jobManager.SetJobDoneAsync(Job);
         }
     }
 }

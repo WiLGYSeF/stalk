@@ -1,5 +1,5 @@
-﻿using Wilgysef.Stalk.Core.Models.Jobs;
-using Wilgysef.Stalk.Core.Models.JobTasks;
+﻿using Wilgysef.Stalk.Core.Models.JobTasks;
+using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Core.JobWorkers;
 
@@ -7,12 +7,12 @@ public class JobTaskWorker : IJobTaskWorker
 {
     public JobTask? JobTask { get; private set; }
 
-    private readonly IJobManager _jobManager;
+    private readonly IServiceLocator _serviceLocator;
 
     public JobTaskWorker(
-        IJobManager jobManager)
+        IServiceLocator serviceLocator)
     {
-        _jobManager = jobManager;
+        _serviceLocator = serviceLocator;
     }
 
     public JobTaskWorker WithJobTask(JobTask task)

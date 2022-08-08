@@ -1,23 +1,22 @@
 ﻿using Wilgysef.Stalk.Core.JobWorkers;
-using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
+using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Core.JobWorkerFactories;
 
 public class JobTaskWorkerFactory : IJobTaskWorkerFactory
 {
-    private readonly IJobManager _jobManager;
+    private readonly IServiceLocator _serviceLocator;
 
     public JobTaskWorkerFactory(
-        IJobManager jobManager)
+        IServiceLocator serviceLocator)
     {
-        _jobManager = jobManager;
+        _serviceLocator = serviceLocator;
     }
 
     public JobTaskWorker CreateWorker(JobTask task)
     {
-        // TODO: this probably needs to be a service locator since we need to drop the db context when not in use
-        var taskWorker = new JobTaskWorker(_jobManager);
+        var taskWorker = new JobTaskWorker(_serviceLocator);
         taskWorker.WithJobTask(task);
         return taskWorker;
     }
