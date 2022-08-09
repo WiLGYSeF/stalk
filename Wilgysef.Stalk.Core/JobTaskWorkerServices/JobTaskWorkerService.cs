@@ -8,8 +8,6 @@ public class JobTaskWorkerService : IJobTaskWorkerService
 {
     public IReadOnlyCollection<JobTaskWorker> Workers => _jobTaskWorkers;
 
-    private int WorkerLimit { get; set; } = 4;
-
     private readonly List<JobTaskWorker> _jobTaskWorkers = new();
     private readonly Dictionary<JobTaskWorker, JobTaskWorkerObjects> _jobTaskWorkerObjects = new();
 
@@ -23,11 +21,6 @@ public class JobTaskWorkerService : IJobTaskWorkerService
 
     public bool StartJobTaskWorker(JobTask jobTask)
     {
-        if (_jobTaskWorkers.Count >= WorkerLimit)
-        {
-            return false;
-        }
-
         var worker = _jobTaskWorkerFactory.CreateWorker(jobTask);
         var cancellationTokenSource = new CancellationTokenSource();
 

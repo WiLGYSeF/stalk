@@ -2,7 +2,7 @@
 
 namespace Wilgysef.Stalk.Core.Shared.ServiceLocators
 {
-    public interface IServiceLocator
+    public interface IServiceLifetimeScope : IDisposable
     {
         IServiceLifetimeScope BeginLifetimeScope();
 

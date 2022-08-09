@@ -1,14 +1,13 @@
 ﻿using Autofac;
-using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Application.ServiceRegistrar;
 
-public class ServiceLocator : IServiceLocator, ITransientDependency
+public class ServiceLifetimeScope : IServiceLifetimeScope
 {
     private readonly ILifetimeScope _lifetimeScope;
 
-    public ServiceLocator(ILifetimeScope lifetimeScope)
+    public ServiceLifetimeScope(ILifetimeScope lifetimeScope)
     {
         _lifetimeScope = lifetimeScope;
     }
@@ -36,5 +35,10 @@ public class ServiceLocator : IServiceLocator, ITransientDependency
     public object? GetService(Type type)
     {
         return _lifetimeScope.ResolveOptional(type);
+    }
+
+    public void Dispose()
+    {
+        _lifetimeScope.Dispose();
     }
 }
