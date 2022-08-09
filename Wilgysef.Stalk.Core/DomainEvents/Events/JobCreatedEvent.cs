@@ -8,4 +8,9 @@ public class JobCreatedEvent : IDomainEvent
     {
         Id = id;
     }
+
+    public override string ToString()
+    {
+        return "a";
+    }
 }

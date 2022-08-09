@@ -11,14 +11,21 @@ public class DomainEventDispatcher : IDomainEventDispatcher
         _serviceLocator = serviceLocator;
     }
 
-    public async Task DispatchEvents<T>(IEnumerable<T> eventData) where T : IDomainEvent
+    public async Task DispatchEvents<T>(params T[] eventData) where T : notnull, IDomainEvent
     {
-        var genericType = typeof(IDomainEventHandler<>).MakeGenericType(typeof(T));
+        var eventHandlerType = typeof(IDomainEventHandler<>);
 
         foreach (var data in eventData)
         {
-            dynamic service = _serviceLocator.GetRequiredService(genericType);
-            await service.HandleEventAsync(data);
+            var genericType = eventHandlerType.MakeGenericType(data.GetType());
+
+            var service = _serviceLocator.GetRequiredService(genericType);
+
+            dynamic handlerWrapper = Activator.CreateInstance(
+                typeof(DomainEventHandlerWrapper<>).MakeGenericType(data.GetType()),
+                service)!;
+
+            await handlerWrapper.HandleEventAsync(data);
         }
     }
 }

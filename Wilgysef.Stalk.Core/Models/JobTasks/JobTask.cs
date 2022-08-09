@@ -8,7 +8,7 @@ using Wilgysef.Stalk.Core.Shared.Exceptions;
 
 namespace Wilgysef.Stalk.Core.Models.JobTasks;
 
-public class JobTask
+public class JobTask : Entity
 {
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public virtual long Id { get; protected set; }
