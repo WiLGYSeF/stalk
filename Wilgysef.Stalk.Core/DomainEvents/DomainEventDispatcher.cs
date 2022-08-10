@@ -17,15 +17,15 @@ public class DomainEventDispatcher : IDomainEventDispatcher
 
         foreach (var data in eventData)
         {
-            var genericType = eventHandlerType.MakeGenericType(data.GetType());
+            var dataType = data.GetType();
+            var genericType = eventHandlerType.MakeGenericType(dataType);
 
             var service = _serviceLocator.GetRequiredService(genericType);
 
-            dynamic handlerWrapper = Activator.CreateInstance(
-                typeof(DomainEventHandlerWrapper<>).MakeGenericType(data.GetType()),
-                service)!;
+            var handlerWrapper = (IDomainEventHandlerWrapper)Activator.CreateInstance(
+                typeof(DomainEventHandlerWrapper<>).MakeGenericType(dataType))!;
 
-            await handlerWrapper.HandleEventAsync(data);
+            await handlerWrapper.HandleEventAsync(service, data);
         }
     }
 }

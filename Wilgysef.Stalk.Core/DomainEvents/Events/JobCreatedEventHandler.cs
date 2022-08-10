@@ -4,6 +4,6 @@ public class JobCreatedEventHandler : IDomainEventHandler<JobCreatedEvent>
 {
     public Task HandleEventAsync(JobCreatedEvent eventData)
     {
-        throw new NotImplementedException();
+        return Task.CompletedTask;
     }
 }

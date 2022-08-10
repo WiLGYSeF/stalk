@@ -1,16 +1,14 @@
 ﻿namespace Wilgysef.Stalk.Core.DomainEvents;
 
-internal class DomainEventHandlerWrapper<T> where T : IDomainEvent
+internal interface IDomainEventHandlerWrapper
 {
-    private readonly IDomainEventHandler<T> _handler;
+    Task HandleEventAsync(object handler, object eventData);
+}
 
-    public DomainEventHandlerWrapper(IDomainEventHandler<T> handler)
+internal class DomainEventHandlerWrapper<T> : IDomainEventHandlerWrapper where T : IDomainEvent
+{
+    public async Task HandleEventAsync(object handler, object eventData)
     {
-        _handler = handler;
-    }
-
-    public async Task HandleEventAsync(object eventData)
-    {
-        await _handler.HandleEventAsync((T)eventData);
+        await ((IDomainEventHandler<T>)handler).HandleEventAsync((T)eventData);
     }
 }
