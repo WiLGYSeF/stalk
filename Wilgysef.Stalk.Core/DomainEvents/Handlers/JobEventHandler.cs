@@ -53,7 +53,7 @@ public class JobEventHandler :
             return;
         }
 
-        var activeJobs = new Queue<Job>(_jobWorkerService.Jobs.OrderBy(j => j.Priority));
+        var activeJobs = new Queue<Job>(_jobWorkerService.GetJobsByPriority());
 
         while (activeJobs.Count > 0)
         {
@@ -63,8 +63,7 @@ public class JobEventHandler :
             {
                 break;
             }
-             
-            // TODO: blocking
+
             await _jobWorkerService.StopJobWorker(job);
             await _jobWorkerService.StartJobWorker(nextPriorityJob);
         }
