@@ -20,12 +20,13 @@ public class DomainEventDispatcher : IDomainEventDispatcher
             var dataType = data.GetType();
             var genericType = eventHandlerType.MakeGenericType(dataType);
 
-            var service = _serviceLocator.GetRequiredService(genericType);
+            var genericEnumerableType = typeof(IEnumerable<>).MakeGenericType(genericType);
+            var services = _serviceLocator.GetRequiredService(genericEnumerableType);
 
             var handlerWrapper = (IDomainEventHandlerWrapper)Activator.CreateInstance(
                 typeof(DomainEventHandlerWrapper<>).MakeGenericType(dataType))!;
 
-            await handlerWrapper.HandleEventAsync(service, data);
+            await handlerWrapper.HandleEventAsync(services, data);
         }
     }
 }
