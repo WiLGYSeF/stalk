@@ -20,7 +20,7 @@ public class JobManager : IJobManager
     {
         var entity = await _unitOfWork.JobRepository.AddAsync(job);
 
-        job.DomainEvents.Add(new JobCreatedEvent(job.Id));
+        job.DomainEvents.AddOrReplace(new JobCreatedEvent(job.Id));
 
         await _unitOfWork.SaveChangesAsync();
         return entity;

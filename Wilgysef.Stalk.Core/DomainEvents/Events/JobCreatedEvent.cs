@@ -2,15 +2,10 @@
 
 public class JobCreatedEvent : IDomainEvent
 {
-    public long Id { get; }
+    public long JobId { get; }
 
-    public JobCreatedEvent(long id)
+    public JobCreatedEvent(long jobId)
     {
-        Id = id;
-    }
-
-    public override string ToString()
-    {
-        return "a";
+        JobId = jobId;
     }
 }

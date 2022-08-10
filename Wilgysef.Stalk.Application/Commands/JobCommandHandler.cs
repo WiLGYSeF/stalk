@@ -17,18 +17,15 @@ public class JobCommandHandler : CommandQuery,
 {
     private readonly IJobManager _jobManager;
     private readonly IJobStateManager _jobStateManager;
-    private readonly IJobWorkerService _jobWorkerService;
     private readonly IIdGenerator<long> _idGenerator;
 
     public JobCommandHandler(
         IJobManager jobManager,
         IJobStateManager jobStateManager,
-        IJobWorkerService jobWorkerService,
         IIdGenerator<long> idGenerator)
     {
         _jobManager = jobManager;
         _jobStateManager = jobStateManager;
-        _jobWorkerService = jobWorkerService;
         _idGenerator = idGenerator;
     }
 
@@ -51,9 +48,6 @@ public class JobCommandHandler : CommandQuery,
         }
 
         var job = await _jobManager.CreateJobAsync(builder.Create());
-
-        // TODO: remove
-        _jobWorkerService.StartJobWorker(job);
 
         return Mapper.Map<JobDto>(job);
     }

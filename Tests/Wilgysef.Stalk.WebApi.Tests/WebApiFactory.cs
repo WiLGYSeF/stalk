@@ -18,7 +18,8 @@ public class WebApiFactory : IDisposable
             _connection = new SqliteConnection("DataSource=:memory:");
             _connection.Open();
 
-            using var context = new StalkDbContext(SetOptions().Options);
+            // TODO: replace null
+            using var context = new StalkDbContext(SetOptions().Options, null);
             context.Database.EnsureCreated();
         }
 
