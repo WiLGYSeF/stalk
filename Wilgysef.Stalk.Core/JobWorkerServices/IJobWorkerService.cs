@@ -15,4 +15,6 @@ public interface IJobWorkerService : ISingletonDependency
     Task<bool> StartJobWorker(Job job);
 
     Task<bool> StopJobWorker(Job job);
+
+    IReadOnlyList<Job> GetJobsByPriority();
 }
