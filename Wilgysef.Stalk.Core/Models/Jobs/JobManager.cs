@@ -28,7 +28,18 @@ public class JobManager : IJobManager
 
     public async Task<Job> GetJobAsync(long id)
     {
-        var entity = await _unitOfWork.JobRepository.FirstOrDefaultAsync(new JobSingleSpecification(id));
+        var entity = await _unitOfWork.JobRepository.FirstOrDefaultAsync(new JobSingleSpecification(jobId: id));
+        if (entity == null)
+        {
+            throw new EntityNotFoundException(nameof(Job), id);
+        }
+
+        return entity;
+    }
+
+    public async Task<Job> GetJobByTaskIdAsync(long id)
+    {
+        var entity = await _unitOfWork.JobRepository.FirstOrDefaultAsync(new JobSingleSpecification(taskId: id));
         if (entity == null)
         {
             throw new EntityNotFoundException(nameof(Job), id);
@@ -107,6 +118,24 @@ public class JobManager : IJobManager
                     break;
                 default:
                     break;
+            }
+
+            foreach (var task in job.Tasks)
+            {
+                switch (task.State)
+                {
+                    case JobTaskState.Active:
+                        task.ChangeState(JobTaskState.Inactive);
+                        break;
+                    case JobTaskState.Cancelling:
+                        task.ChangeState(JobTaskState.Cancelled);
+                        break;
+                    case JobTaskState.Pausing:
+                        task.ChangeState(JobTaskState.Paused);
+                        break;
+                    default:
+                        break;
+                }
             }
         }
 

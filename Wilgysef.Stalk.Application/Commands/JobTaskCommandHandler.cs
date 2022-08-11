@@ -8,16 +8,23 @@ using Wilgysef.Stalk.Core.Shared.Cqrs;
 namespace Wilgysef.Stalk.Application.Commands;
 
 public class JobTaskCommandHandler : CommandQuery,
-    ICommandHandler<CreateJobTask, JobDto>
+    ICommandHandler<CreateJobTask, JobDto>,
+    ICommandHandler<StopJobTask, JobDto>,
+    ICommandHandler<DeleteJobTask, JobDto>,
+    ICommandHandler<PauseJobTask, JobDto>,
+    ICommandHandler<UnpauseJobTask, JobDto>
 {
     private readonly IJobManager _jobManager;
+    private readonly IJobStateManager _jobStateManager;
     private readonly IIdGenerator<long> _idGenerator;
 
     public JobTaskCommandHandler(
         IJobManager jobManager,
+        IJobStateManager jobStateManager,
         IIdGenerator<long> idGenerator)
     {
         _jobManager = jobManager;
+        _jobStateManager = jobStateManager;
         _idGenerator = idGenerator;
     }
 
@@ -35,6 +42,53 @@ public class JobTaskCommandHandler : CommandQuery,
         job.AddTask(builder.Create());
 
         await _jobManager.UpdateJobAsync(job);
+
+        return Mapper.Map<JobDto>(job);
+    }
+
+    public async Task<JobDto> HandleCommandAsync(StopJobTask command)
+    {
+        var job = await _jobManager.GetJobByTaskIdAsync(command.Id);
+        var task = job.Tasks.Single(t => t.Id == command.Id);
+
+        // TODO: do not await
+        await _jobStateManager.StopJobTaskAsync(job, task);
+
+        return Mapper.Map<JobDto>(job);
+    }
+
+    public async Task<JobDto> HandleCommandAsync(DeleteJobTask command)
+    {
+        var job = await _jobManager.GetJobByTaskIdAsync(command.Id);
+        var task = job.Tasks.Single(t => t.Id == command.Id);
+
+        // TODO: do not await
+        await _jobStateManager.StopJobTaskAsync(job, task);
+
+        job.RemoveTask(task);
+        await _jobManager.UpdateJobAsync(job);
+
+        return Mapper.Map<JobDto>(job);
+    }
+
+    public async Task<JobDto> HandleCommandAsync(PauseJobTask command)
+    {
+        var job = await _jobManager.GetJobByTaskIdAsync(command.Id);
+        var task = job.Tasks.Single(t => t.Id == command.Id);
+
+        // TODO: do not await
+        await _jobStateManager.PauseJobTaskAsync(job, task);
+
+        return Mapper.Map<JobDto>(job);
+    }
+
+    public async Task<JobDto> HandleCommandAsync(UnpauseJobTask command)
+    {
+        var job = await _jobManager.GetJobByTaskIdAsync(command.Id);
+        var task = job.Tasks.Single(t => t.Id == command.Id);
+
+        // TODO: do not await
+        await _jobStateManager.UnpauseJobTaskAsync(job, task);
 
         return Mapper.Map<JobDto>(job);
     }

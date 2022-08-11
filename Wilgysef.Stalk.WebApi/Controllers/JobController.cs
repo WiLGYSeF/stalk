@@ -21,6 +21,10 @@ public class JobController : ControllerBase
     private readonly IQueryHandler<GetJobs, JobListDto> _getJobsCommandHandler;
 
     private readonly ICommandHandler<CreateJobTask, JobDto> _createJobTaskDtoCommandHandler;
+    private readonly ICommandHandler<StopJobTask, JobDto> _stopJobTaskCommandHandler;
+    private readonly ICommandHandler<DeleteJobTask, JobDto> _deleteJobTaskCommandHandler;
+    private readonly ICommandHandler<PauseJobTask, JobDto> _pauseJobTaskCommandHandler;
+    private readonly ICommandHandler<UnpauseJobTask, JobDto> _unpauseJobTaskCommandHandler;
 
     public JobController(
         ICommandHandler<CreateJob, JobDto> createJobCommandHandler,
@@ -32,7 +36,11 @@ public class JobController : ControllerBase
         IQueryHandler<GetJob, JobDto> getJobCommandHandler,
         IQueryHandler<GetJobs, JobListDto> getJobsCommandHandler,
 
-        ICommandHandler<CreateJobTask, JobDto> createJobTaskDtoCommandHandler)
+        ICommandHandler<CreateJobTask, JobDto> createJobTaskDtoCommandHandler,
+        ICommandHandler<StopJobTask, JobDto> stopJobTaskCommandHandler,
+        ICommandHandler<DeleteJobTask, JobDto> deleteJobTaskCommandHandler,
+        ICommandHandler<PauseJobTask, JobDto> pauseJobTaskCommandHandler,
+        ICommandHandler<UnpauseJobTask, JobDto> unpauseJobTaskCommandHandler)
     {
         _createJobCommandHandler = createJobCommandHandler;
         _stopJobCommandHandler = stopJobCommandHandler;
@@ -44,6 +52,10 @@ public class JobController : ControllerBase
         _getJobsCommandHandler = getJobsCommandHandler;
 
         _createJobTaskDtoCommandHandler = createJobTaskDtoCommandHandler;
+        _stopJobTaskCommandHandler = stopJobTaskCommandHandler;
+        _deleteJobTaskCommandHandler = deleteJobTaskCommandHandler;
+        _pauseJobTaskCommandHandler = pauseJobTaskCommandHandler;
+        _unpauseJobTaskCommandHandler = unpauseJobTaskCommandHandler;
     }
 
     #region Job Endpoints
@@ -104,6 +116,30 @@ public class JobController : ControllerBase
             input.Uri,
             input.DelayedUntil);
         return await _createJobTaskDtoCommandHandler.HandleCommandAsync(command);
+    }
+
+    [HttpPost("{jobId}/task/{taskId}/stop")]
+    public async Task<JobDto> StopJobTaskAsync(long jobId, long taskId)
+    {
+        return await _stopJobTaskCommandHandler.HandleCommandAsync(new StopJobTask(taskId));
+    }
+
+    [HttpDelete("{jobId}/task/{taskId}")]
+    public async Task<JobDto> DeleteJobTaskAsync(long jobId, long taskId)
+    {
+        return await _deleteJobTaskCommandHandler.HandleCommandAsync(new DeleteJobTask(taskId));
+    }
+
+    [HttpPost("{jobId}/task/{taskId}/pause")]
+    public async Task<JobDto> PauseJobTaskAsync(long jobId, long taskId)
+    {
+        return await _pauseJobTaskCommandHandler.HandleCommandAsync(new PauseJobTask(taskId));
+    }
+
+    [HttpPost("{jobId}/task/{taskId}/unpause")]
+    public async Task<JobDto> UnpauseJobTaskAsync(long jobId, long taskId)
+    {
+        return await _unpauseJobTaskCommandHandler.HandleCommandAsync(new UnpauseJobTask(taskId));
     }
 
     #endregion

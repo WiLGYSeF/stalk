@@ -188,14 +188,14 @@ public class JobTask : Entity
 
     internal void ChangeState(JobTaskState state)
     {
-        if (IsDone)
-        {
-            throw new JobTaskAlreadyDoneException();
-        }
-
         if (State == state)
         {
             return;
+        }
+
+        if (IsDone)
+        {
+            throw new JobTaskAlreadyDoneException();
         }
 
         State = state;

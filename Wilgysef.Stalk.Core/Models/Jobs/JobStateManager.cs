@@ -25,7 +25,7 @@ public class JobStateManager : IJobStateManager
     {
         if (job.IsFinished)
         {
-            throw new JobAlreadyDoneException();
+            return;
         }
         if (job.IsTransitioning)
         {
@@ -70,7 +70,7 @@ public class JobStateManager : IJobStateManager
     {
         if (task.IsFinished)
         {
-            throw new JobTaskAlreadyDoneException();
+            return;
         }
         if (task.IsTransitioning)
         {
@@ -113,11 +113,7 @@ public class JobStateManager : IJobStateManager
 
     private async Task PauseJobAsync(Job job, bool changeState)
     {
-        if (job.IsDone)
-        {
-            throw new JobAlreadyDoneException();
-        }
-        if (job.IsTransitioning)
+        if (job.IsDone || job.IsTransitioning)
         {
             return;
         }
@@ -142,11 +138,7 @@ public class JobStateManager : IJobStateManager
 
     private async Task PauseJobTaskAsync(Job job, JobTask task, bool changeState)
     {
-        if (task.IsDone)
-        {
-            throw new JobTaskAlreadyDoneException();
-        }
-        if (task.IsTransitioning)
+        if (task.IsDone || task.IsTransitioning)
         {
             return;
         }
