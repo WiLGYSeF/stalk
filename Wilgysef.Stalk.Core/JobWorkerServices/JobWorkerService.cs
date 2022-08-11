@@ -1,6 +1,7 @@
 ﻿using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Shared.Exceptions;
 
 namespace Wilgysef.Stalk.Core.JobWorkerManagers;
 
@@ -33,6 +34,11 @@ public class JobWorkerService : IJobWorkerService
 
     public async Task<bool> StartJobWorker(Job job)
     {
+        if (_jobWorkers.Any(j => j.Job != null && j.Job.Id == job.Id))
+        {
+            throw new JobActiveException();
+        }
+
         if (!CanStartAdditionalWorkers)
         {
             return false;
@@ -73,7 +79,7 @@ public class JobWorkerService : IJobWorkerService
         return Jobs
             .OrderBy(j => j.Priority)
             .ThenBy(j => j.Tasks.Count(t => t.IsActive))
-            .ToArray();
+            .ToList();
     }
 
     private class JobWorkerObjects
