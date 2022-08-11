@@ -1,7 +1,6 @@
 ﻿using IdGen;
 using Wilgysef.Stalk.Application.Contracts.Commands.Jobs;
 using Wilgysef.Stalk.Application.Contracts.Dtos;
-using Wilgysef.Stalk.Core.JobWorkerManagers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Cqrs;

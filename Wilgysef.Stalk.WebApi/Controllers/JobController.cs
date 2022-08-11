@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Wilgysef.Stalk.Application.Contracts.Commands.Jobs;
+using Wilgysef.Stalk.Application.Contracts.Commands.JobTasks;
 using Wilgysef.Stalk.Application.Contracts.Dtos;
 using Wilgysef.Stalk.Application.Contracts.Queries.Jobs;
 using Wilgysef.Stalk.Core.Shared.Cqrs;
@@ -15,8 +16,11 @@ public class JobController : ControllerBase
     private readonly ICommandHandler<DeleteJob, JobDto> _deleteJobCommandHandler;
     private readonly ICommandHandler<PauseJob, JobDto> _pauseJobCommandHandler;
     private readonly ICommandHandler<UnpauseJob, JobDto> _unpauseJobCommandHandler;
+
     private readonly IQueryHandler<GetJob, JobDto> _getJobCommandHandler;
     private readonly IQueryHandler<GetJobs, JobListDto> _getJobsCommandHandler;
+
+    private readonly ICommandHandler<CreateJobTask, JobDto> _createJobTaskDtoCommandHandler;
 
     public JobController(
         ICommandHandler<CreateJob, JobDto> createJobCommandHandler,
@@ -24,17 +28,25 @@ public class JobController : ControllerBase
         ICommandHandler<DeleteJob, JobDto> deleteJobCommandHandler,
         ICommandHandler<PauseJob, JobDto> pauseJobCommandHandler,
         ICommandHandler<UnpauseJob, JobDto> unpauseJobCommandHandler,
+
         IQueryHandler<GetJob, JobDto> getJobCommandHandler,
-        IQueryHandler<GetJobs, JobListDto> getJobsCommandHandler)
+        IQueryHandler<GetJobs, JobListDto> getJobsCommandHandler,
+
+        ICommandHandler<CreateJobTask, JobDto> createJobTaskDtoCommandHandler)
     {
         _createJobCommandHandler = createJobCommandHandler;
         _stopJobCommandHandler = stopJobCommandHandler;
         _deleteJobCommandHandler = deleteJobCommandHandler;
         _pauseJobCommandHandler = pauseJobCommandHandler;
         _unpauseJobCommandHandler = unpauseJobCommandHandler;
+
         _getJobCommandHandler = getJobCommandHandler;
         _getJobsCommandHandler = getJobsCommandHandler;
+
+        _createJobTaskDtoCommandHandler = createJobTaskDtoCommandHandler;
     }
+
+    #region Job Endpoints
 
     [HttpPost]
     public async Task<JobDto> CreateJobAsync(CreateJob command)
@@ -77,4 +89,22 @@ public class JobController : ControllerBase
     {
         return await _getJobsCommandHandler.HandleQueryAsync(query);
     }
+
+    #endregion
+
+    #region Job Tasks Endpoints
+
+    [HttpPost("{jobId}/task")]
+    public async Task<JobDto> CreateJobTask(long jobId, CreateJobTaskDto input)
+    {
+        var command = new CreateJobTask(
+            jobId,
+            input.Name,
+            input.Priority,
+            input.Uri,
+            input.DelayedUntil);
+        return await _createJobTaskDtoCommandHandler.HandleCommandAsync(command);
+    }
+
+    #endregion
 }
