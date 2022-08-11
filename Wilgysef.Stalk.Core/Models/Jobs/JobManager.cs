@@ -1,4 +1,5 @@
 ﻿using Ardalis.Specification;
+using Wilgysef.Stalk.Core.DomainEvents.Events;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.Core.Specifications;
@@ -18,6 +19,9 @@ public class JobManager : IJobManager
     public async Task<Job> CreateJobAsync(Job job)
     {
         var entity = await _unitOfWork.JobRepository.AddAsync(job);
+
+        job.DomainEvents.AddOrReplace(new JobCreatedEvent(job.Id));
+
         await _unitOfWork.SaveChangesAsync();
         return entity;
     }

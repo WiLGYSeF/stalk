@@ -120,9 +120,12 @@ public class BaseTest
             _connection = new SqliteConnection("DataSource=:memory:");
             _connection.Open();
 
-            using var context = new StalkDbContext(new DbContextOptionsBuilder<StalkDbContext>()
-                .UseSqlite(_connection)
-                .Options);
+            // TODO: replace null
+            using var context = new StalkDbContext(
+                new DbContextOptionsBuilder<StalkDbContext>()
+                    .UseSqlite(_connection)
+                    .Options,
+                null);
             context.Database.EnsureCreated();
         }
 

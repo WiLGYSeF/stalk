@@ -3,13 +3,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.Json;
+using Wilgysef.Stalk.Core.DomainEvents.Events;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;
 
-public class Job
+public class Job : Entity
 {
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public virtual long Id { get; protected set; }
@@ -156,6 +157,8 @@ public class Job
 
         if (Priority != priority)
         {
+            DomainEvents.AddOrReplace(new JobPriorityChangedEvent(Id, Priority, priority));
+
             Priority = priority;
         }
     }
@@ -206,6 +209,8 @@ public class Job
         {
             return;
         }
+
+        DomainEvents.AddOrReplace(new JobStateChangedEvent(Id, State, state));
 
         State = state;
 

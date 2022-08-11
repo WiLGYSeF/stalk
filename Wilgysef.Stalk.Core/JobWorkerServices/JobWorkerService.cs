@@ -8,22 +8,32 @@ public class JobWorkerService : IJobWorkerService
 {
     public IReadOnlyCollection<JobWorker> Workers => _jobWorkers;
 
+    public IReadOnlyCollection<Job> Jobs => (IReadOnlyCollection<Job>)Workers
+        .Select(w => w.Job)
+        .Where(j => j != null)
+        .ToList();
+
+    public bool CanStartAdditionalWorkers => _jobWorkers.Count < WorkerLimit;
+
     private int WorkerLimit { get; set; } = 4;
 
     private readonly List<JobWorker> _jobWorkers = new();
     private readonly Dictionary<JobWorker, JobWorkerObjects> _jobWorkerObjects = new();
 
+    private readonly IJobManager _jobManager;
     private readonly IJobWorkerFactory _jobWorkerFactory;
 
     public JobWorkerService(
+        IJobManager jobManager,
         IJobWorkerFactory jobWorkerFactory)
     {
+        _jobManager = jobManager;
         _jobWorkerFactory = jobWorkerFactory;
     }
 
-    public bool StartJobWorker(Job job)
+    public async Task<bool> StartJobWorker(Job job)
     {
-        if (_jobWorkers.Count >= WorkerLimit)
+        if (!CanStartAdditionalWorkers)
         {
             return false;
         }
@@ -37,7 +47,9 @@ public class JobWorkerService : IJobWorkerService
         _jobWorkers.Add(worker);
         _jobWorkerObjects.Add(worker, new JobWorkerObjects(task, cancellationTokenSource));
 
+        await _jobManager.SetJobActiveAsync(job);
         task.Start();
+
         return true;
     }
 
@@ -54,6 +66,14 @@ public class JobWorkerService : IJobWorkerService
 
         await objects.Task;
         return true;
+    }
+
+    public IReadOnlyList<Job> GetJobsByPriority()
+    {
+        return Jobs
+            .OrderBy(j => j.Priority)
+            .ThenBy(j => j.Tasks.Count(t => t.IsActive))
+            .ToArray();
     }
 
     private class JobWorkerObjects
