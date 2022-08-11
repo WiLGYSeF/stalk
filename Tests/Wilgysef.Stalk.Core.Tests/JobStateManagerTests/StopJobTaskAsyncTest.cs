@@ -34,15 +34,15 @@ public class StopJobTaskAsyncTest : BaseTest
     }
 
     [Theory]
-    [InlineData(JobTaskState.Active, true, true, false)]
-    [InlineData(JobTaskState.Inactive, true, true, false)]
-    [InlineData(JobTaskState.Completed, false, false, true)]
-    [InlineData(JobTaskState.Failed, false, false, true)]
-    [InlineData(JobTaskState.Cancelled, false, false, true)]
-    [InlineData(JobTaskState.Cancelling, false, false, false)]
-    [InlineData(JobTaskState.Paused, false, false, false)]
-    [InlineData(JobTaskState.Pausing, false, false, false)]
-    public async Task Stop_Job(JobTaskState state, bool intermediaryChange, bool change, bool throwsException)
+    [InlineData(JobTaskState.Active, true, true)]
+    [InlineData(JobTaskState.Inactive, true, true)]
+    [InlineData(JobTaskState.Completed, false, false)]
+    [InlineData(JobTaskState.Failed, false, false)]
+    [InlineData(JobTaskState.Cancelled, false, false)]
+    [InlineData(JobTaskState.Cancelling, false, false)]
+    [InlineData(JobTaskState.Paused, false, false)]
+    [InlineData(JobTaskState.Pausing, false, false)]
+    public async Task Stop_Job(JobTaskState state, bool intermediaryChange, bool change)
     {
         var job = new JobBuilder().WithRandomInitializedState(JobState.Active)
             .WithRandomTasks(state, 1)
@@ -50,13 +50,6 @@ public class StopJobTaskAsyncTest : BaseTest
         var jobTask = job.Tasks.First();
 
         await _jobManager.CreateJobAsync(job);
-
-        if (throwsException)
-        {
-            _manualResetEventSlimOuter.Set();
-            await Should.ThrowAsync<JobTaskAlreadyDoneException>(_jobStateManager.StopJobTaskAsync(job, jobTask));
-            return;
-        }
 
         var task = Task.Run(async () => await _jobStateManager.StopJobTaskAsync(job, jobTask));
 

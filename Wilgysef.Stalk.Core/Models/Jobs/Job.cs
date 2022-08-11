@@ -183,6 +183,20 @@ public class Job : Entity
         Tasks.Add(task);
     }
 
+    public void RemoveTask(JobTask task)
+    {
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+        if (task.IsActive)
+        {
+            throw new JobTaskActiveException();
+        }
+
+        Tasks.Remove(task);
+    }
+
     public JobConfig GetConfig()
     {
         if (ConfigJson == null)
@@ -200,14 +214,14 @@ public class Job : Entity
 
     internal void ChangeState(JobState state)
     {
-        if (IsDone)
-        {
-            throw new JobAlreadyDoneException();
-        }
-
         if (State == state)
         {
             return;
+        }
+
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
         }
 
         DomainEvents.AddOrReplace(new JobStateChangedEvent(Id, State, state));

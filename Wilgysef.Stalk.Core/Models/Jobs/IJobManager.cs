@@ -9,6 +9,8 @@ public interface IJobManager : ITransientDependency
 
     Task<Job> GetJobAsync(long id);
 
+    Task<Job> GetJobByTaskIdAsync(long id);
+
     Task<List<Job>> GetJobsAsync();
 
     Task<List<Job>> GetJobsAsync(ISpecification<Job> specification);
