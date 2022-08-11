@@ -68,6 +68,14 @@ public class JobWorkerService : IJobWorkerService
         return true;
     }
 
+    public IReadOnlyList<Job> GetJobsByPriority()
+    {
+        return Jobs
+            .OrderBy(j => j.Priority)
+            .ThenBy(j => j.Tasks.Count(t => t.IsActive))
+            .ToArray();
+    }
+
     private class JobWorkerObjects
     {
         public Task Task { get; set; }
