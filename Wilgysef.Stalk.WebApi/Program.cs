@@ -35,8 +35,11 @@ var services = context.ComponentRegistry.Registrations
     .Where(r => r.Services.Any(s => s.Description.StartsWith("Wilgysef")))
     .ToList();
 
-var appStartup = app.Services.GetRequiredService<Startup>();
-await appStartup.StartAsync();
+using (var scope = app.Services.CreateScope())
+{
+    var appStartup = scope.ServiceProvider.GetRequiredService<Startup>();
+    await appStartup.StartAsync();
+}
 
 app.Run();
 
