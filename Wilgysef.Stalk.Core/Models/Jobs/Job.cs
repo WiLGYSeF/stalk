@@ -404,15 +404,14 @@ public class Job : Entity
     /// <param name="dateTime">Delay until time.</param>
     internal void DelayUntil(DateTime? dateTime)
     {
-        if (DelayedUntil == dateTime)
-        {
-            return;
-        }
-        if (IsDone)
+        if (IsDone && dateTime.HasValue)
         {
             throw new JobAlreadyDoneException();
         }
 
-        DelayedUntil = dateTime;
+        if (DelayedUntil != dateTime)
+        {
+            DelayedUntil = dateTime;
+        }
     }
 }

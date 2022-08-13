@@ -385,11 +385,14 @@ public class JobTask : Entity
     /// <param name="dateTime">Delay until time.</param>
     internal void DelayUntil(DateTime? dateTime)
     {
-        if (IsDone)
+        if (IsDone && dateTime.HasValue)
         {
             throw new JobTaskAlreadyDoneException();
         }
 
-        DelayedUntil = dateTime;
+        if (DelayedUntil != dateTime)
+        {
+            DelayedUntil = dateTime;
+        }
     }
 }
