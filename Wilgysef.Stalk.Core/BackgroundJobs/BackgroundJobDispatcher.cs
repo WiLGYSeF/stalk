@@ -1,5 +1,4 @@
-﻿using System.Text.Json;
-using Wilgysef.Stalk.Core.Shared.ServiceLocators;
+﻿using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Core.BackgroundJobs;
 
@@ -54,20 +53,10 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
 
     private async Task ExecuteJob(BackgroundJob job)
     {
+        var argsType = job.GetJobArgsType();
+        var args = job.DeserializeArgs();
+
         var eventHandlerType = typeof(IBackgroundJobHandler<>);
-        var argsType = Type.GetType(job.JobArgsName);
-
-        if (argsType == null)
-        {
-            throw new InvalidBackgroundJobException();
-        }
-
-        var args = JsonSerializer.Deserialize(job.JobArgs, argsType);
-        if (args == null)
-        {
-            throw new InvalidBackgroundJobException();
-        }
-
         var genericType = eventHandlerType.MakeGenericType(argsType);
 
         var genericEnumerableType = typeof(IEnumerable<>).MakeGenericType(genericType);

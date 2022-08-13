@@ -40,7 +40,7 @@ public class JobEventHandler :
 
     private async Task WorkPrioritizedJobs()
     {
-        await _backgroundJobManager.EnqueueJobAsync(
+        await _backgroundJobManager.EnqueueOrReplaceJobAsync(
             BackgroundJob.Create(
                 _idGenerator.CreateId(),
                 new WorkPrioritizedJobsArgs()),

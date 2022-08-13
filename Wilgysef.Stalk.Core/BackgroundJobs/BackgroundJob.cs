@@ -128,6 +128,28 @@ public class BackgroundJob : Entity
         }
     }
 
+    public Type GetJobArgsType()
+    {
+        var argsType = Type.GetType(JobArgsName);
+        if (argsType == null)
+        {
+            throw new InvalidBackgroundJobException();
+        }
+        return argsType;
+    }
+
+    public BackgroundJobArgs DeserializeArgs()
+    {
+        var args = JsonSerializer.Deserialize(JobArgs, GetJobArgsType());
+        if (args == null)
+        {
+            throw new InvalidBackgroundJobException();
+        }
+
+        return args as BackgroundJobArgs
+            ?? throw new InvalidBackgroundJobException();
+    }
+
     private static string Serialize(BackgroundJobArgs args)
     {
         return JsonSerializer.Serialize(args);
