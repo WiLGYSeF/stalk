@@ -11,7 +11,6 @@ public class BackgroundJob : Entity
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public virtual long Id { get; protected set; }
 
-    public virtual string Name { get; protected set; } = null!;
 
     public virtual int Priority { get; protected set; }
 
@@ -22,6 +21,8 @@ public class BackgroundJob : Entity
     public virtual DateTime? MaximumLifetime { get; protected set; }
 
     public virtual bool Abandoned { get; protected set; }
+
+    public virtual string JobArgsName { get; protected set; } = null!;
 
     public virtual string JobArgs { get; protected set; } = null!;
 
@@ -43,7 +44,7 @@ public class BackgroundJob : Entity
         var job = new BackgroundJob
         {
             Id = id,
-            Name = argsName,
+            JobArgsName = argsName,
             Priority = priority,
             MaximumLifetime = maximumLifetime,
             JobArgs = Serialize(args),
@@ -100,7 +101,7 @@ public class BackgroundJob : Entity
         }
     }
 
-    internal void IncrementAttempt()
+    internal void SetJobFailed()
     {
         if (Abandoned)
         {
@@ -108,6 +109,15 @@ public class BackgroundJob : Entity
         }
 
         Attempts++;
+
+        if (MaximumLifetime.HasValue && MaximumLifetime <= DateTime.Now)
+        {
+            Abandoned = true;
+            NextRun = null;
+            return;
+        }
+
+        NextRun = DateTime.Now.Add(TimeSpan.FromSeconds(Math.Pow(2, Attempts - 1)));
     }
 
     internal void SetAbandoned()

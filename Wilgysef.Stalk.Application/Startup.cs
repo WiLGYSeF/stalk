@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+﻿using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
@@ -44,10 +44,11 @@ public class Startup
     {
         while (!cancellationToken.IsCancellationRequested)
         {
-            using var scope = _serviceLocator.BeginLifetimeScope();
-            var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
             await Task.Delay(5 * 1000);
-            Debug.WriteLine("aaa");
+
+            using var scope = _serviceLocator.BeginLifetimeScope();
+            var backgroundJobDispatcher = scope.GetRequiredService<IBackgroundJobDispatcher>();
+            await backgroundJobDispatcher.ExecuteJobs();
         }
     }
 }
