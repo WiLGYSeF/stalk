@@ -1,5 +1,5 @@
 ﻿namespace Wilgysef.Stalk.Core.BackgroundJobs;
 
-public class InvalidBackgroundJobException : Exception
+public class BackgroundJobAbandonedException : Exception
 {
 }

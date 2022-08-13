@@ -73,7 +73,8 @@ public class Job : Entity
 
     [NotMapped]
     internal static Expression<Func<Job, bool>> IsQueuedExpression =>
-        j => j.State == JobState.Inactive;
+        j => j.State == JobState.Inactive
+            || (j.State == JobState.Paused && j.DelayedUntil != null && j.DelayedUntil < DateTime.Now);
 
     [NotMapped]
     internal static Expression<Func<Job, bool>> HasUnfinishedTasksExpression =>
@@ -237,7 +238,7 @@ public class Job : Entity
             Finish();
         }
 
-        if (state == JobState.Active)
+        if (IsDone || state == JobState.Active)
         {
             DelayUntil(null);
         }
@@ -287,10 +288,15 @@ public class Job : Entity
         }
 
         Finished = dateTime.Value;
+        DelayedUntil = null;
     }
 
     internal void DelayUntil(DateTime? dateTime)
     {
+        if (DelayedUntil == dateTime)
+        {
+            return;
+        }
         if (IsDone)
         {
             throw new JobAlreadyDoneException();

@@ -19,7 +19,7 @@ public class JobTask : Entity
 
     public virtual int Priority { get; protected set; }
 
-    public virtual string Uri { get; protected set; }
+    public virtual string Uri { get; protected set; } = null!;
 
     public virtual string? ItemId { get; protected set; }
 
@@ -35,7 +35,7 @@ public class JobTask : Entity
 
     public virtual DateTime? DelayedUntil { get; protected set; }
 
-    public virtual JobTaskResult Result { get; protected set; }
+    public virtual JobTaskResult Result { get; protected set; } = null!;
 
     public virtual JobTask? ParentTask { get; protected set; }
 
@@ -78,7 +78,8 @@ public class JobTask : Entity
 
     [NotMapped]
     internal static Expression<Func<JobTask, bool>> IsQueuedExpression =>
-        j => j.State == JobTaskState.Inactive;
+        t => t.State == JobTaskState.Inactive
+            || (t.State == JobTaskState.Paused && t.DelayedUntil != null && t.DelayedUntil < DateTime.Now);
 
     protected JobTask() { }
 

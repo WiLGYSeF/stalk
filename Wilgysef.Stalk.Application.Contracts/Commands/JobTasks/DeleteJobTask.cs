@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Wilgysef.Stalk.Core.Shared.Cqrs;
+﻿using Wilgysef.Stalk.Core.Shared.Cqrs;
 
 namespace Wilgysef.Stalk.Application.Contracts.Commands.JobTasks;
 

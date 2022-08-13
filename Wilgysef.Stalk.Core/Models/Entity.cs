@@ -1,5 +1,4 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
-using Wilgysef.Stalk.Core.DomainEvents;
 
 namespace Wilgysef.Stalk.Core.Models;
 

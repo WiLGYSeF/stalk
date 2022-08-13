@@ -1,5 +1,4 @@
 ﻿using Shouldly;
-using System.Linq;
 using System.Linq.Expressions;
 using Wilgysef.Stalk.Application.Contracts.Dtos;
 using Wilgysef.Stalk.Application.Contracts.Queries.Jobs;

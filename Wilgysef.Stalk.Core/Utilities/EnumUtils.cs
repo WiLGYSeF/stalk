@@ -57,7 +57,7 @@ public static class EnumUtils
     /// Whether to throw if no matching enum member value is found.
     /// Otherwise try to parse with <see cref="Parse{T}(string, bool)"/>.</param>
     /// <returns>Enum.</returns>
-    /// <exception cref="ArgumentException">Value does not match any <see cref="EnumMemberAttribute"/> value</exception>
+    /// <exception cref="ArgumentException">Value does not match any <see cref="EnumMemberAttribute"/> value.</exception>
     public static T ParseEnumMemberValue<T>(
         string value,
         bool ignoreCase = true,
