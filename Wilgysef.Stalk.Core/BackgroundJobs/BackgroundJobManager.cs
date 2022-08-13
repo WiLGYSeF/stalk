@@ -72,6 +72,11 @@ public class BackgroundJobManager : IBackgroundJobManager
         return await _unitOfWork.BackgroundJobRepository.FindAsync(new object?[] { id }, cancellationToken: cancellationToken);
     }
 
+    public async Task<List<BackgroundJob>> GetJobs(CancellationToken cancellationToken = default)
+    {
+        return await _unitOfWork.BackgroundJobRepository.ListAsync(cancellationToken);
+    }
+
     public async Task<BackgroundJob?> GetNextPriorityJobAsync(CancellationToken cancellationToken = default)
     {
         return await _unitOfWork.BackgroundJobRepository.FirstOrDefaultAsync(

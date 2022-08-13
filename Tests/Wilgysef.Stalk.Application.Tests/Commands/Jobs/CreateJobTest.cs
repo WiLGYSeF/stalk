@@ -2,6 +2,8 @@
 using Shouldly;
 using Wilgysef.Stalk.Application.Contracts.Commands.Jobs;
 using Wilgysef.Stalk.Application.Contracts.Dtos;
+using Wilgysef.Stalk.Core.BackgroundJobs;
+using Wilgysef.Stalk.Core.BackgroundJobs.Args;
 using Wilgysef.Stalk.Core.Shared.Cqrs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.TestBase;
@@ -11,12 +13,14 @@ namespace Wilgysef.Stalk.Application.Tests.Commands.Jobs;
 public class CreateJobTest : BaseTest
 {
     private readonly ICommandHandler<CreateJob, JobDto> _createJobCommandHandler;
+    private readonly IBackgroundJobManager _backgroundJobManager;
 
     private readonly IMapper _mapper;
 
     public CreateJobTest()
     {
         _createJobCommandHandler = GetRequiredService<ICommandHandler<CreateJob, JobDto>>();
+        _backgroundJobManager = GetRequiredService<IBackgroundJobManager>();
 
         _mapper = GetRequiredService<IMapper>();
     }
@@ -53,6 +57,10 @@ public class CreateJobTest : BaseTest
             task.Result.ErrorMessage.ShouldBeNull();
             task.Result.ErrorDetail.ShouldBeNull();
         }
+
+        var backgroundJobs = await _backgroundJobManager.GetJobs();
+        backgroundJobs.Count.ShouldBe(1);
+        backgroundJobs.ShouldContain(j => j.JobArgsName == typeof(WorkPrioritizedJobsArgs).FullName);
     }
 
     [Fact]

@@ -26,18 +26,18 @@ public class StalkDbContext : DbContext, IStalkDbContext
 
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
-        // TODO: synchronous domain events
+        // TODO: synchronous domain events?
         return base.SaveChanges(acceptAllChangesOnSuccess);
     }
 
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
-        await DispatchDomainEvents();
+        await DispatchDomainEvents(cancellationToken);
 
         return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
     }
 
-    private async Task DispatchDomainEvents()
+    private async Task DispatchDomainEvents(CancellationToken cancellationToken)
     {
         var domainEventEntities = ChangeTracker.Entries<IEntity>()
             .Select(e => e.Entity)
@@ -46,14 +46,12 @@ public class StalkDbContext : DbContext, IStalkDbContext
 
         foreach (var entity in domainEventEntities)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var events = entity.DomainEvents.ToArray();
             entity.DomainEvents.Clear();
 
-            foreach (var domainEvent in events)
-            {
-                var type = domainEvent.GetType();
-                await _domainEventDispatcher.DispatchEvents(domainEvent);
-            }
+            await _domainEventDispatcher.DispatchEvents(events, cancellationToken);
         }
     }
 }
