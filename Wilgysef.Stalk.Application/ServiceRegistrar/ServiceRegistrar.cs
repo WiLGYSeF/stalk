@@ -1,128 +1,80 @@
-﻿using System.Reflection;
+﻿using Autofac;
+using Autofac.Builder;
+using Autofac.Features.Scanning;
+using AutoMapper.Contrib.Autofac.DependencyInjection;
+using IdGen;
+using System.Reflection;
+using Wilgysef.Stalk.Core;
+using Wilgysef.Stalk.Core.Shared.Cqrs;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
+using Wilgysef.Stalk.EntityFrameworkCore;
 
 namespace Wilgysef.Stalk.Application.ServiceRegistrar;
 
 public class ServiceRegistrar
 {
-    /// <summary>
-    /// Get transient service implementations for registration.
-    /// </summary>
-    /// <param name="assembly">Executing assembly.</param>
-    /// <returns>Implementations and their services.</returns>
-    public IEnumerable<(Type Implementation, Type Service)> GetTransientServiceImplementations(Assembly assembly)
+    // used for project reference so the assembly is loaded when registering dependency injection
+    // is there a better way to do this?
+    private static readonly Type[] DependsOn = new[]
     {
-        return GetAssembliesServiceImplementations<ITransientDependency>(assembly);
-    }
+        typeof(ApplicationModule),
+        typeof(CoreModule),
+        typeof(EntityFrameworkCoreModule),
+    };
+
+    public int IdGeneratorId { get; set; } = 1;
 
     /// <summary>
-    /// Get scoped service implementations for registration.
+    /// Register application dependencies.
     /// </summary>
-    /// <param name="assembly">Executing assembly.</param>
-    /// <returns>Implementations and their services.</returns>
-    public IEnumerable<(Type Implementation, Type Service)> GetScopedServiceImplementations(Assembly assembly)
+    /// <param name="builder">Container builder.</param>
+    public void RegisterApplication(ContainerBuilder builder)
     {
-        return GetAssembliesServiceImplementations<IScopedDependency>(assembly);
+        var assemblies = GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter)
+            .ToArray();
+
+        builder.RegisterAutoMapper(true, assemblies);
+
+        builder.Register(c => new IdGenerator(IdGeneratorId, IdGeneratorOptions.Default))
+            .As<IIdGenerator<long>>()
+            .SingleInstance();
+
+        RegisterAssemblyTypes<ITransientDependency>(builder, assemblies)
+            .InstancePerDependency();
+        RegisterAssemblyTypes<IScopedDependency>(builder, assemblies)
+            .InstancePerLifetimeScope();
+        RegisterAssemblyTypes<ISingletonDependency>(builder, assemblies)
+            .SingleInstance();
+
+        RegisterAssemblyTypes(typeof(ICommandHandler<,>), builder, assemblies)
+            .InstancePerDependency();
+        RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, assemblies)
+            .InstancePerDependency();
+
+        builder.RegisterType<Startup>()
+            .AsSelf()
+            .SingleInstance();
     }
 
-    /// <summary>
-    /// Get singleton service implementations for registration.
-    /// </summary>
-    /// <param name="assembly">Executing assembly.</param>
-    /// <returns>Implementations and their services.</returns>
-    public IEnumerable<(Type Implementation, Type Service)> GetSingletonServiceImplementations(Assembly assembly)
-    {
-        return GetAssembliesServiceImplementations<ISingletonDependency>(assembly);
-    }
-
-    /// <summary>
-    /// Get service implementations for registration of <paramref name="service"/> type.
-    /// </summary>
-    /// <param name="service">Service.</param>
-    /// <param name="assembly">Executing assembly.</param>
-    /// <returns>Implementations and their services.</returns>
-    public IEnumerable<(Type Implementation, Type Service)> GetServiceTypeImplementations(Type service, Assembly assembly)
-    {
-        return GetAssembliesServiceImplementations(service, assembly, (_, @interface) =>
-        {
-            return @interface.FullName == service.FullName;
-        });
-    }
-
-    /// <summary>
-    /// Get service implementations for registration.
-    /// </summary>
-    /// <typeparam name="T">Service</typeparam>
-    /// <param name="assembly">Executing assembly.</param>
-    /// <returns>Implementations and their services.</returns>
-    public IEnumerable<(Type Implementation, Type Service)> GetServiceTypeImplementations<T>(Assembly assembly)
-    {
-        return GetServiceTypeImplementations(typeof(T), assembly);
-    }
-
-    /// <summary>
-    /// Get all referenced assemblies.
-    /// </summary>
-    /// <param name="assembly">Parent assembly.</param>
-    /// <returns>All referenced assemblies of <paramref name="assembly"/>.</returns>
-    public IEnumerable<Assembly> GetAssemblies(Assembly assembly)
-    {
-        return GetAssemblies(assembly, _ => true);
-    }
-
-    private IEnumerable<(Type Implementation, Type Service)> GetAssembliesServiceImplementations(
+    private IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle> RegisterAssemblyTypes(
         Type type,
-        Assembly assembly,
-        Func<Type, Type, bool> interfaceSelector)
+        ContainerBuilder builder,
+        params Assembly[] assemblies)
     {
-        foreach (var asm in GetAssemblies(assembly, IsEligibleAssembly))
-        {
-            foreach (var implementation in GetServiceImplementations(type, asm, interfaceSelector))
-            {
-                yield return implementation;
-            }
-        }
+        return builder.RegisterAssemblyTypes(assemblies)
+            .Where(t => t.GetInterfaces().Any(i => i.IsAssignableFrom(type)))
+            .AsImplementedInterfaces()
+            .PropertiesAutowired();
     }
 
-    private IEnumerable<(Type Implementation, Type Service)> GetAssembliesServiceImplementations<T>(
-        Assembly assembly,
-        Func<Type, Type, bool> interfaceSelector)
+    private IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle> RegisterAssemblyTypes<T>(
+        ContainerBuilder builder,
+        params Assembly[] assemblies)
     {
-        return GetAssembliesServiceImplementations(typeof(T), assembly, interfaceSelector);
+        return RegisterAssemblyTypes(typeof(T), builder, assemblies);
     }
 
-    private IEnumerable<(Type Implementation, Type Service)> GetAssembliesServiceImplementations<T>(Assembly assembly)
-    {
-        return GetAssembliesServiceImplementations<T>(assembly, InterfaceSelector);
-    }
-
-    private IEnumerable<(Type Implementation, Type Service)> GetServiceImplementations(
-        Type type,
-        Assembly assembly,
-        Func<Type, Type, bool> interfaceSelector)
-    {
-        return assembly.GetTypes()
-            .Where(t => t.IsClass && !t.IsAbstract
-                && t.GetInterfaces()
-                    .Any(i => i.FullName == type.FullName))
-            .Select(t =>
-            {
-                var interfaces = t.GetInterfaces().ToList();
-                return (
-                    t,
-                    interfaces.SingleOrDefault(i => interfaceSelector(t, i)) ?? interfaces.Single(ii => ii.FullName != type.FullName));
-            });
-    }
-
-    private IEnumerable<(Type Implementation, Type Service)> GetServiceImplementations(Type type, Assembly assembly)
-    {
-        return GetServiceImplementations(type, assembly, InterfaceSelector);
-    }
-
-    private bool InterfaceSelector(Type implementation, Type @interface) => implementation.Name == @interface.Name
-        || (@interface.Name.StartsWith("I") && implementation.Name == @interface.Name.Substring(1));
-
-    private bool IsEligibleAssembly(Assembly assembly) => assembly.FullName != null && assembly.FullName.StartsWith("Wilgysef");
+    private bool EligibleAssemblyFilter(Assembly assembly) => assembly.FullName != null && assembly.FullName.StartsWith("Wilgysef");
 
     private IEnumerable<Assembly> GetAssemblies(Assembly assembly, Func<Assembly, bool> filter)
     {

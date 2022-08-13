@@ -1,46 +1,29 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using AutoMapper.Contrib.Autofac.DependencyInjection;
-using IdGen;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data.Common;
-using System.Reflection;
-using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
-using Wilgysef.Stalk.Core;
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 namespace Wilgysef.Stalk.TestBase;
 
 public class BaseTest
 {
-    private static Type[] DependsOn = new[]
-    {
-        typeof(ApplicationModule),
-        typeof(CoreModule),
-    };
-
-    private const int IdGeneratorId = 1;
-
     private IServiceProvider? _serviceProvider;
     private IServiceProvider ServiceProvider
     {
-        get
-        {
-            if (_serviceProvider == null)
-            {
-                _serviceProvider = GetServiceProvider();
-            }
-            return _serviceProvider;
-        }
+        get => _serviceProvider ??= GetServiceProvider();
         set => _serviceProvider = value;
     }
 
     private DbConnection? _connection;
 
     private List<(Type Implementation, Type Service, ServiceRegistrationType RegistrationType)> _replaceServices = new();
+    private List<(object Implementation, Type Service)> _replaceServiceInstances = new();
+
+    #region Service Registration
 
     public T? GetService<T>() where T : notnull
     {
@@ -85,6 +68,13 @@ public class BaseTest
         ReplaceSingletonService(typeof(TImplementation), typeof(TService));
     }
 
+    public void ReplaceServiceInstance<TImplementation, TService>(TImplementation instance)
+        where TImplementation : class
+        where TService : notnull
+    {
+        ReplaceServiceInstance(instance, typeof(TService));
+    }
+
     public void ReplaceService(Type implementation, Type service)
     {
         ReplaceTransientService(implementation, service);
@@ -108,6 +98,12 @@ public class BaseTest
         _serviceProvider = null;
     }
 
+    public void ReplaceServiceInstance<T>(T implementation, Type service) where T : class
+    {
+        _replaceServiceInstances.Add((implementation, service));
+        _serviceProvider = null;
+    }
+
     private IServiceProvider GetServiceProvider(ContainerBuilder? builder = null)
     {
         return new AutofacServiceProviderFactory()
@@ -124,9 +120,12 @@ public class BaseTest
             _connection = new SqliteConnection("DataSource=:memory:");
             _connection.Open();
 
-            using var context = new StalkDbContext(new DbContextOptionsBuilder<StalkDbContext>()
-                .UseSqlite(_connection)
-                .Options);
+            // TODO: replace null
+            using var context = new StalkDbContext(
+                new DbContextOptionsBuilder<StalkDbContext>()
+                    .UseSqlite(_connection)
+                    .Options,
+                null);
             context.Database.EnsureCreated();
         }
 
@@ -147,38 +146,8 @@ public class BaseTest
             builder.Populate(services);
         }
 
-        var assembly = Assembly.GetExecutingAssembly();
         var serviceRegistrar = new ServiceRegistrar();
-
-        builder.RegisterAutoMapper(true, serviceRegistrar.GetAssemblies(assembly).ToArray());
-
-        builder.Register(c => new IdGenerator(IdGeneratorId, IdGeneratorOptions.Default))
-            .As<IIdGenerator<long>>()
-            .SingleInstance();
-
-        foreach (var (implementation, service) in serviceRegistrar.GetTransientServiceImplementations(assembly))
-        {
-            builder.RegisterType(implementation)
-                .As(service)
-                .PropertiesAutowired()
-                .InstancePerDependency();
-        }
-
-        foreach (var (implementation, service) in serviceRegistrar.GetScopedServiceImplementations(assembly))
-        {
-            builder.RegisterType(implementation)
-                .As(service)
-                .PropertiesAutowired()
-                .InstancePerLifetimeScope();
-        }
-
-        foreach (var (implementation, service) in serviceRegistrar.GetSingletonServiceImplementations(assembly))
-        {
-            builder.RegisterType(implementation)
-                .As(service)
-                .PropertiesAutowired()
-                .SingleInstance();
-        }
+        serviceRegistrar.RegisterApplication(builder);
 
         foreach (var (implementation, service, type) in _replaceServices)
         {
@@ -186,13 +155,21 @@ public class BaseTest
                 .As(service)
                 .PropertiesAutowired();
 
-            registration = type switch
+            _ = type switch
             {
                 ServiceRegistrationType.Transient => registration.InstancePerDependency(),
                 ServiceRegistrationType.Scoped => registration.InstancePerLifetimeScope(),
                 ServiceRegistrationType.Singleton => registration.SingleInstance(),
                 _ => throw new NotImplementedException(),
             };
+        }
+
+        foreach (var (implementation, service) in _replaceServiceInstances)
+        {
+            var registration = builder.RegisterInstance(implementation)
+                .As(service)
+                .PropertiesAutowired()
+                .SingleInstance();
         }
 
         return builder;
@@ -204,4 +181,6 @@ public class BaseTest
         Scoped,
         Singleton,
     }
+
+    #endregion
 }

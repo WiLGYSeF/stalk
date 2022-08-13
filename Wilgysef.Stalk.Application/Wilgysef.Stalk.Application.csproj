@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -7,11 +7,15 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Autofac" Version="6.4.0" />
     <PackageReference Include="AutoMapper" Version="11.0.1" />
+    <PackageReference Include="AutoMapper.Contrib.Autofac.DependencyInjection" Version="6.1.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Wilgysef.Stalk.Application.Shared\Wilgysef.Stalk.Application.Shared.csproj" />
+    <ProjectReference Include="..\Infrastructure\Wilgysef.Stalk.EntityFrameworkCore\Wilgysef.Stalk.EntityFrameworkCore.csproj" />
+    <ProjectReference Include="..\Wilgysef.Stalk.Application.Contracts\Wilgysef.Stalk.Application.Contracts.csproj" />
+    <ProjectReference Include="..\Wilgysef.Stalk.Application.Contracts\Wilgysef.Stalk.Application.Contracts.csproj" />
     <ProjectReference Include="..\Wilgysef.Stalk.Core\Wilgysef.Stalk.Core.csproj" />
   </ItemGroup>
 

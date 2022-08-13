@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Core.JobWorkers;
 
@@ -7,12 +8,12 @@ public class JobWorker : IJobWorker
 {
     public Job? Job { get; private set; }
 
-    private readonly IJobManager _jobManager;
+    private readonly IServiceLocator _serviceLocator;
 
     public JobWorker(
-        IJobManager jobManager)
+        IServiceLocator serviceLocator)
     {
-        _jobManager = jobManager;
+        _serviceLocator = serviceLocator;
     }
 
     public JobWorker WithJob(Job job)
@@ -23,18 +24,25 @@ public class JobWorker : IJobWorker
 
     public async Task WorkAsync(CancellationToken? cancellationToken = null)
     {
-        await _jobManager.SetJobActiveAsync(Job!);
+        // TODO: service locator is used because the scope is disposed on original thread, find a better way?
+        using var scope = _serviceLocator.BeginLifetimeScope();
+        var jobManager = scope.GetRequiredService<IJobManager>();
+        await jobManager.SetJobActiveAsync(Job!);
 
         while (!cancellationToken.HasValue || !cancellationToken.Value.IsCancellationRequested)
         {
-            Debug.WriteLine($"{Job!.Id}: doing work...");
-            await Task.Delay(1000);
+            Debug.WriteLine($"{Job!.Id}: {DateTime.Now} doing work...");
+            await Task.Delay(2000);
         }
 
-        // TODO: fix
-        if (!Job.HasUnfinishedTasks || cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
+        if (cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
         {
-            await _jobManager.SetJobDoneAsync(Job);
+            return;
+        }
+
+        if (!Job!.HasUnfinishedTasks)
+        {
+            await jobManager.SetJobDoneAsync(Job);
         }
     }
 }

@@ -1,33 +1,45 @@
-﻿using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
-using Wilgysef.Stalk.Core.Models.JobTasks;
+﻿using Ardalis.Specification;
+using Wilgysef.Stalk.Core.DomainEvents.Events;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
+using Wilgysef.Stalk.Core.Specifications;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;
 
 public class JobManager : IJobManager
 {
-    private readonly IStalkDbContext _dbContext;
+    private readonly IUnitOfWork _unitOfWork;
 
     public JobManager(
-        IStalkDbContext dbContext)
+        IUnitOfWork unitOfWork)
     {
-        _dbContext = dbContext;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<Job> CreateJobAsync(Job job)
     {
-        var entity = (await _dbContext.Jobs.AddAsync(job)).Entity;
-        await _dbContext.SaveChangesAsync();
+        var entity = await _unitOfWork.JobRepository.AddAsync(job);
+
+        job.DomainEvents.AddOrReplace(new JobCreatedEvent(job.Id));
+
+        await _unitOfWork.SaveChangesAsync();
         return entity;
     }
 
     public async Task<Job> GetJobAsync(long id)
     {
-        var entity = await GetJobs()
-            .Where(j => j.Id == id)
-            .SingleOrDefaultAsync();
+        var entity = await _unitOfWork.JobRepository.FirstOrDefaultAsync(new JobSingleSpecification(jobId: id));
+        if (entity == null)
+        {
+            throw new EntityNotFoundException(nameof(Job), id);
+        }
+
+        return entity;
+    }
+
+    public async Task<Job> GetJobByTaskIdAsync(long id)
+    {
+        var entity = await _unitOfWork.JobRepository.FirstOrDefaultAsync(new JobSingleSpecification(taskId: id));
         if (entity == null)
         {
             throw new EntityNotFoundException(nameof(Job), id);
@@ -38,32 +50,24 @@ public class JobManager : IJobManager
 
     public async Task<List<Job>> GetJobsAsync()
     {
-        return await GetJobs().ToListAsync();
+        return await _unitOfWork.JobRepository.ListAsync();
     }
 
-    public async Task<List<Job>> GetUnfinishedJobsAsync()
+    public async Task<List<Job>> GetJobsAsync(ISpecification<Job> specification)
     {
-        return await GetJobs()
-            .Where(Expression.Lambda<Func<Job, bool>>(Expression.Negate(Job.IsDoneExpression)))
-            .ToListAsync();
+        return await _unitOfWork.JobRepository.ListAsync(specification);
     }
 
     public async Task<Job?> GetNextPriorityJobAsync()
     {
-        return await GetJobs()
-            .Where(Job.IsQueuedExpression)
-            .Where(j => j.Tasks.AsQueryable()
-                .Any(JobTask.IsQueuedExpression))
-            .OrderByDescending(j => j.Priority)
-            .ThenBy(j => j.Started)
-            .FirstOrDefaultAsync();
+        return await _unitOfWork.JobRepository.FirstOrDefaultAsync(new QueuedJobsSpecification());
     }
 
     public async Task<Job> UpdateJobAsync(Job job)
     {
-        var entity = _dbContext.Jobs.Update(job);
-        await _dbContext.SaveChangesAsync();
-        return entity.Entity;
+        var entity = _unitOfWork.JobRepository.Update(job);
+        await _unitOfWork.SaveChangesAsync();
+        return entity;
     }
 
     public async Task DeleteJobAsync(Job job)
@@ -73,52 +77,69 @@ public class JobManager : IJobManager
             throw new JobActiveException();
         }
 
-        _dbContext.Jobs.Remove(job);
-        await _dbContext.SaveChangesAsync();
-    }
-
-    public async Task DeleteJobTaskAsync(JobTask task)
-    {
-        if (task.IsActive)
-        {
-            throw new JobTaskActiveException();
-        }
-
-        _dbContext.JobTasks.Remove(task);
-        await _dbContext.SaveChangesAsync();
+        _unitOfWork.JobRepository.Remove(job);
+        await _unitOfWork.SaveChangesAsync();
     }
 
     public async Task SetJobActiveAsync(Job job)
     {
         job.ChangeState(JobState.Active);
 
-        _dbContext.Jobs.Update(job);
-        await _dbContext.SaveChangesAsync();
+        _unitOfWork.JobRepository.Update(job);
+        await _unitOfWork.SaveChangesAsync();
     }
 
-    public async Task SetJobDoneAsync(Job job, bool cancelled = false)
+    public async Task SetJobDoneAsync(Job job)
     {
-        JobState state;
-        if (!cancelled)
-        {
-            state = !job.HasUnfinishedTasks
-                ? JobState.Completed
-                : JobState.Failed;
-        }
-        else
-        {
-            state = JobState.Cancelled;
-        }
+        job.ChangeState(!job.HasUnfinishedTasks
+            ? JobState.Completed
+            : JobState.Failed);
 
-        job.ChangeState(state);
-
-        _dbContext.Jobs.Update(job);
-        await _dbContext.SaveChangesAsync();
+        _unitOfWork.JobRepository.Update(job);
+        await _unitOfWork.SaveChangesAsync();
     }
 
-    private IQueryable<Job> GetJobs()
+    public async Task DeactivateJobsAsync()
     {
-        return _dbContext.Jobs
-            .Include(j => j.Tasks);
+        var jobs = await _unitOfWork.JobRepository.ListAsync();
+
+        foreach (var job in jobs)
+        {
+            switch (job.State)
+            {
+                case JobState.Active:
+                    job.ChangeState(JobState.Inactive);
+                    break;
+                case JobState.Cancelling:
+                    job.ChangeState(JobState.Cancelled);
+                    break;
+                case JobState.Pausing:
+                    job.ChangeState(JobState.Paused);
+                    break;
+                default:
+                    break;
+            }
+
+            foreach (var task in job.Tasks)
+            {
+                switch (task.State)
+                {
+                    case JobTaskState.Active:
+                        task.ChangeState(JobTaskState.Inactive);
+                        break;
+                    case JobTaskState.Cancelling:
+                        task.ChangeState(JobTaskState.Cancelled);
+                        break;
+                    case JobTaskState.Pausing:
+                        task.ChangeState(JobTaskState.Paused);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+
+        _unitOfWork.JobRepository.UpdateRange(jobs);
+        await _unitOfWork.SaveChangesAsync();
     }
 }

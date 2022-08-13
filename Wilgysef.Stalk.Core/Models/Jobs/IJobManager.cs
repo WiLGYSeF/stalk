@@ -1,4 +1,4 @@
-﻿using Wilgysef.Stalk.Core.Models.JobTasks;
+﻿using Ardalis.Specification;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;
@@ -9,15 +9,21 @@ public interface IJobManager : ITransientDependency
 
     Task<Job> GetJobAsync(long id);
 
+    Task<Job> GetJobByTaskIdAsync(long id);
+
     Task<List<Job>> GetJobsAsync();
+
+    Task<List<Job>> GetJobsAsync(ISpecification<Job> specification);
+
+    Task<Job?> GetNextPriorityJobAsync();
 
     Task<Job> UpdateJobAsync(Job job);
 
     Task DeleteJobAsync(Job job);
 
-    Task DeleteJobTaskAsync(JobTask task);
-
     Task SetJobActiveAsync(Job job);
 
-    Task SetJobDoneAsync(Job job, bool cancelled = false);
+    Task SetJobDoneAsync(Job job);
+
+    Task DeactivateJobsAsync();
 }

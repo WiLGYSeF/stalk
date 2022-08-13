@@ -1,25 +1,10 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using AutoMapper.Contrib.Autofac.DependencyInjection;
-using IdGen;
 using Microsoft.EntityFrameworkCore;
-using System.Reflection;
 using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
-using Wilgysef.Stalk.Core;
-using Wilgysef.Stalk.Core.Shared;
 
 using Wilgysef.Stalk.EntityFrameworkCore;
-
-const int IdGeneratorId = 1;
-
-// used for project reference so the assembly is loaded when registering dependency injection
-// is there a better way to do this?
-var DependsOn = new[]
-{
-    typeof(ApplicationModule),
-    typeof(CoreModule),
-};
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,10 +29,20 @@ app.UseAuthorization();
 
 app.MapControllers();
 
+// TODO: remove debug
+var context = app.Services.GetRequiredService<IComponentContext>();
+var services = context.ComponentRegistry.Registrations
+    .Where(r => r.Services.Any(s => s.Description.StartsWith("Wilgysef")))
+    .ToList();
+
+var appStartup = app.Services.GetRequiredService<Startup>();
+await appStartup.StartAsync();
+
 app.Run();
 
 void ConfigureDbContext()
 {
+    // TODO: move to registrar
     builder.Services.AddDbContext<StalkDbContext>(opt =>
     {
         opt.UseSqlite("DataSource=abc.db");
@@ -68,38 +63,8 @@ void ConfigureDependencyInjection()
 
     builder.Host.ConfigureContainer<ContainerBuilder>((context, builder) =>
     {
-        var assembly = Assembly.GetExecutingAssembly();
         var serviceRegistrar = new ServiceRegistrar();
-
-        builder.RegisterAutoMapper(true, serviceRegistrar.GetAssemblies(assembly).ToArray());
-
-        builder.Register(c => new IdGenerator(IdGeneratorId, IdGeneratorOptions.Default))
-            .As<IIdGenerator<long>>()
-            .SingleInstance();
-
-        foreach (var (implementation, service) in serviceRegistrar.GetTransientServiceImplementations(assembly))
-        {
-            builder.RegisterType(implementation)
-                .As(service)
-                .PropertiesAutowired()
-                .InstancePerDependency();
-        }
-
-        foreach (var (implementation, service) in serviceRegistrar.GetScopedServiceImplementations(assembly))
-        {
-            builder.RegisterType(implementation)
-                .As(service)
-                .PropertiesAutowired()
-                .InstancePerLifetimeScope();
-        }
-
-        foreach (var (implementation, service) in serviceRegistrar.GetSingletonServiceImplementations(assembly))
-        {
-            builder.RegisterType(implementation)
-                .As(service)
-                .PropertiesAutowired()
-                .SingleInstance();
-        }
+        serviceRegistrar.RegisterApplication(builder);
     });
 }
 

@@ -3,13 +3,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.Json;
+using Wilgysef.Stalk.Core.DomainEvents.Events;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;
 
-public class Job
+public class Job : Entity
 {
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public virtual long Id { get; protected set; }
@@ -34,6 +35,12 @@ public class Job
     public bool IsActive => IsActiveExpression.Compile()(this);
 
     [NotMapped]
+    public bool IsTransitioning => IsTransitioningExpression.Compile()(this);
+
+    [NotMapped]
+    public bool IsFinished => IsFinishedExpression.Compile()(this);
+
+    [NotMapped]
     public bool IsDone => IsDoneExpression.Compile()(this);
 
     [NotMapped]
@@ -47,6 +54,16 @@ public class Job
         j => j.State == JobState.Active
             || j.State == JobState.Cancelling
             || j.State == JobState.Pausing;
+
+    [NotMapped]
+    internal static Expression<Func<Job, bool>> IsTransitioningExpression =>
+        j => j.State == JobState.Cancelling
+            || j.State == JobState.Pausing;
+
+    [NotMapped]
+    internal static Expression<Func<Job, bool>> IsFinishedExpression =>
+        j => j.State == JobState.Completed
+            || j.State == JobState.Failed;
 
     [NotMapped]
     internal static Expression<Func<Job, bool>> IsDoneExpression =>
@@ -79,6 +96,58 @@ public class Job
         };
     }
 
+    internal static Job Create(
+        long id,
+        string? name,
+        JobState state,
+        int priority,
+        DateTime? started,
+        DateTime? finished,
+        DateTime? delayedUntil,
+        JobConfig? config,
+        ICollection<JobTask> tasks)
+    {
+        if (!started.HasValue && state != JobState.Inactive)
+        {
+            throw new ArgumentNullException(nameof(started), "Start time cannot be null for a non-inactive job.");
+        }
+
+        var job = new Job
+        {
+            Id = id,
+            Name = name,
+            State = state,
+            Priority = priority,
+            Started = started,
+            DelayedUntil = delayedUntil,
+            Tasks = tasks,
+        };
+
+        if (!finished.HasValue && job.IsDone || finished.HasValue && !job.IsDone)
+        {
+            throw new ArgumentException("Finish time must be set only for a done job.", nameof(finished));
+        }
+
+        if (delayedUntil.HasValue && job.State == JobState.Active)
+        {
+            throw new ArgumentException("Delayed until cannot be set for an active job.", nameof(delayedUntil));
+        }
+
+        if (delayedUntil.HasValue && job.State == JobState.Inactive)
+        {
+            job.ChangeState(JobState.Paused);
+        }
+
+        if (finished.HasValue)
+        {
+            job.Finish(finished.Value);
+        }
+
+        job.SetConfig(config);
+
+        return job;
+    }
+
     public void ChangePriority(int priority)
     {
         if (IsDone)
@@ -88,16 +157,95 @@ public class Job
 
         if (Priority != priority)
         {
+            DomainEvents.AddOrReplace(new JobPriorityChangedEvent(Id, Priority, priority));
+
             Priority = priority;
         }
     }
 
-    public void ChangeConfig(JobConfig config)
+    public void ChangeConfig(JobConfig? config)
     {
         if (IsDone)
         {
             throw new JobAlreadyDoneException();
         }
+
+        SetConfig(config);
+    }
+
+    public void AddTask(JobTask task)
+    {
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
+        Tasks.Add(task);
+    }
+
+    public void RemoveTask(JobTask task)
+    {
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+        if (task.IsActive)
+        {
+            throw new JobTaskActiveException();
+        }
+
+        Tasks.Remove(task);
+    }
+
+    public JobConfig GetConfig()
+    {
+        if (ConfigJson == null)
+        {
+            return new JobConfig();
+        }
+
+        var config = JsonSerializer.Deserialize<JobConfig>(ConfigJson);
+        if (config == null)
+        {
+            throw new InvalidOperationException($"{nameof(ConfigJson)} is not valid config.");
+        }
+        return config;
+    }
+
+    internal void ChangeState(JobState state)
+    {
+        if (State == state)
+        {
+            return;
+        }
+
+        if (IsDone)
+        {
+            throw new JobAlreadyDoneException();
+        }
+
+        DomainEvents.AddOrReplace(new JobStateChangedEvent(Id, State, state));
+
+        State = state;
+
+        if (IsActive && !Started.HasValue)
+        {
+            Start();
+        }
+        else if (IsDone)
+        {
+            Finish();
+        }
+
+        if (state == JobState.Active)
+        {
+            DelayUntil(null);
+        }
+    }
+
+    internal void SetConfig(JobConfig? config)
+    {
+        config ??= new JobConfig();
 
         var serialized = Encoding.UTF8.GetString(
             JsonSerializer.SerializeToUtf8Bytes(config, new JsonSerializerOptions
@@ -111,57 +259,43 @@ public class Job
         }
     }
 
-    public void AddTask(JobTask task)
+    internal void Start(DateTime? dateTime = null)
     {
         if (IsDone)
         {
             throw new JobAlreadyDoneException();
         }
 
-        Tasks.Add(task);
+        if (!Started.HasValue)
+        {
+            Started = dateTime ?? DateTime.Now;
+        }
     }
 
-    internal void ChangeState(JobState state)
+    internal void Finish(DateTime? dateTime = null)
     {
-        if (State == state)
+        if (Finished.HasValue)
         {
             return;
         }
 
-        State = state;
+        dateTime ??= DateTime.Now;
 
-        if (IsActive && !Started.HasValue)
+        if (Started > dateTime)
         {
-            Start();
-        }
-        else if (IsDone)
-        {
-            Finish();
+            throw new ArgumentException("Finish time cannot be earlier than start time.", nameof(dateTime));
         }
 
-        if (state != JobState.Paused)
-        {
-            DelayUntil(null);
-        }
+        Finished = dateTime.Value;
     }
 
-    internal void Start()
+    internal void DelayUntil(DateTime? dateTime)
     {
         if (IsDone)
         {
             throw new JobAlreadyDoneException();
         }
 
-        Started = DateTime.Now;
-    }
-
-    internal void Finish()
-    {
-        Finished = DateTime.Now;
-    }
-
-    internal void DelayUntil(DateTime? dateTime)
-    {
         DelayedUntil = dateTime;
     }
 }

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
@@ -22,7 +22,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Wilgysef.Stalk.Application.Shared\Wilgysef.Stalk.Application.Shared.csproj" />
+    <ProjectReference Include="..\..\Wilgysef.Stalk.Application.Contracts\Wilgysef.Stalk.Application.Contracts.csproj" />
+    <ProjectReference Include="..\..\Wilgysef.Stalk.Application.Contracts\Wilgysef.Stalk.Application.Contracts.csproj" />
     <ProjectReference Include="..\Wilgysef.Stalk.TestBase\Wilgysef.Stalk.TestBase.csproj" />
   </ItemGroup>
 

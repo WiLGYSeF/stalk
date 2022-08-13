@@ -8,33 +8,57 @@ namespace Wilgysef.Stalk.Core.Models.Jobs;
 public class JobStateManager : IJobStateManager
 {
     private readonly IJobManager _jobManager;
-    private readonly IJobWorkerManager _jobWorkerManager;
+    private readonly IJobWorkerService _jobWorkerService;
+    private readonly IJobTaskWorkerService _jobTaskWorkerService;
 
     public JobStateManager(
         IJobManager jobManager,
-        IJobWorkerManager jobWorkerManager)
+        IJobWorkerService jobWorkerService,
+        IJobTaskWorkerService jobTaskWorkerService)
     {
         _jobManager = jobManager;
-        _jobWorkerManager = jobWorkerManager;
+        _jobWorkerService = jobWorkerService;
+        _jobTaskWorkerService = jobTaskWorkerService;
     }
 
-    public async Task StopJobAsync(Job job, bool blocking = false)
+    public async Task StopJobAsync(Job job)
     {
-        await StopJobNoSaveAsync(job, blocking);
+        if (job.IsFinished)
+        {
+            return;
+        }
+        if (job.IsTransitioning)
+        {
+            // TODO: take over pause with cancel
+            return;
+        }
+
+        if (job.IsActive)
+        {
+            job.ChangeState(JobState.Cancelling);
+            await _jobManager.UpdateJobAsync(job);
+
+            await PauseJobAsync(job, false);
+        }
+
+        job.ChangeState(JobState.Cancelled);
         await _jobManager.UpdateJobAsync(job);
     }
 
-    public async Task PauseJobAsync(Job job, bool blocking = false)
+    public async Task PauseJobAsync(Job job)
     {
-        await PauseJobNoSaveAsync(job, blocking);
-        await _jobManager.UpdateJobAsync(job);
+        await PauseJobAsync(job, true);
     }
 
     public async Task UnpauseJobAsync(Job job)
     {
-        if (job.State != JobState.Paused)
+        if (job.IsDone)
         {
-            throw new JobNotPausedException();
+            throw new JobAlreadyDoneException();
+        }
+        if (job.IsActive)
+        {
+            return;
         }
 
         job.ChangeState(JobState.Inactive);
@@ -42,23 +66,44 @@ public class JobStateManager : IJobStateManager
         await _jobManager.UpdateJobAsync(job);
     }
 
-    public async Task StopJobTaskAsync(Job job, JobTask task, bool blocking = false)
+    public async Task StopJobTaskAsync(Job job, JobTask task)
     {
-        await StopJobTaskNoSaveAsync(job, task, blocking);
+        if (task.IsFinished)
+        {
+            return;
+        }
+        if (task.IsTransitioning)
+        {
+            // TODO: take over pause with cancel
+            return;
+        }
+
+        if (task.IsActive)
+        {
+            task.ChangeState(JobTaskState.Cancelling);
+            await _jobManager.UpdateJobAsync(job);
+
+            await PauseJobTaskAsync(job, task, false);
+        }
+
+        task.ChangeState(JobTaskState.Cancelled);
         await _jobManager.UpdateJobAsync(job);
     }
 
-    public async Task PauseJobTaskAsync(Job job, JobTask task, bool blocking = false)
+    public async Task PauseJobTaskAsync(Job job, JobTask task)
     {
-        await PauseJobTaskNoSaveAsync(job, task, blocking);
-        await _jobManager.UpdateJobAsync(job);
+        await PauseJobTaskAsync(job, task, true);
     }
 
     public async Task UnpauseJobTaskAsync(Job job, JobTask task)
     {
-        if (task.State != JobTaskState.Paused)
+        if (task.IsDone)
         {
-            throw new JobTaskNotPausedException();
+            throw new JobTaskAlreadyDoneException();
+        }
+        if (task.IsActive)
+        {
+            return;
         }
 
         task.ChangeState(JobTaskState.Inactive);
@@ -66,65 +111,53 @@ public class JobStateManager : IJobStateManager
         await _jobManager.UpdateJobAsync(job);
     }
 
-    private async Task StopJobNoSaveAsync(Job job, bool blocking = false)
+    private async Task PauseJobAsync(Job job, bool changeState)
     {
-        if (job.IsDone)
+        if (job.IsDone || job.IsTransitioning)
         {
-            throw new JobAlreadyDoneException();
+            return;
         }
 
         if (job.IsActive)
         {
-            await PauseJobNoSaveAsync(job, blocking);
+            if (changeState)
+            {
+                job.ChangeState(JobState.Pausing);
+                await _jobManager.UpdateJobAsync(job);
+            }
 
-            job.ChangeState(JobState.Cancelled);
-        }
-    }
-
-    private async Task PauseJobNoSaveAsync(Job job, bool blocking = false)
-    {
-        if (job.IsDone)
-        {
-            throw new JobAlreadyDoneException();
+            await _jobWorkerService.StopJobWorker(job);
         }
 
-        if (job.IsActive)
+        if (changeState)
         {
-            await _jobWorkerManager.StopJobWorker(job, blocking);
-
             job.ChangeState(JobState.Paused);
+            await _jobManager.UpdateJobAsync(job);
         }
     }
 
-    private async Task StopJobTaskNoSaveAsync(Job job, JobTask task, bool blocking = false)
+    private async Task PauseJobTaskAsync(Job job, JobTask task, bool changeState)
     {
-        if (task.IsDone)
+        if (task.IsDone || task.IsTransitioning)
         {
-            throw new JobTaskAlreadyDoneException();
+            return;
         }
 
         if (task.IsActive)
         {
-            await PauseJobTaskNoSaveAsync(job, task, blocking);
+            if (changeState)
+            {
+                task.ChangeState(JobTaskState.Pausing);
+                await _jobManager.UpdateJobAsync(job);
+            }
 
-            task.ChangeState(JobTaskState.Cancelled);
-            task.Finish();
-        }
-    }
-
-    private async Task PauseJobTaskNoSaveAsync(Job job, JobTask task, bool blocking = false)
-    {
-        if (task.IsDone)
-        {
-            throw new JobTaskAlreadyDoneException();
+            await _jobTaskWorkerService.StopJobTaskWorker(task);
         }
 
-        if (task.IsActive)
+        if (changeState)
         {
-            // TODO: stop job task
-            // TODO: nonblock?
-
             task.ChangeState(JobTaskState.Paused);
+            await _jobManager.UpdateJobAsync(job);
         }
     }
 }
