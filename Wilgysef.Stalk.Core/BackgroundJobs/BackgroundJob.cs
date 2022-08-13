@@ -32,7 +32,8 @@ public class BackgroundJob : Entity
         int priority = 0,
         DateTime? delayUntil = null,
         TimeSpan? delayFor = null,
-        DateTime? maximumLifetime = null)
+        DateTime? maximumLifetime = null,
+        TimeSpan? maximumLifespan = null)
     {
         var argsName = args.GetType().FullName;
 
@@ -46,7 +47,6 @@ public class BackgroundJob : Entity
             Id = id,
             JobArgsName = argsName,
             Priority = priority,
-            MaximumLifetime = maximumLifetime,
             JobArgs = Serialize(args),
         };
 
@@ -57,6 +57,15 @@ public class BackgroundJob : Entity
         else if (delayFor.HasValue)
         {
             job.NextRun = DateTime.Now.Add(delayFor.Value);
+        }
+
+        if (maximumLifetime.HasValue)
+        {
+            job.MaximumLifetime = maximumLifetime.Value;
+        }
+        else if (maximumLifespan.HasValue)
+        {
+            job.MaximumLifetime = DateTime.Now.Add(maximumLifespan.Value);
         }
 
         return job;

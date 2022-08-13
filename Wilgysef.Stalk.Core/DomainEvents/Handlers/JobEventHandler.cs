@@ -43,7 +43,8 @@ public class JobEventHandler :
         await _backgroundJobManager.EnqueueOrReplaceJobAsync(
             BackgroundJob.Create(
                 _idGenerator.CreateId(),
-                new WorkPrioritizedJobsArgs()),
+                new WorkPrioritizedJobsArgs(),
+                maximumLifespan: TimeSpan.FromSeconds(3)),
             false);
     }
 }
