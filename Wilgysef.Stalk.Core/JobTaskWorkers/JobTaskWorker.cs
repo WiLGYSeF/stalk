@@ -21,7 +21,7 @@ public class JobTaskWorker : IJobTaskWorker
         return this;
     }
 
-    public async Task WorkAsync(CancellationToken? cancellationToken = null)
+    public async Task WorkAsync(CancellationToken cancellationToken = default)
     {
 
     }

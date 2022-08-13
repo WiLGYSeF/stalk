@@ -16,32 +16,42 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
         _serviceLocator = serviceLocator;
     }
 
-    public async Task ExecuteJobs()
+    public async Task ExecuteJobs(CancellationToken cancellationToken = default)
     {
         using var scope = _serviceLocator.BeginLifetimeScope();
         var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
 
         while (true)
         {
-            var job = await backgroundJobManager.GetNextPriorityJobAsync();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var job = await backgroundJobManager.GetNextPriorityJobAsync(cancellationToken);
             if (job == null)
             {
                 break;
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             try
             {
-                await ExecuteJob(job);
+                await ExecuteJob(job, cancellationToken);
                 await backgroundJobManager.DeleteJobAsync(job);
             }
-            catch (InvalidBackgroundJobException exception)
+            catch (OperationCanceledException)
             {
-
+                throw;
             }
-            catch (Exception exception)
+            catch (InvalidBackgroundJobException)
+            {
+                // TODO: handle invalid background job
+                job.SetJobFailed();
+                await backgroundJobManager.UpdateJobAsync(job, CancellationToken.None);
+            }
+            catch (Exception)
             {
                 job.SetJobFailed();
-                await backgroundJobManager.UpdateJobAsync(job);
+                await backgroundJobManager.UpdateJobAsync(job, CancellationToken.None);
             }
         }
     }
@@ -51,7 +61,7 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
         return _backgroundTasks.ContainsValue(job);
     }
 
-    private async Task ExecuteJob(BackgroundJob job)
+    private async Task ExecuteJob(BackgroundJob job, CancellationToken cancellationToken)
     {
         var argsType = job.GetJobArgsType();
         var args = job.DeserializeArgs();
@@ -65,6 +75,6 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
         var handlerWrapper = (IBackgroundJobHandlerWrapper)Activator.CreateInstance(
             typeof(BackgroundJobHandlerWrapper<>).MakeGenericType(argsType))!;
 
-        await handlerWrapper.ExecuteJobAsync(services, args);
+        await handlerWrapper.ExecuteJobAsync(services, args, cancellationToken);
     }
 }

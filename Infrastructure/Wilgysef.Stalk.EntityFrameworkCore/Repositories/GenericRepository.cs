@@ -43,9 +43,9 @@ public abstract class GenericRepository<T> : IRepository<T>, ISpecificationRepos
         return _dbSet.ToList();
     }
 
-    public virtual async Task<List<T>> ListAsync()
+    public virtual async Task<List<T>> ListAsync(CancellationToken cancellationToken = default)
     {
-        return await _dbSet.ToListAsync();
+        return await _dbSet.ToListAsync(cancellationToken);
     }
 
     #endregion
@@ -56,9 +56,9 @@ public abstract class GenericRepository<T> : IRepository<T>, ISpecificationRepos
         return _dbSet.Count();
     }
 
-    public virtual async Task<int> CountAsync()
+    public virtual async Task<int> CountAsync(CancellationToken cancellationToken = default)
     {
-        return await _dbSet.CountAsync();
+        return await _dbSet.CountAsync(cancellationToken);
     }
 
     #endregion

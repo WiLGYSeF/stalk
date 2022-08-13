@@ -22,20 +22,19 @@ public class JobWorker : IJobWorker
         return this;
     }
 
-    public async Task WorkAsync(CancellationToken? cancellationToken = null)
+    public async Task WorkAsync(CancellationToken cancellationToken = default)
     {
-        // TODO: service locator is used because the scope is disposed on original thread, find a better way?
         using var scope = _serviceLocator.BeginLifetimeScope();
         var jobManager = scope.GetRequiredService<IJobManager>();
         await jobManager.SetJobActiveAsync(Job!);
 
-        while (!cancellationToken.HasValue || !cancellationToken.Value.IsCancellationRequested)
+        while (!cancellationToken.IsCancellationRequested)
         {
             Debug.WriteLine($"{Job!.Id}: {DateTime.Now} doing work...");
             await Task.Delay(2000);
         }
 
-        if (cancellationToken.HasValue && cancellationToken.Value.IsCancellationRequested)
+        if (cancellationToken.IsCancellationRequested)
         {
             return;
         }

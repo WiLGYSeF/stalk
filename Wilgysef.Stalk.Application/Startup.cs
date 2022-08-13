@@ -9,10 +9,11 @@ public class Startup
     private readonly IJobManager _jobManager;
     private readonly IServiceLocator _serviceLocator;
 
-    private bool _started = false;
+    private readonly CancellationTokenSource _backgroundTaskTokenSource = new();
 
     private Task _backgroundJobTask;
-    private CancellationTokenSource _backgroundTaskTokenSource = new();
+
+    private bool _started = false;
 
     public Startup(
         IJobManager jobManager,
@@ -32,23 +33,25 @@ public class Startup
 
         await _jobManager.DeactivateJobsAsync();
 
-        var cancellationToken = _backgroundTaskTokenSource.Token;
         _backgroundJobTask = new Task(
-            async () => await DispatchBackgroundJobs(cancellationToken),
-            cancellationToken,
+            async () => await DispatchBackgroundJobs(_backgroundTaskTokenSource.Token),
+            _backgroundTaskTokenSource.Token,
             TaskCreationOptions.LongRunning);
         _backgroundJobTask.Start();
     }
 
     private async Task DispatchBackgroundJobs(CancellationToken cancellationToken)
     {
-        while (!cancellationToken.IsCancellationRequested)
+        while (true)
         {
-            await Task.Delay(5 * 1000);
+            cancellationToken.ThrowIfCancellationRequested();
+            await Task.Delay(5 * 1000, cancellationToken);
 
             using var scope = _serviceLocator.BeginLifetimeScope();
             var backgroundJobDispatcher = scope.GetRequiredService<IBackgroundJobDispatcher>();
-            await backgroundJobDispatcher.ExecuteJobs();
+
+            cancellationToken.ThrowIfCancellationRequested();
+            await backgroundJobDispatcher.ExecuteJobs(cancellationToken);
         }
     }
 }

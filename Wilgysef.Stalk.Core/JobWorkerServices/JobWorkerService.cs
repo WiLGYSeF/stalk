@@ -77,7 +77,7 @@ public class JobWorkerService : IJobWorkerService
     public IReadOnlyList<Job> GetJobsByPriority()
     {
         return Jobs
-            .OrderBy(j => j.Priority)
+            .OrderByDescending(j => j.Priority)
             .ThenBy(j => j.Tasks.Count(t => t.IsActive))
             .ToList();
     }

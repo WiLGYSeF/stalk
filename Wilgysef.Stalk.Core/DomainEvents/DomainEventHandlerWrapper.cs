@@ -2,16 +2,17 @@
 
 internal interface IDomainEventHandlerWrapper
 {
-    Task HandleEventAsync(object handlers, object eventData);
+    Task HandleEventAsync(object handlers, object eventData, CancellationToken cancellationToken);
 }
 
 internal class DomainEventHandlerWrapper<T> : IDomainEventHandlerWrapper where T : IDomainEvent
 {
-    public async Task HandleEventAsync(object handlers, object eventData)
+    public async Task HandleEventAsync(object handlers, object eventData, CancellationToken cancellationToken)
     {
         foreach (var handler in (IEnumerable<IDomainEventHandler<T>>)handlers)
         {
-            await handler.HandleEventAsync((T)eventData);
+            cancellationToken.ThrowIfCancellationRequested();
+            await handler.HandleEventAsync((T)eventData, cancellationToken);
         }
     }
 }

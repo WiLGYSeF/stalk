@@ -6,5 +6,5 @@ public interface IBackgroundJobDispatcher : ISingletonDependency
 {
     public IReadOnlyCollection<BackgroundJob> ActiveJobs { get; }
 
-    Task ExecuteJobs();
+    Task ExecuteJobs(CancellationToken cancellationToken = default);
 }

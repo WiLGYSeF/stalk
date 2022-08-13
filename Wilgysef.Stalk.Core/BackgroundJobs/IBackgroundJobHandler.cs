@@ -4,5 +4,5 @@ namespace Wilgysef.Stalk.Core.BackgroundJobs;
 
 public interface IBackgroundJobHandler<T> : ITransientDependency where T : BackgroundJobArgs
 {
-    Task ExecuteJobAsync(T args);
+    Task ExecuteJobAsync(T args, CancellationToken cancellationToken = default);
 }

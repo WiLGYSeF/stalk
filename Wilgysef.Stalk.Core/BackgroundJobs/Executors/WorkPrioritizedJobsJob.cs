@@ -17,33 +17,39 @@ public class WorkPrioritizedJobsJob : IBackgroundJobHandler<WorkPrioritizedJobsA
         _jobWorkerService = jobWorkerService;
     }
 
-    public async Task ExecuteJobAsync(WorkPrioritizedJobsArgs args)
+    public async Task ExecuteJobAsync(WorkPrioritizedJobsArgs args, CancellationToken cancellationToken = default)
     {
         if (_jobWorkerService.CanStartAdditionalWorkers)
         {
             while (_jobWorkerService.CanStartAdditionalWorkers)
             {
+                cancellationToken.ThrowIfCancellationRequested();
                 var nextPriorityJob = await _jobManager.GetNextPriorityJobAsync();
                 if (nextPriorityJob == null)
                 {
                     break;
                 }
 
+                cancellationToken.ThrowIfCancellationRequested();
                 await _jobWorkerService.StartJobWorker(nextPriorityJob);
             }
             return;
         }
 
-        var activeJobs = new Queue<Job>(_jobWorkerService.GetJobsByPriority());
+        var activeJobs = new Stack<Job>(_jobWorkerService.GetJobsByPriority());
 
         while (activeJobs.Count > 0)
         {
-            var job = activeJobs.Dequeue();
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var job = activeJobs.Pop();
             var nextPriorityJob = await _jobManager.GetNextPriorityJobAsync();
             if (nextPriorityJob == null || job.Priority >= nextPriorityJob.Priority)
             {
                 break;
             }
+
+            cancellationToken.ThrowIfCancellationRequested();
 
             await _jobWorkerService.StopJobWorker(job);
             await _jobWorkerService.StartJobWorker(nextPriorityJob);
