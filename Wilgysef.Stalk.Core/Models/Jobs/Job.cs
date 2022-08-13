@@ -12,70 +12,133 @@ namespace Wilgysef.Stalk.Core.Models.Jobs;
 
 public class Job : Entity
 {
+    /// <summary>
+    /// Job Id.
+    /// </summary>
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public virtual long Id { get; protected set; }
 
+    /// <summary>
+    /// Job name.
+    /// </summary>
     public virtual string? Name { get; protected set; }
 
+    /// <summary>
+    /// Job state.
+    /// </summary>
     public virtual JobState State { get; protected set; }
 
+    /// <summary>
+    /// Job priority.
+    /// </summary>
     public virtual int Priority { get; protected set; }
 
+    /// <summary>
+    /// Job started time.
+    /// </summary>
     public virtual DateTime? Started { get; protected set; }
 
+    /// <summary>
+    /// Job finished time.
+    /// </summary>
     public virtual DateTime? Finished { get; protected set; }
 
+    /// <summary>
+    /// Job delayed until time.
+    /// </summary>
     public virtual DateTime? DelayedUntil { get; protected set; }
 
+    /// <summary>
+    /// Job configuration.
+    /// </summary>
     public virtual string? ConfigJson { get; protected set; }
 
+    /// <summary>
+    /// Job tasks.
+    /// </summary>
     public virtual ICollection<JobTask> Tasks { get; protected set; } = new List<JobTask>();
 
+    /// <summary>
+    /// Indicates if the job is active.
+    /// </summary>
     [NotMapped]
     public bool IsActive => IsActiveExpression.Compile()(this);
 
+    /// <summary>
+    /// Indicates if the job state is transitioning to a different state.
+    /// </summary>
     [NotMapped]
     public bool IsTransitioning => IsTransitioningExpression.Compile()(this);
 
+    /// <summary>
+    /// Indicates if the job is finished (not cancelled).
+    /// </summary>
     [NotMapped]
     public bool IsFinished => IsFinishedExpression.Compile()(this);
 
+    /// <summary>
+    /// Indicates if the job is done.
+    /// </summary>
     [NotMapped]
     public bool IsDone => IsDoneExpression.Compile()(this);
 
+    /// <summary>
+    /// Indicates if the job is queued.
+    /// </summary>
     [NotMapped]
     public bool IsQueued => IsQueuedExpression.Compile()(this);
 
+    /// <summary>
+    /// Indicates if the job has unfinished tasks.
+    /// </summary>
     [NotMapped]
     public bool HasUnfinishedTasks => Tasks.Any(t => !t.IsDone);
 
+    /// <summary>
+    /// Job active expression.
+    /// </summary>
     [NotMapped]
     internal static Expression<Func<Job, bool>> IsActiveExpression =>
         j => j.State == JobState.Active
             || j.State == JobState.Cancelling
             || j.State == JobState.Pausing;
 
+    /// <summary>
+    /// Job transitioning expression.
+    /// </summary>
     [NotMapped]
     internal static Expression<Func<Job, bool>> IsTransitioningExpression =>
         j => j.State == JobState.Cancelling
             || j.State == JobState.Pausing;
 
+    /// <summary>
+    /// Job finished expression.
+    /// </summary>
     [NotMapped]
     internal static Expression<Func<Job, bool>> IsFinishedExpression =>
         j => j.State == JobState.Completed
             || j.State == JobState.Failed;
 
+    /// <summary>
+    /// Job done expression.
+    /// </summary>
     [NotMapped]
     internal static Expression<Func<Job, bool>> IsDoneExpression =>
         j => j.State == JobState.Completed
             || j.State == JobState.Failed
             || j.State == JobState.Cancelled;
 
+    /// <summary>
+    /// Job queued expression.
+    /// </summary>
     [NotMapped]
     internal static Expression<Func<Job, bool>> IsQueuedExpression =>
         j => j.State == JobState.Inactive
             || (j.State == JobState.Paused && j.DelayedUntil != null && j.DelayedUntil < DateTime.Now);
 
+    /// <summary>
+    /// Job unfinished tasks expression.
+    /// </summary>
     [NotMapped]
     internal static Expression<Func<Job, bool>> HasUnfinishedTasksExpression =>
         j => j.Tasks.AsQueryable().Any(
@@ -83,6 +146,13 @@ public class Job : Entity
 
     protected Job() { }
 
+    /// <summary>
+    /// Creates a job.
+    /// </summary>
+    /// <param name="id">Job Id.</param>
+    /// <param name="name">Job name.</param>
+    /// <param name="priority">Job priority.</param>
+    /// <returns>Job.</returns>
     public static Job Create(
         long id,
         string? name = null,
@@ -149,6 +219,10 @@ public class Job : Entity
         return job;
     }
 
+    /// <summary>
+    /// Changes job priority.
+    /// </summary>
+    /// <param name="priority">Job priority.</param>
     public void ChangePriority(int priority)
     {
         if (IsDone)
@@ -164,6 +238,10 @@ public class Job : Entity
         }
     }
 
+    /// <summary>
+    /// Changes job config.
+    /// </summary>
+    /// <param name="config">Job config.</param>
     public void ChangeConfig(JobConfig? config)
     {
         if (IsDone)
@@ -174,6 +252,10 @@ public class Job : Entity
         SetConfig(config);
     }
 
+    /// <summary>
+    /// Adds task to job.
+    /// </summary>
+    /// <param name="task">Job task.</param>
     public void AddTask(JobTask task)
     {
         if (IsDone)
@@ -184,6 +266,10 @@ public class Job : Entity
         Tasks.Add(task);
     }
 
+    /// <summary>
+    /// Removes job task from job.
+    /// </summary>
+    /// <param name="task">Job task.</param>
     public void RemoveTask(JobTask task)
     {
         if (IsDone)
@@ -198,6 +284,10 @@ public class Job : Entity
         Tasks.Remove(task);
     }
 
+    /// <summary>
+    /// Gets the job config.
+    /// </summary>
+    /// <returns>Job config.</returns>
     public JobConfig GetConfig()
     {
         if (ConfigJson == null)
@@ -213,6 +303,10 @@ public class Job : Entity
         return config;
     }
 
+    /// <summary>
+    /// Changes the job state.
+    /// </summary>
+    /// <param name="state">Job state.</param>
     internal void ChangeState(JobState state)
     {
         if (State == state)
@@ -244,6 +338,10 @@ public class Job : Entity
         }
     }
 
+    /// <summary>
+    /// Sets the job config.
+    /// </summary>
+    /// <param name="config">Job config.</param>
     internal void SetConfig(JobConfig? config)
     {
         config ??= new JobConfig();
@@ -260,6 +358,10 @@ public class Job : Entity
         }
     }
 
+    /// <summary>
+    /// Sets the job start time.
+    /// </summary>
+    /// <param name="dateTime">Start time.</param>
     internal void Start(DateTime? dateTime = null)
     {
         if (IsDone)
@@ -273,6 +375,11 @@ public class Job : Entity
         }
     }
 
+    /// <summary>
+    /// Sets the job finish time.
+    /// </summary>
+    /// <param name="dateTime">Finish time.</param>
+    /// <exception cref="ArgumentException">Finish time is earlier than the start time.</exception>
     internal void Finish(DateTime? dateTime = null)
     {
         if (Finished.HasValue)
@@ -291,6 +398,10 @@ public class Job : Entity
         DelayedUntil = null;
     }
 
+    /// <summary>
+    /// Sets the job delay until time.
+    /// </summary>
+    /// <param name="dateTime">Delay until time.</param>
     internal void DelayUntil(DateTime? dateTime)
     {
         if (DelayedUntil == dateTime)

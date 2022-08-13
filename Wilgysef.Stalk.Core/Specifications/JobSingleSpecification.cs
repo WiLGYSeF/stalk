@@ -3,6 +3,9 @@ using Wilgysef.Stalk.Core.Models.Jobs;
 
 namespace Wilgysef.Stalk.Core.Specifications;
 
+/// <summary>
+/// Gets a single job by either job Id or job task Id.
+/// </summary>
 public class JobSingleSpecification : Specification<Job>
 {
     /// <summary>

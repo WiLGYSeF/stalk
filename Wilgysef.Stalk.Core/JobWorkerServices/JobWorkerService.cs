@@ -74,7 +74,7 @@ public class JobWorkerService : IJobWorkerService
         return true;
     }
 
-    public IReadOnlyList<Job> GetJobsByPriority()
+    public List<Job> GetJobsByPriority()
     {
         return Jobs
             .OrderByDescending(j => j.Priority)

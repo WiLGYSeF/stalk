@@ -2,27 +2,58 @@
 
 public class JobConfig
 {
+    /// <summary>
+    /// Maximum concurrent job tasks.
+    /// </summary>
     public int MaxTaskWorkerCount { get; set; } = 4;
 
+    /// <summary>
+    /// File destination path.
+    /// </summary>
     public string? DestinationPath { get; set; }
 
+    /// <summary>
+    /// Whether to download data.
+    /// </summary>
     public bool DownloadData { get; set; } = true;
 
+    /// <summary>
+    /// Metadata path.
+    /// </summary>
     public string? MetadataPath { get; set; }
 
+    /// <summary>
+    /// Whether to save metadata.
+    /// </summary>
     public bool SaveMetadata { get; set; } = true;
 
+    /// <summary>
+    /// Item Id path.
+    /// </summary>
     public string? ItemIdPath { get; set; }
 
+    /// <summary>
+    /// Whether to save item Ids.
+    /// </summary>
     public bool SaveItemIds { get; set; } = true;
 
+    /// <summary>
+    /// Log path.
+    /// </summary>
     public string? LogPath { get; set; }
 
+    /// <summary>
+    /// Log level.
+    /// </summary>
     public int LogLevel { get; set; }
 
+    /// <summary>
+    /// Whether each item should be placed in its own directory.
+    /// </summary>
     public bool ItemDirectories { get; set; }
 
-    public bool ListFull { get; set; }
-
+    /// <summary>
+    /// Maximum task failures before a job iss considered failed.
+    /// </summary>
     public int MaxFailures { get; set; } = 10;
 }
