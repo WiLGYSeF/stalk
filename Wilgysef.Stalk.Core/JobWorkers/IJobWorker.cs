@@ -6,5 +6,5 @@ public interface IJobWorker
 {
     JobWorker WithJob(Job job);
 
-    Task WorkAsync(CancellationToken? cancellationToken = null);
+    Task WorkAsync(CancellationToken cancellationToken = default);
 }

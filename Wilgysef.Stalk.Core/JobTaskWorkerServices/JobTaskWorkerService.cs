@@ -24,8 +24,10 @@ public class JobTaskWorkerService : IJobTaskWorkerService
         var worker = _jobTaskWorkerFactory.CreateWorker(jobTask);
         var cancellationTokenSource = new CancellationTokenSource();
 
-        var token = cancellationTokenSource.Token;
-        var task = new Task(async () => await worker.WorkAsync(token), token, TaskCreationOptions.LongRunning);
+        var task = new Task(
+            async () => await worker.WorkAsync(cancellationTokenSource.Token),
+            cancellationTokenSource.Token,
+            TaskCreationOptions.LongRunning);
 
         _jobTaskWorkers.Add(worker);
         _jobTaskWorkerObjects.Add(worker, new JobTaskWorkerObjects(task, cancellationTokenSource));

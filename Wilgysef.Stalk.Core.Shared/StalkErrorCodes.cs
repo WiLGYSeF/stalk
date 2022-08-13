@@ -17,5 +17,11 @@
         public const string JobTaskActive = "Stalk:001002";
 
         #endregion
+
+        #region Background Job Error Codes
+
+        public const string BackgroundJobAbandoned = "Stalk:002001";
+
+        #endregion
     }
 }

@@ -37,7 +37,6 @@ public class JobStateManager : IJobStateManager
         {
             job.ChangeState(JobState.Cancelling);
             await _jobManager.UpdateJobAsync(job);
-
             await PauseJobAsync(job, false);
         }
 
@@ -62,7 +61,6 @@ public class JobStateManager : IJobStateManager
         }
 
         job.ChangeState(JobState.Inactive);
-
         await _jobManager.UpdateJobAsync(job);
     }
 
@@ -82,7 +80,6 @@ public class JobStateManager : IJobStateManager
         {
             task.ChangeState(JobTaskState.Cancelling);
             await _jobManager.UpdateJobAsync(job);
-
             await PauseJobTaskAsync(job, task, false);
         }
 
@@ -107,7 +104,6 @@ public class JobStateManager : IJobStateManager
         }
 
         task.ChangeState(JobTaskState.Inactive);
-
         await _jobManager.UpdateJobAsync(job);
     }
 
@@ -120,6 +116,8 @@ public class JobStateManager : IJobStateManager
 
         if (job.IsActive)
         {
+            // TODO: restore state
+
             if (changeState)
             {
                 job.ChangeState(JobState.Pausing);
@@ -145,6 +143,8 @@ public class JobStateManager : IJobStateManager
 
         if (task.IsActive)
         {
+            // TODO: restore state
+
             if (changeState)
             {
                 task.ChangeState(JobTaskState.Pausing);

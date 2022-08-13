@@ -38,6 +38,23 @@ public class DomainEventCollection : ICollection<IDomainEvent>
         return _domainEvents.Remove(item);
     }
 
+    public int RemoveType<T>() where T : IDomainEvent
+    {
+        return RemoveType(typeof(T));
+    }
+
+    public int RemoveType(Type type)
+    {
+        var toRemove = _domainEvents.Where(e => e.GetType() == type).ToList();
+
+        foreach (var item in toRemove)
+        {
+            _domainEvents.Remove(item);
+        }
+
+        return toRemove.Count;
+    }
+
     public void Clear()
     {
         _domainEvents.Clear();
@@ -46,6 +63,16 @@ public class DomainEventCollection : ICollection<IDomainEvent>
     public bool Contains(IDomainEvent item)
     {
         return _domainEvents.Contains(item);
+    }
+
+    public bool ContainsType<T>() where T : IDomainEvent
+    {
+        return ContainsType(typeof(T));
+    }
+
+    public bool ContainsType(Type type)
+    {
+        return _domainEvents.Any(e => e.GetType() == type);
     }
 
     public void CopyTo(IDomainEvent[] array, int arrayIndex)

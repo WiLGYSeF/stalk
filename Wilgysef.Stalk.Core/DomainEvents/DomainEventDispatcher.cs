@@ -13,10 +13,17 @@ public class DomainEventDispatcher : IDomainEventDispatcher
 
     public async Task DispatchEvents<T>(params T[] eventData) where T : notnull, IDomainEvent
     {
+        await DispatchEvents(eventData, default);
+    }
+
+    public async Task DispatchEvents<T>(IEnumerable<T> eventData, CancellationToken cancellationToken = default) where T : notnull, IDomainEvent
+    {
         var eventHandlerType = typeof(IDomainEventHandler<>);
 
         foreach (var data in eventData)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var dataType = data.GetType();
             var genericType = eventHandlerType.MakeGenericType(dataType);
 
@@ -26,7 +33,7 @@ public class DomainEventDispatcher : IDomainEventDispatcher
             var handlerWrapper = (IDomainEventHandlerWrapper)Activator.CreateInstance(
                 typeof(DomainEventHandlerWrapper<>).MakeGenericType(dataType))!;
 
-            await handlerWrapper.HandleEventAsync(services, data);
+            await handlerWrapper.HandleEventAsync(services, data, cancellationToken);
         }
     }
 }

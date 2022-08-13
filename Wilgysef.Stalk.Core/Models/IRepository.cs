@@ -18,7 +18,7 @@ public interface IRepository<T> : IScopedDependency where T : class
 
     List<T> List();
 
-    Task<List<T>> ListAsync();
+    Task<List<T>> ListAsync(CancellationToken cancellationToken = default);
 
     #endregion
 
@@ -26,7 +26,7 @@ public interface IRepository<T> : IScopedDependency where T : class
 
     int Count();
 
-    Task<int> CountAsync();
+    Task<int> CountAsync(CancellationToken cancellationToken = default);
 
     #endregion
 

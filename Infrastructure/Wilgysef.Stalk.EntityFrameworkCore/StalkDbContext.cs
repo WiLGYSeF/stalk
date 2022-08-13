@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.Core.DomainEvents;
 using Wilgysef.Stalk.Core.Models;
 using Wilgysef.Stalk.Core.Models.Jobs;
@@ -10,6 +11,8 @@ public class StalkDbContext : DbContext, IStalkDbContext
 {
     public DbSet<Job> Jobs { get; set; } = null!;
     public DbSet<JobTask> JobTasks { get; set; } = null!;
+
+    public DbSet<BackgroundJob> BackgroundJobs { get; set; } = null!;
 
     private readonly IDomainEventDispatcher _domainEventDispatcher;
 

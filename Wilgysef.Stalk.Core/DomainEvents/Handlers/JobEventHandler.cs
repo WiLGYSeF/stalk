@@ -1,6 +1,10 @@
-﻿using Wilgysef.Stalk.Core.DomainEvents.Events;
+﻿using IdGen;
+using Wilgysef.Stalk.Core.BackgroundJobs;
+using Wilgysef.Stalk.Core.BackgroundJobs.Args;
+using Wilgysef.Stalk.Core.DomainEvents.Events;
 using Wilgysef.Stalk.Core.JobWorkerManagers;
 using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Shared.Enums;
 
 namespace Wilgysef.Stalk.Core.DomainEvents.Handlers;
 
@@ -9,63 +13,43 @@ public class JobEventHandler :
     IDomainEventHandler<JobStateChangedEvent>,
     IDomainEventHandler<JobPriorityChangedEvent>
 {
-    private readonly IJobWorkerService _jobWorkerService;
-    private readonly IJobManager _jobManager;
+    private readonly IBackgroundJobManager _backgroundJobManager;
+    private readonly IIdGenerator<long> _idGenerator;
 
     public JobEventHandler(
-        IJobWorkerService jobWorkerService,
-        IJobManager jobManager)
+        IBackgroundJobManager backgroundJobManager,
+        IIdGenerator<long> idGenerator)
     {
-        _jobWorkerService = jobWorkerService;
-        _jobManager = jobManager;
+        _backgroundJobManager = backgroundJobManager;
+        _idGenerator = idGenerator;
     }
 
-    public async Task HandleEventAsync(JobCreatedEvent eventData)
+    public async Task HandleEventAsync(JobCreatedEvent eventData, CancellationToken cancellationToken = default)
     {
-        await WorkPrioritizedJobs();
+        await WorkPrioritizedJobs(cancellationToken);
     }
 
-    public async Task HandleEventAsync(JobStateChangedEvent eventData)
+    public async Task HandleEventAsync(JobStateChangedEvent eventData, CancellationToken cancellationToken = default)
     {
-        await WorkPrioritizedJobs();
-    }
-
-    public async Task HandleEventAsync(JobPriorityChangedEvent eventData)
-    {
-        await WorkPrioritizedJobs();
-    }
-
-    private async Task WorkPrioritizedJobs()
-    {
-        // TODO: use background job
-        if (_jobWorkerService.CanStartAdditionalWorkers)
+        if (eventData.NewState != JobState.Active)
         {
-            while (_jobWorkerService.CanStartAdditionalWorkers)
-            {
-                var nextPriorityJob = await _jobManager.GetNextPriorityJobAsync();
-                if (nextPriorityJob == null)
-                {
-                    break;
-                }
-
-                await _jobWorkerService.StartJobWorker(nextPriorityJob);
-            }
-            return;
+            await WorkPrioritizedJobs(cancellationToken);
         }
+    }
 
-        var activeJobs = new Queue<Job>(_jobWorkerService.GetJobsByPriority());
+    public async Task HandleEventAsync(JobPriorityChangedEvent eventData, CancellationToken cancellationToken = default)
+    {
+        await WorkPrioritizedJobs(cancellationToken);
+    }
 
-        while (activeJobs.Count > 0)
-        {
-            var job = activeJobs.Dequeue();
-            var nextPriorityJob = await _jobManager.GetNextPriorityJobAsync();
-            if (nextPriorityJob == null || job.Priority >= nextPriorityJob.Priority)
-            {
-                break;
-            }
-
-            await _jobWorkerService.StopJobWorker(job);
-            await _jobWorkerService.StartJobWorker(nextPriorityJob);
-        }
+    private async Task WorkPrioritizedJobs(CancellationToken cancellationToken)
+    {
+        await _backgroundJobManager.EnqueueOrReplaceJobAsync(
+            BackgroundJob.Create(
+                _idGenerator.CreateId(),
+                new WorkPrioritizedJobsArgs(),
+                maximumLifespan: TimeSpan.FromSeconds(3)),
+            false,
+            cancellationToken);
     }
 }
