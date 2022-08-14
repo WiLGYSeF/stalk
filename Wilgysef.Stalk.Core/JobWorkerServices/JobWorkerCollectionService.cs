@@ -6,31 +6,31 @@ namespace Wilgysef.Stalk.Core.JobWorkerServices;
 
 public class JobWorkerCollectionService : IJobWorkerCollectionService
 {
-    public IReadOnlyCollection<JobWorker> Workers => (IReadOnlyCollection<JobWorker>)_jobWorkers.Keys;
+    public IReadOnlyCollection<IJobWorker> Workers => (IReadOnlyCollection<IJobWorker>)_jobWorkers.Keys;
 
-    private readonly ConcurrentDictionary<JobWorker, JobWorkerValues> _jobWorkers = new();
+    private readonly ConcurrentDictionary<IJobWorker, JobWorkerValues> _jobWorkers = new();
 
-    public void AddJobWorker(JobWorker worker, Task task, CancellationTokenSource cancellationTokenSource)
+    public void AddJobWorker(IJobWorker worker, Task task, CancellationTokenSource cancellationTokenSource)
     {
         _jobWorkers[worker] = new JobWorkerValues(task, cancellationTokenSource);
     }
 
-    public void RemoveJobWorker(JobWorker worker)
+    public void RemoveJobWorker(IJobWorker worker)
     {
         _jobWorkers.Remove(worker, out _);
     }
 
-    public JobWorker? GetJobWorker(Job job)
+    public IJobWorker? GetJobWorker(Job job)
     {
         return _jobWorkers.Keys.SingleOrDefault(w => w.Job != null && w.Job.Id == job.Id);
     }
 
-    public void CancelJobWorkerToken(JobWorker worker)
+    public void CancelJobWorkerToken(IJobWorker worker)
     {
         _jobWorkers[worker].CancellationTokenSource.Cancel();
     }
 
-    public Task GetJobWorkerTask(JobWorker worker)
+    public Task GetJobWorkerTask(IJobWorker worker)
     {
         // return Task
         return _jobWorkers[worker].Task;

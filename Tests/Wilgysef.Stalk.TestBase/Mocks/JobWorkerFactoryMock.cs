@@ -1,14 +1,15 @@
-﻿using Wilgysef.Stalk.Core.JobWorkers;
+﻿using Wilgysef.Stalk.Core.JobWorkerFactories;
+using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
-namespace Wilgysef.Stalk.Core.JobWorkerFactories;
+namespace Wilgysef.Stalk.TestBase.Mocks;
 
-public class JobWorkerFactory : IJobWorkerFactory
+public class JobWorkerFactoryMock : IJobWorkerFactory
 {
     private readonly IServiceLocator _serviceLocator;
 
-    public JobWorkerFactory(
+    public JobWorkerFactoryMock(
         IServiceLocator serviceLocator)
     {
         _serviceLocator = serviceLocator;
@@ -16,7 +17,7 @@ public class JobWorkerFactory : IJobWorkerFactory
 
     public IJobWorker CreateWorker(Job job)
     {
-        return new JobWorker(_serviceLocator)
+        return new JobWorkerMock(_serviceLocator)
             .WithJob(job);
     }
 }

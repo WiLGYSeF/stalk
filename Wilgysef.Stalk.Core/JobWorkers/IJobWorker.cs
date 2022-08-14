@@ -4,7 +4,9 @@ namespace Wilgysef.Stalk.Core.JobWorkers;
 
 public interface IJobWorker
 {
-    JobWorker WithJob(Job job);
+    Job? Job { get; }
+
+    IJobWorker WithJob(Job job);
 
     Task WorkAsync(CancellationToken cancellationToken = default);
 }

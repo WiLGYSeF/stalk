@@ -1,4 +1,5 @@
 ﻿using Wilgysef.Stalk.Core.JobWorkerFactories;
+using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 
@@ -40,7 +41,7 @@ public class JobWorkerService : IJobWorkerService
         var cancellationTokenSource = new CancellationTokenSource();
 
         var task = new Task(
-            async () => await worker.WorkAsync(cancellationTokenSource.Token),
+            async () => await DoWorkAsync(worker, cancellationTokenSource.Token),
             cancellationTokenSource.Token,
             TaskCreationOptions.LongRunning);
 
@@ -62,6 +63,7 @@ public class JobWorkerService : IJobWorkerService
 
         _jobWorkerCollectionService.CancelJobWorkerToken(worker);
         await _jobWorkerCollectionService.GetJobWorkerTask(worker);
+        _jobWorkerCollectionService.RemoveJobWorker(worker);
         return true;
     }
 
@@ -71,5 +73,14 @@ public class JobWorkerService : IJobWorkerService
             .OrderByDescending(j => j.Priority)
             .ThenBy(j => j.Tasks.Count(t => t.IsActive))
             .ToList();
+    }
+
+    private static async Task DoWorkAsync(IJobWorker worker, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await worker.WorkAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) { }
     }
 }

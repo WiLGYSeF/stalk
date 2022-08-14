@@ -35,7 +35,7 @@ public class JobTaskWorkerService : IJobTaskWorkerService
         var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(jobCancellationToken);
 
         var task = new Task(
-            async () => await worker.WorkAsync(cancellationTokenSource.Token),
+            async () => await DoWorkAsync(worker, cancellationTokenSource.Token),
             cancellationTokenSource.Token,
             TaskCreationOptions.LongRunning);
 
@@ -59,5 +59,14 @@ public class JobTaskWorkerService : IJobTaskWorkerService
         _jobTaskWorkerCollectionService.CancelJobTaskWorkerToken(worker);
         await _jobTaskWorkerCollectionService.GetJobTaskWorkerTask(worker);
         return true;
+    }
+
+    private static async Task DoWorkAsync(IJobTaskWorker worker, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await worker.WorkAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) { }
     }
 }

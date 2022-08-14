@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Wilgysef.Stalk.Core.JobTaskWorkerServices;
+﻿using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
@@ -9,7 +8,7 @@ namespace Wilgysef.Stalk.Core.JobWorkers;
 
 public class JobWorker : IJobWorker
 {
-    public Job? Job { get; private set; }
+    public Job? Job { get; private set; } = null!;
 
     public int WorkerLimit { get; set; } = 4;
 
@@ -25,7 +24,7 @@ public class JobWorker : IJobWorker
         _serviceLocator = serviceLocator;
     }
 
-    public JobWorker WithJob(Job job)
+    public IJobWorker WithJob(Job job)
     {
         Job = job;
         return this;

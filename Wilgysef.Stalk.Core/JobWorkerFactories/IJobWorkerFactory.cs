@@ -6,5 +6,5 @@ namespace Wilgysef.Stalk.Core.JobWorkerFactories;
 
 public interface IJobWorkerFactory : ITransientDependency
 {
-    JobWorker CreateWorker(Job job);
+    IJobWorker CreateWorker(Job job);
 }
