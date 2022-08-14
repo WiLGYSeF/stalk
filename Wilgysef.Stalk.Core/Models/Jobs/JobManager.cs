@@ -133,40 +133,12 @@ public class JobManager : IJobManager
         foreach (var job in jobs)
         {
             cancellationToken.ThrowIfCancellationRequested();
-
-            switch (job.State)
-            {
-                case JobState.Active:
-                    job.ChangeState(JobState.Inactive);
-                    break;
-                case JobState.Cancelling:
-                    job.ChangeState(JobState.Cancelled);
-                    break;
-                case JobState.Pausing:
-                    job.ChangeState(JobState.Paused);
-                    break;
-                default:
-                    break;
-            }
+            job.Deactivate();
 
             foreach (var task in job.Tasks)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-
-                switch (task.State)
-                {
-                    case JobTaskState.Active:
-                        task.ChangeState(JobTaskState.Inactive);
-                        break;
-                    case JobTaskState.Cancelling:
-                        task.ChangeState(JobTaskState.Cancelled);
-                        break;
-                    case JobTaskState.Pausing:
-                        task.ChangeState(JobTaskState.Paused);
-                        break;
-                    default:
-                        break;
-                }
+                task.Deactivate();
             }
         }
 

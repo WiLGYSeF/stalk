@@ -395,4 +395,25 @@ public class JobTask : Entity
             DelayedUntil = dateTime;
         }
     }
+
+    /// <summary>
+    /// Sets active and transitioning state to their inactive and transitioned states.
+    /// </summary>
+    internal void Deactivate()
+    {
+        switch (State)
+        {
+            case JobTaskState.Active:
+                ChangeState(JobTaskState.Inactive);
+                break;
+            case JobTaskState.Cancelling:
+                ChangeState(JobTaskState.Cancelled);
+                break;
+            case JobTaskState.Pausing:
+                ChangeState(JobTaskState.Paused);
+                break;
+            default:
+                break;
+        }
+    }
 }

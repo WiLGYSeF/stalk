@@ -1,10 +1,13 @@
-﻿using Wilgysef.Stalk.Core.Models.JobTasks;
+﻿using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
 public class JobTaskWorker : IJobTaskWorker
 {
+    public Job? Job { get; private set; }
+
     public JobTask? JobTask { get; private set; }
 
     private readonly IServiceLocator _serviceLocator;
@@ -15,9 +18,10 @@ public class JobTaskWorker : IJobTaskWorker
         _serviceLocator = serviceLocator;
     }
 
-    public JobTaskWorker WithJobTask(JobTask task)
+    public JobTaskWorker WithJobTask(Job job, JobTask jobTask)
     {
-        JobTask = task;
+        Job = job;
+        JobTask = jobTask;
         return this;
     }
 
@@ -26,6 +30,19 @@ public class JobTaskWorker : IJobTaskWorker
         if (JobTask == null)
         {
             throw new InvalidOperationException("Job task is not set.");
+        }
+
+        try
+        {
+
+        }
+        finally
+        {
+            using var scope = _serviceLocator.BeginLifetimeScope();
+            var jobManager = scope.GetRequiredService<IJobManager>();
+
+            JobTask.Deactivate();
+            await jobManager.UpdateJobAsync(Job, CancellationToken.None);
         }
     }
 }

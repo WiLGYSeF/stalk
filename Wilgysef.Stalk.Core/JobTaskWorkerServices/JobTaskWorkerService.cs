@@ -31,7 +31,7 @@ public class JobTaskWorkerService : IJobTaskWorkerService
             throw new JobTaskActiveException();
         }
 
-        var worker = _jobTaskWorkerFactory.CreateWorker(jobTask);
+        var worker = _jobTaskWorkerFactory.CreateWorker(job, jobTask);
         var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(jobCancellationToken);
 
         var task = new Task(
