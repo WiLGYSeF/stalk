@@ -2,13 +2,8 @@
 
 namespace Wilgysef.Stalk.Core.BackgroundJobs;
 
-public interface IBackgroundJobDispatcher : ISingletonDependency
+public interface IBackgroundJobDispatcher : ITransientDependency
 {
-    /// <summary>
-    /// Active background jobs.
-    /// </summary>
-    public IReadOnlyCollection<BackgroundJob> ActiveJobs { get; }
-
     /// <summary>
     /// Executes queued background jobs.
     /// </summary>

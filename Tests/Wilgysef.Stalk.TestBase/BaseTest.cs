@@ -109,8 +109,7 @@ public class BaseTest
     private IServiceProvider GetServiceProvider(ContainerBuilder? builder = null)
     {
         return new AutofacServiceProviderFactory()
-            .CreateServiceProvider(builder
-                ?? CreateContainerBuilder());
+            .CreateServiceProvider(builder ?? CreateContainerBuilder());
     }
 
     private DbContextOptionsBuilder<StalkDbContext> GetDbContextOptionsBuilder()
@@ -120,7 +119,7 @@ public class BaseTest
             _connection = new SqliteConnection("DataSource=:memory:");
             _connection.Open();
 
-            // TODO: replace null
+            // TODO: replace null?
             using var context = new StalkDbContext(
                 new DbContextOptionsBuilder<StalkDbContext>()
                     .UseSqlite(_connection)
@@ -162,7 +161,7 @@ public class BaseTest
 
         foreach (var (implementation, service) in _replaceServiceInstances)
         {
-            var registration = builder.RegisterInstance(implementation)
+            builder.RegisterInstance(implementation)
                 .As(service)
                 .PropertiesAutowired()
                 .SingleInstance();

@@ -5,6 +5,9 @@
     /// </summary>
     public class JobTaskAlreadyDoneException : BusinessException
     {
+        /// <summary>
+        /// The job task is already done.
+        /// </summary>
         public JobTaskAlreadyDoneException() : base(StalkErrorCodes.JobTaskAlreadyDone) { }
     }
 }

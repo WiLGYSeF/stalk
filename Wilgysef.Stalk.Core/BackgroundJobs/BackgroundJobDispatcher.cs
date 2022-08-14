@@ -4,16 +4,15 @@ namespace Wilgysef.Stalk.Core.BackgroundJobs;
 
 public class BackgroundJobDispatcher : IBackgroundJobDispatcher
 {
-    public IReadOnlyCollection<BackgroundJob> ActiveJobs => _backgroundTasks.Values;
-
     private readonly IServiceLocator _serviceLocator;
-
-    private readonly Dictionary<Task, BackgroundJob> _backgroundTasks = new();
+    private readonly IBackgroundJobCollectionService _backgroundJobCollectionService;
 
     public BackgroundJobDispatcher(
-        IServiceLocator serviceLocator)
+        IServiceLocator serviceLocator,
+        IBackgroundJobCollectionService backgroundJobCollectionService)
     {
         _serviceLocator = serviceLocator;
+        _backgroundJobCollectionService = backgroundJobCollectionService;
     }
 
     public async Task ExecuteJobs(CancellationToken cancellationToken = default)
@@ -35,6 +34,7 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
 
             try
             {
+                _backgroundJobCollectionService.AddActiveJob(job);
                 await ExecuteJob(job, cancellationToken);
                 await backgroundJobManager.DeleteJobAsync(job);
             }
@@ -52,6 +52,10 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
             {
                 job.SetJobFailed();
                 await backgroundJobManager.UpdateJobAsync(job, CancellationToken.None);
+            }
+            finally
+            {
+                _backgroundJobCollectionService.RemoveActiveJob(job);
             }
         }
     }

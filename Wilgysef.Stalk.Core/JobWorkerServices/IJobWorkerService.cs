@@ -2,20 +2,10 @@
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 
-namespace Wilgysef.Stalk.Core.JobWorkerManagers;
+namespace Wilgysef.Stalk.Core.JobWorkerServices;
 
-public interface IJobWorkerService : ISingletonDependency
+public interface IJobWorkerService : ITransientDependency
 {
-    /// <summary>
-    /// Job workers.
-    /// </summary>
-    IReadOnlyCollection<JobWorker> Workers { get; }
-
-    /// <summary>
-    /// Active jobs.
-    /// </summary>
-    IReadOnlyCollection<Job> Jobs { get; }
-
     /// <summary>
     /// Whether additional workers can be started.
     /// </summary>

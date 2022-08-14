@@ -3,38 +3,31 @@ using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 
-namespace Wilgysef.Stalk.Core.JobWorkerManagers;
+namespace Wilgysef.Stalk.Core.JobWorkerServices;
 
 public class JobWorkerService : IJobWorkerService
 {
-    public IReadOnlyCollection<JobWorker> Workers => _jobWorkers;
-
-    public IReadOnlyCollection<Job> Jobs => (IReadOnlyCollection<Job>)Workers
-        .Select(w => w.Job)
-        .Where(j => j != null)
-        .ToList();
-
-    public bool CanStartAdditionalWorkers => _jobWorkers.Count < WorkerLimit;
+    public bool CanStartAdditionalWorkers => _jobWorkerCollectionService.Workers.Count < WorkerLimit;
 
     private int WorkerLimit { get; set; } = 4;
 
-    private readonly List<JobWorker> _jobWorkers = new();
-    private readonly Dictionary<JobWorker, JobWorkerObjects> _jobWorkerObjects = new();
-
     private readonly IJobManager _jobManager;
     private readonly IJobWorkerFactory _jobWorkerFactory;
+    private readonly IJobWorkerCollectionService _jobWorkerCollectionService;
 
     public JobWorkerService(
         IJobManager jobManager,
-        IJobWorkerFactory jobWorkerFactory)
+        IJobWorkerFactory jobWorkerFactory,
+        IJobWorkerCollectionService jobWorkerCollectionService)
     {
         _jobManager = jobManager;
         _jobWorkerFactory = jobWorkerFactory;
+        _jobWorkerCollectionService = jobWorkerCollectionService;
     }
 
     public async Task<bool> StartJobWorker(Job job)
     {
-        if (_jobWorkers.Any(j => j.Job != null && j.Job.Id == job.Id))
+        if (_jobWorkerCollectionService.GetJobWorker(job) != null)
         {
             throw new JobActiveException();
         }
@@ -47,11 +40,12 @@ public class JobWorkerService : IJobWorkerService
         var worker = _jobWorkerFactory.CreateWorker(job);
         var cancellationTokenSource = new CancellationTokenSource();
 
-        var token = cancellationTokenSource.Token;
-        var task = new Task(async () => await worker.WorkAsync(token), token, TaskCreationOptions.LongRunning);
+        var task = new Task(
+            async () => await worker.WorkAsync(cancellationTokenSource.Token),
+            cancellationTokenSource.Token,
+            TaskCreationOptions.LongRunning);
 
-        _jobWorkers.Add(worker);
-        _jobWorkerObjects.Add(worker, new JobWorkerObjects(task, cancellationTokenSource));
+        _jobWorkerCollectionService.AddJobWorker(worker, task, cancellationTokenSource);
 
         await _jobManager.SetJobActiveAsync(job);
         task.Start();
@@ -61,37 +55,22 @@ public class JobWorkerService : IJobWorkerService
 
     public async Task<bool> StopJobWorker(Job job)
     {
-        var worker = _jobWorkers.SingleOrDefault(w => w.Job != null && w.Job.Id == job.Id);
+        var worker = _jobWorkerCollectionService.GetJobWorker(job);
         if (worker == null)
         {
             return false;
         }
 
-        var objects = _jobWorkerObjects[worker];
-        objects.CancellationTokenSource.Cancel();
-
-        await objects.Task;
+        _jobWorkerCollectionService.CancelJobWorkerToken(worker);
+        await _jobWorkerCollectionService.GetJobWorkerTask(worker);
         return true;
     }
 
     public List<Job> GetJobsByPriority()
     {
-        return Jobs
+        return _jobWorkerCollectionService.Jobs
             .OrderByDescending(j => j.Priority)
             .ThenBy(j => j.Tasks.Count(t => t.IsActive))
             .ToList();
-    }
-
-    private class JobWorkerObjects
-    {
-        public Task Task { get; set; }
-
-        public CancellationTokenSource CancellationTokenSource { get; set; }
-
-        public JobWorkerObjects(Task task, CancellationTokenSource cancellationTokenSource)
-        {
-            Task = task;
-            CancellationTokenSource = cancellationTokenSource;
-        }
     }
 }

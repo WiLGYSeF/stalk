@@ -1,5 +1,5 @@
 ﻿using Wilgysef.Stalk.Core.BackgroundJobs.Args;
-using Wilgysef.Stalk.Core.JobWorkerManagers;
+using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 
 namespace Wilgysef.Stalk.Core.BackgroundJobs.Executors;
@@ -24,7 +24,7 @@ public class WorkPrioritizedJobsJob : IBackgroundJobHandler<WorkPrioritizedJobsA
             while (_jobWorkerService.CanStartAdditionalWorkers)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var nextPriorityJob = await _jobManager.GetNextPriorityJobAsync();
+                var nextPriorityJob = await _jobManager.GetNextPriorityJobAsync(cancellationToken);
                 if (nextPriorityJob == null)
                 {
                     break;
@@ -43,7 +43,7 @@ public class WorkPrioritizedJobsJob : IBackgroundJobHandler<WorkPrioritizedJobsA
             cancellationToken.ThrowIfCancellationRequested();
 
             var job = activeJobs.Pop();
-            var nextPriorityJob = await _jobManager.GetNextPriorityJobAsync();
+            var nextPriorityJob = await _jobManager.GetNextPriorityJobAsync(cancellationToken);
             if (nextPriorityJob == null || job.Priority >= nextPriorityJob.Priority)
             {
                 break;

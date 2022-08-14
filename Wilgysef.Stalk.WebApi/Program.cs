@@ -3,7 +3,6 @@ using Autofac.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
-
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -42,12 +41,6 @@ using (var scope = app.Services.CreateScope())
 
 app.Run();
 
-void ConfigureSwagger()
-{
-    builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
-}
-
 void ConfigureServices()
 {
     builder.Services.AddAutofac();
@@ -62,6 +55,12 @@ void ConfigureServices()
                 .Options);
         serviceRegistrar.RegisterApplication(containerBuilder, builder.Services);
     });
+}
+
+void ConfigureSwagger()
+{
+    builder.Services.AddEndpointsApiExplorer();
+    builder.Services.AddSwaggerGen();
 }
 
 public partial class Program { }
