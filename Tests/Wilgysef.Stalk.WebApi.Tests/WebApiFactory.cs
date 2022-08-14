@@ -38,13 +38,13 @@ public class WebApiFactory : IDisposable
 
     public void Dispose()
     {
-        GC.SuppressFinalize(this);
-
         if (_connection != null)
         {
             _connection.Dispose();
             _connection = null;
         }
+
+        GC.SuppressFinalize(this);
     }
 
     private DbContextOptionsBuilder<StalkDbContext> SetOptions(DbContextOptionsBuilder<StalkDbContext>? builder = null)

@@ -110,13 +110,11 @@ public class BaseTest
     {
         return new AutofacServiceProviderFactory()
             .CreateServiceProvider(builder
-                ?? CreateContainerBuilder(CreateServiceCollection()));
+                ?? CreateContainerBuilder());
     }
 
-    private ServiceCollection CreateServiceCollection()
+    private DbContextOptionsBuilder<StalkDbContext> GetDbContextOptionsBuilder()
     {
-        var services = new ServiceCollection();
-
         if (_connection == null)
         {
             _connection = new SqliteConnection("DataSource=:memory:");
@@ -131,12 +129,8 @@ public class BaseTest
             context.Database.EnsureCreated();
         }
 
-        services.AddDbContext<StalkDbContext>(options =>
-        {
-            options.UseSqlite(_connection);
-        });
-
-        return services;
+        return new DbContextOptionsBuilder<StalkDbContext>()
+            .UseSqlite(_connection);
     }
 
     private ContainerBuilder CreateContainerBuilder(IServiceCollection? services = null)
@@ -148,7 +142,7 @@ public class BaseTest
             builder.Populate(services);
         }
 
-        var serviceRegistrar = new ServiceRegistrar();
+        var serviceRegistrar = new ServiceRegistrar(GetDbContextOptionsBuilder().Options);
         serviceRegistrar.RegisterApplication(builder);
 
         foreach (var (implementation, service, type) in _replaceServices)

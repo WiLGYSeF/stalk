@@ -10,8 +10,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-ConfigureDependencyInjection();
-ConfigureDbContext();
+ConfigureServices();
 ConfigureSwagger();
 
 var app = builder.Build();
@@ -43,31 +42,25 @@ using (var scope = app.Services.CreateScope())
 
 app.Run();
 
-void ConfigureDbContext()
-{
-    // TODO: move to registrar
-    builder.Services.AddDbContext<StalkDbContext>(opt =>
-    {
-        opt.UseSqlite("DataSource=abc.db");
-    });
-}
-
 void ConfigureSwagger()
 {
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 }
 
-void ConfigureDependencyInjection()
+void ConfigureServices()
 {
     builder.Services.AddAutofac();
 
     builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
-    builder.Host.ConfigureContainer<ContainerBuilder>((context, builder) =>
+    builder.Host.ConfigureContainer<ContainerBuilder>((context, containerBuilder) =>
     {
-        var serviceRegistrar = new ServiceRegistrar();
-        serviceRegistrar.RegisterApplication(builder);
+        var serviceRegistrar = new ServiceRegistrar(
+            new DbContextOptionsBuilder<StalkDbContext>()
+                .UseSqlite("DataSource=abc.db")
+                .Options);
+        serviceRegistrar.RegisterApplication(containerBuilder, builder.Services);
     });
 }
 
