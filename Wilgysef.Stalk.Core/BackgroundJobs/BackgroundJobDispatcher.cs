@@ -4,19 +4,18 @@ namespace Wilgysef.Stalk.Core.BackgroundJobs;
 
 public class BackgroundJobDispatcher : IBackgroundJobDispatcher
 {
-    public IReadOnlyCollection<BackgroundJob> ActiveJobs => _backgroundTasks.Values;
-
     private readonly IServiceLocator _serviceLocator;
-
-    private readonly Dictionary<Task, BackgroundJob> _backgroundTasks = new();
+    private readonly IBackgroundJobCollectionService _backgroundJobCollectionService;
 
     public BackgroundJobDispatcher(
-        IServiceLocator serviceLocator)
+        IServiceLocator serviceLocator,
+        IBackgroundJobCollectionService backgroundJobCollectionService)
     {
         _serviceLocator = serviceLocator;
+        _backgroundJobCollectionService = backgroundJobCollectionService;
     }
 
-    public async Task ExecuteJobs(CancellationToken cancellationToken = default)
+    public async Task ExecuteJobsAsync(CancellationToken cancellationToken = default)
     {
         using var scope = _serviceLocator.BeginLifetimeScope();
         var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
@@ -35,7 +34,8 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
 
             try
             {
-                await ExecuteJob(job, cancellationToken);
+                _backgroundJobCollectionService.AddActiveJob(job);
+                await ExecuteJobAsync(job, cancellationToken);
                 await backgroundJobManager.DeleteJobAsync(job);
             }
             catch (OperationCanceledException)
@@ -53,10 +53,14 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
                 job.SetJobFailed();
                 await backgroundJobManager.UpdateJobAsync(job, CancellationToken.None);
             }
+            finally
+            {
+                _backgroundJobCollectionService.RemoveActiveJob(job);
+            }
         }
     }
 
-    private async Task ExecuteJob(BackgroundJob job, CancellationToken cancellationToken)
+    private async Task ExecuteJobAsync(BackgroundJob job, CancellationToken cancellationToken)
     {
         var argsType = job.GetJobArgsType();
         var args = job.DeserializeArgs();

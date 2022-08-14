@@ -1,5 +1,5 @@
 ﻿using Wilgysef.Stalk.Core.BackgroundJobs.Args;
-using Wilgysef.Stalk.Core.JobWorkerManagers;
+using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 
 namespace Wilgysef.Stalk.Core.BackgroundJobs.Executors;
@@ -24,14 +24,14 @@ public class WorkPrioritizedJobsJob : IBackgroundJobHandler<WorkPrioritizedJobsA
             while (_jobWorkerService.CanStartAdditionalWorkers)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var nextPriorityJob = await _jobManager.GetNextPriorityJobAsync();
+                var nextPriorityJob = await _jobManager.GetNextPriorityJobAsync(cancellationToken);
                 if (nextPriorityJob == null)
                 {
                     break;
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
-                await _jobWorkerService.StartJobWorker(nextPriorityJob);
+                await _jobWorkerService.StartJobWorkerAsync(nextPriorityJob);
             }
             return;
         }
@@ -43,7 +43,7 @@ public class WorkPrioritizedJobsJob : IBackgroundJobHandler<WorkPrioritizedJobsA
             cancellationToken.ThrowIfCancellationRequested();
 
             var job = activeJobs.Pop();
-            var nextPriorityJob = await _jobManager.GetNextPriorityJobAsync();
+            var nextPriorityJob = await _jobManager.GetNextPriorityJobAsync(cancellationToken);
             if (nextPriorityJob == null || job.Priority >= nextPriorityJob.Priority)
             {
                 break;
@@ -51,8 +51,8 @@ public class WorkPrioritizedJobsJob : IBackgroundJobHandler<WorkPrioritizedJobsA
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            await _jobWorkerService.StopJobWorker(job);
-            await _jobWorkerService.StartJobWorker(nextPriorityJob);
+            await _jobWorkerService.StopJobWorkerAsync(job);
+            await _jobWorkerService.StartJobWorkerAsync(nextPriorityJob);
         }
     }
 }

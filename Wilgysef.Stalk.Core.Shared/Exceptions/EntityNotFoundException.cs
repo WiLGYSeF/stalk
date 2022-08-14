@@ -17,6 +17,9 @@ namespace Wilgysef.Stalk.Core.Shared.Exceptions
         /// </summary>
         public object EntityId { get; private set; }
 
+        /// <summary>
+        /// Entity was not found.
+        /// </summary>
         public EntityNotFoundException(string entityName, object entityId)
         {
             EntityName = entityName;

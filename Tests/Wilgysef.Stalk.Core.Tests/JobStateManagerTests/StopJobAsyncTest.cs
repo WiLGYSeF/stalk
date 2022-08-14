@@ -1,6 +1,6 @@
 ﻿using Moq;
 using Shouldly;
-using Wilgysef.Stalk.Core.JobWorkerManagers;
+using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.TestBase;
@@ -19,7 +19,7 @@ public class StopJobAsyncTest : BaseTest
     {
         var jobWorkerService = new Mock<IJobWorkerService>();
 
-        jobWorkerService.Setup(s => s.StopJobWorker(It.IsAny<Job>())).Callback(() =>
+        jobWorkerService.Setup(s => s.StopJobWorkerAsync(It.IsAny<Job>())).Callback(() =>
         {
             _manualResetEventSlimInner.Set();
             _manualResetEventSlimOuter.Wait();

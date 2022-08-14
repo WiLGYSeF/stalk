@@ -36,7 +36,7 @@ public class JobTaskWorkerService : IJobTaskWorkerService
         return true;
     }
 
-    public async Task<bool> StopJobTaskWorker(JobTask task)
+    public async Task<bool> StopJobTaskWorkerAsync(JobTask task)
     {
         var worker = _jobTaskWorkers.SingleOrDefault(w => w.JobTask != null && w.JobTask.Id == task.Id);
         if (worker == null)

@@ -32,12 +32,12 @@ public class StalkDbContext : DbContext, IStalkDbContext
 
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
     {
-        await DispatchDomainEvents(cancellationToken);
+        await DispatchDomainEventsAsync(cancellationToken);
 
         return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
     }
 
-    private async Task DispatchDomainEvents(CancellationToken cancellationToken)
+    private async Task DispatchDomainEventsAsync(CancellationToken cancellationToken)
     {
         var domainEventEntities = ChangeTracker.Entries<IEntity>()
             .Select(e => e.Entity)

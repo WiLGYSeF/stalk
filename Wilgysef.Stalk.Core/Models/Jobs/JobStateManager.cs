@@ -1,4 +1,5 @@
 ﻿using Wilgysef.Stalk.Core.JobWorkerManagers;
+using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
@@ -124,7 +125,7 @@ public class JobStateManager : IJobStateManager
                 await _jobManager.UpdateJobAsync(job);
             }
 
-            await _jobWorkerService.StopJobWorker(job);
+            await _jobWorkerService.StopJobWorkerAsync(job);
         }
 
         if (changeState)
@@ -151,7 +152,7 @@ public class JobStateManager : IJobStateManager
                 await _jobManager.UpdateJobAsync(job);
             }
 
-            await _jobTaskWorkerService.StopJobTaskWorker(task);
+            await _jobTaskWorkerService.StopJobTaskWorkerAsync(task);
         }
 
         if (changeState)

@@ -58,7 +58,7 @@ public class CreateJobTest : BaseTest
             task.Result.ErrorDetail.ShouldBeNull();
         }
 
-        var backgroundJobs = await _backgroundJobManager.GetJobs();
+        var backgroundJobs = await _backgroundJobManager.GetJobsAsync();
         backgroundJobs.Count.ShouldBe(1);
         backgroundJobs.ShouldContain(j => j.JobArgsName == typeof(WorkPrioritizedJobsArgs).FullName);
     }

@@ -3,15 +3,13 @@ using Autofac.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
-
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
 
-ConfigureDependencyInjection();
-ConfigureDbContext();
+ConfigureServices();
 ConfigureSwagger();
 
 var app = builder.Build();
@@ -43,12 +41,19 @@ using (var scope = app.Services.CreateScope())
 
 app.Run();
 
-void ConfigureDbContext()
+void ConfigureServices()
 {
-    // TODO: move to registrar
-    builder.Services.AddDbContext<StalkDbContext>(opt =>
+    builder.Services.AddAutofac();
+
+    builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
+
+    builder.Host.ConfigureContainer<ContainerBuilder>((context, containerBuilder) =>
     {
-        opt.UseSqlite("DataSource=abc.db");
+        var serviceRegistrar = new ServiceRegistrar(
+            new DbContextOptionsBuilder<StalkDbContext>()
+                .UseSqlite("DataSource=abc.db")
+                .Options);
+        serviceRegistrar.RegisterApplication(containerBuilder, builder.Services);
     });
 }
 
@@ -56,19 +61,6 @@ void ConfigureSwagger()
 {
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
-}
-
-void ConfigureDependencyInjection()
-{
-    builder.Services.AddAutofac();
-
-    builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
-
-    builder.Host.ConfigureContainer<ContainerBuilder>((context, builder) =>
-    {
-        var serviceRegistrar = new ServiceRegistrar();
-        serviceRegistrar.RegisterApplication(builder);
-    });
 }
 
 public partial class Program { }

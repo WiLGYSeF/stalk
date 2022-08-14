@@ -2,20 +2,10 @@
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 
-namespace Wilgysef.Stalk.Core.JobWorkerManagers;
+namespace Wilgysef.Stalk.Core.JobWorkerServices;
 
-public interface IJobWorkerService : ISingletonDependency
+public interface IJobWorkerService : ITransientDependency
 {
-    /// <summary>
-    /// Job workers.
-    /// </summary>
-    IReadOnlyCollection<JobWorker> Workers { get; }
-
-    /// <summary>
-    /// Active jobs.
-    /// </summary>
-    IReadOnlyCollection<Job> Jobs { get; }
-
     /// <summary>
     /// Whether additional workers can be started.
     /// </summary>
@@ -26,14 +16,14 @@ public interface IJobWorkerService : ISingletonDependency
     /// </summary>
     /// <param name="job">Job.</param>
     /// <returns><see langword="true"/> if job worker was started, otherwise <see langword="false"/>.</returns>
-    Task<bool> StartJobWorker(Job job);
+    Task<bool> StartJobWorkerAsync(Job job);
 
     /// <summary>
     /// Stops a job worker. Awaits until the job is no longer active.
     /// </summary>
     /// <param name="job">Job.</param>
     /// <returns></returns>
-    Task<bool> StopJobWorker(Job job);
+    Task<bool> StopJobWorkerAsync(Job job);
 
     /// <summary>
     /// Gets the active jobs ordered by highest priority, then by active job taskcount.

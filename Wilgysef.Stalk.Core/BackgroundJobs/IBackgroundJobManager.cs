@@ -42,14 +42,14 @@ public interface IBackgroundJobManager : ITransientDependency
     /// <param name="id">Background job Id.</param>
     /// <param name="cancellationToken"></param>
     /// <returns>Background job, or <see langword="null"/> if no background job was found.</returns>
-    Task<BackgroundJob?> FindJob(long id, CancellationToken cancellationToken = default);
+    Task<BackgroundJob?> FindJobAsync(long id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets list of background jobs.
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns>List of background jobs.</returns>
-    Task<List<BackgroundJob>> GetJobs(CancellationToken cancellationToken = default);
+    Task<List<BackgroundJob>> GetJobsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets next priority queued background job.

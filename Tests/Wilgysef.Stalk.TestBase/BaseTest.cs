@@ -109,20 +109,17 @@ public class BaseTest
     private IServiceProvider GetServiceProvider(ContainerBuilder? builder = null)
     {
         return new AutofacServiceProviderFactory()
-            .CreateServiceProvider(builder
-                ?? CreateContainerBuilder(CreateServiceCollection()));
+            .CreateServiceProvider(builder ?? CreateContainerBuilder());
     }
 
-    private ServiceCollection CreateServiceCollection()
+    private DbContextOptionsBuilder<StalkDbContext> GetDbContextOptionsBuilder()
     {
-        var services = new ServiceCollection();
-
         if (_connection == null)
         {
             _connection = new SqliteConnection("DataSource=:memory:");
             _connection.Open();
 
-            // TODO: replace null
+            // TODO: replace null?
             using var context = new StalkDbContext(
                 new DbContextOptionsBuilder<StalkDbContext>()
                     .UseSqlite(_connection)
@@ -131,12 +128,8 @@ public class BaseTest
             context.Database.EnsureCreated();
         }
 
-        services.AddDbContext<StalkDbContext>(options =>
-        {
-            options.UseSqlite(_connection);
-        });
-
-        return services;
+        return new DbContextOptionsBuilder<StalkDbContext>()
+            .UseSqlite(_connection);
     }
 
     private ContainerBuilder CreateContainerBuilder(IServiceCollection? services = null)
@@ -148,7 +141,7 @@ public class BaseTest
             builder.Populate(services);
         }
 
-        var serviceRegistrar = new ServiceRegistrar();
+        var serviceRegistrar = new ServiceRegistrar(GetDbContextOptionsBuilder().Options);
         serviceRegistrar.RegisterApplication(builder);
 
         foreach (var (implementation, service, type) in _replaceServices)
@@ -168,7 +161,7 @@ public class BaseTest
 
         foreach (var (implementation, service) in _replaceServiceInstances)
         {
-            var registration = builder.RegisterInstance(implementation)
+            builder.RegisterInstance(implementation)
                 .As(service)
                 .PropertiesAutowired()
                 .SingleInstance();
