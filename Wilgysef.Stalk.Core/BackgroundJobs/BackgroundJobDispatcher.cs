@@ -36,17 +36,17 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
             {
                 _backgroundJobCollectionService.AddActiveJob(job);
                 await ExecuteJobAsync(job, cancellationToken);
-                await backgroundJobManager.DeleteJobAsync(job);
-            }
-            catch (OperationCanceledException)
-            {
-                throw;
+                await backgroundJobManager.DeleteJobAsync(job, CancellationToken.None);
             }
             catch (InvalidBackgroundJobException)
             {
                 // TODO: handle invalid background job
                 job.SetJobFailed();
                 await backgroundJobManager.UpdateJobAsync(job, CancellationToken.None);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
             }
             catch (Exception)
             {
