@@ -1,5 +1,6 @@
 ﻿using Ardalis.Specification;
 using Wilgysef.Stalk.Core.DomainEvents.Events;
+using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.Core.Specifications;
@@ -91,7 +92,25 @@ public class JobManager : IJobManager
 
     public async Task SetJobActiveAsync(Job job, CancellationToken cancellationToken = default)
     {
+        if (job.IsActive)
+        {
+            return;
+        }
+
         job.ChangeState(JobState.Active);
+
+        _unitOfWork.JobRepository.Update(job);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task SetJobTaskActiveAsync(Job job, JobTask jobTask, CancellationToken cancellationToken = default)
+    {
+        if (jobTask.IsActive)
+        {
+            return;
+        }
+
+        jobTask.ChangeState(JobTaskState.Active);
 
         _unitOfWork.JobRepository.Update(job);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

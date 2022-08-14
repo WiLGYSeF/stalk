@@ -1,6 +1,6 @@
 ﻿using Wilgysef.Stalk.Core.Models.JobTasks;
 
-namespace Wilgysef.Stalk.Core.JobWorkers;
+namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
 public interface IJobTaskWorker
 {

@@ -12,11 +12,6 @@ public interface IJobWorkerCollectionService : ISingletonDependency
     IReadOnlyCollection<JobWorker> Workers { get; }
 
     /// <summary>
-    /// Active jobs.
-    /// </summary>
-    IReadOnlyCollection<Job> Jobs { get; }
-
-    /// <summary>
     /// Adds a job worker.
     /// </summary>
     /// <param name="worker">Job worker.</param>
@@ -36,6 +31,12 @@ public interface IJobWorkerCollectionService : ISingletonDependency
     /// <param name="job">Job the job worker is working on.</param>
     /// <returns>Job worker.</returns>
     JobWorker? GetJobWorker(Job job);
+
+    /// <summary>
+    /// Gets active jobs.
+    /// </summary>
+    /// <returns>Enumerable of active jobs.</returns>
+    IEnumerable<Job> GetActiveJobs();
 
     /// <summary>
     /// Cancels the job worker token.

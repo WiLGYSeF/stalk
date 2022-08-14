@@ -6,48 +6,49 @@ namespace Wilgysef.Stalk.Core.JobWorkerServices;
 
 public class JobWorkerCollectionService : IJobWorkerCollectionService
 {
-    public IReadOnlyCollection<JobWorker> Workers => (IReadOnlyCollection<JobWorker>)_jobWorkerObjects.Keys;
+    public IReadOnlyCollection<JobWorker> Workers => (IReadOnlyCollection<JobWorker>)_jobWorkers.Keys;
 
-    public IReadOnlyCollection<Job> Jobs => (IReadOnlyCollection<Job>)Workers
-        .Select(w => w.Job)
-        .Where(j => j != null)
-        .ToList();
-
-    private readonly ConcurrentDictionary<JobWorker, JobWorkerObjects> _jobWorkerObjects = new();
+    private readonly ConcurrentDictionary<JobWorker, JobWorkerValues> _jobWorkers = new();
 
     public void AddJobWorker(JobWorker worker, Task task, CancellationTokenSource cancellationTokenSource)
     {
-        _jobWorkerObjects[worker] = new JobWorkerObjects(task, cancellationTokenSource);
+        _jobWorkers[worker] = new JobWorkerValues(task, cancellationTokenSource);
     }
 
     public void RemoveJobWorker(JobWorker worker)
     {
-        _jobWorkerObjects.Remove(worker, out _);
+        _jobWorkers.Remove(worker, out _);
     }
 
     public JobWorker? GetJobWorker(Job job)
     {
-        return _jobWorkerObjects.Keys.SingleOrDefault(w => w.Job != null && w.Job.Id == job.Id);
+        return _jobWorkers.Keys.SingleOrDefault(w => w.Job != null && w.Job.Id == job.Id);
     }
 
     public void CancelJobWorkerToken(JobWorker worker)
     {
-        _jobWorkerObjects[worker].CancellationTokenSource.Cancel();
+        _jobWorkers[worker].CancellationTokenSource.Cancel();
     }
 
     public Task GetJobWorkerTask(JobWorker worker)
     {
         // return Task
-        return _jobWorkerObjects[worker].Task;
+        return _jobWorkers[worker].Task;
     }
 
-    private class JobWorkerObjects
+    public IEnumerable<Job> GetActiveJobs()
+    {
+        return (IEnumerable<Job>)Workers
+            .Select(w => w.Job);
+    }
+
+    private class JobWorkerValues
     {
         public Task Task { get; set; }
 
         public CancellationTokenSource CancellationTokenSource { get; set; }
 
-        public JobWorkerObjects(Task task, CancellationTokenSource cancellationTokenSource)
+        public JobWorkerValues(Task task, CancellationTokenSource cancellationTokenSource)
         {
             Task = task;
             CancellationTokenSource = cancellationTokenSource;

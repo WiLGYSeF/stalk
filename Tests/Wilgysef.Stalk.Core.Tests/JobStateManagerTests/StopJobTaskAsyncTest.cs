@@ -1,6 +1,6 @@
 ﻿using Moq;
 using Shouldly;
-using Wilgysef.Stalk.Core.JobWorkerManagers;
+using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;

@@ -1,5 +1,4 @@
 ﻿using Wilgysef.Stalk.Core.JobWorkerFactories;
-using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 
@@ -68,7 +67,7 @@ public class JobWorkerService : IJobWorkerService
 
     public List<Job> GetJobsByPriority()
     {
-        return _jobWorkerCollectionService.Jobs
+        return _jobWorkerCollectionService.GetActiveJobs()
             .OrderByDescending(j => j.Priority)
             .ThenBy(j => j.Tasks.Count(t => t.IsActive))
             .ToList();

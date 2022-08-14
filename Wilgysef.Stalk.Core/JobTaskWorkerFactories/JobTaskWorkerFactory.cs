@@ -1,8 +1,8 @@
-﻿using Wilgysef.Stalk.Core.JobWorkers;
+﻿using Wilgysef.Stalk.Core.JobTaskWorkers;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
-namespace Wilgysef.Stalk.Core.JobWorkerFactories;
+namespace Wilgysef.Stalk.Core.JobTaskWorkerFactories;
 
 public class JobTaskWorkerFactory : IJobTaskWorkerFactory
 {

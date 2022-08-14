@@ -26,7 +26,7 @@ public interface IJobWorkerService : ITransientDependency
     Task<bool> StopJobWorkerAsync(Job job);
 
     /// <summary>
-    /// Gets the active jobs ordered by highest priority, then by active job taskcount.
+    /// Gets the active jobs ordered by highest priority, then by least active job taskcount.
     /// </summary>
     /// <returns>Ordered list of active jobs.</returns>
     List<Job> GetJobsByPriority();

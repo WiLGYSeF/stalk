@@ -303,6 +303,15 @@ public class Job : Entity
         return config;
     }
 
+    public JobTask? GetQueuedTasksByPriority()
+    {
+        return Tasks
+            .Where(t => t.IsQueued)
+            .OrderByDescending(t => t.Priority)
+            .ThenBy(t => t.Started)
+            .FirstOrDefault();
+    }
+
     /// <summary>
     /// Changes the job state.
     /// </summary>

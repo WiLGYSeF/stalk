@@ -1,26 +1,36 @@
-﻿using Wilgysef.Stalk.Core.JobWorkerFactories;
-using Wilgysef.Stalk.Core.JobWorkers;
+﻿using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
+using Wilgysef.Stalk.Core.JobTaskWorkers;
+using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
+using Wilgysef.Stalk.Core.Shared.Exceptions;
 
-namespace Wilgysef.Stalk.Core.JobWorkerManagers;
+namespace Wilgysef.Stalk.Core.JobTaskWorkerServices;
 
 public class JobTaskWorkerService : IJobTaskWorkerService
 {
-    public IReadOnlyCollection<JobTaskWorker> Workers => _jobTaskWorkers;
+    public IReadOnlyCollection<JobTaskWorker> Workers => _jobTaskWorkerCollectionService.Workers;
 
-    private readonly List<JobTaskWorker> _jobTaskWorkers = new();
-    private readonly Dictionary<JobTaskWorker, JobTaskWorkerObjects> _jobTaskWorkerObjects = new();
-
+    private readonly IJobManager _jobManager;
     private readonly IJobTaskWorkerFactory _jobTaskWorkerFactory;
+    private readonly IJobTaskWorkerCollectionService _jobTaskWorkerCollectionService;
 
     public JobTaskWorkerService(
-        IJobTaskWorkerFactory jobTaskWorkerFactory)
+        IJobManager jobManager,
+        IJobTaskWorkerFactory jobTaskWorkerFactory,
+        IJobTaskWorkerCollectionService jobTaskWorkerCollectionService)
     {
+        _jobManager = jobManager;
         _jobTaskWorkerFactory = jobTaskWorkerFactory;
+        _jobTaskWorkerCollectionService = jobTaskWorkerCollectionService;
     }
 
-    public bool StartJobTaskWorker(JobTask jobTask)
+    public async Task<bool> StartJobTaskWorkerAsync(Job job, JobTask jobTask)
     {
+        if (_jobTaskWorkerCollectionService.GetJobTaskWorker(jobTask) != null)
+        {
+            throw new JobTaskActiveException();
+        }
+
         var worker = _jobTaskWorkerFactory.CreateWorker(jobTask);
         var cancellationTokenSource = new CancellationTokenSource();
 
@@ -29,38 +39,24 @@ public class JobTaskWorkerService : IJobTaskWorkerService
             cancellationTokenSource.Token,
             TaskCreationOptions.LongRunning);
 
-        _jobTaskWorkers.Add(worker);
-        _jobTaskWorkerObjects.Add(worker, new JobTaskWorkerObjects(task, cancellationTokenSource));
+        _jobTaskWorkerCollectionService.AddJobTaskWorker(worker, task, cancellationTokenSource);
 
+        await _jobManager.SetJobTaskActiveAsync(job, jobTask);
         task.Start();
+        
         return true;
     }
 
     public async Task<bool> StopJobTaskWorkerAsync(JobTask task)
     {
-        var worker = _jobTaskWorkers.SingleOrDefault(w => w.JobTask != null && w.JobTask.Id == task.Id);
+        var worker = _jobTaskWorkerCollectionService.GetJobTaskWorker(task);
         if (worker == null)
         {
             return false;
         }
 
-        var objects = _jobTaskWorkerObjects[worker];
-        objects.CancellationTokenSource.Cancel();
-
-        await objects.Task;
+        _jobTaskWorkerCollectionService.CancelJobTaskWorkerToken(worker);
+        await _jobTaskWorkerCollectionService.GetJobTaskWorkerTask(worker);
         return true;
-    }
-
-    private class JobTaskWorkerObjects
-    {
-        public Task Task { get; set; }
-
-        public CancellationTokenSource CancellationTokenSource { get; set; }
-
-        public JobTaskWorkerObjects(Task task, CancellationTokenSource cancellationTokenSource)
-        {
-            Task = task;
-            CancellationTokenSource = cancellationTokenSource;
-        }
     }
 }
