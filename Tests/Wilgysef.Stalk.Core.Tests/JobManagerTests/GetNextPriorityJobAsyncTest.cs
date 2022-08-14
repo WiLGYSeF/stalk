@@ -1,5 +1,6 @@
 ﻿using Shouldly;
 using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.TestBase;
 
@@ -47,14 +48,19 @@ public class GetNextPriorityJobAsyncTest : BaseTest
             await _jobManager.CreateJobAsync(job);
         }
 
+        Job? next;
+
         for (var i = 0; i < expectedJobs.Length; i++)
         {
-            var next = await _jobManager.GetNextPriorityJobAsync();
+            next = await _jobManager.GetNextPriorityJobAsync();
             next.ShouldNotBeNull();
 
             next.Id.ShouldBe(expectedJobs[i].Id);
             await _jobManager.DeleteJobAsync(next);
         }
+
+        next = await _jobManager.GetNextPriorityJobAsync();
+        next.ShouldBeNull();
     }
 
     [Fact]
@@ -92,14 +98,19 @@ public class GetNextPriorityJobAsyncTest : BaseTest
             await _jobManager.CreateJobAsync(job);
         }
 
+        Job? next;
+
         for (var i = 0; i < expectedJobs.Length; i++)
         {
-            var next = await _jobManager.GetNextPriorityJobAsync();
+            next = await _jobManager.GetNextPriorityJobAsync();
             next.ShouldNotBeNull();
 
             next.Id.ShouldBe(expectedJobs[i].Id);
             await _jobManager.DeleteJobAsync(next);
         }
+
+        next = await _jobManager.GetNextPriorityJobAsync();
+        next.ShouldBeNull();
     }
 
     [Fact]
@@ -122,8 +133,11 @@ public class GetNextPriorityJobAsyncTest : BaseTest
 
         var next = await _jobManager.GetNextPriorityJobAsync();
         next.ShouldNotBeNull();
-
         next.Id.ShouldBe(jobs.Single(j => j.State == JobState.Inactive).Id);
+        await _jobManager.DeleteJobAsync(next);
+
+        next = await _jobManager.GetNextPriorityJobAsync();
+        next.ShouldBeNull();
     }
 
 
@@ -150,7 +164,75 @@ public class GetNextPriorityJobAsyncTest : BaseTest
 
         var next = await _jobManager.GetNextPriorityJobAsync();
         next.ShouldNotBeNull();
-
         next.Id.ShouldBe(jobs[2].Id);
+        await _jobManager.DeleteJobAsync(next);
+
+        next = await _jobManager.GetNextPriorityJobAsync();
+        next.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Get_Next_Job_Paused_Past_Delayed_Until()
+    {
+        var jobs = new List<Job>
+        {
+            new JobBuilder().WithRandomInitializedState(JobState.Paused)
+                .WithRandomTasks(JobTaskState.Inactive, 3)
+                .Create(),
+            new JobBuilder().WithRandomInitializedState(JobState.Paused)
+                .WithDelayedUntilTime(DateTime.Now.AddDays(1))
+                .WithRandomTasks(JobTaskState.Inactive, 3)
+                .Create(),
+            new JobBuilder().WithRandomInitializedState(JobState.Paused)
+                .WithDelayedUntilTime(DateTime.Now.AddDays(-1))
+                .WithRandomTasks(JobTaskState.Inactive, 3)
+                .Create(),
+        };
+
+        foreach (var job in jobs)
+        {
+            await _jobManager.CreateJobAsync(job);
+        }
+
+        var next = await _jobManager.GetNextPriorityJobAsync();
+        next.ShouldNotBeNull();
+        next.Id.ShouldBe(jobs[2].Id);
+        await _jobManager.DeleteJobAsync(next);
+
+        next = await _jobManager.GetNextPriorityJobAsync();
+        next.ShouldBeNull();
+    }
+
+    [Fact]
+    public async Task Get_Next_Job_Paused_Task_Past_Delayed_Until()
+    {
+        var jobs = new List<Job>
+        {
+            new JobBuilder().WithRandomInitializedState(JobState.Inactive)
+                .WithTasks(new JobTaskBuilder()
+                    .WithDelayedUntilTime(DateTime.Now.AddDays(-1))
+                    .WithRandomInitializedState(JobTaskState.Paused)
+                    .Create())
+                .Create(),
+            new JobBuilder().WithRandomInitializedState(JobState.Inactive)
+                .WithTasks(new JobTaskBuilder()
+                    .WithDelayedUntilTime(DateTime.Now.AddDays(1))
+                    .WithRandomInitializedState(JobTaskState.Paused)
+                    .Create())
+                .Create(),
+        };
+
+        foreach (var job in jobs)
+        {
+            await _jobManager.CreateJobAsync(job);
+        }
+
+        var next = await _jobManager.GetNextPriorityJobAsync();
+        next.ShouldNotBeNull();
+        next.Id.ShouldBe(jobs[0].Id);
+        await _jobManager.DeleteJobAsync(next);
+
+        next = await _jobManager.GetNextPriorityJobAsync();
+        next.ShouldBeNull();
     }
 }

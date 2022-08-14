@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace Wilgysef.Stalk.Core.BackgroundJobs;
 
-namespace Wilgysef.Stalk.Core.BackgroundJobs;
-
+/// <summary>
+/// Background job is invalid.
+/// </summary>
 public class InvalidBackgroundJobException : Exception
 {
 }

@@ -3,8 +3,10 @@ using Autofac.Extensions.DependencyInjection;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Moq;
 using System.Data.Common;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
+using Wilgysef.Stalk.Core.DomainEvents;
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 namespace Wilgysef.Stalk.TestBase;
@@ -20,8 +22,8 @@ public class BaseTest
 
     private DbConnection? _connection;
 
-    private List<(Type Implementation, Type Service, ServiceRegistrationType RegistrationType)> _replaceServices = new();
-    private List<(object Implementation, Type Service)> _replaceServiceInstances = new();
+    private readonly List<(Type Implementation, Type Service, ServiceRegistrationType RegistrationType)> _replaceServices = new();
+    private readonly List<(object Implementation, Type Service)> _replaceServiceInstances = new();
 
     #region Service Registration
 

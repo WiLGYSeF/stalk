@@ -56,11 +56,6 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
         }
     }
 
-    public bool IsJobActive(BackgroundJob job)
-    {
-        return _backgroundTasks.ContainsValue(job);
-    }
-
     private async Task ExecuteJob(BackgroundJob job, CancellationToken cancellationToken)
     {
         var argsType = job.GetJobArgsType();

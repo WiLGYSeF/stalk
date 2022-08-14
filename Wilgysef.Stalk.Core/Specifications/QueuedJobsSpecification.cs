@@ -4,6 +4,9 @@ using Wilgysef.Stalk.Core.Models.JobTasks;
 
 namespace Wilgysef.Stalk.Core.Specifications;
 
+/// <summary>
+/// Get queued jobs in highest priority order.
+/// </summary>
 public class QueuedJobsSpecification : Specification<Job>
 {
     public QueuedJobsSpecification()

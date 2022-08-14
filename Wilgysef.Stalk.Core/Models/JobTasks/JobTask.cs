@@ -10,78 +10,160 @@ namespace Wilgysef.Stalk.Core.Models.JobTasks;
 
 public class JobTask : Entity
 {
+    /// <summary>
+    /// Job task Id.
+    /// </summary>
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public virtual long Id { get; protected set; }
 
+    /// <summary>
+    /// Job task name.
+    /// </summary>
     public virtual string? Name { get; protected set; }
 
+    /// <summary>
+    /// Job task state.
+    /// </summary>
     public virtual JobTaskState State { get; protected set; }
 
+    /// <summary>
+    /// Job task priority.
+    /// </summary>
     public virtual int Priority { get; protected set; }
 
-    public virtual string Uri { get; protected set; }
+    /// <summary>
+    /// Job task URI.
+    /// </summary>
+    public virtual string Uri { get; protected set; } = null!;
 
+    /// <summary>
+    /// Job task item Id.
+    /// </summary>
     public virtual string? ItemId { get; protected set; }
 
+    /// <summary>
+    /// Job task item data.
+    /// </summary>
     public virtual string? ItemData { get; protected set; }
 
+    /// <summary>
+    /// Job task metadata.
+    /// </summary>
     public virtual string? MetadataJson { get; protected set; }
 
+    /// <summary>
+    /// Job task type.
+    /// </summary>
     public virtual JobTaskType Type { get; protected set; } = JobTaskType.Extract;
 
+    /// <summary>
+    /// Job task started time.
+    /// </summary>
     public virtual DateTime? Started { get; protected set; }
 
+    /// <summary>
+    /// Job task finished time.
+    /// </summary>
     public virtual DateTime? Finished { get; protected set; }
 
+    /// <summary>
+    /// Job task delayed until time.
+    /// </summary>
     public virtual DateTime? DelayedUntil { get; protected set; }
 
-    public virtual JobTaskResult Result { get; protected set; }
+    /// <summary>
+    /// Job task result.
+    /// </summary>
+    public virtual JobTaskResult Result { get; protected set; } = null!;
 
+    /// <summary>
+    /// Parent task.
+    /// </summary>
     public virtual JobTask? ParentTask { get; protected set; }
 
+    /// <summary>
+    /// Indicates if the job task is active.
+    /// </summary>
     [NotMapped]
     public bool IsActive => IsActiveExpression.Compile()(this);
 
+    /// <summary>
+    /// Indicates if the job task is transitioning to a different state.
+    /// </summary>
     [NotMapped]
     public bool IsTransitioning => IsTransitioningExpression.Compile()(this);
 
+    /// <summary>
+    /// Indicates if the job task is finished (not cancelled).
+    /// </summary>
     [NotMapped]
     public bool IsFinished => IsFinishedExpression.Compile()(this);
 
+    /// <summary>
+    /// Indicates if the job task is done.
+    /// </summary>
     [NotMapped]
     public bool IsDone => IsDoneExpression.Compile()(this);
 
+    /// <summary>
+    /// Indicates if the job task is queued.
+    /// </summary>
     [NotMapped]
     public bool IsQueued => IsQueuedExpression.Compile()(this);
 
+    /// <summary>
+    /// Job task active expression.
+    /// </summary>
     [NotMapped]
     internal static Expression<Func<JobTask, bool>> IsActiveExpression =>
         t => t.State == JobTaskState.Active
             || t.State == JobTaskState.Cancelling
             || t.State == JobTaskState.Pausing;
 
+    /// <summary>
+    /// Job task transitioning expression.
+    /// </summary>
     [NotMapped]
     internal static Expression<Func<JobTask, bool>> IsTransitioningExpression =>
         t => t.State == JobTaskState.Cancelling
             || t.State == JobTaskState.Pausing;
 
+    /// <summary>
+    /// Job task finished expression.
+    /// </summary>
     [NotMapped]
     internal static Expression<Func<JobTask, bool>> IsFinishedExpression =>
         t => t.State == JobTaskState.Completed
             || t.State == JobTaskState.Failed;
 
+    /// <summary>
+    /// Job task done expression.
+    /// </summary>
     [NotMapped]
     internal static Expression<Func<JobTask, bool>> IsDoneExpression =>
         t => t.State == JobTaskState.Completed
             || t.State == JobTaskState.Failed
             || t.State == JobTaskState.Cancelled;
 
+    /// <summary>
+    /// Job task queued expression.
+    /// </summary>
     [NotMapped]
     internal static Expression<Func<JobTask, bool>> IsQueuedExpression =>
-        j => j.State == JobTaskState.Inactive;
+        t => t.State == JobTaskState.Inactive
+            || (t.State == JobTaskState.Paused && t.DelayedUntil != null && t.DelayedUntil < DateTime.Now);
 
     protected JobTask() { }
 
+    /// <summary>
+    /// Creates a job task.
+    /// </summary>
+    /// <param name="id">Job task Id.</param>
+    /// <param name="uri">Job task URI.</param>
+    /// <param name="name">Job task name.</param>
+    /// <param name="priority">Job task priority.</param>
+    /// <param name="type">Job task type.</param>
+    /// <returns>Job task.</returns>
     public static JobTask Create(
         long id,
         string uri,
@@ -175,6 +257,10 @@ public class JobTask : Entity
         return task;
     }
 
+    /// <summary>
+    /// Changes the job task metadata.
+    /// </summary>
+    /// <param name="metadata">Job task metadata.</param>
     // TODO: change to class?
     public void ChangeMetadata(object? metadata)
     {
@@ -186,6 +272,10 @@ public class JobTask : Entity
         SetMetadata(metadata);
     }
 
+    /// <summary>
+    /// Changes the job task state.
+    /// </summary>
+    /// <param name="state">Job task state.</param>
     internal void ChangeState(JobTaskState state)
     {
         if (State == state)
@@ -209,12 +299,17 @@ public class JobTask : Entity
             Finish();
         }
 
-        if (state == JobTaskState.Active)
+        if (IsDone || state == JobTaskState.Active)
         {
             DelayUntil(null);
         }
     }
 
+    /// <summary>
+    /// Sets the job task metadata.
+    /// </summary>
+    /// <param name="metadata">Job task metadata.</param>
+    /// <exception cref="ArgumentException">Metadata does not serialize to an object.</exception>
     internal void SetMetadata(object? metadata)
     {
         if (metadata == null)
@@ -247,6 +342,10 @@ public class JobTask : Entity
         }
     }
 
+    /// <summary>
+    /// Sets the job task start time.
+    /// </summary>
+    /// <param name="dateTime">Start time.</param>
     internal void Start(DateTime? dateTime = null)
     {
         if (IsDone)
@@ -260,6 +359,11 @@ public class JobTask : Entity
         }
     }
 
+    /// <summary>
+    /// Sets the job task finish time.
+    /// </summary>
+    /// <param name="dateTime">Finish time.</param>
+    /// <exception cref="ArgumentException">Finish time is earlier than the start time.</exception>
     internal void Finish(DateTime? dateTime = null)
     {
         dateTime ??= DateTime.Now;
@@ -275,13 +379,20 @@ public class JobTask : Entity
         }
     }
 
+    /// <summary>
+    /// Sets the job task delay until time.
+    /// </summary>
+    /// <param name="dateTime">Delay until time.</param>
     internal void DelayUntil(DateTime? dateTime)
     {
-        if (IsDone)
+        if (IsDone && dateTime.HasValue)
         {
             throw new JobTaskAlreadyDoneException();
         }
 
-        DelayedUntil = dateTime;
+        if (DelayedUntil != dateTime)
+        {
+            DelayedUntil = dateTime;
+        }
     }
 }

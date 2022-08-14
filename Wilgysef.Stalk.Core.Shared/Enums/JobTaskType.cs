@@ -2,8 +2,14 @@
 {
     public enum JobTaskType
     {
+        /// <summary>
+        /// Extract.
+        /// </summary>
         Extract,
 
+        /// <summary>
+        /// Download.
+        /// </summary>
         Download,
     }
 }

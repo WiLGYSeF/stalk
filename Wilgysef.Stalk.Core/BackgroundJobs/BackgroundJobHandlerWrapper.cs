@@ -1,6 +1,4 @@
-﻿using Wilgysef.Stalk.Core.BackgroundJobs;
-
-namespace Wilgysef.Stalk.Core.BackgroundJobs;
+﻿namespace Wilgysef.Stalk.Core.BackgroundJobs;
 
 internal interface IBackgroundJobHandlerWrapper
 {

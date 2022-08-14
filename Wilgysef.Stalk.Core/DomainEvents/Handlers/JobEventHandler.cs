@@ -2,8 +2,6 @@
 using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.Core.BackgroundJobs.Args;
 using Wilgysef.Stalk.Core.DomainEvents.Events;
-using Wilgysef.Stalk.Core.JobWorkerManagers;
-using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 
 namespace Wilgysef.Stalk.Core.DomainEvents.Handlers;

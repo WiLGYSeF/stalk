@@ -5,6 +5,9 @@ using Wilgysef.Stalk.Core.Shared.Enums;
 
 namespace Wilgysef.Stalk.Core.Specifications;
 
+/// <summary>
+/// Job query specification.
+/// </summary>
 public class JobQuerySpecification : Specification<Job>
 {
     public JobQuerySpecification(JobQuery query)
