@@ -25,7 +25,7 @@ public class JobWorkerService : IJobWorkerService
         _jobWorkerCollectionService = jobWorkerCollectionService;
     }
 
-    public async Task<bool> StartJobWorker(Job job)
+    public async Task<bool> StartJobWorkerAsync(Job job)
     {
         if (_jobWorkerCollectionService.GetJobWorker(job) != null)
         {
@@ -53,7 +53,7 @@ public class JobWorkerService : IJobWorkerService
         return true;
     }
 
-    public async Task<bool> StopJobWorker(Job job)
+    public async Task<bool> StopJobWorkerAsync(Job job)
     {
         var worker = _jobWorkerCollectionService.GetJobWorker(job);
         if (worker == null)

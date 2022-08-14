@@ -31,7 +31,7 @@ public class WorkPrioritizedJobsJob : IBackgroundJobHandler<WorkPrioritizedJobsA
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
-                await _jobWorkerService.StartJobWorker(nextPriorityJob);
+                await _jobWorkerService.StartJobWorkerAsync(nextPriorityJob);
             }
             return;
         }
@@ -51,8 +51,8 @@ public class WorkPrioritizedJobsJob : IBackgroundJobHandler<WorkPrioritizedJobsA
 
             cancellationToken.ThrowIfCancellationRequested();
 
-            await _jobWorkerService.StopJobWorker(job);
-            await _jobWorkerService.StartJobWorker(nextPriorityJob);
+            await _jobWorkerService.StopJobWorkerAsync(job);
+            await _jobWorkerService.StartJobWorkerAsync(nextPriorityJob);
         }
     }
 }

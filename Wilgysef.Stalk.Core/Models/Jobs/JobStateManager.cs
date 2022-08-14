@@ -125,7 +125,7 @@ public class JobStateManager : IJobStateManager
                 await _jobManager.UpdateJobAsync(job);
             }
 
-            await _jobWorkerService.StopJobWorker(job);
+            await _jobWorkerService.StopJobWorkerAsync(job);
         }
 
         if (changeState)
@@ -152,7 +152,7 @@ public class JobStateManager : IJobStateManager
                 await _jobManager.UpdateJobAsync(job);
             }
 
-            await _jobTaskWorkerService.StopJobTaskWorker(task);
+            await _jobTaskWorkerService.StopJobTaskWorkerAsync(task);
         }
 
         if (changeState)

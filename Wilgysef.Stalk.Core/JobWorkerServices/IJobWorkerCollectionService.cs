@@ -16,11 +16,37 @@ public interface IJobWorkerCollectionService : ISingletonDependency
     /// </summary>
     IReadOnlyCollection<Job> Jobs { get; }
 
+    /// <summary>
+    /// Adds a job worker.
+    /// </summary>
+    /// <param name="worker">Job worker.</param>
+    /// <param name="task">Job worker task.</param>
+    /// <param name="cancellationTokenSource">Job worker task cancellation token source.</param>
     void AddJobWorker(JobWorker worker, Task task, CancellationTokenSource cancellationTokenSource);
 
+    /// <summary>
+    /// Removes a job worker.
+    /// </summary>
+    /// <param name="worker">Job worker.</param>
+    void RemoveJobWorker(JobWorker worker);
+
+    /// <summary>
+    /// Gets a job worker.
+    /// </summary>
+    /// <param name="job">Job the job worker is working on.</param>
+    /// <returns>Job worker.</returns>
     JobWorker? GetJobWorker(Job job);
 
+    /// <summary>
+    /// Cancels the job worker token.
+    /// </summary>
+    /// <param name="worker">Job worker.</param>
     void CancelJobWorkerToken(JobWorker worker);
 
+    /// <summary>
+    /// Gets the job worker task.
+    /// </summary>
+    /// <param name="worker">Job worker.</param>
+    /// <returns>Job worker task.</returns>
     Task GetJobWorkerTask(JobWorker worker);
 }

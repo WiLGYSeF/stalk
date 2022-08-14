@@ -1,22 +1,28 @@
-﻿using Wilgysef.Stalk.Core.JobWorkers;
+﻿using System.Collections.Concurrent;
+using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 
 namespace Wilgysef.Stalk.Core.JobWorkerServices;
 
 public class JobWorkerCollectionService : IJobWorkerCollectionService
 {
-    public IReadOnlyCollection<JobWorker> Workers => _jobWorkerObjects.Keys;
+    public IReadOnlyCollection<JobWorker> Workers => (IReadOnlyCollection<JobWorker>)_jobWorkerObjects.Keys;
 
     public IReadOnlyCollection<Job> Jobs => (IReadOnlyCollection<Job>)Workers
         .Select(w => w.Job)
         .Where(j => j != null)
         .ToList();
 
-    private readonly Dictionary<JobWorker, JobWorkerObjects> _jobWorkerObjects = new();
+    private readonly ConcurrentDictionary<JobWorker, JobWorkerObjects> _jobWorkerObjects = new();
 
     public void AddJobWorker(JobWorker worker, Task task, CancellationTokenSource cancellationTokenSource)
     {
-        _jobWorkerObjects.Add(worker, new JobWorkerObjects(task, cancellationTokenSource));
+        _jobWorkerObjects[worker] = new JobWorkerObjects(task, cancellationTokenSource);
+    }
+
+    public void RemoveJobWorker(JobWorker worker)
+    {
+        _jobWorkerObjects.Remove(worker, out _);
     }
 
     public JobWorker? GetJobWorker(Job job)

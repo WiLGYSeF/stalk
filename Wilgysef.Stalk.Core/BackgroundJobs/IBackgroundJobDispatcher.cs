@@ -9,5 +9,5 @@ public interface IBackgroundJobDispatcher : ITransientDependency
     /// </summary>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task ExecuteJobs(CancellationToken cancellationToken = default);
+    Task ExecuteJobsAsync(CancellationToken cancellationToken = default);
 }

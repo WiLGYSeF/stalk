@@ -107,7 +107,7 @@ public class JobController : ControllerBase
     #region Job Tasks Endpoints
 
     [HttpPost("{jobId}/task")]
-    public async Task<JobDto> CreateJobTask(long jobId, CreateJobTaskDto input)
+    public async Task<JobDto> CreateJobTaskAsync(long jobId, CreateJobTaskDto input)
     {
         var command = new CreateJobTask(
             jobId,

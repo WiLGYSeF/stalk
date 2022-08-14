@@ -15,7 +15,7 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
         _backgroundJobCollectionService = backgroundJobCollectionService;
     }
 
-    public async Task ExecuteJobs(CancellationToken cancellationToken = default)
+    public async Task ExecuteJobsAsync(CancellationToken cancellationToken = default)
     {
         using var scope = _serviceLocator.BeginLifetimeScope();
         var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
@@ -35,7 +35,7 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
             try
             {
                 _backgroundJobCollectionService.AddActiveJob(job);
-                await ExecuteJob(job, cancellationToken);
+                await ExecuteJobAsync(job, cancellationToken);
                 await backgroundJobManager.DeleteJobAsync(job);
             }
             catch (OperationCanceledException)
@@ -60,7 +60,7 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
         }
     }
 
-    private async Task ExecuteJob(BackgroundJob job, CancellationToken cancellationToken)
+    private async Task ExecuteJobAsync(BackgroundJob job, CancellationToken cancellationToken)
     {
         var argsType = job.GetJobArgsType();
         var args = job.DeserializeArgs();

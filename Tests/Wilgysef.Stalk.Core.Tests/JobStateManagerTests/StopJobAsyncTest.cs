@@ -19,7 +19,7 @@ public class StopJobAsyncTest : BaseTest
     {
         var jobWorkerService = new Mock<IJobWorkerService>();
 
-        jobWorkerService.Setup(s => s.StopJobWorker(It.IsAny<Job>())).Callback(() =>
+        jobWorkerService.Setup(s => s.StopJobWorkerAsync(It.IsAny<Job>())).Callback(() =>
         {
             _manualResetEventSlimInner.Set();
             _manualResetEventSlimOuter.Wait();

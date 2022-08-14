@@ -67,12 +67,12 @@ public class BackgroundJobManager : IBackgroundJobManager
         return await EnqueueJobAsync(job, saveChanges, cancellationToken);
     }
 
-    public async Task<BackgroundJob?> FindJob(long id, CancellationToken cancellationToken = default)
+    public async Task<BackgroundJob?> FindJobAsync(long id, CancellationToken cancellationToken = default)
     {
         return await _unitOfWork.BackgroundJobRepository.FindAsync(new object?[] { id }, cancellationToken: cancellationToken);
     }
 
-    public async Task<List<BackgroundJob>> GetJobs(CancellationToken cancellationToken = default)
+    public async Task<List<BackgroundJob>> GetJobsAsync(CancellationToken cancellationToken = default)
     {
         return await _unitOfWork.BackgroundJobRepository.ListAsync(cancellationToken);
     }
