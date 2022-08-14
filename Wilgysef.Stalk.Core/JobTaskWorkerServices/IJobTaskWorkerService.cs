@@ -11,8 +11,9 @@ public interface IJobTaskWorkerService : ISingletonDependency
     /// </summary>
     /// <param name="job">Job.</param>
     /// <param name="jobTask">Job task.</param>
-    /// <returns><see langword="true"/> if job worker was started, otherwise <see langword="false"/>.</returns>
-    Task<bool> StartJobTaskWorkerAsync(Job job, JobTask jobTask);
+    /// <param name="jobCancellationToken">Cancellation token that <paramref name="job"/> uses.</param>
+    /// <returns>Job task worker task.</returns>
+    Task<Task> StartJobTaskWorkerAsync(Job job, JobTask jobTask, CancellationToken jobCancellationToken);
 
     /// <summary>
     /// Stops a job task worker. Awaits until the job task is no longer active.

@@ -1,5 +1,8 @@
 ﻿using System.Diagnostics;
+using Wilgysef.Stalk.Core.JobTaskWorkerServices;
+using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Core.JobWorkers;
@@ -7,6 +10,12 @@ namespace Wilgysef.Stalk.Core.JobWorkers;
 public class JobWorker : IJobWorker
 {
     public Job? Job { get; private set; }
+
+    public int WorkerLimit { get; set; } = 4;
+
+    public int TaskWaitTimeoutMilliseconds { get; set; } = 1000;
+
+    private readonly List<Task> _tasks;
 
     private readonly IServiceLocator _serviceLocator;
 
@@ -33,28 +42,74 @@ public class JobWorker : IJobWorker
         {
             using var scope = _serviceLocator.BeginLifetimeScope();
             var jobManager = scope.GetRequiredService<IJobManager>();
-            await jobManager.SetJobActiveAsync(Job!, cancellationToken);
+            await jobManager.SetJobActiveAsync(Job, cancellationToken);
         }
 
         try
         {
-            while (!cancellationToken.IsCancellationRequested)
+            while (!cancellationToken.IsCancellationRequested && Job.HasUnfinishedTasks)
             {
-                Debug.WriteLine($"{Job!.Id}: {DateTime.Now} doing work...");
-                await Task.Delay(2000, cancellationToken);
-            }
-        } catch (OperationCanceledException) { }
+                await CreateJobTaskWorkers(cancellationToken);
 
-        if (cancellationToken.IsCancellationRequested)
+                var taskArray = _tasks.ToArray();
+                var taskCompletedIndex = Task.WaitAny(taskArray, TaskWaitTimeoutMilliseconds, cancellationToken);
+
+                if (taskCompletedIndex != -1)
+                {
+                    RemoveCompletedTasks(taskArray);
+                }
+            }
+        }
+        finally
+        {
+            using var scope = _serviceLocator.BeginLifetimeScope();
+            var jobManager = scope.GetRequiredService<IJobManager>();
+
+            if (!Job.HasUnfinishedTasks)
+            {
+                await jobManager.SetJobDoneAsync(Job, CancellationToken.None);
+            }
+            else
+            {
+                Job.ChangeState(JobState.Inactive);
+                await jobManager.UpdateJobAsync(Job, CancellationToken.None);
+            }
+
+            var jobWorkerCollectionService = scope.GetRequiredService<IJobWorkerCollectionService>();
+            jobWorkerCollectionService.RemoveJobWorker(this);
+        }
+    }
+
+    private async Task CreateJobTaskWorkers(CancellationToken cancellationToken)
+    {
+        if (_tasks.Count >= WorkerLimit)
         {
             return;
         }
 
-        if (!Job.HasUnfinishedTasks)
+        using var scope = _serviceLocator.BeginLifetimeScope();
+        var jobTaskWorkerService = scope.GetRequiredService<IJobTaskWorkerService>();
+
+        var jobTasks = Job!.GetQueuedTasksByPriority();
+        var jobTaskIndex = 0;
+
+        while (_tasks.Count < WorkerLimit && jobTaskIndex < jobTasks.Count)
         {
-            using var scope = _serviceLocator.BeginLifetimeScope();
-            var jobManager = scope.GetRequiredService<IJobManager>();
-            await jobManager.SetJobDoneAsync(Job);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            var jobTask = jobTasks[jobTaskIndex];
+            _tasks.Add(await jobTaskWorkerService.StartJobTaskWorkerAsync(Job, jobTask, cancellationToken));
+        }
+    }
+
+    private void RemoveCompletedTasks(Task[] tasks)
+    {
+        foreach (var task in tasks)
+        {
+            if (task.IsCompleted)
+            {
+                _tasks.Remove(task);
+            }
         }
     }
 }

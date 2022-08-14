@@ -24,7 +24,7 @@ public class JobTaskWorkerService : IJobTaskWorkerService
         _jobTaskWorkerCollectionService = jobTaskWorkerCollectionService;
     }
 
-    public async Task<bool> StartJobTaskWorkerAsync(Job job, JobTask jobTask)
+    public async Task<Task> StartJobTaskWorkerAsync(Job job, JobTask jobTask, CancellationToken jobCancellationToken)
     {
         if (_jobTaskWorkerCollectionService.GetJobTaskWorker(jobTask) != null)
         {
@@ -32,7 +32,7 @@ public class JobTaskWorkerService : IJobTaskWorkerService
         }
 
         var worker = _jobTaskWorkerFactory.CreateWorker(jobTask);
-        var cancellationTokenSource = new CancellationTokenSource();
+        var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(jobCancellationToken);
 
         var task = new Task(
             async () => await worker.WorkAsync(cancellationTokenSource.Token),
@@ -44,7 +44,8 @@ public class JobTaskWorkerService : IJobTaskWorkerService
         await _jobManager.SetJobTaskActiveAsync(job, jobTask);
         task.Start();
         
-        return true;
+        // return task
+        return task;
     }
 
     public async Task<bool> StopJobTaskWorkerAsync(JobTask task)

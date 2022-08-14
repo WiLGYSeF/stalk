@@ -23,6 +23,9 @@ public class JobTaskWorker : IJobTaskWorker
 
     public async Task WorkAsync(CancellationToken cancellationToken = default)
     {
-
+        if (JobTask == null)
+        {
+            throw new InvalidOperationException("Job task is not set.");
+        }
     }
 }
