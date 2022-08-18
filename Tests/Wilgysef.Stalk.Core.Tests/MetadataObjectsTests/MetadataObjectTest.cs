@@ -155,4 +155,26 @@ public class MetadataObjectTest
         metadata.RemoveValue("asdf").ShouldBeFalse();
         metadata.RemoveValue("aaa.abc").ShouldBeFalse();
     }
+
+    [Fact]
+    public void InitializeValues()
+    {
+        var dict = new Dictionary<string, object>
+        {
+            { "abc", 1 },
+            {
+                "aaa",
+                new Dictionary<string, object>
+                {
+                    { "asdf", 2 },
+                }
+            },
+            { "test.key", 3 },
+        };
+        var metadata = new MetadataObject(dict, '.');
+
+        metadata.GetValue("abc").ShouldBe(1);
+        metadata.GetValue("aaa.asdf").ShouldBe(2);
+        metadata.GetValue("test.key").ShouldBe(3);
+    }
 }

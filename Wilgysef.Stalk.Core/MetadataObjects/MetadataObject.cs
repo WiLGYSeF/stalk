@@ -12,6 +12,14 @@ public class MetadataObject : IMetadataObject
         KeySeparator = keySeparator;
     }
 
+    public MetadataObject(IDictionary<string, object> dictionary, char keySeparator) : this(keySeparator)
+    {
+        foreach (var pair in dictionary)
+        {
+            this[pair.Key] = pair.Value;
+        }
+    }
+
     public object this[string key]
     {
         get => GetValue(key);

@@ -3,13 +3,18 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq.Expressions;
 using System.Text;
 using System.Text.Json;
+using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
+using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
 namespace Wilgysef.Stalk.Core.Models.JobTasks;
 
 public class JobTask : Entity
 {
+    [NotMapped]
+    public const char MetadataKeySeparator = '.';
+
     /// <summary>
     /// Job task Id.
     /// </summary>
@@ -270,6 +275,16 @@ public class JobTask : Entity
         }
 
         SetMetadata(metadata);
+    }
+
+    public IMetadataObject GetMetadata()
+    {
+        var metadata = JsonSerializer.Deserialize<IDictionary<string, object>>(MetadataJson!);
+        if (metadata == null)
+        {
+            throw new InvalidOperationException("Metadata must be a dictionary.");
+        }
+        return new MetadataObject(metadata, MetadataKeySeparator);
     }
 
     /// <summary>
