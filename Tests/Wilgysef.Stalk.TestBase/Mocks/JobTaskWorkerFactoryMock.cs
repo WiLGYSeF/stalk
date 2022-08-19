@@ -10,6 +10,8 @@ public class JobTaskWorkerFactoryMock : IJobTaskWorkerFactory
 {
     public event EventHandler<WorkEventArgs> WorkEvent;
 
+    private readonly List<IJobTaskWorker> _jobTaskWorkers = new();
+
     private readonly IServiceLocator _serviceLocator;
 
     public JobTaskWorkerFactoryMock(IServiceLocator serviceLocator)
@@ -22,7 +24,15 @@ public class JobTaskWorkerFactoryMock : IJobTaskWorkerFactory
         var worker = new JobTaskWorkerMock(_serviceLocator);
         worker.WithJobTask(job, jobTask);
         worker.WorkEvent += (sender, args) => OnWorkEvent(worker);
+        _jobTaskWorkers.Add(worker);
         return worker;
+    }
+
+    public void FinishJobTaskWorker(JobTask jobTask)
+    {
+        var worker = _jobTaskWorkers.Single(w => w.JobTask!.Id == jobTask.Id) as JobTaskWorkerMock;
+        worker!.FinishWork();
+        _jobTaskWorkers.Remove(worker);
     }
 
     private void OnWorkEvent(JobTaskWorkerMock jobTaskWorker)

@@ -14,6 +14,8 @@ public class JobTaskWorkerMock : IJobTaskWorker
 
     public event EventHandler WorkEvent;
 
+    private bool _finishWork = false;
+
     private readonly IServiceLocator _serviceLocator;
 
     public JobTaskWorkerMock(
@@ -29,13 +31,17 @@ public class JobTaskWorkerMock : IJobTaskWorker
         return this;
     }
 
+    public void FinishWork()
+    {
+        _finishWork = true;
+    }
+
     public async Task WorkAsync(CancellationToken cancellationToken = default)
     {
         WorkEvent(this, new EventArgs());
 
-        while (!cancellationToken.IsCancellationRequested)
+        while (!cancellationToken.IsCancellationRequested && !_finishWork)
         {
-            Debug.WriteLine($"a {Thread.CurrentThread.ManagedThreadId}");
             await Task.Delay(100, cancellationToken);
         }
     }
