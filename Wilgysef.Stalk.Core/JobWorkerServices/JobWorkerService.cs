@@ -39,18 +39,22 @@ public class JobWorkerService : IJobWorkerService
 
         var worker = _jobWorkerFactory.CreateWorker(job);
         var cancellationTokenSource = new CancellationTokenSource();
-
-        var task = new Task(
-            async () => await DoWorkAsync(worker, cancellationTokenSource.Token),
-            cancellationTokenSource.Token,
-            TaskCreationOptions.LongRunning);
+        var task = Task.Run(DoWorkAsync);
 
         _jobWorkerCollectionService.AddJobWorker(worker, task, cancellationTokenSource);
 
         await _jobManager.SetJobActiveAsync(job);
-        task.Start();
 
         return true;
+
+        async Task DoWorkAsync()
+        {
+            try
+            {
+                await worker.WorkAsync(cancellationTokenSource.Token);
+            }
+            catch (OperationCanceledException) { }
+        }
     }
 
     public async Task<bool> StopJobWorkerAsync(Job job)
@@ -73,14 +77,5 @@ public class JobWorkerService : IJobWorkerService
             .OrderByDescending(j => j.Priority)
             .ThenBy(j => j.Tasks.Count(t => t.IsActive))
             .ToList();
-    }
-
-    private static async Task DoWorkAsync(IJobWorker worker, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await worker.WorkAsync(cancellationToken);
-        }
-        catch (OperationCanceledException) { }
     }
 }

@@ -6,31 +6,31 @@ namespace Wilgysef.Stalk.Core.JobTaskWorkerServices;
 
 public class JobTaskWorkerCollectionService : IJobTaskWorkerCollectionService
 {
-    public IReadOnlyCollection<JobTaskWorker> Workers => (IReadOnlyCollection<JobTaskWorker>)_jobTaskWorkers.Keys;
+    public IReadOnlyCollection<IJobTaskWorker> Workers => (IReadOnlyCollection<JobTaskWorker>)_jobTaskWorkers.Keys;
 
-    private readonly ConcurrentDictionary<JobTaskWorker, JobTaskWorkerValues> _jobTaskWorkers = new();
+    private readonly ConcurrentDictionary<IJobTaskWorker, JobTaskWorkerValues> _jobTaskWorkers = new();
 
-    public void AddJobTaskWorker(JobTaskWorker worker, Task task, CancellationTokenSource cancellationTokenSource)
+    public void AddJobTaskWorker(IJobTaskWorker worker, Task task, CancellationTokenSource cancellationTokenSource)
     {
         _jobTaskWorkers[worker] = new JobTaskWorkerValues(task, cancellationTokenSource);
     }
 
-    public void RemoveJobTaskWorker(JobTaskWorker worker)
+    public void RemoveJobTaskWorker(IJobTaskWorker worker)
     {
         _jobTaskWorkers.Remove(worker, out _);
     }
 
-    public JobTaskWorker? GetJobTaskWorker(JobTask jobTask)
+    public IJobTaskWorker? GetJobTaskWorker(JobTask jobTask)
     {
         return _jobTaskWorkers.Keys.SingleOrDefault(w => w.JobTask != null && w.JobTask.Id == jobTask.Id);
     }
 
-    public void CancelJobTaskWorkerToken(JobTaskWorker worker)
+    public void CancelJobTaskWorkerToken(IJobTaskWorker worker)
     {
         _jobTaskWorkers[worker].CancellationTokenSource.Cancel();
     }
 
-    public Task GetJobTaskWorkerTask(JobTaskWorker worker)
+    public Task GetJobTaskWorkerTask(IJobTaskWorker worker)
     {
         // return task
         return _jobTaskWorkers[worker].Task;

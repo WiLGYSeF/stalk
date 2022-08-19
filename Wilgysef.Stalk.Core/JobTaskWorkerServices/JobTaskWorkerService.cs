@@ -1,4 +1,5 @@
-﻿using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
+﻿using System.Threading;
+using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
 using Wilgysef.Stalk.Core.JobTaskWorkers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
@@ -8,8 +9,6 @@ namespace Wilgysef.Stalk.Core.JobTaskWorkerServices;
 
 public class JobTaskWorkerService : IJobTaskWorkerService
 {
-    public IReadOnlyCollection<JobTaskWorker> Workers => _jobTaskWorkerCollectionService.Workers;
-
     private readonly IJobManager _jobManager;
     private readonly IJobTaskWorkerFactory _jobTaskWorkerFactory;
     private readonly IJobTaskWorkerCollectionService _jobTaskWorkerCollectionService;
@@ -33,19 +32,23 @@ public class JobTaskWorkerService : IJobTaskWorkerService
 
         var worker = _jobTaskWorkerFactory.CreateWorker(job, jobTask);
         var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(jobCancellationToken);
-
-        var task = new Task(
-            async () => await DoWorkAsync(worker, cancellationTokenSource.Token),
-            cancellationTokenSource.Token,
-            TaskCreationOptions.LongRunning);
+        var task = Task.Run(DoWorkAsync, jobCancellationToken);
 
         _jobTaskWorkerCollectionService.AddJobTaskWorker(worker, task, cancellationTokenSource);
 
-        await _jobManager.SetJobTaskActiveAsync(job, jobTask);
-        task.Start();
-        
+        await _jobManager.SetJobTaskActiveAsync(job, jobTask, CancellationToken.None);
+
         // return task
         return task;
+
+        async Task DoWorkAsync()
+        {
+            try
+            {
+                await worker.WorkAsync(cancellationTokenSource.Token);
+            }
+            catch (OperationCanceledException) { }
+        }
     }
 
     public async Task<bool> StopJobTaskWorkerAsync(JobTask task)
@@ -59,14 +62,5 @@ public class JobTaskWorkerService : IJobTaskWorkerService
         _jobTaskWorkerCollectionService.CancelJobTaskWorkerToken(worker);
         await _jobTaskWorkerCollectionService.GetJobTaskWorkerTask(worker);
         return true;
-    }
-
-    private static async Task DoWorkAsync(IJobTaskWorker worker, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await worker.WorkAsync(cancellationToken);
-        }
-        catch (OperationCanceledException) { }
     }
 }

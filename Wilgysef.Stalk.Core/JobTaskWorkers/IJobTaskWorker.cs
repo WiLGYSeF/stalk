@@ -9,7 +9,7 @@ public interface IJobTaskWorker
 
     public JobTask? JobTask { get; }
 
-    JobTaskWorker WithJobTask(Job job, JobTask jobTask);
+    IJobTaskWorker WithJobTask(Job job, JobTask jobTask);
 
     Task WorkAsync(CancellationToken cancellationToken = default);
 }

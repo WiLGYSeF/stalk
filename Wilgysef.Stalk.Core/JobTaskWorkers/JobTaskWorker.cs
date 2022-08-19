@@ -24,7 +24,7 @@ public class JobTaskWorker : IJobTaskWorker
         _serviceLocator = serviceLocator;
     }
 
-    public JobTaskWorker WithJobTask(Job job, JobTask jobTask)
+    public IJobTaskWorker WithJobTask(Job job, JobTask jobTask)
     {
         Job = job;
         JobTask = jobTask;
@@ -47,10 +47,10 @@ public class JobTaskWorker : IJobTaskWorker
             switch (JobTask.Type)
             {
                 case JobTaskType.Extract:
-                    await ExtractAsync();
+                    await ExtractAsync(cancellationToken);
                     break;
                 case JobTaskType.Download:
-                    await DownloadAsync();
+                    await DownloadAsync(cancellationToken);
                     break;
                 default:
                     throw new NotImplementedException();
@@ -66,7 +66,7 @@ public class JobTaskWorker : IJobTaskWorker
         }
     }
 
-    private async Task ExtractAsync()
+    private async Task ExtractAsync(CancellationToken cancellationToken)
     {
         var jobTaskUri = new Uri(JobTask!.Uri);
 
@@ -85,19 +85,24 @@ public class JobTaskWorker : IJobTaskWorker
                 $"No extractor was able to extract from {jobTaskUri}");
         }
 
-        await foreach (var result in extractor.ExtractAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata()))
+        using (var scope = _serviceLocator.BeginLifetimeScope())
         {
-            using var scope = _serviceLocator.BeginLifetimeScope();
             var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
 
-            Job!.AddTask(new JobTaskBuilder()
-                .WithId(idGenerator.CreateId())
-                .WithExtractResult(JobTask, result)
-                .Create());
+            await foreach (var result in extractor.ExtractAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
+            {
+                Job!.AddTask(new JobTaskBuilder()
+                    .WithId(idGenerator.CreateId())
+                    .WithExtractResult(JobTask, result)
+                    .Create());
+            }
+
+            var jobManager = scope.GetRequiredService<IJobManager>();
+            await jobManager.UpdateJobAsync(Job!, CancellationToken.None);
         }
     }
 
-    private async Task DownloadAsync()
+    private async Task DownloadAsync(CancellationToken cancellationToken)
     {
         var jobTaskUri = new Uri(JobTask!.Uri);
 

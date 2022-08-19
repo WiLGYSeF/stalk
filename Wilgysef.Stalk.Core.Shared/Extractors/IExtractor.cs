@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
 namespace Wilgysef.Stalk.Core.Shared.Extractors
@@ -8,6 +9,10 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
     {
         bool CanExtract(Uri uri);
 
-        IAsyncEnumerable<ExtractResult> ExtractAsync(Uri uri, string itemData, IMetadataObject metadata);
+        IAsyncEnumerable<ExtractResult> ExtractAsync(
+            Uri uri,
+            string itemData,
+            IMetadataObject metadata,
+            CancellationToken cancellationToken = default);
     }
 }

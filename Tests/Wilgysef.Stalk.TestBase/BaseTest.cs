@@ -3,10 +3,8 @@ using Autofac.Extensions.DependencyInjection;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Moq;
 using System.Data.Common;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
-using Wilgysef.Stalk.Core.DomainEvents;
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 namespace Wilgysef.Stalk.TestBase;
@@ -175,6 +173,33 @@ public class BaseTest
         Transient,
         Scoped,
         Singleton,
+    }
+
+    #endregion
+
+    #region Wait
+
+    /// <summary>
+    /// Waits until a condition is met.
+    /// </summary>
+    /// <param name="condition">Condition to meet, stops waiting when <see langword="true"/> is returned.</param>
+    /// <param name="timeout">Wait timeout.</param>
+    /// <returns><see langword="true"/> if the condition was met, <see langword="false"/> if the timeout occurred.</returns>
+    public static bool WaitUntil(Func<bool> condition, TimeSpan timeout)
+    {
+        var spin = new SpinWait();
+        var startTime = DateTime.Now;
+
+        while (DateTime.Now - startTime < timeout)
+        {
+            if (condition())
+            {
+                return true;
+            }
+            spin.SpinOnce();
+        }
+
+        return false;
     }
 
     #endregion

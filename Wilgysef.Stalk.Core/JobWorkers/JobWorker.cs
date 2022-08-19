@@ -14,7 +14,7 @@ public class JobWorker : IJobWorker
 
     public int TaskWaitTimeoutMilliseconds { get; set; } = 1000;
 
-    private readonly List<Task> _tasks;
+    private readonly List<Task> _tasks = new();
 
     private readonly IServiceLocator _serviceLocator;
 
@@ -86,17 +86,22 @@ public class JobWorker : IJobWorker
             return;
         }
 
+        var jobTasks = Job!.GetQueuedTasksByPriority();
+        if (jobTasks.Count == 0)
+        {
+            return;
+        }
+
         using var scope = _serviceLocator.BeginLifetimeScope();
         var jobTaskWorkerService = scope.GetRequiredService<IJobTaskWorkerService>();
 
-        var jobTasks = Job!.GetQueuedTasksByPriority();
         var jobTaskIndex = 0;
 
         while (_tasks.Count < WorkerLimit && jobTaskIndex < jobTasks.Count)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var jobTask = jobTasks[jobTaskIndex];
+            var jobTask = jobTasks[jobTaskIndex++];
             _tasks.Add(await jobTaskWorkerService.StartJobTaskWorkerAsync(Job, jobTask, cancellationToken));
         }
     }

@@ -10,7 +10,11 @@ internal class DefaultDownloader : IDefaultDownloader
         throw new NotImplementedException();
     }
 
-    public IAsyncEnumerable<DownloadResult> DownloadAsync(Uri uri, string itemData, IMetadataObject metadata)
+    public IAsyncEnumerable<DownloadResult> DownloadAsync(
+        Uri uri,
+        string itemData,
+        IMetadataObject metadata,
+        CancellationToken cancellationToken = default)
     {
         throw new NotImplementedException();
     }
