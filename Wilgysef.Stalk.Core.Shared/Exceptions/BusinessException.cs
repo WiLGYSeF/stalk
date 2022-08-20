@@ -10,7 +10,7 @@ namespace Wilgysef.Stalk.Core.Shared.Exceptions
         /// <summary>
         /// Business error code.
         /// </summary>
-        public string Code { get; private set; }
+        public string Code { get; }
 
         /// <summary>
         /// Business exception.

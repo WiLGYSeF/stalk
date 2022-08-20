@@ -15,7 +15,7 @@ public class JobTaskWorkerFactory : IJobTaskWorkerFactory
         _serviceLocator = serviceLocator;
     }
 
-    public JobTaskWorker CreateWorker(Job job, JobTask jobTask)
+    public IJobTaskWorker CreateWorker(Job job, JobTask jobTask)
     {
         var taskWorker = new JobTaskWorker(_serviceLocator);
         taskWorker.WithJobTask(job, jobTask);

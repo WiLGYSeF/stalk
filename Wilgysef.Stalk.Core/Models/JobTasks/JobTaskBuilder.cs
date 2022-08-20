@@ -1,4 +1,6 @@
-﻿using Wilgysef.Stalk.Core.Shared.Enums;
+﻿using IdGen;
+using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Shared.Extractors;
 
 namespace Wilgysef.Stalk.Core.Models.JobTasks;
 
@@ -157,7 +159,7 @@ public class JobTaskBuilder
 
     public JobTaskBuilder WithResult(JobTaskResult? result)
     {
-        Result = result;
+        Result = result ?? JobTaskResult.Create();
         return this;
     }
 
@@ -165,5 +167,17 @@ public class JobTaskBuilder
     {
         ParentTask = parentTask;
         return this;
+    }
+
+    public JobTaskBuilder WithExtractResult(JobTask jobTask, ExtractResult result)
+    {
+        return WithName(result.Name)
+            .WithState(JobTaskState.Inactive)
+            .WithPriority(result.Priority ?? jobTask.Priority)
+            .WithItemId(result.ItemId)
+            .WithItemData(result.ItemData)
+            .WithMetadata(result.Metadata)
+            .WithType(result.Type)
+            .WithParent(jobTask);
     }
 }

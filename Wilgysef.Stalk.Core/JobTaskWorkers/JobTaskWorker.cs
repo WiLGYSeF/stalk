@@ -1,14 +1,20 @@
-﻿using Wilgysef.Stalk.Core.Models.Jobs;
+﻿using IdGen;
+using Wilgysef.Stalk.Core.Downloaders;
+using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
+using Wilgysef.Stalk.Core.Shared;
+using Wilgysef.Stalk.Core.Shared.Downloaders;
+using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
 public class JobTaskWorker : IJobTaskWorker
 {
-    public Job? Job { get; private set; }
+    public Job? Job { get; protected set; }
 
-    public JobTask? JobTask { get; private set; }
+    public JobTask? JobTask { get; protected set; }
 
     private readonly IServiceLocator _serviceLocator;
 
@@ -18,7 +24,7 @@ public class JobTaskWorker : IJobTaskWorker
         _serviceLocator = serviceLocator;
     }
 
-    public JobTaskWorker WithJobTask(Job job, JobTask jobTask)
+    public IJobTaskWorker WithJobTask(Job job, JobTask jobTask)
     {
         Job = job;
         JobTask = jobTask;
@@ -27,6 +33,10 @@ public class JobTaskWorker : IJobTaskWorker
 
     public async Task WorkAsync(CancellationToken cancellationToken = default)
     {
+        if (Job == null)
+        {
+            throw new InvalidOperationException("Job is not set.");
+        }
         if (JobTask == null)
         {
             throw new InvalidOperationException("Job task is not set.");
@@ -34,7 +44,19 @@ public class JobTaskWorker : IJobTaskWorker
 
         try
         {
+            switch (JobTask.Type)
+            {
+                case JobTaskType.Extract:
+                    await ExtractAsync(cancellationToken);
+                    break;
+                case JobTaskType.Download:
+                    await DownloadAsync(cancellationToken);
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
 
+            JobTask.ChangeState(JobTaskState.Completed);
         }
         finally
         {
@@ -43,6 +65,66 @@ public class JobTaskWorker : IJobTaskWorker
 
             JobTask.Deactivate();
             await jobManager.UpdateJobAsync(Job, CancellationToken.None);
+        }
+    }
+
+    protected virtual async Task ExtractAsync(CancellationToken cancellationToken)
+    {
+        var jobTaskUri = new Uri(JobTask!.Uri);
+
+        IExtractor? extractor = null;
+        using (var scope = _serviceLocator.BeginLifetimeScope())
+        {
+            extractor = scope.GetRequiredService<IEnumerable<IExtractor>>()
+                .FirstOrDefault(e => e.CanExtract(jobTaskUri));
+        }
+
+        if (extractor == null)
+        {
+            throw new JobTaskWorkerException(
+                StalkErrorCodes.JobTaskWorkerNoExtractor,
+                "No extractor found.",
+                $"No extractor was able to extract from {jobTaskUri}");
+        }
+
+        using (var scope = _serviceLocator.BeginLifetimeScope())
+        {
+            var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
+
+            await foreach (var result in extractor.ExtractAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
+            {
+                Job!.AddTask(new JobTaskBuilder()
+                    .WithId(idGenerator.CreateId())
+                    .WithExtractResult(JobTask, result)
+                    .Create());
+            }
+
+            var jobManager = scope.GetRequiredService<IJobManager>();
+            await jobManager.UpdateJobAsync(Job!, CancellationToken.None);
+        }
+    }
+
+    protected virtual async Task DownloadAsync(CancellationToken cancellationToken)
+    {
+        var jobTaskUri = new Uri(JobTask!.Uri);
+
+        IDownloader? downloader = null;
+        using (var scope = _serviceLocator.BeginLifetimeScope())
+        {
+            var defaultDownloader = scope.GetRequiredService<IDefaultDownloader>();
+            downloader = scope.GetRequiredService<IEnumerable<IDownloader>>()
+                .FirstOrDefault(d => d is not IDefaultDownloader && d.CanDownload(jobTaskUri))
+                ?? defaultDownloader;
+        }
+
+        if (downloader == null)
+        {
+            throw new InvalidOperationException("No downloader found.");
+        }
+
+        await foreach (var result in downloader.DownloadAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata()))
+        {
+
         }
     }
 }
