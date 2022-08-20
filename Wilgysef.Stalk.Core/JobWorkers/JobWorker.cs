@@ -64,6 +64,7 @@ public class JobWorker : IJobWorker
             using var scope = _serviceLocator.BeginLifetimeScope();
             var jobManager = scope.GetRequiredService<IJobManager>();
 
+            // TODO: fix state
             if (!Job.HasUnfinishedTasks)
             {
                 await jobManager.SetJobDoneAsync(Job, CancellationToken.None);
