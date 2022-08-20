@@ -2,6 +2,6 @@
 
 namespace Wilgysef.Stalk.Core.Downloaders;
 
-internal interface IDefaultDownloader : IDownloader
+public interface IDefaultDownloader : IDownloader
 {
 }

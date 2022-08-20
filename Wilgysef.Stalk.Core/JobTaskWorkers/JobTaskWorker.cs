@@ -1,5 +1,6 @@
 ﻿using IdGen;
 using Wilgysef.Stalk.Core.Downloaders;
+using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared;
@@ -15,6 +16,8 @@ public class JobTaskWorker : IJobTaskWorker
     public Job? Job { get; protected set; }
 
     public JobTask? JobTask { get; protected set; }
+
+    private JobConfig JobConfig { get; set; }
 
     private readonly IServiceLocator _serviceLocator;
 
@@ -44,6 +47,8 @@ public class JobTaskWorker : IJobTaskWorker
 
         try
         {
+            JobConfig = Job.GetConfig();
+
             switch (JobTask.Type)
             {
                 case JobTaskType.Extract:
@@ -109,12 +114,21 @@ public class JobTaskWorker : IJobTaskWorker
         var jobTaskUri = new Uri(JobTask!.Uri);
 
         IDownloader? downloader = null;
+        IItemIdSet? itemIds = null;
+
         using (var scope = _serviceLocator.BeginLifetimeScope())
         {
-            var defaultDownloader = scope.GetRequiredService<IDefaultDownloader>();
+            var downloaders = scope.GetRequiredService<IEnumerable<IDownloader>>();
+            var defaultDownloader = downloaders.First(d => d is IDefaultDownloader);
             downloader = scope.GetRequiredService<IEnumerable<IDownloader>>()
                 .FirstOrDefault(d => d is not IDefaultDownloader && d.CanDownload(jobTaskUri))
                 ?? defaultDownloader;
+
+            var itemIdSetService = scope.GetRequiredService<IItemIdSetService>();
+            if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
+            {
+                itemIds = itemIdSetService.GetItemIdSet(JobConfig.ItemIdPath);
+            }
         }
 
         if (downloader == null)
@@ -124,7 +138,14 @@ public class JobTaskWorker : IJobTaskWorker
 
         await foreach (var result in downloader.DownloadAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata()))
         {
+            itemIds?.Add(result.ItemId);
+        }
 
+        if (itemIds != null)
+        {
+            using var scope = _serviceLocator.BeginLifetimeScope();
+            var itemIdSetService = scope.GetRequiredService<IItemIdSetService>();
+            itemIdSetService.WriteChanges(JobConfig.ItemIdPath!, itemIds);
         }
     }
 }

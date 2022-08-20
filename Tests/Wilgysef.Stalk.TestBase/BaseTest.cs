@@ -139,7 +139,11 @@ public class BaseTest
             builder.Populate(services);
         }
 
-        var serviceRegistrar = new ServiceRegistrar(GetDbContextOptionsBuilder().Options);
+        var serviceRegistrar = new ServiceRegistrar(GetDbContextOptionsBuilder().Options)
+        {
+            RegisterExtractors = false,
+            RegisterDownloaders = false,
+        };
         serviceRegistrar.RegisterApplication(builder);
 
         foreach (var (implementation, service, type) in _replaceServices)

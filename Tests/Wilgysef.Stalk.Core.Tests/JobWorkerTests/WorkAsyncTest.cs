@@ -16,6 +16,7 @@ public class WorkAsyncTest : BaseTest
     private readonly JobTaskWorkerFactoryMock _jobTaskWorkerFactory;
     private readonly IJobManager _jobManager;
     private readonly IJobWorkerFactory _jobWorkerFactory;
+    private Task? _jobWorkerTask;
 
     public WorkAsyncTest()
     {
@@ -40,6 +41,7 @@ public class WorkAsyncTest : BaseTest
 
         WaitUntil(() => job.State == JobState.Active, TimeSpan.FromSeconds(3));
         job.State.ShouldBe(JobState.Active);
+        _jobWorkerTask!.Exception.ShouldBeNull();
     }
 
     [Fact]
@@ -61,6 +63,7 @@ public class WorkAsyncTest : BaseTest
 
         job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBe(4);
         job.Tasks.Count(t => t.State == JobTaskState.Inactive).ShouldBe(1);
+        _jobWorkerTask!.Exception.ShouldBeNull();
     }
 
     [Fact]
@@ -87,6 +90,7 @@ public class WorkAsyncTest : BaseTest
         // not done in mock
         //activeJobTasks.ShouldNotContain(t => t.Id != jobTask.Id);
         activeJobTasks.ShouldContain(t => t.Id != jobTask.Id);
+        _jobWorkerTask!.Exception.ShouldBeNull();
     }
 
     [Fact]
@@ -111,6 +115,7 @@ public class WorkAsyncTest : BaseTest
 
         var jobWorkerCollectionService = GetRequiredService<IJobWorkerCollectionService>();
         jobWorkerCollectionService.Workers.ShouldBeEmpty();
+        _jobWorkerTask!.Exception.ShouldBeNull();
     }
 
     [Fact]
@@ -134,6 +139,7 @@ public class WorkAsyncTest : BaseTest
 
         var jobWorkerCollectionService = GetRequiredService<IJobWorkerCollectionService>();
         jobWorkerCollectionService.Workers.ShouldBeEmpty();
+        _jobWorkerTask!.Exception.ShouldBeNull();
     }
 
     private IJobWorker CreateAndStartWorker(Job job, out CancellationTokenSource cancellationTokenSource)
@@ -141,7 +147,7 @@ public class WorkAsyncTest : BaseTest
         var worker = _jobWorkerFactory.CreateWorker(job);
         var cts = new CancellationTokenSource();
         cancellationTokenSource = cts;
-        var _ = Task.Run(async () => await worker.WorkAsync(cts.Token));
+        _jobWorkerTask = Task.Run(async () => await worker.WorkAsync(cts.Token));
         return worker;
     }
 }

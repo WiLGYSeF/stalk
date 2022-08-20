@@ -9,6 +9,8 @@ using System.Reflection;
 using Wilgysef.Stalk.Core;
 using Wilgysef.Stalk.Core.Shared.Cqrs;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
+using Wilgysef.Stalk.Core.Shared.Downloaders;
+using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 namespace Wilgysef.Stalk.Application.ServiceRegistrar;
@@ -23,6 +25,10 @@ public class ServiceRegistrar
         typeof(CoreModule),
         typeof(EntityFrameworkCoreModule),
     };
+
+    public bool RegisterExtractors { get; set; } = true;
+
+    public bool RegisterDownloaders { get; set; } = true;
 
     public int IdGeneratorId { get; set; } = 1;
 
@@ -70,6 +76,18 @@ public class ServiceRegistrar
             .InstancePerDependency();
         RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, assemblies)
             .InstancePerDependency();
+
+        if (RegisterExtractors)
+        {
+            RegisterAssemblyTypes(typeof(IExtractor), builder, assemblies)
+                .InstancePerDependency();
+        }
+
+        if (RegisterDownloaders)
+        {
+            RegisterAssemblyTypes(typeof(IDownloader), builder, assemblies)
+                .InstancePerDependency();
+        }
 
         builder.RegisterType<Startup>()
             .AsSelf()
