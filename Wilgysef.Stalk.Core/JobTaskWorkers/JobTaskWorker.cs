@@ -12,9 +12,9 @@ namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
 public class JobTaskWorker : IJobTaskWorker
 {
-    public Job? Job { get; private set; }
+    public Job? Job { get; protected set; }
 
-    public JobTask? JobTask { get; private set; }
+    public JobTask? JobTask { get; protected set; }
 
     private readonly IServiceLocator _serviceLocator;
 
@@ -55,6 +55,8 @@ public class JobTaskWorker : IJobTaskWorker
                 default:
                     throw new NotImplementedException();
             }
+
+            JobTask.ChangeState(JobTaskState.Completed);
         }
         finally
         {
@@ -66,7 +68,7 @@ public class JobTaskWorker : IJobTaskWorker
         }
     }
 
-    private async Task ExtractAsync(CancellationToken cancellationToken)
+    protected virtual async Task ExtractAsync(CancellationToken cancellationToken)
     {
         var jobTaskUri = new Uri(JobTask!.Uri);
 
@@ -102,7 +104,7 @@ public class JobTaskWorker : IJobTaskWorker
         }
     }
 
-    private async Task DownloadAsync(CancellationToken cancellationToken)
+    protected virtual async Task DownloadAsync(CancellationToken cancellationToken)
     {
         var jobTaskUri = new Uri(JobTask!.Uri);
 

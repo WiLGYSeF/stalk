@@ -6,12 +6,8 @@ using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.TestBase.Mocks;
 
-public class JobTaskWorkerMock : IJobTaskWorker
+public class JobTaskWorkerMock : JobTaskWorker
 {
-    public Job? Job { get; private set; }
-
-    public JobTask? JobTask { get; private set; }
-
     public event EventHandler WorkEvent;
 
     private bool _finishWork = false;
@@ -20,6 +16,7 @@ public class JobTaskWorkerMock : IJobTaskWorker
 
     public JobTaskWorkerMock(
         IServiceLocator serviceLocator)
+        : base(serviceLocator)
     {
         _serviceLocator = serviceLocator;
     }
@@ -38,8 +35,21 @@ public class JobTaskWorkerMock : IJobTaskWorker
 
     public async Task WorkAsync(CancellationToken cancellationToken = default)
     {
-        WorkEvent(this, new EventArgs());
+        WorkEvent?.Invoke(this, new EventArgs());
 
+        await base.WorkAsync(cancellationToken);
+    }
+
+    protected override async Task ExtractAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested && !_finishWork)
+        {
+            await Task.Delay(100, cancellationToken);
+        }
+    }
+
+    protected override async Task DownloadAsync(CancellationToken cancellationToken)
+    {
         while (!cancellationToken.IsCancellationRequested && !_finishWork)
         {
             await Task.Delay(100, cancellationToken);

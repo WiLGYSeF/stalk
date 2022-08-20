@@ -37,7 +37,7 @@ public class JobTaskWorkerFactoryMock : IJobTaskWorkerFactory
 
     private void OnWorkEvent(JobTaskWorkerMock jobTaskWorker)
     {
-        WorkEvent(jobTaskWorker, new WorkEventArgs(jobTaskWorker));
+        WorkEvent?.Invoke(jobTaskWorker, new WorkEventArgs(jobTaskWorker));
     }
 
     public class WorkEventArgs : EventArgs

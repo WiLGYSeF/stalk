@@ -2,6 +2,7 @@
 using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkers;
+using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
@@ -12,71 +13,45 @@ namespace Wilgysef.Stalk.Core.Tests.JobWorkerTests;
 
 public class WorkAsyncTest : BaseTest
 {
+    private readonly JobTaskWorkerFactoryMock _jobTaskWorkerFactory;
+    private readonly IJobManager _jobManager;
+    private readonly IJobWorkerFactory _jobWorkerFactory;
+
+    public WorkAsyncTest()
+    {
+        _jobTaskWorkerFactory = new JobTaskWorkerFactoryMock(GetRequiredService<IServiceLocator>());
+
+        ReplaceServiceInstance<JobTaskWorkerFactoryMock, IJobTaskWorkerFactory>(_jobTaskWorkerFactory);
+
+        _jobManager = GetRequiredService<IJobManager>();
+        _jobWorkerFactory = GetRequiredService<IJobWorkerFactory>();
+    }
+
     [Fact]
     public async Task Work_Job_Start_Tasks()
     {
-        var resetEvent = new ManualResetEventSlim();
-        var jobTaskWorkerFactory = new JobTaskWorkerFactoryMock(GetRequiredService<IServiceLocator>());
-        jobTaskWorkerFactory.WorkEvent += (sender, args) =>
-        {
-            resetEvent.Set();
-        };
-
-        ReplaceServiceInstance<JobTaskWorkerFactoryMock, IJobTaskWorkerFactory>(jobTaskWorkerFactory);
-
-        var jobManager = GetRequiredService<IJobManager>();
-        var jobWorkerFactory = GetRequiredService<IJobWorkerFactory>();
-
         var job = new JobBuilder()
             .WithRandomInitializedState(JobState.Inactive)
             .WithRandomTasks(JobTaskState.Inactive, 3)
             .Create();
-        await jobManager.CreateJobAsync(job);
+        await _jobManager.CreateJobAsync(job);
 
-        var worker = jobWorkerFactory.CreateWorker(job);
-        var cancellationTokenSource = new CancellationTokenSource();
-        var task = new Task(
-            async () => await worker.WorkAsync(cancellationTokenSource.Token),
-            cancellationTokenSource.Token);
-        task.Start();
+        CreateAndStartWorker(job, out _);
 
-        resetEvent.Wait();
+        WaitUntil(() => job.State == JobState.Active, TimeSpan.FromSeconds(3));
         job.State.ShouldBe(JobState.Active);
-        //cancellationTokenSource.Cancel();
-
-        //WaitUntil(() => job.State == JobState.Inactive, TimeSpan.FromSeconds(3));
-        //job.State.ShouldBe(JobState.Inactive);
     }
 
     [Fact]
     public async Task Work_Job_Wait_Tasks()
     {
-        var resetEvent = new ManualResetEventSlim();
-        var jobTaskWorkerFactory = new JobTaskWorkerFactoryMock(GetRequiredService<IServiceLocator>());
-        jobTaskWorkerFactory.WorkEvent += (sender, args) =>
-        {
-            resetEvent.Set();
-        };
-
-        ReplaceServiceInstance<JobTaskWorkerFactoryMock, IJobTaskWorkerFactory>(jobTaskWorkerFactory);
-
-        var jobManager = GetRequiredService<IJobManager>();
-        var jobWorkerFactory = GetRequiredService<IJobWorkerFactory>();
-
         var job = new JobBuilder()
             .WithRandomInitializedState(JobState.Inactive)
             .WithRandomTasks(JobTaskState.Inactive, 5)
             .Create();
-        await jobManager.CreateJobAsync(job);
+        await _jobManager.CreateJobAsync(job);
 
-        var worker = jobWorkerFactory.CreateWorker(job);
-        var cancellationTokenSource = new CancellationTokenSource();
-        var task = new Task(
-            async () => await worker.WorkAsync(cancellationTokenSource.Token),
-            cancellationTokenSource.Token);
-        task.Start();
-
-        resetEvent.Wait();
+        CreateAndStartWorker(job, out _);
 
         WaitUntil(() => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 4, TimeSpan.FromSeconds(3));
         job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBe(4);
@@ -91,37 +66,19 @@ public class WorkAsyncTest : BaseTest
     [Fact]
     public async Task Work_Job_Cycle_Tasks()
     {
-        var resetEvent = new ManualResetEventSlim();
-        var jobTaskWorkerFactory = new JobTaskWorkerFactoryMock(GetRequiredService<IServiceLocator>());
-        jobTaskWorkerFactory.WorkEvent += (sender, args) =>
-        {
-            resetEvent.Set();
-        };
-
-        ReplaceServiceInstance<JobTaskWorkerFactoryMock, IJobTaskWorkerFactory>(jobTaskWorkerFactory);
-
-        var jobManager = GetRequiredService<IJobManager>();
-        var jobWorkerFactory = GetRequiredService<IJobWorkerFactory>();
-
         var job = new JobBuilder()
             .WithRandomInitializedState(JobState.Inactive)
             .WithRandomTasks(JobTaskState.Inactive, 5)
             .Create();
-        await jobManager.CreateJobAsync(job);
+        await _jobManager.CreateJobAsync(job);
 
-        var worker = jobWorkerFactory.CreateWorker(job);
-        var cancellationTokenSource = new CancellationTokenSource();
-        var task = new Task(
-            async () => await worker.WorkAsync(cancellationTokenSource.Token),
-            cancellationTokenSource.Token);
-        task.Start();
+        CreateAndStartWorker(job, out _);
 
-        resetEvent.Wait();
         WaitUntil(() => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 4, TimeSpan.FromSeconds(3));
 
         var jobTask = job.Tasks.First(t => t.State == JobTaskState.Active);
         var nextJobTask = job.Tasks.Single(t => t.State == JobTaskState.Inactive);
-        jobTaskWorkerFactory.FinishJobTaskWorker(jobTask);
+        _jobTaskWorkerFactory.FinishJobTaskWorker(jobTask);
 
         await Task.Delay(1100);
 
@@ -130,5 +87,61 @@ public class WorkAsyncTest : BaseTest
         // not done in mock
         //activeJobTasks.ShouldNotContain(t => t.Id != jobTask.Id);
         activeJobTasks.ShouldContain(t => t.Id != jobTask.Id);
+    }
+
+    [Fact]
+    public async Task Work_Job_Finish_Tasks()
+    {
+        var job = new JobBuilder()
+            .WithRandomInitializedState(JobState.Inactive)
+            .WithRandomTasks(JobTaskState.Inactive, 1)
+            .Create();
+        await _jobManager.CreateJobAsync(job);
+
+        CreateAndStartWorker(job, out _);
+
+        WaitUntil(() => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 1, TimeSpan.FromSeconds(3));
+
+        var jobTask = job.Tasks.Single(t => t.State == JobTaskState.Active);
+        _jobTaskWorkerFactory.FinishJobTaskWorker(jobTask);
+
+        WaitUntil(() => job.State == JobState.Completed, TimeSpan.FromSeconds(3));
+
+        job.State.ShouldBe(JobState.Completed);
+
+        var jobWorkerCollectionService = GetRequiredService<IJobWorkerCollectionService>();
+        jobWorkerCollectionService.Workers.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Work_Job_Cancel()
+    {
+        var job = new JobBuilder()
+            .WithRandomInitializedState(JobState.Inactive)
+            .WithRandomTasks(JobTaskState.Inactive, 1)
+            .Create();
+        await _jobManager.CreateJobAsync(job);
+
+        CreateAndStartWorker(job, out var cancellationTokenSource);
+
+        WaitUntil(() => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 1, TimeSpan.FromSeconds(3));
+
+        cancellationTokenSource.Cancel();
+
+        WaitUntil(() => job.State != JobState.Active, TimeSpan.FromSeconds(3));
+
+        job.State.ShouldBe(JobState.Inactive);
+
+        var jobWorkerCollectionService = GetRequiredService<IJobWorkerCollectionService>();
+        jobWorkerCollectionService.Workers.ShouldBeEmpty();
+    }
+
+    private IJobWorker CreateAndStartWorker(Job job, out CancellationTokenSource cancellationTokenSource)
+    {
+        var worker = _jobWorkerFactory.CreateWorker(job);
+        var cts = new CancellationTokenSource();
+        cancellationTokenSource = cts;
+        var _ = Task.Run(async () => await worker.WorkAsync(cts.Token));
+        return worker;
     }
 }
