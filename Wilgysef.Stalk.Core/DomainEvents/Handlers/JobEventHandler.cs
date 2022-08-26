@@ -24,23 +24,23 @@ public class JobEventHandler :
 
     public async Task HandleEventAsync(JobCreatedEvent eventData, CancellationToken cancellationToken = default)
     {
-        await WorkPrioritizedJobs(cancellationToken);
+        await WorkPrioritizedJobsAsync(cancellationToken);
     }
 
     public async Task HandleEventAsync(JobStateChangedEvent eventData, CancellationToken cancellationToken = default)
     {
         if (eventData.NewState != JobState.Active)
         {
-            await WorkPrioritizedJobs(cancellationToken);
+            await WorkPrioritizedJobsAsync(cancellationToken);
         }
     }
 
     public async Task HandleEventAsync(JobPriorityChangedEvent eventData, CancellationToken cancellationToken = default)
     {
-        await WorkPrioritizedJobs(cancellationToken);
+        await WorkPrioritizedJobsAsync(cancellationToken);
     }
 
-    private async Task WorkPrioritizedJobs(CancellationToken cancellationToken)
+    private async Task WorkPrioritizedJobsAsync(CancellationToken cancellationToken)
     {
         await _backgroundJobManager.EnqueueOrReplaceJobAsync(
             BackgroundJob.Create(

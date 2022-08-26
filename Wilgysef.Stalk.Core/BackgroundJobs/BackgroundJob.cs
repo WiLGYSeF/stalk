@@ -10,7 +10,6 @@ public class BackgroundJob : Entity
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public virtual long Id { get; protected set; }
 
-
     public virtual int Priority { get; protected set; }
 
     public virtual int Attempts { get; protected set; }
@@ -25,20 +24,29 @@ public class BackgroundJob : Entity
 
     public virtual string JobArgs { get; protected set; } = null!;
 
-    public static BackgroundJob Create(
+    [NotMapped]
+    public Func<TimeSpan> GetNextRunOffset { get; set; }
+
+    protected BackgroundJob()
+    {
+        GetNextRunOffset = GetNextRunOffsetDefault;
+    }
+
+    public static BackgroundJob Create<T>(
         long id,
-        BackgroundJobArgs args,
+        T args,
         int priority = 0,
         DateTime? delayUntil = null,
         TimeSpan? delayFor = null,
         DateTime? maximumLifetime = null,
-        TimeSpan? maximumLifespan = null)
+        TimeSpan? maximumLifespan = null,
+        string? argsName = null) where T : BackgroundJobArgs
     {
-        var argsName = args.GetType().FullName;
+        argsName ??= args.GetType().FullName;
 
         if (argsName == null)
         {
-            throw new ArgumentNullException(nameof(args), "args does not have FullName.");
+            throw new ArgumentNullException(nameof(argsName));
         }
 
         var job = new BackgroundJob
@@ -46,7 +54,7 @@ public class BackgroundJob : Entity
             Id = id,
             JobArgsName = argsName,
             Priority = priority,
-            JobArgs = Serialize(args),
+            JobArgs = SerializeArgs(args),
         };
 
         if (delayUntil.HasValue)
@@ -109,30 +117,30 @@ public class BackgroundJob : Entity
         }
     }
 
-    internal void SetJobFailed()
+    internal void JobFailed()
     {
         if (Abandoned)
         {
-            throw new BackgroundJobAbandonedException();
+            return;
         }
 
         Attempts++;
 
         if (MaximumLifetime.HasValue && MaximumLifetime <= DateTime.Now)
         {
-            Abandoned = true;
-            NextRun = null;
+            Abandon();
             return;
         }
 
-        NextRun = DateTime.Now.Add(TimeSpan.FromSeconds(Math.Pow(2, Attempts - 1)));
+        NextRun = DateTime.Now.Add(GetNextRunOffset());
     }
 
-    internal void SetAbandoned()
+    internal void Abandon()
     {
         if (!Abandoned)
         {
             Abandoned = true;
+            NextRun = null;
         }
     }
 
@@ -148,7 +156,12 @@ public class BackgroundJob : Entity
             ?? throw new InvalidBackgroundJobException();
     }
 
-    private static string Serialize(BackgroundJobArgs args)
+    private TimeSpan GetNextRunOffsetDefault()
+    {
+        return TimeSpan.FromSeconds(Math.Pow(2, Attempts - 1));
+    }
+
+    private static string SerializeArgs<T>(T args) where T : BackgroundJobArgs
     {
         return JsonSerializer.Serialize(args);
     }
