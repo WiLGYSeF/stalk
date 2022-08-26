@@ -10,7 +10,6 @@ public class BackgroundJob : Entity
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public virtual long Id { get; protected set; }
 
-
     public virtual int Priority { get; protected set; }
 
     public virtual int Attempts { get; protected set; }
@@ -24,6 +23,14 @@ public class BackgroundJob : Entity
     public virtual string JobArgsName { get; protected set; } = null!;
 
     public virtual string JobArgs { get; protected set; } = null!;
+
+    [NotMapped]
+    public Func<TimeSpan> GetNextRunOffset { get; set; }
+
+    protected BackgroundJob()
+    {
+        GetNextRunOffset = GetNextRunOffsetDefault;
+    }
 
     public static BackgroundJob Create<T>(
         long id,
@@ -114,7 +121,7 @@ public class BackgroundJob : Entity
     {
         if (Abandoned)
         {
-            throw new BackgroundJobAbandonedException();
+            return;
         }
 
         Attempts++;
@@ -125,7 +132,7 @@ public class BackgroundJob : Entity
             return;
         }
 
-        NextRun = DateTime.Now.Add(TimeSpan.FromSeconds(Math.Pow(2, Attempts - 1)));
+        NextRun = DateTime.Now.Add(GetNextRunOffset());
     }
 
     internal void Abandon()
@@ -147,6 +154,11 @@ public class BackgroundJob : Entity
     {
         return JsonSerializer.Deserialize(JobArgs, GetJobArgsType()) as BackgroundJobArgs
             ?? throw new InvalidBackgroundJobException();
+    }
+
+    private TimeSpan GetNextRunOffsetDefault()
+    {
+        return TimeSpan.FromSeconds(Math.Pow(2, Attempts - 1));
     }
 
     private static string SerializeArgs<T>(T args) where T : BackgroundJobArgs

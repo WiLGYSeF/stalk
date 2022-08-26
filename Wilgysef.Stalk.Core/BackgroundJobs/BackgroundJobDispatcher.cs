@@ -75,6 +75,6 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        await handlerWrapper.ExecuteJobAsync(services, args, cancellationToken);
+        await handlerWrapper.ExecuteJobAsync(services, args, job, cancellationToken);
     }
 }

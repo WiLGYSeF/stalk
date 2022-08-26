@@ -1,7 +1,5 @@
 ﻿using Shouldly;
 using Wilgysef.Stalk.Core.BackgroundJobs;
-using Wilgysef.Stalk.Core.BackgroundJobs.Args;
-using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.TestBase;
 
 namespace Wilgysef.Stalk.Core.Tests.BackgroundJobsTests;
@@ -14,7 +12,8 @@ public class BackgroundJobDispatcherTest : BaseTest
     public BackgroundJobDispatcherTest()
     {
         ReplaceService<TestJobHandler, IBackgroundJobHandler<TestJobArgs>>();
-        ReplaceService<TestJobFailHandler, IBackgroundJobHandler<TestJobFailArgs>>();
+        ReplaceService<TestFailJobHandler, IBackgroundJobHandler<TestFailJobArgs>>();
+        ReplaceService<TestChangeJobHandler, IBackgroundJobHandler<TestChangeJobArgs>>();
 
         _backgroundJobDispatcher = GetRequiredService<IBackgroundJobDispatcher>();
         _backgroundJobManager = GetRequiredService<IBackgroundJobManager>();
@@ -26,13 +25,13 @@ public class BackgroundJobDispatcherTest : BaseTest
         await _backgroundJobManager.EnqueueJobAsync(
             BackgroundJob.Create(
                 1,
-                new TestJobArgs("a", 1),
+                new TestJobArgs(),
                 argsName: typeof(TestJobArgs).AssemblyQualifiedName),
             true);
         await _backgroundJobManager.EnqueueJobAsync(
             BackgroundJob.Create(
                 2,
-                new TestJobArgs("b", 2),
+                new TestJobArgs(),
                 argsName: typeof(TestJobArgs).AssemblyQualifiedName),
             true);
 
@@ -46,13 +45,37 @@ public class BackgroundJobDispatcherTest : BaseTest
     }
 
     [Fact]
+    public async Task Executes_Job_Change_JobEntity()
+    {
+        await _backgroundJobManager.EnqueueJobAsync(
+            BackgroundJob.Create(
+                1,
+                new TestChangeJobArgs(),
+                argsName: typeof(TestChangeJobArgs).AssemblyQualifiedName),
+            true);
+
+        await _backgroundJobDispatcher.ExecuteJobsAsync();
+
+        await WithLifetimeScopeAsync(async scope =>
+        {
+            var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
+            var job = await backgroundJobManager.FindJobAsync(1);
+            job!.Attempts.ShouldBe(1);
+            job.Abandoned.ShouldBeFalse();
+
+            job.NextRun.ShouldNotBeNull();
+            (DateTime.Now.AddSeconds(123) - job.NextRun.Value).Duration().TotalSeconds.ShouldBeInRange(0, 3);
+        });
+    }
+
+    [Fact]
     public async Task Executes_Failed_Job()
     {
         await _backgroundJobManager.EnqueueJobAsync(
             BackgroundJob.Create(
                 1,
-                new TestJobFailArgs(),
-                argsName: typeof(TestJobFailArgs).AssemblyQualifiedName),
+                new TestFailJobArgs(),
+                argsName: typeof(TestFailJobArgs).AssemblyQualifiedName),
             true);
 
         await _backgroundJobDispatcher.ExecuteJobsAsync();
@@ -72,7 +95,7 @@ public class BackgroundJobDispatcherTest : BaseTest
         await _backgroundJobManager.EnqueueJobAsync(
             BackgroundJob.Create(
                 1,
-                new TestJobFailArgs(),
+                new TestFailJobArgs(),
                 argsName: "invalid"),
             true);
 
@@ -87,34 +110,34 @@ public class BackgroundJobDispatcherTest : BaseTest
         });
     }
 
-    private class TestJobHandler : IBackgroundJobHandler<TestJobArgs>
+    private class TestJobHandler : BackgroundJobHandler<TestJobArgs>
     {
-        public Task ExecuteJobAsync(TestJobArgs args, CancellationToken cancellationToken = default)
+        public override Task ExecuteJobAsync(TestJobArgs args, CancellationToken cancellationToken = default)
         {
             return Task.CompletedTask;
         }
     }
 
-    private class TestJobFailHandler : IBackgroundJobHandler<TestJobFailArgs>
+    private class TestFailJobHandler : BackgroundJobHandler<TestFailJobArgs>
     {
-        public Task ExecuteJobAsync(TestJobFailArgs args, CancellationToken cancellationToken = default)
+        public override Task ExecuteJobAsync(TestFailJobArgs args, CancellationToken cancellationToken = default)
         {
             throw new InvalidOperationException();
         }
     }
 
-    private class TestJobArgs : BackgroundJobArgs
+    private class TestChangeJobHandler : BackgroundJobHandler<TestChangeJobArgs>
     {
-        public string Name { get; }
-
-        public int Value { get; }
-
-        public TestJobArgs(string name, int value)
+        public override Task ExecuteJobAsync(TestChangeJobArgs args, CancellationToken cancellationToken = default)
         {
-            Name = name;
-            Value = value;
+            BackgroundJob.GetNextRunOffset = () => TimeSpan.FromSeconds(123);
+            throw new InvalidOperationException();
         }
     }
 
-    private class TestJobFailArgs : BackgroundJobArgs { }
+    private class TestJobArgs : BackgroundJobArgs { }
+
+    private class TestFailJobArgs : BackgroundJobArgs { }
+
+    private class TestChangeJobArgs : BackgroundJobArgs { }
 }
