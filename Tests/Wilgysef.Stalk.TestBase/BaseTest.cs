@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using System.Data.Common;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
+using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 namespace Wilgysef.Stalk.TestBase;
@@ -200,6 +201,33 @@ public class BaseTest
         }
 
         return false;
+    }
+
+    #endregion
+
+    #region Scope
+
+    /// <summary>
+    /// Creates a lifetime scope.
+    /// </summary>
+    /// <param name="action">Action.</param>
+    public void WithLifetimeScope(Action<IServiceLifetimeScope> action)
+    {
+        var serviceLocator = GetRequiredService<IServiceLocator>();
+        using var scope = serviceLocator.BeginLifetimeScope();
+        action(scope);
+    }
+
+    /// <summary>
+    /// Creates a lifetime scope.
+    /// </summary>
+    /// <param name="action">Action.</param>
+    /// <returns></returns>
+    public async Task WithLifetimeScopeAsync(Func<IServiceLifetimeScope, Task> action)
+    {
+        var serviceLocator = GetRequiredService<IServiceLocator>();
+        using var scope = serviceLocator.BeginLifetimeScope();
+        await action(scope);
     }
 
     #endregion

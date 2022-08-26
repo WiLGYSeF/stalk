@@ -43,25 +43,13 @@ public class BackgroundJobManager : IBackgroundJobManager
 
         var jobArgs = job.DeserializeArgs();
 
-        BackgroundJob? existingJob = null;
-
-        foreach (var queuedJob in queuedJobs)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var args = queuedJob.DeserializeArgs();
-            if (compareTo(jobArgs, args))
-            {
-                existingJob = queuedJob;
-                break;
-            }
-        }
+        var matchingJobs = queuedJobs.Where(j => compareTo(jobArgs, j.DeserializeArgs()));
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (existingJob != null)
+        if (matchingJobs.Any())
         {
-            _unitOfWork.BackgroundJobRepository.Remove(existingJob);
+            _unitOfWork.BackgroundJobRepository.RemoveRange(matchingJobs);
         }
 
         return await EnqueueJobAsync(job, saveChanges, cancellationToken);

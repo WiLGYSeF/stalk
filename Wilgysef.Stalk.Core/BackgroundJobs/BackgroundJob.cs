@@ -25,20 +25,21 @@ public class BackgroundJob : Entity
 
     public virtual string JobArgs { get; protected set; } = null!;
 
-    public static BackgroundJob Create(
+    public static BackgroundJob Create<T>(
         long id,
-        BackgroundJobArgs args,
+        T args,
         int priority = 0,
         DateTime? delayUntil = null,
         TimeSpan? delayFor = null,
         DateTime? maximumLifetime = null,
-        TimeSpan? maximumLifespan = null)
+        TimeSpan? maximumLifespan = null,
+        string? argsName = null) where T : BackgroundJobArgs
     {
-        var argsName = args.GetType().FullName;
+        argsName ??= args.GetType().FullName;
 
         if (argsName == null)
         {
-            throw new ArgumentNullException(nameof(args), "args does not have FullName.");
+            throw new ArgumentNullException(nameof(argsName));
         }
 
         var job = new BackgroundJob
@@ -46,7 +47,7 @@ public class BackgroundJob : Entity
             Id = id,
             JobArgsName = argsName,
             Priority = priority,
-            JobArgs = Serialize(args),
+            JobArgs = SerializeArgs(args),
         };
 
         if (delayUntil.HasValue)
@@ -109,7 +110,7 @@ public class BackgroundJob : Entity
         }
     }
 
-    internal void SetJobFailed()
+    internal void JobFailed()
     {
         if (Abandoned)
         {
@@ -120,19 +121,19 @@ public class BackgroundJob : Entity
 
         if (MaximumLifetime.HasValue && MaximumLifetime <= DateTime.Now)
         {
-            Abandoned = true;
-            NextRun = null;
+            Abandon();
             return;
         }
 
         NextRun = DateTime.Now.Add(TimeSpan.FromSeconds(Math.Pow(2, Attempts - 1)));
     }
 
-    internal void SetAbandoned()
+    internal void Abandon()
     {
         if (!Abandoned)
         {
             Abandoned = true;
+            NextRun = null;
         }
     }
 
@@ -148,7 +149,7 @@ public class BackgroundJob : Entity
             ?? throw new InvalidBackgroundJobException();
     }
 
-    private static string Serialize(BackgroundJobArgs args)
+    private static string SerializeArgs<T>(T args) where T : BackgroundJobArgs
     {
         return JsonSerializer.Serialize(args);
     }
