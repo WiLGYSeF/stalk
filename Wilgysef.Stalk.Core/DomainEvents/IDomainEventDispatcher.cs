@@ -10,7 +10,7 @@ public interface IDomainEventDispatcher : ITransientDependency
     /// <typeparam name="T">Event type.</typeparam>
     /// <param name="eventData">Event data.</param>
     /// <returns></returns>
-    Task DispatchEvents<T>(params T[] eventData) where T : notnull, IDomainEvent;
+    Task DispatchEventsAsync<T>(params T[] eventData) where T : notnull, IDomainEvent;
 
     /// <summary>
     /// Dispatch events.
@@ -19,5 +19,5 @@ public interface IDomainEventDispatcher : ITransientDependency
     /// <param name="eventData">Event data.</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    Task DispatchEvents<T>(IEnumerable<T> eventData, CancellationToken cancellationToken = default) where T : notnull, IDomainEvent;
+    Task DispatchEventsAsync<T>(IEnumerable<T> eventData, CancellationToken cancellationToken = default) where T : notnull, IDomainEvent;
 }

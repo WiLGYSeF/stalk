@@ -24,6 +24,8 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            await backgroundJobManager.AbandonExpiredJobsAsync(cancellationToken);
+
             var job = await backgroundJobManager.GetNextPriorityJobAsync(cancellationToken);
             if (job == null)
             {
@@ -40,8 +42,7 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
             }
             catch (InvalidBackgroundJobException)
             {
-                // TODO: handle invalid background job
-                job.SetJobFailed();
+                job.Abandon();
                 await backgroundJobManager.UpdateJobAsync(job, CancellationToken.None);
             }
             catch (OperationCanceledException)
@@ -50,7 +51,7 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
             }
             catch (Exception)
             {
-                job.SetJobFailed();
+                job.JobFailed();
                 await backgroundJobManager.UpdateJobAsync(job, CancellationToken.None);
             }
             finally
@@ -74,6 +75,8 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
         var handlerWrapper = (IBackgroundJobHandlerWrapper)Activator.CreateInstance(
             typeof(BackgroundJobHandlerWrapper<>).MakeGenericType(argsType))!;
 
-        await handlerWrapper.ExecuteJobAsync(services, args, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        await handlerWrapper.ExecuteJobAsync(services, args, job, cancellationToken);
     }
 }

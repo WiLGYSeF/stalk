@@ -11,12 +11,12 @@ public class DomainEventDispatcher : IDomainEventDispatcher
         _serviceLocator = serviceLocator;
     }
 
-    public async Task DispatchEvents<T>(params T[] eventData) where T : notnull, IDomainEvent
+    public async Task DispatchEventsAsync<T>(params T[] eventData) where T : notnull, IDomainEvent
     {
-        await DispatchEvents(eventData, default);
+        await DispatchEventsAsync(eventData, default);
     }
 
-    public async Task DispatchEvents<T>(IEnumerable<T> eventData, CancellationToken cancellationToken = default) where T : notnull, IDomainEvent
+    public async Task DispatchEventsAsync<T>(IEnumerable<T> eventData, CancellationToken cancellationToken = default) where T : notnull, IDomainEvent
     {
         var eventHandlerType = typeof(IDomainEventHandler<>);
 
