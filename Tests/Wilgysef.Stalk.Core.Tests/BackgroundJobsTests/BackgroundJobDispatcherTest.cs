@@ -112,6 +112,37 @@ public class BackgroundJobDispatcherTest : BaseTest
     }
 
     [Fact]
+    public async Task Executes_Retries_Job()
+    {
+        await _backgroundJobManager.EnqueueJobAsync(
+            BackgroundJob.Create(
+                1,
+                new TestFailJobArgs(),
+                argsName: typeof(TestFailJobArgs).AssemblyQualifiedName),
+            true);
+
+        await _backgroundJobDispatcher.ExecuteJobsAsync();
+
+        await WithLifetimeScopeAsync(async scope =>
+        {
+            var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
+            var job = await backgroundJobManager.FindJobAsync(1);
+            job!.ChangeNextRun(null);
+            await backgroundJobManager.UpdateJobAsync(job);
+        });
+
+        await _backgroundJobDispatcher.ExecuteJobsAsync();
+
+        await WithLifetimeScopeAsync(async scope =>
+        {
+            var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
+            var job = await backgroundJobManager.FindJobAsync(1);
+            job!.Attempts.ShouldBe(2);
+            job.Abandoned.ShouldBeFalse();
+        });
+    }
+
+    [Fact]
     public async Task Executes_Invalid_Job()
     {
         await _backgroundJobManager.EnqueueJobAsync(
