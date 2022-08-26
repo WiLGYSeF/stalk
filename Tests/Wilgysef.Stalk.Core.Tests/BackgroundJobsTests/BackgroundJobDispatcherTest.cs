@@ -69,6 +69,28 @@ public class BackgroundJobDispatcherTest : BaseTest
     }
 
     [Fact]
+    public async Task Abandons_Expired_Jobs()
+    {
+        await _backgroundJobManager.EnqueueJobAsync(
+            BackgroundJob.Create(
+                1,
+                new TestJobArgs(),
+                maximumLifetime: DateTime.Now.AddDays(-1),
+                argsName: typeof(TestChangeJobArgs).AssemblyQualifiedName),
+            true);
+
+        await _backgroundJobDispatcher.ExecuteJobsAsync();
+
+        await WithLifetimeScopeAsync(async scope =>
+        {
+            var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
+            var job = await backgroundJobManager.FindJobAsync(1);
+            job!.Attempts.ShouldBe(0);
+            job.Abandoned.ShouldBeTrue();
+        });
+    }
+
+    [Fact]
     public async Task Executes_Failed_Job()
     {
         await _backgroundJobManager.EnqueueJobAsync(

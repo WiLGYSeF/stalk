@@ -72,6 +72,23 @@ public class BackgroundJobManager : IBackgroundJobManager
             cancellationToken);
     }
 
+    public async Task<List<BackgroundJob>> AbandonExpiredJobsAsync(CancellationToken cancellationToken = default)
+    {
+        var jobs = await _unitOfWork.BackgroundJobRepository.ListAsync(
+            new ExpiredBackgroundJobSpecification(_backgroundJobCollectionService.ActiveJobs),
+            cancellationToken);
+
+        foreach (var job in jobs)
+        {
+            job.Abandon();
+        }
+
+        _unitOfWork.BackgroundJobRepository.UpdateRange(jobs);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return jobs;
+    }
+
     public async Task UpdateJobAsync(BackgroundJob job, CancellationToken cancellationToken = default)
     {
         _unitOfWork.BackgroundJobRepository.Update(job);

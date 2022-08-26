@@ -24,6 +24,8 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher
         {
             cancellationToken.ThrowIfCancellationRequested();
 
+            await backgroundJobManager.AbandonExpiredJobsAsync(cancellationToken);
+
             var job = await backgroundJobManager.GetNextPriorityJobAsync(cancellationToken);
             if (job == null)
             {
