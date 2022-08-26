@@ -156,7 +156,7 @@ public class BackgroundJob : Entity
             ?? throw new InvalidBackgroundJobException();
     }
 
-    private TimeSpan GetNextRunOffsetDefault()
+    public TimeSpan GetNextRunOffsetDefault()
     {
         return TimeSpan.FromSeconds(Math.Pow(2, Attempts - 1));
     }
