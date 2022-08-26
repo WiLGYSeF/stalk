@@ -12,40 +12,50 @@ public class JobWorker : IJobWorker
 
     public int WorkerLimit { get; set; } = 4;
 
-    public int TaskWaitTimeoutMilliseconds { get; set; } = 1000;
+    public int TaskWaitTimeoutMilliseconds { get; set; } = 10 * 1000;
 
     private readonly List<Task> _tasks = new();
 
-    private readonly IServiceLocator _serviceLocator;
+    private readonly IServiceLifetimeScope _lifetimeScope;
 
-    public JobWorker(
-        IServiceLocator serviceLocator)
+    private bool _working = false;
+
+    public JobWorker(IServiceLifetimeScope lifetimeScope)
     {
-        _serviceLocator = serviceLocator;
+        _lifetimeScope = lifetimeScope;
     }
 
     public IJobWorker WithJob(Job job)
     {
+        if (_working)
+        {
+            throw new InvalidOperationException("Cannot set job when worker is already working");
+        }
+
         Job = job;
         return this;
     }
 
-    public async Task WorkAsync(CancellationToken cancellationToken = default)
+    public virtual async Task WorkAsync(CancellationToken cancellationToken = default)
     {
         if (Job == null)
         {
             throw new InvalidOperationException("Job is not set.");
         }
 
+        _working = true;
+
         if (!Job.IsActive)
         {
-            using var scope = _serviceLocator.BeginLifetimeScope();
+            using var scope = _lifetimeScope.BeginLifetimeScope();
             var jobManager = scope.GetRequiredService<IJobManager>();
             await jobManager.SetJobActiveAsync(Job, cancellationToken);
         }
 
         try
         {
+            await ReloadJobAsync();
+
             while (!cancellationToken.IsCancellationRequested && Job.HasUnfinishedTasks)
             {
                 await CreateJobTaskWorkers(cancellationToken);
@@ -55,14 +65,27 @@ public class JobWorker : IJobWorker
 
                 if (taskCompletedIndex != -1)
                 {
+                    if (taskArray.Any(t => t.Exception != null))
+                    {
+
+                    }
+
                     RemoveCompletedTasks(taskArray);
                 }
+
+                await ReloadJobAsync();
             }
+        }
+        catch (Exception exc)
+        {
+            throw;
         }
         finally
         {
-            using var scope = _serviceLocator.BeginLifetimeScope();
+            using var scope = _lifetimeScope.BeginLifetimeScope();
             var jobManager = scope.GetRequiredService<IJobManager>();
+
+            await ReloadJobAsync(scope);
 
             // TODO: fix state
             if (!Job.HasUnfinishedTasks)
@@ -80,6 +103,13 @@ public class JobWorker : IJobWorker
         }
     }
 
+    public void Dispose()
+    {
+        _lifetimeScope.Dispose();
+
+        GC.SuppressFinalize(this);
+    }
+
     private async Task CreateJobTaskWorkers(CancellationToken cancellationToken)
     {
         if (_tasks.Count >= WorkerLimit)
@@ -93,7 +123,7 @@ public class JobWorker : IJobWorker
             return;
         }
 
-        using var scope = _serviceLocator.BeginLifetimeScope();
+        using var scope = _lifetimeScope.BeginLifetimeScope();
         var jobTaskWorkerService = scope.GetRequiredService<IJobTaskWorkerService>();
 
         var jobTaskIndex = 0;
@@ -116,5 +146,19 @@ public class JobWorker : IJobWorker
                 _tasks.Remove(task);
             }
         }
+    }
+
+    private async Task<Job> ReloadJobAsync()
+    {
+        using var scope = _lifetimeScope.BeginLifetimeScope();
+        return await ReloadJobAsync(scope);
+    }
+
+    private async Task<Job> ReloadJobAsync(IServiceLifetimeScope scope)
+    {
+        var jobManager = scope.GetRequiredService<IJobManager>();
+        var job = await jobManager.GetJobAsync(Job!.Id);
+        Job = job;
+        return job;
     }
 }

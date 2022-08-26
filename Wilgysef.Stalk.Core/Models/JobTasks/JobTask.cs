@@ -431,4 +431,33 @@ public class JobTask : Entity
                 break;
         }
     }
+
+    /// <summary>
+    /// Set job task as completed and successful.
+    /// </summary>
+    internal void Success()
+    {
+        ChangeState(JobTaskState.Completed);
+
+        Result = JobTaskResult.Create(success: true);
+        Finish();
+    }
+
+    /// <summary>
+    /// Set job task as failed and unsuccessful.
+    /// </summary>
+    internal void Fail(
+        string? errorCode = null,
+        string? errorMessage = null,
+        string? errorDetail = null)
+    {
+        ChangeState(JobTaskState.Failed);
+
+        Result = JobTaskResult.Create(
+            success: false,
+            errorCode: errorCode,
+            errorMessage: errorMessage,
+            errorDetail: errorDetail);
+        Finish();
+    }
 }

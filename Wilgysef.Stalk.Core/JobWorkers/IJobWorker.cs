@@ -2,9 +2,11 @@
 
 namespace Wilgysef.Stalk.Core.JobWorkers;
 
-public interface IJobWorker
+public interface IJobWorker : IDisposable
 {
     Job? Job { get; }
+
+    int TaskWaitTimeoutMilliseconds { get; set; }
 
     IJobWorker WithJob(Job job);
 

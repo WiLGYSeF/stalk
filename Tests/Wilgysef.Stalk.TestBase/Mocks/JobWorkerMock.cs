@@ -8,12 +8,13 @@ public class JobWorkerMock : IJobWorker
 {
     public Job Job { get; private set; } = null!;
 
-    private readonly IServiceLocator _serviceLocator;
+    public int TaskWaitTimeoutMilliseconds { get; set; } = 500;
 
-    public JobWorkerMock(
-        IServiceLocator serviceLocator)
+    private readonly IServiceLifetimeScope _lifetimeScope;
+
+    public JobWorkerMock(IServiceLifetimeScope lifetimeScope)
     {
-        _serviceLocator = serviceLocator;
+        _lifetimeScope = lifetimeScope;
     }
 
     public IJobWorker WithJob(Job job)
@@ -28,5 +29,12 @@ public class JobWorkerMock : IJobWorker
         {
             await Task.Delay(100, cancellationToken);
         }
+    }
+
+    public void Dispose()
+    {
+        _lifetimeScope.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 }

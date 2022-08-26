@@ -21,7 +21,7 @@ public class JobTaskWorkerFactoryMock : IJobTaskWorkerFactory
 
     public IJobTaskWorker CreateWorker(Job job, JobTask jobTask)
     {
-        var worker = new JobTaskWorkerMock(_serviceLocator);
+        var worker = new JobTaskWorkerMock(_serviceLocator.BeginLifetimeScope());
         worker.WithJobTask(job, jobTask);
         worker.WorkEvent += (sender, args) => OnWorkEvent(worker);
         _jobTaskWorkers.Add(worker);

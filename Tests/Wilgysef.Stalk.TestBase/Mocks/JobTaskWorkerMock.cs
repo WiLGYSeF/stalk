@@ -1,7 +1,5 @@
 ﻿using System.Diagnostics;
 using Wilgysef.Stalk.Core.JobTaskWorkers;
-using Wilgysef.Stalk.Core.Models.Jobs;
-using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.TestBase.Mocks;
@@ -12,20 +10,12 @@ public class JobTaskWorkerMock : JobTaskWorker
 
     private bool _finishWork = false;
 
-    private readonly IServiceLocator _serviceLocator;
+    private readonly IServiceLifetimeScope _lifetimeScope;
 
-    public JobTaskWorkerMock(
-        IServiceLocator serviceLocator)
-        : base(serviceLocator)
+    public JobTaskWorkerMock(IServiceLifetimeScope lifetimeScope)
+        : base(lifetimeScope)
     {
-        _serviceLocator = serviceLocator;
-    }
-
-    public IJobTaskWorker WithJobTask(Job job, JobTask jobTask)
-    {
-        Job = job;
-        JobTask = jobTask;
-        return this;
+        _lifetimeScope = lifetimeScope;
     }
 
     public void FinishWork()
@@ -33,7 +23,7 @@ public class JobTaskWorkerMock : JobTaskWorker
         _finishWork = true;
     }
 
-    public async Task WorkAsync(CancellationToken cancellationToken = default)
+    public override async Task WorkAsync(CancellationToken cancellationToken = default)
     {
         WorkEvent?.Invoke(this, new EventArgs());
 

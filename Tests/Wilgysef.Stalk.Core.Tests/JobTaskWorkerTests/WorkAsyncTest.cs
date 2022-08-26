@@ -1,4 +1,5 @@
-﻿using Shouldly;
+﻿using Moq;
+using Shouldly;
 using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkers;
@@ -14,17 +15,15 @@ namespace Wilgysef.Stalk.Core.Tests.JobTaskWorkerTests;
 
 public class WorkAsyncTest : BaseTest
 {
-    private readonly JobTaskWorkerFactoryMock _jobTaskWorkerFactory;
+    private readonly Mock<IDownloader> _downloaderMock;
     private readonly IJobManager _jobManager;
     private readonly IJobWorkerFactory _jobWorkerFactory;
     private Task _jobWorkerTask;
 
     public WorkAsyncTest()
     {
-        _jobTaskWorkerFactory = new JobTaskWorkerFactoryMock(GetRequiredService<IServiceLocator>());
-
-        ReplaceService<DefaultDownloaderMock, IDownloader>();
-        //ReplaceServiceInstance<JobTaskWorkerFactoryMock, IJobTaskWorkerFactory>(_jobTaskWorkerFactory);
+        _downloaderMock = new Mock<IDownloader>();
+        ReplaceServiceInstance(_downloaderMock.Object);
 
         _jobManager = GetRequiredService<IJobManager>();
         _jobWorkerFactory = GetRequiredService<IJobWorkerFactory>();
@@ -46,15 +45,23 @@ public class WorkAsyncTest : BaseTest
                 .WithType(JobTaskType.Download)
                 .Create())
             .Create();
+        var jobId = job.Id;
         await _jobManager.CreateJobAsync(job);
 
         CreateAndStartWorker(job, out _);
 
-        WaitUntil(() => job.State == JobState.Active, TimeSpan.FromSeconds(3));
+        await WaitUntilAsync(async () =>
+        {
+            var job = await _jobManager.GetJobAsync(jobId);
+            return job.State != JobState.Active;
+        }, TimeSpan.FromSeconds(3));
         job.State.ShouldBe(JobState.Active);
 
-        await Task.Delay(TimeSpan.FromSeconds(3));
+        await Task.Delay(3000);
+
         _jobWorkerTask!.Exception.ShouldBeNull();
+        job = await _jobManager.GetJobAsync(jobId);
+        job.Tasks.Any(t => t.State == JobTaskState.Failed).ShouldBeFalse();
     }
 
     // TODO: duplicate code

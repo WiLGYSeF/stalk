@@ -19,22 +19,28 @@ public class JobTaskWorker : IJobTaskWorker
 
     private JobConfig JobConfig { get; set; }
 
-    private readonly IServiceLocator _serviceLocator;
+    private readonly IServiceLifetimeScope _lifetimeScope;
 
-    public JobTaskWorker(
-        IServiceLocator serviceLocator)
+    private bool _working = false;
+
+    public JobTaskWorker(IServiceLifetimeScope lifetimeScope)
     {
-        _serviceLocator = serviceLocator;
+        _lifetimeScope = lifetimeScope;
     }
 
     public IJobTaskWorker WithJobTask(Job job, JobTask jobTask)
     {
+        if (_working)
+        {
+            throw new InvalidOperationException("Cannot set job when worker is already working");
+        }
+
         Job = job;
         JobTask = jobTask;
         return this;
     }
 
-    public async Task WorkAsync(CancellationToken cancellationToken = default)
+    public virtual async Task WorkAsync(CancellationToken cancellationToken = default)
     {
         if (Job == null)
         {
@@ -43,6 +49,15 @@ public class JobTaskWorker : IJobTaskWorker
         if (JobTask == null)
         {
             throw new InvalidOperationException("Job task is not set.");
+        }
+
+        _working = true;
+
+        if (!JobTask.IsActive)
+        {
+            using var scope = _lifetimeScope.BeginLifetimeScope();
+            var jobManager = scope.GetRequiredService<IJobManager>();
+            await jobManager.SetJobTaskActiveAsync(Job, JobTask, CancellationToken.None);
         }
 
         try
@@ -63,9 +78,13 @@ public class JobTaskWorker : IJobTaskWorker
 
             JobTask.ChangeState(JobTaskState.Completed);
         }
+        catch (Exception exc)
+        {
+            JobTask.Fail(errorMessage: exc.Message, errorDetail: exc.ToString());
+        }
         finally
         {
-            using var scope = _serviceLocator.BeginLifetimeScope();
+            using var scope = _lifetimeScope.BeginLifetimeScope();
             var jobManager = scope.GetRequiredService<IJobManager>();
 
             JobTask.Deactivate();
@@ -73,12 +92,19 @@ public class JobTaskWorker : IJobTaskWorker
         }
     }
 
+    public void Dispose()
+    {
+        _lifetimeScope.Dispose();
+
+        GC.SuppressFinalize(this);
+    }
+
     protected virtual async Task ExtractAsync(CancellationToken cancellationToken)
     {
         var jobTaskUri = new Uri(JobTask!.Uri);
 
         IExtractor? extractor = null;
-        using (var scope = _serviceLocator.BeginLifetimeScope())
+        using (var scope = _lifetimeScope.BeginLifetimeScope())
         {
             extractor = scope.GetRequiredService<IEnumerable<IExtractor>>()
                 .FirstOrDefault(e => e.CanExtract(jobTaskUri));
@@ -92,7 +118,7 @@ public class JobTaskWorker : IJobTaskWorker
                 $"No extractor was able to extract from {jobTaskUri}");
         }
 
-        using (var scope = _serviceLocator.BeginLifetimeScope())
+        using (var scope = _lifetimeScope.BeginLifetimeScope())
         {
             var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
 
@@ -116,7 +142,7 @@ public class JobTaskWorker : IJobTaskWorker
         IDownloader? downloader = null;
         IItemIdSet? itemIds = null;
 
-        using (var scope = _serviceLocator.BeginLifetimeScope())
+        using (var scope = _lifetimeScope.BeginLifetimeScope())
         {
             var downloaders = scope.GetRequiredService<IEnumerable<IDownloader>>();
             var defaultDownloader = downloaders.First(d => d is IDefaultDownloader);
@@ -143,7 +169,7 @@ public class JobTaskWorker : IJobTaskWorker
 
         if (itemIds != null)
         {
-            using var scope = _serviceLocator.BeginLifetimeScope();
+            using var scope = _lifetimeScope.BeginLifetimeScope();
             var itemIdSetService = scope.GetRequiredService<IItemIdSetService>();
             itemIdSetService.WriteChanges(JobConfig.ItemIdPath!, itemIds);
         }

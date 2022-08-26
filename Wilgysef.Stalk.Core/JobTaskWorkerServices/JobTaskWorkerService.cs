@@ -1,6 +1,4 @@
-﻿using System.Threading;
-using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
-using Wilgysef.Stalk.Core.JobTaskWorkers;
+﻿using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
@@ -38,7 +36,7 @@ public class JobTaskWorkerService : IJobTaskWorkerService
 
         await _jobManager.SetJobTaskActiveAsync(job, jobTask, CancellationToken.None);
 
-        // return task
+        // return task, do not await
         return task;
 
         async Task DoWorkAsync()

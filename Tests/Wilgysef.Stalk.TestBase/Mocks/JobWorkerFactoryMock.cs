@@ -17,7 +17,7 @@ public class JobWorkerFactoryMock : IJobWorkerFactory
 
     public IJobWorker CreateWorker(Job job)
     {
-        return new JobWorkerMock(_serviceLocator)
+        return new JobWorkerMock(_serviceLocator.BeginLifetimeScope())
             .WithJob(job);
     }
 }

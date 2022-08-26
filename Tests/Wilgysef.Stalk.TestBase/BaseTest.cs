@@ -98,6 +98,12 @@ public class BaseTest
         _serviceProvider = null;
     }
 
+    public void ReplaceServiceInstance<T>(T implementation) where T : class
+    {
+        _replaceServiceInstances.Add((implementation, typeof(T)));
+        _serviceProvider = null;
+    }
+
     public void ReplaceServiceInstance<T>(T implementation, Type service) where T : class
     {
         _replaceServiceInstances.Add((implementation, service));
@@ -203,7 +209,30 @@ public class BaseTest
             spin.SpinOnce();
         }
 
-        return false;
+        return condition();
+    }
+
+    /// <summary>
+    /// Waits until a condition is met.
+    /// </summary>
+    /// <param name="condition">Condition to meet, stops waiting when <see langword="true"/> is returned.</param>
+    /// <param name="timeout">Wait timeout.</param>
+    /// <returns><see langword="true"/> if the condition was met, <see langword="false"/> if the timeout occurred.</returns>
+    public static async Task<bool> WaitUntilAsync(Func<Task<bool>> condition, TimeSpan timeout)
+    {
+        var spin = new SpinWait();
+        var startTime = DateTime.Now;
+
+        while (DateTime.Now - startTime < timeout)
+        {
+            if (await condition())
+            {
+                return true;
+            }
+            spin.SpinOnce();
+        }
+
+        return await condition();
     }
 
     #endregion

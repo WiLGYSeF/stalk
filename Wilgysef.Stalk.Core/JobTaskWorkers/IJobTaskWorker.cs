@@ -3,7 +3,7 @@ using Wilgysef.Stalk.Core.Models.JobTasks;
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
-public interface IJobTaskWorker
+public interface IJobTaskWorker : IDisposable
 {
     public Job? Job { get; }
 
