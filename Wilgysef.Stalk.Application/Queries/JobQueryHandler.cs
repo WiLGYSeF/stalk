@@ -20,7 +20,7 @@ public class JobQueryHandler : Query,
 
     public async Task<JobDto> HandleQueryAsync(GetJob query)
     {
-        var job = await _jobManager.GetJobAsync(query.Id);
+        var job = await _jobManager.GetJobAsync(query.Id, true);
 
         return Mapper.Map<JobDto>(job);
     }
@@ -28,7 +28,7 @@ public class JobQueryHandler : Query,
     public async Task<JobListDto> HandleQueryAsync(GetJobs query)
     {
         var jobs = await _jobManager.GetJobsAsync(
-            new JobQuerySpecification(Mapper.Map<JobQuery>(query)));
+            new JobQuerySpecification(Mapper.Map<JobQuery>(query), readOnly: true));
 
         return new JobListDto
         {

@@ -10,7 +10,12 @@ namespace Wilgysef.Stalk.Core.Specifications;
 /// </summary>
 public class JobQuerySpecification : Specification<Job>
 {
-    public JobQuerySpecification(JobQuery query)
+    /// <summary>
+    /// Job query specification.
+    /// </summary>
+    /// <param name="query">Job query.</param>
+    /// <param name="readOnly">Indicates if the query is intended for read only.</param>
+    public JobQuerySpecification(JobQuery query, bool readOnly = false)
     {
         Query
             .Include(j => j.Tasks)
@@ -41,6 +46,11 @@ public class JobQuerySpecification : Specification<Job>
         else
         {
             Query.OrderBy(sort);
+        }
+
+        if (readOnly)
+        {
+            Query.AsNoTracking();
         }
     }
 }

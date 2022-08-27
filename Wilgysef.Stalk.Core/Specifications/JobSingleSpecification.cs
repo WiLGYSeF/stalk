@@ -13,8 +13,9 @@ public class JobSingleSpecification : Specification<Job>
     /// </summary>
     /// <param name="jobId">Job Id.</param>
     /// <param name="taskId">Job task Id.</param>
+    /// <param name="readOnly">Indicates if the query is intended for read only.</param>
     /// <exception cref="ArgumentNullException">Both <paramref name="jobId"/> and <paramref name="taskId"/> are null.</exception>
-    public JobSingleSpecification(long? jobId = null, long? taskId = null)
+    public JobSingleSpecification(long? jobId = null, long? taskId = null, bool readOnly = false)
     {
         if (!jobId.HasValue && !taskId.HasValue)
         {
@@ -30,6 +31,11 @@ public class JobSingleSpecification : Specification<Job>
         else
         {
             Query.Where(j => j.Tasks.Any(t => t.Id == taskId));
+        }
+
+        if (readOnly)
+        {
+            Query.AsNoTracking();
         }
     }
 }

@@ -9,7 +9,11 @@ namespace Wilgysef.Stalk.Core.Specifications;
 /// </summary>
 public class QueuedJobsSpecification : Specification<Job>
 {
-    public QueuedJobsSpecification()
+    /// <summary>
+    /// Get queued jobs in highest priority order.
+    /// </summary>
+    /// <param name="readOnly">Indicates if the query is intended for read only.</param>
+    public QueuedJobsSpecification(bool readOnly = false)
     {
         Query
             .Include(j => j.Tasks)
@@ -18,5 +22,10 @@ public class QueuedJobsSpecification : Specification<Job>
                 .Any(JobTask.IsQueuedExpression))
             .OrderByDescending(j => j.Priority)
             .ThenBy(j => j.Started);
+
+        if (readOnly)
+        {
+            Query.AsNoTracking();
+        }
     }
 }

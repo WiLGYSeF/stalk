@@ -12,12 +12,18 @@ public class JobTaskSingleSpecification : Specification<JobTask>
     /// Gets a single job task by either job task Id.
     /// </summary>
     /// <param name="jobTaskId">Job task Id.</param>
-    public JobTaskSingleSpecification(long jobTaskId)
+    /// <param name="readOnly">Indicates if the query is intended for read only.</param>
+    public JobTaskSingleSpecification(long jobTaskId, bool readOnly = false)
     {
         Query
             .Include(t => t.Job)
                 // TODO: FIX!
                 //.ThenInclude(j => j.Tasks)
             .Where(t => t.Id == jobTaskId);
+
+        if (readOnly)
+        {
+            Query.AsNoTracking();
+        }
     }
 }

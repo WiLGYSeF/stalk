@@ -30,8 +30,13 @@ public class JobManager : IJobManager
 
     public async Task<Job> GetJobAsync(long id, CancellationToken cancellationToken = default)
     {
+        return await GetJobAsync(id, false, cancellationToken);
+    }
+
+    public async Task<Job> GetJobAsync(long id, bool readOnly, CancellationToken cancellationToken = default)
+    {
         var entity = await _unitOfWork.JobRepository.FirstOrDefaultAsync(
-            new JobSingleSpecification(jobId: id),
+            new JobSingleSpecification(jobId: id, readOnly: readOnly),
             cancellationToken);
         if (entity == null)
         {
@@ -92,8 +97,6 @@ public class JobManager : IJobManager
 
     public async Task SetJobActiveAsync(Job job, CancellationToken cancellationToken = default)
     {
-        // TODO: remove
-
         if (job.IsActive)
         {
             return;

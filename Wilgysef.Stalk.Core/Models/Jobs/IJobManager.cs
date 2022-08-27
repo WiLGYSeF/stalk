@@ -22,6 +22,15 @@ public interface IJobManager : ITransientDependency
     Task<Job> GetJobAsync(long id, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets a job by its Id.
+    /// </summary>
+    /// <param name="id">Job Id.</param>
+    /// <param name="readOnly">Indicates if the entity is intended to be read-only.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Job.</returns>
+    Task<Job> GetJobAsync(long id, bool readOnly, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Gets a job by a job task Id.
     /// </summary>
     /// <param name="id">Job task Id.</param>
