@@ -1,9 +1,7 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System.Data.Common;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.EntityFrameworkCore;
@@ -18,8 +16,6 @@ public class BaseTest
         get => _serviceProvider ??= GetServiceProvider();
         set => _serviceProvider = value;
     }
-
-    private DbConnection? _connection;
 
     private readonly List<(Type Implementation, Type Service, ServiceRegistrationType RegistrationType)> _replaceServices = new();
     private readonly List<(object Implementation, Type Service)> _replaceServiceInstances = new();
@@ -119,22 +115,8 @@ public class BaseTest
 
     private DbContextOptionsBuilder<StalkDbContext> GetDbContextOptionsBuilder()
     {
-        if (_connection == null)
-        {
-            _connection = new SqliteConnection("DataSource=:memory:");
-            _connection.Open();
-
-            // TODO: replace null?
-            using var context = new StalkDbContext(
-                new DbContextOptionsBuilder<StalkDbContext>()
-                    .UseSqlite(_connection)
-                    .Options,
-                null);
-            context.Database.EnsureCreated();
-        }
-
         return new DbContextOptionsBuilder<StalkDbContext>()
-            .UseSqlite(_connection);
+            .UseInMemoryDatabase(Guid.NewGuid().ToString());
     }
 
     private ContainerBuilder CreateContainerBuilder(IServiceCollection? services = null)
