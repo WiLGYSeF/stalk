@@ -7,7 +7,9 @@ namespace Wilgysef.Stalk.Core.Tests.Utilities;
 
 internal class JobWorkerStarter
 {
-    public TimeSpan TaskWaitTimeout { get; set; } = TimeSpan.FromMilliseconds(100);
+    public int TaskWorkerLimit { get; set; } = 4;
+
+    public TimeSpan TaskWaitTimeout { get; set; } = TimeSpan.FromMilliseconds(200);
 
     private readonly IJobWorkerFactory _jobWorkerFactory;
 
@@ -19,6 +21,7 @@ internal class JobWorkerStarter
     public JobWorkerInstance CreateAndStartWorker(Job job)
     {
         var worker = _jobWorkerFactory.CreateWorker(job);
+        worker.WorkerLimit = TaskWorkerLimit;
         worker.TaskWaitTimeoutMilliseconds = (int)TaskWaitTimeout.TotalMilliseconds;
 
         var cancellationTokenSource = new CancellationTokenSource();
@@ -43,6 +46,7 @@ internal class JobWorkerStarter
 
         public void Dispose()
         {
+            Worker.Job!.Tasks.All(t => t.Result.Success.GetValueOrDefault(true)).ShouldBeTrue();
             WorkerTask.Exception.ShouldBeNull();
 
             GC.SuppressFinalize(this);

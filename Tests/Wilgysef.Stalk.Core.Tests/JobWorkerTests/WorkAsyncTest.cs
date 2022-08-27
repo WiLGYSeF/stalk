@@ -37,7 +37,7 @@ public class WorkAsyncTest : BaseTest
     {
         var job = new JobBuilder()
             .WithRandomInitializedState(JobState.Inactive)
-            .WithRandomTasks(JobTaskState.Inactive, 3)
+            .WithRandomTasks(JobTaskState.Inactive, _jobWorkerStarter.TaskWorkerLimit - 1)
             .Create();
         await _jobManager.CreateJobAsync(job);
 
@@ -60,7 +60,7 @@ public class WorkAsyncTest : BaseTest
         {
             job = new JobBuilder()
                 .WithRandomInitializedState(JobState.Inactive)
-                .WithRandomTasks(JobTaskState.Inactive, 5)
+                .WithRandomTasks(JobTaskState.Inactive, _jobWorkerStarter.TaskWorkerLimit + 1)
                 .Create();
             var jobManager = scope.GetRequiredService<IJobManager>();
             await jobManager.CreateJobAsync(job);
@@ -70,12 +70,12 @@ public class WorkAsyncTest : BaseTest
 
         job = await this.WaitUntilJobAsync(
             job.Id,
-            job => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 4,
+            job => job.Tasks.Count(t => t.State == JobTaskState.Active) >= workerInstance.Worker.WorkerLimit,
             TimeSpan.FromSeconds(3));
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
-        job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBe(4);
-        job.Tasks.Count(t => t.State == JobTaskState.Inactive).ShouldBe(1);
+        job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBe(workerInstance.Worker.WorkerLimit);
+        job.Tasks.Count(t => t.State == JobTaskState.Inactive).ShouldBe(job.Tasks.Count - workerInstance.Worker.WorkerLimit);
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class WorkAsyncTest : BaseTest
         {
             job = new JobBuilder()
                 .WithRandomInitializedState(JobState.Inactive)
-                .WithRandomTasks(JobTaskState.Inactive, 5)
+                .WithRandomTasks(JobTaskState.Inactive, _jobWorkerStarter.TaskWorkerLimit + 1)
                 .Create();
             await _jobManager.CreateJobAsync(job);
         }
@@ -95,26 +95,25 @@ public class WorkAsyncTest : BaseTest
 
         job = await this.WaitUntilJobAsync(
             job.Id,
-            job => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 4,
-            TimeSpan.FromSeconds(3));
+            job => job.Tasks.Count(t => t.State == JobTaskState.Active) >= workerInstance.Worker.WorkerLimit,
+            TimeSpan.FromSeconds(15));
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
-        job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBe(4);
+        job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBe(workerInstance.Worker.WorkerLimit);
 
         var jobTask = job.Tasks.First(t => t.State == JobTaskState.Active);
         var nextJobTask = job.Tasks.Single(t => t.State == JobTaskState.Inactive);
         _jobTaskWorkerFactory.FinishJobTaskWorker(jobTask);
 
-        await Task.Delay(JobTaskWorkerMock.DelayInterval * 2);
+        await Task.Delay(workerInstance.Worker.TaskWaitTimeoutMilliseconds * 2);
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job = await this.ReloadJobAsync(job.Id);
 
         var activeJobTasks = job.Tasks.Where(t => t.State == JobTaskState.Active).ToList();
-        activeJobTasks.Count.ShouldBe(4);
+        activeJobTasks.Count.ShouldBe(workerInstance.Worker.WorkerLimit);
         job.Tasks.Count(t => t.State == JobTaskState.Inactive).ShouldBe(0);
-        // not done in mock
-        //activeJobTasks.ShouldNotContain(t => t.Id == jobTask.Id);
+        activeJobTasks.ShouldNotContain(t => t.Id == jobTask.Id);
         activeJobTasks.ShouldContain(t => t.Id == nextJobTask.Id);
     }
 

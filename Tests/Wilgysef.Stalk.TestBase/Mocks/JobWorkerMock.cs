@@ -8,6 +8,8 @@ public class JobWorkerMock : IJobWorker
 {
     public Job Job { get; private set; } = null!;
 
+    public int WorkerLimit { get; set; } = 4;
+
     public int TaskWaitTimeoutMilliseconds { get; set; } = 500;
 
     private readonly IServiceLifetimeScope _lifetimeScope;

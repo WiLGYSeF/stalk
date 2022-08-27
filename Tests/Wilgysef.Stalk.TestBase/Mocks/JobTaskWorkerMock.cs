@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Wilgysef.Stalk.Core.JobTaskWorkers;
+﻿using Wilgysef.Stalk.Core.JobTaskWorkers;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.TestBase.Mocks;
@@ -38,7 +37,6 @@ public class JobTaskWorkerMock : JobTaskWorker
         {
             await Task.Delay(DelayInterval, cancellationToken);
         }
-        Debug.WriteLine($"{JobTask.Id} finished");
     }
 
     protected override async Task DownloadAsync(CancellationToken cancellationToken)

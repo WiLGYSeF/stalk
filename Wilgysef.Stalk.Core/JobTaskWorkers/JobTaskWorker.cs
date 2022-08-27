@@ -162,7 +162,7 @@ public class JobTaskWorker : IJobTaskWorker
             throw new InvalidOperationException("No downloader found.");
         }
 
-        await foreach (var result in downloader.DownloadAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata()))
+        await foreach (var result in downloader.DownloadAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
         {
             itemIds?.Add(result.ItemId);
         }
