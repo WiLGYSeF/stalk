@@ -14,14 +14,15 @@ public class JobTaskWorkerFactoryMock : IJobTaskWorkerFactory
 
     private readonly IServiceLocator _serviceLocator;
 
-    public JobTaskWorkerFactoryMock(IServiceLocator serviceLocator)
+    public JobTaskWorkerFactoryMock(
+        IServiceLocator serviceLocator)
     {
         _serviceLocator = serviceLocator;
     }
 
     public IJobTaskWorker CreateWorker(Job job, JobTask jobTask)
     {
-        var worker = new JobTaskWorkerMock(_serviceLocator.BeginLifetimeScope());
+        var worker = new JobTaskWorkerMock(_serviceLocator.BeginLifetimeScopeFromRoot());
         worker.WithJobTask(job, jobTask);
         worker.WorkEvent += (sender, args) => OnWorkEvent(worker);
         _jobTaskWorkers.Add(worker);

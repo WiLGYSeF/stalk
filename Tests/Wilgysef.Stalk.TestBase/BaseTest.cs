@@ -268,6 +268,11 @@ public class BaseTest
     /// <returns><see langword="true"/> if the condition was met, <see langword="false"/> if the timeout occurred.</returns>
     public static async Task<bool> WaitUntilAsync(Func<Task<bool>> condition, TimeSpan timeout, TimeSpan interval)
     {
+        if (interval == TimeSpan.Zero)
+        {
+            return await WaitUntilAsync(condition, timeout);
+        }
+
         var startTime = DateTime.Now;
 
         while (DateTime.Now - startTime < timeout)
@@ -287,26 +292,12 @@ public class BaseTest
     #region Scope
 
     /// <summary>
-    /// Creates a lifetime scope.
+    /// Begins a lifetime scope.
     /// </summary>
-    /// <param name="action">Action.</param>
-    public void WithLifetimeScope(Action<IServiceLifetimeScope> action)
+    public IServiceLifetimeScope BeginLifetimeScope()
     {
         var serviceLocator = GetRequiredService<IServiceLocator>();
-        using var scope = serviceLocator.BeginLifetimeScope();
-        action(scope);
-    }
-
-    /// <summary>
-    /// Creates a lifetime scope.
-    /// </summary>
-    /// <param name="action">Action.</param>
-    /// <returns></returns>
-    public async Task WithLifetimeScopeAsync(Func<IServiceLifetimeScope, Task> action)
-    {
-        var serviceLocator = GetRequiredService<IServiceLocator>();
-        using var scope = serviceLocator.BeginLifetimeScope();
-        await action(scope);
+        return serviceLocator.BeginLifetimeScope();
     }
 
     #endregion

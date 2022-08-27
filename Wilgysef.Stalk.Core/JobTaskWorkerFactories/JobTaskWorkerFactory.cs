@@ -17,7 +17,7 @@ public class JobTaskWorkerFactory : IJobTaskWorkerFactory
 
     public IJobTaskWorker CreateWorker(Job job, JobTask jobTask)
     {
-        var taskWorker = new JobTaskWorker(_serviceLocator.BeginLifetimeScope());
+        var taskWorker = new JobTaskWorker(_serviceLocator.BeginLifetimeScopeFromRoot());
         taskWorker.WithJobTask(job, jobTask);
         return taskWorker;
     }

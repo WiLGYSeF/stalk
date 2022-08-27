@@ -1,11 +1,11 @@
 ﻿using Shouldly;
 using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkerFactories;
-using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
+using Wilgysef.Stalk.Core.Tests.Utilities;
 using Wilgysef.Stalk.TestBase;
 using Wilgysef.Stalk.TestBase.Mocks;
 
@@ -16,7 +16,8 @@ public class WorkAsyncTest : BaseTest
     private readonly JobTaskWorkerFactoryMock _jobTaskWorkerFactory;
     private readonly IJobManager _jobManager;
     private readonly IJobWorkerFactory _jobWorkerFactory;
-    private Task? _jobWorkerTask;
+
+    private readonly JobWorkerStarter _jobWorkerStarter;
 
     public WorkAsyncTest()
     {
@@ -26,6 +27,8 @@ public class WorkAsyncTest : BaseTest
 
         _jobManager = GetRequiredService<IJobManager>();
         _jobWorkerFactory = GetRequiredService<IJobWorkerFactory>();
+
+        _jobWorkerStarter = new JobWorkerStarter(_jobWorkerFactory);
     }
 
     [Fact]
@@ -37,10 +40,13 @@ public class WorkAsyncTest : BaseTest
             .Create();
         await _jobManager.CreateJobAsync(job);
 
-        CreateAndStartWorker(job, out _);
+        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        WaitUntil(() => job.State == JobState.Active, TimeSpan.FromSeconds(3));
-        _jobWorkerTask!.Exception.ShouldBeNull();
+        job = await WaitUntilJobAsync(
+            job.Id,
+            job => job.State == JobState.Active,
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.State.ShouldBe(JobState.Active);
     }
@@ -48,28 +54,24 @@ public class WorkAsyncTest : BaseTest
     [Fact]
     public async Task Work_Job_Wait_Tasks()
     {
-        var job = new JobBuilder()
-            .WithRandomInitializedState(JobState.Inactive)
-            .WithRandomTasks(JobTaskState.Inactive, 5)
-            .Create();
-        var jobId = job.Id;
-        await _jobManager.CreateJobAsync(job);
-
-        CreateAndStartWorker(job, out _);
-
-        await WaitUntilAsync(async () =>
+        Job job;
+        using (var scope = BeginLifetimeScope())
         {
-            job = await _jobManager.GetJobAsync(jobId);
-            return job.Tasks.Count(t => t.State == JobTaskState.Active) >= 4;
-        }, TimeSpan.FromSeconds(3), TimeSpan.FromMilliseconds(100));
-        _jobWorkerTask!.Exception.ShouldBeNull();
+            job = new JobBuilder()
+                .WithRandomInitializedState(JobState.Inactive)
+                .WithRandomTasks(JobTaskState.Inactive, 5)
+                .Create();
+            var jobManager = scope.GetRequiredService<IJobManager>();
+            await jobManager.CreateJobAsync(job);
+        }
 
-        job = await _jobManager.GetJobAsync(jobId);
-        job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBe(4);
-        job.Tasks.Count(t => t.State == JobTaskState.Inactive).ShouldBe(1);
+        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        await Task.Delay(1100);
-        _jobWorkerTask!.Exception.ShouldBeNull();
+        job = await WaitUntilJobAsync(
+            job.Id,
+            job => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 4,
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBe(4);
         job.Tasks.Count(t => t.State == JobTaskState.Inactive).ShouldBe(1);
@@ -78,29 +80,38 @@ public class WorkAsyncTest : BaseTest
     [Fact]
     public async Task Work_Job_Cycle_Tasks()
     {
-        var job = new JobBuilder()
-            .WithRandomInitializedState(JobState.Inactive)
-            .WithRandomTasks(JobTaskState.Inactive, 5)
-            .Create();
-        await _jobManager.CreateJobAsync(job);
+        Job job;
+        using (var scope = BeginLifetimeScope())
+        {
+            job = new JobBuilder()
+                .WithRandomInitializedState(JobState.Inactive)
+                .WithRandomTasks(JobTaskState.Inactive, 5)
+                .Create();
+            await _jobManager.CreateJobAsync(job);
+        }
 
-        CreateAndStartWorker(job, out _);
+        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        WaitUntil(() => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 4, TimeSpan.FromSeconds(3));
-        _jobWorkerTask!.Exception.ShouldBeNull();
+        job = await WaitUntilJobAsync(
+            job.Id,
+            job => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 4,
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         var jobTask = job.Tasks.First(t => t.State == JobTaskState.Active);
         var nextJobTask = job.Tasks.Single(t => t.State == JobTaskState.Inactive);
         _jobTaskWorkerFactory.FinishJobTaskWorker(jobTask);
 
-        await Task.Delay(1100);
-        _jobWorkerTask!.Exception.ShouldBeNull();
+        await Task.Delay(_jobWorkerStarter.TaskWaitTimeout * 2);
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
+
+        job = await ReloadJob(job.Id);
 
         var activeJobTasks = job.Tasks.Where(t => t.State == JobTaskState.Active).ToList();
         job.Tasks.Count(t => t.State == JobTaskState.Inactive).ShouldBe(0);
         // not done in mock
-        //activeJobTasks.ShouldNotContain(t => t.Id != jobTask.Id);
-        activeJobTasks.ShouldContain(t => t.Id != jobTask.Id);
+        //activeJobTasks.ShouldNotContain(t => t.Id == jobTask.Id);
+        activeJobTasks.ShouldContain(t => t.Id == nextJobTask.Id);
     }
 
     [Fact]
@@ -112,16 +123,24 @@ public class WorkAsyncTest : BaseTest
             .Create();
         await _jobManager.CreateJobAsync(job);
 
-        CreateAndStartWorker(job, out _);
+        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        WaitUntil(() => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 1, TimeSpan.FromSeconds(3));
+        job = await WaitUntilJobAsync(
+            job.Id,
+            job => job.Tasks.Any(t => t.State == JobTaskState.Active),
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
+
         job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBeGreaterThanOrEqualTo(1);
 
         var jobTask = job.Tasks.Single(t => t.State == JobTaskState.Active);
         _jobTaskWorkerFactory.FinishJobTaskWorker(jobTask);
 
-        WaitUntil(() => job.State == JobState.Completed, TimeSpan.FromSeconds(3));
-        _jobWorkerTask!.Exception.ShouldBeNull();
+        job = await WaitUntilJobAsync(
+            job.Id,
+            job => job.State == JobState.Completed,
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.State.ShouldBe(JobState.Completed);
 
@@ -138,15 +157,23 @@ public class WorkAsyncTest : BaseTest
             .Create();
         await _jobManager.CreateJobAsync(job);
 
-        CreateAndStartWorker(job, out var cancellationTokenSource);
+        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        WaitUntil(() => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 1, TimeSpan.FromSeconds(3));
+        job = await WaitUntilJobAsync(
+            job.Id,
+            job => job.Tasks.Any(t => t.State == JobTaskState.Active),
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
+
         job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBeGreaterThanOrEqualTo(1);
 
-        cancellationTokenSource.Cancel();
+        workerInstance.CancellationTokenSource.Cancel();
 
-        WaitUntil(() => job.State != JobState.Active, TimeSpan.FromSeconds(3));
-        _jobWorkerTask!.Exception.ShouldBeNull();
+        job = await WaitUntilJobAsync(
+            job.Id,
+            job => job.State != JobState.Active,
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.State.ShouldBe(JobState.Inactive);
 
@@ -154,14 +181,37 @@ public class WorkAsyncTest : BaseTest
         jobWorkerCollectionService.Workers.ShouldBeEmpty();
     }
 
-    private IJobWorker CreateAndStartWorker(Job job, out CancellationTokenSource cancellationTokenSource)
+    private async Task<Job> WaitUntilJobAsync(long jobId, Func<Job, bool> condition, TimeSpan timeout, TimeSpan? interval = null)
     {
-        var worker = _jobWorkerFactory.CreateWorker(job);
-        worker.TaskWaitTimeoutMilliseconds = 100;
+        Job job = null!;
+        await WaitUntilAsync(async () =>
+        {
+            job = await ReloadJob(jobId);
+            return condition(job);
+        }, timeout, interval ?? TimeSpan.Zero);
+        return job;
+    }
 
-        var cts = new CancellationTokenSource();
-        cancellationTokenSource = cts;
-        _jobWorkerTask = Task.Run(async () => await worker.WorkAsync(cts.Token));
-        return worker;
+    private async Task<Job> WaitUntilJobAsync(long jobId, Func<Job, Task<bool>> condition, TimeSpan timeout, TimeSpan? interval = null)
+    {
+        Job job = null!;
+        await WaitUntilAsync(async () =>
+        {
+            job = await ReloadJob(jobId);
+            return await condition(job);
+        }, timeout, interval ?? TimeSpan.Zero);
+        return job;
+    }
+
+    private async Task<Job> ReloadJob(long jobId)
+    {
+        using var scope = BeginLifetimeScope();
+        return await ReloadJob(jobId, scope);
+    }
+
+    private async Task<Job> ReloadJob(long jobId, IServiceLifetimeScope scope)
+    {
+        var jobManager = scope.GetRequiredService<IJobManager>();
+        return await jobManager.GetJobAsync(jobId);
     }
 }

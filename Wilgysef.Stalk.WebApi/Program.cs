@@ -36,7 +36,7 @@ var services = context.ComponentRegistry.Registrations
 using (var scope = app.Services.CreateScope())
 {
     var appStartup = scope.ServiceProvider.GetRequiredService<Startup>();
-    await appStartup.StartAsync();
+    await appStartup.StartAsync(app.Services.GetAutofacRoot());
 }
 
 app.Run();

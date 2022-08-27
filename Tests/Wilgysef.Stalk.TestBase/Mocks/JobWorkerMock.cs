@@ -12,7 +12,8 @@ public class JobWorkerMock : IJobWorker
 
     private readonly IServiceLifetimeScope _lifetimeScope;
 
-    public JobWorkerMock(IServiceLifetimeScope lifetimeScope)
+    public JobWorkerMock(
+        IServiceLifetimeScope lifetimeScope)
     {
         _lifetimeScope = lifetimeScope;
     }
