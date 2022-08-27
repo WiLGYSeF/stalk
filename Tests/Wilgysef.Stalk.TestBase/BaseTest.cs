@@ -218,6 +218,29 @@ public class BaseTest
     /// </summary>
     /// <param name="condition">Condition to meet, stops waiting when <see langword="true"/> is returned.</param>
     /// <param name="timeout">Wait timeout.</param>
+    /// <param name="interval">Interval between checking condition.</param>
+    /// <returns><see langword="true"/> if the condition was met, <see langword="false"/> if the timeout occurred.</returns>
+    public static bool WaitUntil(Func<bool> condition, TimeSpan timeout, TimeSpan interval)
+    {
+        var startTime = DateTime.Now;
+
+        while (DateTime.Now - startTime < timeout)
+        {
+            if (condition())
+            {
+                return true;
+            }
+            Thread.Sleep(interval);
+        }
+
+        return condition();
+    }
+
+    /// <summary>
+    /// Waits until a condition is met.
+    /// </summary>
+    /// <param name="condition">Condition to meet, stops waiting when <see langword="true"/> is returned.</param>
+    /// <param name="timeout">Wait timeout.</param>
     /// <returns><see langword="true"/> if the condition was met, <see langword="false"/> if the timeout occurred.</returns>
     public static async Task<bool> WaitUntilAsync(Func<Task<bool>> condition, TimeSpan timeout)
     {
@@ -231,6 +254,29 @@ public class BaseTest
                 return true;
             }
             spin.SpinOnce();
+        }
+
+        return await condition();
+    }
+
+    /// <summary>
+    /// Waits until a condition is met.
+    /// </summary>
+    /// <param name="condition">Condition to meet, stops waiting when <see langword="true"/> is returned.</param>
+    /// <param name="timeout">Wait timeout.</param>
+    /// <param name="interval">Interval between checking condition.</param>
+    /// <returns><see langword="true"/> if the condition was met, <see langword="false"/> if the timeout occurred.</returns>
+    public static async Task<bool> WaitUntilAsync(Func<Task<bool>> condition, TimeSpan timeout, TimeSpan interval)
+    {
+        var startTime = DateTime.Now;
+
+        while (DateTime.Now - startTime < timeout)
+        {
+            if (await condition())
+            {
+                return true;
+            }
+            await Task.Delay(interval);
         }
 
         return await condition();

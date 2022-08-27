@@ -59,9 +59,9 @@ public class WorkAsyncTest : BaseTest
 
         await WaitUntilAsync(async () =>
         {
-            //job = await _jobManager.GetJobAsync(jobId);
+            job = await _jobManager.GetJobAsync(jobId);
             return job.Tasks.Count(t => t.State == JobTaskState.Active) >= 4;
-        }, TimeSpan.FromSeconds(3));
+        }, TimeSpan.FromSeconds(3), TimeSpan.FromMilliseconds(100));
         _jobWorkerTask!.Exception.ShouldBeNull();
 
         job = await _jobManager.GetJobAsync(jobId);
