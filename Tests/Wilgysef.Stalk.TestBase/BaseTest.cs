@@ -20,6 +20,9 @@ public class BaseTest
     private readonly List<(Type Implementation, Type Service, ServiceRegistrationType RegistrationType)> _replaceServices = new();
     private readonly List<(object Implementation, Type Service)> _replaceServiceInstances = new();
 
+    private string _databaseName = Guid.NewGuid().ToString();
+    private string DatabaseName => _databaseName;
+
     #region Service Registration
 
     public T? GetService<T>() where T : notnull
@@ -116,7 +119,7 @@ public class BaseTest
     private DbContextOptionsBuilder<StalkDbContext> GetDbContextOptionsBuilder()
     {
         return new DbContextOptionsBuilder<StalkDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString());
+            .UseInMemoryDatabase(DatabaseName);
     }
 
     private ContainerBuilder CreateContainerBuilder(IServiceCollection? services = null)

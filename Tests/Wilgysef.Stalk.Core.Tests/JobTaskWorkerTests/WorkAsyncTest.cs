@@ -5,6 +5,7 @@ using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Tests.Extensions;
 using Wilgysef.Stalk.Core.Tests.Utilities;
 using Wilgysef.Stalk.TestBase;
 
@@ -38,29 +39,29 @@ public class WorkAsyncTest : BaseTest
     [Fact]
     public async Task Work_Download()
     {
-        var job = new JobBuilder()
-            .WithRandomInitializedState(JobState.Inactive)
-            .WithTasks(new JobTaskBuilder()
-                .WithRandomInitializedState(JobTaskState.Inactive)
-                .WithType(JobTaskType.Download)
-                .Create())
-            .Create();
-        var jobId = job.Id;
-        await _jobManager.CreateJobAsync(job);
+        Job job;
+        using (var scope = BeginLifetimeScope())
+        {
+            job = new JobBuilder()
+                .WithRandomInitializedState(JobState.Inactive)
+                .WithTasks(new JobTaskBuilder()
+                    .WithRandomInitializedState(JobTaskState.Inactive)
+                    .WithType(JobTaskType.Download)
+                    .Create())
+                .Create();
+            var jobManager = scope.GetRequiredService<IJobManager>();
+            await jobManager.CreateJobAsync(job);
+        }
 
         using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        await WaitUntilAsync(async () =>
-        {
-            var job = await _jobManager.GetJobAsync(jobId);
-            return job.State != JobState.Active;
-        }, TimeSpan.FromSeconds(3));
-        job.State.ShouldBe(JobState.Active);
-
-        await Task.Delay(3000);
-
+        job = await this.WaitUntilJobAsync(
+            job.Id,
+            job => job.State == JobState.Active,
+            TimeSpan.FromSeconds(3));
         workerInstance.WorkerTask.Exception.ShouldBeNull();
-        job = await _jobManager.GetJobAsync(jobId);
+
+        job.State.ShouldBe(JobState.Active);
         job.Tasks.Any(t => t.State == JobTaskState.Failed).ShouldBeFalse();
     }
 }

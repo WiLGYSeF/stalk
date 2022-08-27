@@ -5,6 +5,7 @@ using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
+using Wilgysef.Stalk.Core.Tests.Extensions;
 using Wilgysef.Stalk.Core.Tests.Utilities;
 using Wilgysef.Stalk.TestBase;
 using Wilgysef.Stalk.TestBase.Mocks;
@@ -42,7 +43,7 @@ public class WorkAsyncTest : BaseTest
 
         using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        job = await WaitUntilJobAsync(
+        job = await this.WaitUntilJobAsync(
             job.Id,
             job => job.State == JobState.Active,
             TimeSpan.FromSeconds(3));
@@ -67,7 +68,7 @@ public class WorkAsyncTest : BaseTest
 
         using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        job = await WaitUntilJobAsync(
+        job = await this.WaitUntilJobAsync(
             job.Id,
             job => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 4,
             TimeSpan.FromSeconds(3));
@@ -92,11 +93,13 @@ public class WorkAsyncTest : BaseTest
 
         using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        job = await WaitUntilJobAsync(
+        job = await this.WaitUntilJobAsync(
             job.Id,
             job => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 4,
             TimeSpan.FromSeconds(3));
         workerInstance.WorkerTask.Exception.ShouldBeNull();
+
+        job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBe(4);
 
         var jobTask = job.Tasks.First(t => t.State == JobTaskState.Active);
         var nextJobTask = job.Tasks.Single(t => t.State == JobTaskState.Inactive);
@@ -105,9 +108,10 @@ public class WorkAsyncTest : BaseTest
         await Task.Delay(_jobWorkerStarter.TaskWaitTimeout * 2);
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
-        job = await ReloadJob(job.Id);
+        job = await this.ReloadJob(job.Id);
 
         var activeJobTasks = job.Tasks.Where(t => t.State == JobTaskState.Active).ToList();
+        activeJobTasks.Count.ShouldBe(4);
         job.Tasks.Count(t => t.State == JobTaskState.Inactive).ShouldBe(0);
         // not done in mock
         //activeJobTasks.ShouldNotContain(t => t.Id == jobTask.Id);
@@ -125,7 +129,7 @@ public class WorkAsyncTest : BaseTest
 
         using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        job = await WaitUntilJobAsync(
+        job = await this.WaitUntilJobAsync(
             job.Id,
             job => job.Tasks.Any(t => t.State == JobTaskState.Active),
             TimeSpan.FromSeconds(3));
@@ -136,7 +140,7 @@ public class WorkAsyncTest : BaseTest
         var jobTask = job.Tasks.Single(t => t.State == JobTaskState.Active);
         _jobTaskWorkerFactory.FinishJobTaskWorker(jobTask);
 
-        job = await WaitUntilJobAsync(
+        job = await this.WaitUntilJobAsync(
             job.Id,
             job => job.State == JobState.Completed,
             TimeSpan.FromSeconds(3));
@@ -159,7 +163,7 @@ public class WorkAsyncTest : BaseTest
 
         using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        job = await WaitUntilJobAsync(
+        job = await this.WaitUntilJobAsync(
             job.Id,
             job => job.Tasks.Any(t => t.State == JobTaskState.Active),
             TimeSpan.FromSeconds(3));
@@ -169,7 +173,7 @@ public class WorkAsyncTest : BaseTest
 
         workerInstance.CancellationTokenSource.Cancel();
 
-        job = await WaitUntilJobAsync(
+        job = await this.WaitUntilJobAsync(
             job.Id,
             job => job.State != JobState.Active,
             TimeSpan.FromSeconds(3));
@@ -179,39 +183,5 @@ public class WorkAsyncTest : BaseTest
 
         var jobWorkerCollectionService = GetRequiredService<IJobWorkerCollectionService>();
         jobWorkerCollectionService.Workers.ShouldBeEmpty();
-    }
-
-    private async Task<Job> WaitUntilJobAsync(long jobId, Func<Job, bool> condition, TimeSpan timeout, TimeSpan? interval = null)
-    {
-        Job job = null!;
-        await WaitUntilAsync(async () =>
-        {
-            job = await ReloadJob(jobId);
-            return condition(job);
-        }, timeout, interval ?? TimeSpan.Zero);
-        return job;
-    }
-
-    private async Task<Job> WaitUntilJobAsync(long jobId, Func<Job, Task<bool>> condition, TimeSpan timeout, TimeSpan? interval = null)
-    {
-        Job job = null!;
-        await WaitUntilAsync(async () =>
-        {
-            job = await ReloadJob(jobId);
-            return await condition(job);
-        }, timeout, interval ?? TimeSpan.Zero);
-        return job;
-    }
-
-    private async Task<Job> ReloadJob(long jobId)
-    {
-        using var scope = BeginLifetimeScope();
-        return await ReloadJob(jobId, scope);
-    }
-
-    private async Task<Job> ReloadJob(long jobId, IServiceLifetimeScope scope)
-    {
-        var jobManager = scope.GetRequiredService<IJobManager>();
-        return await jobManager.GetJobAsync(jobId);
     }
 }

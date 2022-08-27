@@ -53,11 +53,16 @@ public class JobTaskWorker : IJobTaskWorker
 
         _working = true;
 
-        if (!JobTask.IsActive)
+        using (var scope = _lifetimeScope.BeginLifetimeScope())
         {
-            using var scope = _lifetimeScope.BeginLifetimeScope();
             var jobManager = scope.GetRequiredService<IJobManager>();
-            await jobManager.SetJobTaskActiveAsync(Job, JobTask, CancellationToken.None);
+            Job = await jobManager.GetJobAsync(Job.Id, cancellationToken);
+            JobTask = Job.Tasks.Single(t => t.Id == JobTask.Id);
+
+            if (!JobTask.IsActive)
+            {
+                await jobManager.SetJobTaskActiveAsync(Job, JobTask, CancellationToken.None);
+            }
         }
 
         try
@@ -76,7 +81,7 @@ public class JobTaskWorker : IJobTaskWorker
                     throw new NotImplementedException();
             }
 
-            JobTask.ChangeState(JobTaskState.Completed);
+            JobTask.Success();
         }
         catch (Exception exc)
         {
