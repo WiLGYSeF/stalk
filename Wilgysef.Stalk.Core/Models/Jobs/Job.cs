@@ -295,7 +295,12 @@ public class Job : Entity
             return new JobConfig();
         }
 
-        var config = JsonSerializer.Deserialize<JobConfig>(ConfigJson);
+        var config = JsonSerializer.Deserialize<JobConfig>(
+            ConfigJson,
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            });
         if (config == null)
         {
             throw new InvalidOperationException($"{nameof(ConfigJson)} is not valid config.");

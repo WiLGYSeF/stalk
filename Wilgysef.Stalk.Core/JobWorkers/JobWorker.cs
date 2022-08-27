@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Wilgysef.Stalk.Core.JobTaskWorkerServices;
+﻿using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
@@ -66,11 +65,17 @@ public class JobWorker : IJobWorker
 
         try
         {
-            await ReloadJobAsync();
-
-            while (!cancellationToken.IsCancellationRequested && Job.HasUnfinishedTasks)
+            do
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 await CreateJobTaskWorkers(cancellationToken);
+                if (_tasks.Count == 0)
+                {
+                    break;
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
 
                 var taskArray = _tasks.ToArray();
                 var taskCompletedIndex = Task.WaitAny(taskArray, TaskWaitTimeoutMilliseconds, cancellationToken);
@@ -79,18 +84,20 @@ public class JobWorker : IJobWorker
                 {
                     if (taskArray.Any(t => t.Exception != null))
                     {
-
+                        // TODO: do something?
                     }
 
                     RemoveCompletedTasks(taskArray);
                 }
-
-                await ReloadJobAsync();
             }
+            while (_tasks.Count > 0);
+
+            // TODO: handle job with all paused tasks
 
             await ReloadJobAsync();
             Job.Done();
         }
+        catch (OperationCanceledException) { }
         catch (Exception exc)
         {
             throw;
@@ -119,7 +126,10 @@ public class JobWorker : IJobWorker
             return;
         }
 
+        await ReloadJobAsync();
+
         var jobTasks = Job!.GetQueuedTasksByPriority();
+
         if (jobTasks.Count == 0)
         {
             return;

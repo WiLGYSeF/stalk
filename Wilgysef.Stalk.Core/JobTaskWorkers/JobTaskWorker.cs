@@ -75,6 +75,7 @@ public class JobTaskWorker : IJobTaskWorker
 
             JobTask.Success();
         }
+        catch (OperationCanceledException) { }
         catch (Exception exc)
         {
             JobTask.Fail(errorMessage: exc.Message, errorDetail: exc.ToString());

@@ -11,6 +11,8 @@ internal class JobWorkerStarter
 
     public TimeSpan TaskWaitTimeout { get; set; } = TimeSpan.FromMilliseconds(200);
 
+    public bool EnsureTaskSuccessesOnDispose { get; set; } = true;
+
     private readonly IJobWorkerFactory _jobWorkerFactory;
 
     public JobWorkerStarter(IJobWorkerFactory jobWorkerFactory)
@@ -26,7 +28,10 @@ internal class JobWorkerStarter
 
         var cancellationTokenSource = new CancellationTokenSource();
         var task = Task.Run(async () => await worker.WorkAsync(cancellationTokenSource.Token));
-        return new JobWorkerInstance(worker, task, cancellationTokenSource);
+        return new JobWorkerInstance(worker, task, cancellationTokenSource)
+        {
+            EnsureTaskSuccesses = EnsureTaskSuccessesOnDispose,
+        };
     }
 
     public class JobWorkerInstance : IDisposable
@@ -37,6 +42,8 @@ internal class JobWorkerStarter
 
         public CancellationTokenSource CancellationTokenSource { get; }
 
+        public bool EnsureTaskSuccesses { get; set; } = true;
+
         public JobWorkerInstance(IJobWorker jobWorker, Task workerTask, CancellationTokenSource cancellationTokenSource)
         {
             Worker = jobWorker;
@@ -46,7 +53,10 @@ internal class JobWorkerStarter
 
         public void Dispose()
         {
-            Worker.Job!.Tasks.All(t => t.Result.Success.GetValueOrDefault(true)).ShouldBeTrue();
+            if (EnsureTaskSuccesses)
+            {
+                Worker.Job!.Tasks.All(t => t.Result.Success.GetValueOrDefault(true)).ShouldBeTrue();
+            }
             WorkerTask.Exception.ShouldBeNull();
 
             GC.SuppressFinalize(this);

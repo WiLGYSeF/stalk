@@ -45,9 +45,10 @@ public class JobTaskManager : IJobTaskManager
 
     public async Task<JobTask> UpdateJobTaskAsync(JobTask jobTask, CancellationToken cancellationToken = default)
     {
-        var entity = _unitOfWork.JobTaskRepository.Update(jobTask);
+        // TODO: change this?
+        _unitOfWork.JobTaskRepository.Update(jobTask);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return entity;
+        return jobTask;
     }
 
     public async Task DeleteJobTaskAsync(JobTask jobTask, CancellationToken cancellationToken = default)
@@ -70,7 +71,6 @@ public class JobTaskManager : IJobTaskManager
 
         jobTask.ChangeState(JobTaskState.Active);
 
-        _unitOfWork.JobTaskRepository.Update(jobTask);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await UpdateJobTaskAsync(jobTask, cancellationToken);
     }
 }

@@ -31,9 +31,26 @@ public class JobTaskWorkerFactoryMock : IJobTaskWorkerFactory
 
     public void FinishJobTaskWorker(JobTask jobTask)
     {
-        var worker = _jobTaskWorkers.Single(w => w.JobTask!.Id == jobTask.Id) as JobTaskWorkerMock;
-        worker!.FinishWork();
+        var worker = GetJobTaskWorkerMock(jobTask);
+        worker.Finish();
         _jobTaskWorkers.Remove(worker);
+    }
+
+    public void FailJobTaskWorker(JobTask jobTask)
+    {
+        var worker = GetJobTaskWorkerMock(jobTask);
+        worker.Fail();
+        _jobTaskWorkers.Remove(worker);
+    }
+
+    private JobTaskWorkerMock GetJobTaskWorkerMock(JobTask jobTask)
+    {
+        var worker = _jobTaskWorkers.Single(w => w.JobTask!.Id == jobTask.Id) as JobTaskWorkerMock;
+        if (worker == null)
+        {
+            throw new ArgumentException("Job task does not have a worker", nameof(jobTask));
+        }
+        return worker;
     }
 
     private void OnWorkEvent(JobTaskWorkerMock jobTaskWorker)

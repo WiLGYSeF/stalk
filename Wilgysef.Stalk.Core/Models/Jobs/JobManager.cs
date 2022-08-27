@@ -73,9 +73,10 @@ public class JobManager : IJobManager
 
     public async Task<Job> UpdateJobAsync(Job job, CancellationToken cancellationToken = default)
     {
-        var entity = _unitOfWork.JobRepository.Update(job);
+        // TODO: change this?
+        _unitOfWork.JobRepository.Update(job);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return entity;
+        return job;
     }
 
     public async Task DeleteJobAsync(Job job, CancellationToken cancellationToken = default)
@@ -91,6 +92,8 @@ public class JobManager : IJobManager
 
     public async Task SetJobActiveAsync(Job job, CancellationToken cancellationToken = default)
     {
+        // TODO: remove
+
         if (job.IsActive)
         {
             return;
@@ -98,8 +101,7 @@ public class JobManager : IJobManager
 
         job.ChangeState(JobState.Active);
 
-        _unitOfWork.JobRepository.Update(job);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await UpdateJobAsync(job, cancellationToken);
     }
 
     public async Task DeactivateJobsAsync(CancellationToken cancellationToken = default)
@@ -118,7 +120,6 @@ public class JobManager : IJobManager
             }
         }
 
-        _unitOfWork.JobRepository.UpdateRange(jobs);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

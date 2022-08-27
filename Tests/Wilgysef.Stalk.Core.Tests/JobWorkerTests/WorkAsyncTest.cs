@@ -152,6 +152,45 @@ public class WorkAsyncTest : BaseTest
     }
 
     [Fact]
+    public async Task Work_Job_Finish_Tasks_Failed()
+    {
+        var job = new JobBuilder()
+            .WithRandomInitializedState(JobState.Inactive)
+            .WithConfig(new JobConfig
+            {
+                MaxFailures = 1,
+            })
+            .WithRandomTasks(JobTaskState.Inactive, 2)
+            .Create();
+        await _jobManager.CreateJobAsync(job);
+
+        _jobWorkerStarter.EnsureTaskSuccessesOnDispose = false;
+        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
+
+        job = await this.WaitUntilJobAsync(
+            job.Id,
+            job => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 2,
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
+
+        foreach (var jobTask in job.Tasks)
+        {
+            _jobTaskWorkerFactory.FailJobTaskWorker(jobTask);
+        }
+
+        job = await this.WaitUntilJobAsync(
+            job.Id,
+            job => job.IsDone,
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
+
+        job.State.ShouldBe(JobState.Failed);
+
+        var jobWorkerCollectionService = GetRequiredService<IJobWorkerCollectionService>();
+        jobWorkerCollectionService.Workers.ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task Work_Job_Cancel()
     {
         var job = new JobBuilder()
