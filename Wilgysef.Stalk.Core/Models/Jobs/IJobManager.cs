@@ -76,14 +76,6 @@ public interface IJobManager : ITransientDependency
     Task SetJobActiveAsync(Job job, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Sets job as done.
-    /// </summary>
-    /// <param name="job">Job.</param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    Task SetJobDoneAsync(Job job, CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Sets all active and transitioning jobs and tasks to their inactive and transitioned states.
     /// </summary>
     /// <param name="cancellationToken"></param>

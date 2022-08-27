@@ -444,4 +444,18 @@ public class Job : Entity
                 break;
         }
     }
+
+    internal void Done()
+    {
+        if (HasUnfinishedTasks)
+        {
+            throw new InvalidOperationException("Job still has unfinished tasks.");
+        }
+
+        var config = GetConfig();
+        ChangeState(Tasks.Count(t => t.State == JobTaskState.Failed) > config.MaxFailures
+            ? JobState.Failed
+            : JobState.Completed);
+        Finish();
+    }
 }

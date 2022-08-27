@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using Wilgysef.Stalk.Core.JobWorkerFactories;
+﻿using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 
@@ -54,10 +53,6 @@ public class JobWorkerService : IJobWorkerService
                 await worker.WorkAsync(cancellationTokenSource.Token);
             }
             catch (OperationCanceledException) { }
-            catch (Exception exc)
-            {
-                Debug.WriteLine(exc.ToString());
-            }
             finally
             {
                 // this is singleton

@@ -9,7 +9,20 @@ public class JobWorker : IJobWorker
 {
     public Job? Job { get; private set; } = null!;
 
-    public int WorkerLimit { get; set; } = 4;
+    private int _workerLimit = 4;
+
+    public int WorkerLimit
+    {
+        get => _workerLimit;
+        set
+        {
+            if (value < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), "Worker limit must be at least 1.");
+            }
+            _workerLimit = value;
+        }
+    }
 
     public int TaskWaitTimeoutMilliseconds { get; set; } = 10 * 1000;
 
@@ -74,6 +87,9 @@ public class JobWorker : IJobWorker
 
                 await ReloadJobAsync();
             }
+
+            await ReloadJobAsync();
+            Job.Done();
         }
         catch (Exception exc)
         {
@@ -84,18 +100,8 @@ public class JobWorker : IJobWorker
             using var scope = _lifetimeScope.BeginLifetimeScope();
             var jobManager = scope.GetRequiredService<IJobManager>();
 
-            await ReloadJobAsync(scope);
-
-            // TODO: fix state
-            if (!Job.HasUnfinishedTasks)
-            {
-                await jobManager.SetJobDoneAsync(Job, CancellationToken.None);
-            }
-            else
-            {
-                Job.Deactivate();
-                await jobManager.UpdateJobAsync(Job, CancellationToken.None);
-            }
+            Job.Deactivate();
+            await jobManager.UpdateJobAsync(Job, CancellationToken.None);
         }
     }
 

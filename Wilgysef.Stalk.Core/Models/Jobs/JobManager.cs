@@ -102,16 +102,6 @@ public class JobManager : IJobManager
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task SetJobDoneAsync(Job job, CancellationToken cancellationToken = default)
-    {
-        job.ChangeState(!job.HasUnfinishedTasks
-            ? JobState.Completed
-            : JobState.Failed);
-
-        _unitOfWork.JobRepository.Update(job);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-    }
-
     public async Task DeactivateJobsAsync(CancellationToken cancellationToken = default)
     {
         var jobs = await _unitOfWork.JobRepository.ListAsync(cancellationToken);

@@ -20,7 +20,5 @@ public class JobConfigDto
 
     public int? LogLevel { get; set; }
 
-    public bool? ItemDirectories { get; set; }
-
     public int? MaxFailures { get; set; }
 }
