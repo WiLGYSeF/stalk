@@ -13,8 +13,6 @@ namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
 public class JobTaskWorker : IJobTaskWorker
 {
-    public Job? Job { get; protected set; }
-
     public JobTask? JobTask { get; protected set; }
 
     private JobConfig JobConfig { get; set; }
@@ -28,24 +26,19 @@ public class JobTaskWorker : IJobTaskWorker
         _lifetimeScope = lifetimeScope;
     }
 
-    public IJobTaskWorker WithJobTask(Job job, JobTask jobTask)
+    public IJobTaskWorker WithJobTask(JobTask jobTask)
     {
         if (_working)
         {
             throw new InvalidOperationException("Cannot set job when worker is already working");
         }
 
-        Job = job;
         JobTask = jobTask;
         return this;
     }
 
     public virtual async Task WorkAsync(CancellationToken cancellationToken = default)
     {
-        if (Job == null)
-        {
-            throw new InvalidOperationException("Job is not set.");
-        }
         if (JobTask == null)
         {
             throw new InvalidOperationException("Job task is not set.");
@@ -55,19 +48,18 @@ public class JobTaskWorker : IJobTaskWorker
 
         using (var scope = _lifetimeScope.BeginLifetimeScope())
         {
-            var jobManager = scope.GetRequiredService<IJobManager>();
-            Job = await jobManager.GetJobAsync(Job.Id, cancellationToken);
-            JobTask = Job.Tasks.Single(t => t.Id == JobTask.Id);
+            var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
+            JobTask = await jobTaskManager.GetJobTaskAsync(JobTask.Id, cancellationToken);
 
             if (!JobTask.IsActive)
             {
-                await jobManager.SetJobTaskActiveAsync(Job, JobTask, CancellationToken.None);
+                await jobTaskManager.SetJobTaskActiveAsync(JobTask, CancellationToken.None);
             }
         }
 
         try
         {
-            JobConfig = Job.GetConfig();
+            JobConfig = JobTask.Job.GetConfig();
 
             switch (JobTask.Type)
             {
@@ -90,10 +82,10 @@ public class JobTaskWorker : IJobTaskWorker
         finally
         {
             using var scope = _lifetimeScope.BeginLifetimeScope();
-            var jobManager = scope.GetRequiredService<IJobManager>();
+            var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
 
             JobTask.Deactivate();
-            await jobManager.UpdateJobAsync(Job, CancellationToken.None);
+            await jobTaskManager.UpdateJobTaskAsync(JobTask, CancellationToken.None);
         }
     }
 
@@ -127,16 +119,19 @@ public class JobTaskWorker : IJobTaskWorker
         {
             var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
 
+            var newTasks = new List<JobTask>();
+
             await foreach (var result in extractor.ExtractAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
             {
-                Job!.AddTask(new JobTaskBuilder()
+                newTasks.Add(new JobTaskBuilder()
+                    .WithJob(JobTask.Job)
                     .WithId(idGenerator.CreateId())
                     .WithExtractResult(JobTask, result)
                     .Create());
             }
 
-            var jobManager = scope.GetRequiredService<IJobManager>();
-            await jobManager.UpdateJobAsync(Job!, CancellationToken.None);
+            var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
+            await jobTaskManager.CreateJobTasksAsync(newTasks, CancellationToken.None);
         }
     }
 

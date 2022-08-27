@@ -1,5 +1,4 @@
 ﻿using Wilgysef.Stalk.Core.JobTaskWorkers;
-using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
@@ -15,10 +14,10 @@ public class JobTaskWorkerFactory : IJobTaskWorkerFactory
         _serviceLocator = serviceLocator;
     }
 
-    public IJobTaskWorker CreateWorker(Job job, JobTask jobTask)
+    public IJobTaskWorker CreateWorker(JobTask jobTask)
     {
         var taskWorker = new JobTaskWorker(_serviceLocator.BeginLifetimeScopeFromRoot());
-        taskWorker.WithJobTask(job, jobTask);
+        taskWorker.WithJobTask(jobTask);
         return taskWorker;
     }
 }

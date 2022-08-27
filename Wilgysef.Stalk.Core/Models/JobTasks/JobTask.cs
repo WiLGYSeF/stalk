@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Text.Json;
 using Wilgysef.Stalk.Core.MetadataObjects;
+using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
@@ -80,6 +81,11 @@ public class JobTask : Entity
     /// Job task result.
     /// </summary>
     public virtual JobTaskResult Result { get; protected set; } = null!;
+
+    /// <summary>
+    /// Job the job task belongs to.
+    /// </summary>
+    public virtual Job Job { get; protected set; } = null!;
 
     /// <summary>
     /// Parent task.
@@ -163,6 +169,7 @@ public class JobTask : Entity
     /// <summary>
     /// Creates a job task.
     /// </summary>
+    /// <param name="job">Job the job task belongs to.</param>
     /// <param name="id">Job task Id.</param>
     /// <param name="uri">Job task URI.</param>
     /// <param name="name">Job task name.</param>
@@ -170,6 +177,7 @@ public class JobTask : Entity
     /// <param name="type">Job task type.</param>
     /// <returns>Job task.</returns>
     public static JobTask Create(
+        Job job,
         long id,
         string uri,
         string? name = null,
@@ -188,6 +196,7 @@ public class JobTask : Entity
     }
 
     internal static JobTask Create(
+        Job job,
         long id,
         string? name,
         JobTaskState state,
@@ -210,6 +219,7 @@ public class JobTask : Entity
 
         var task = new JobTask
         {
+            Job = job,
             Id = id,
             Name = name,
             State = state,

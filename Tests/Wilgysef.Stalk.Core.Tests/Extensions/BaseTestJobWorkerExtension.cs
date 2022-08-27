@@ -15,7 +15,7 @@ internal static class BaseTestJobWorkerExtension
         Job job = null!;
         await BaseTest.WaitUntilAsync(async () =>
         {
-            job = await ReloadJob(baseTest, jobId);
+            job = await ReloadJobAsync(baseTest, jobId);
             return condition(job);
         }, timeout, interval ?? TimeSpan.Zero);
         return job;
@@ -30,19 +30,19 @@ internal static class BaseTestJobWorkerExtension
         Job job = null!;
         await BaseTest.WaitUntilAsync(async () =>
         {
-            job = await ReloadJob(baseTest, jobId);
+            job = await ReloadJobAsync(baseTest, jobId);
             return await condition(job);
         }, timeout, interval ?? TimeSpan.Zero);
         return job;
     }
 
-    public static async Task<Job> ReloadJob(this BaseTest baseTest, long jobId)
+    public static async Task<Job> ReloadJobAsync(this BaseTest baseTest, long jobId)
     {
         using var scope = baseTest.BeginLifetimeScope();
-        return await ReloadJob(baseTest, jobId, scope);
+        return await ReloadJobAsync(baseTest, jobId, scope);
     }
 
-    public static async Task<Job> ReloadJob(this BaseTest _, long jobId, IServiceLifetimeScope scope)
+    public static async Task<Job> ReloadJobAsync(this BaseTest _, long jobId, IServiceLifetimeScope scope)
     {
         var jobManager = scope.GetRequiredService<IJobManager>();
         return await jobManager.GetJobAsync(jobId);

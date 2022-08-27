@@ -1,6 +1,5 @@
 ﻿using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.JobWorkerServices;
-using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 
@@ -65,49 +64,6 @@ public class JobStateManager : IJobStateManager
         await _jobManager.UpdateJobAsync(job);
     }
 
-    public async Task StopJobTaskAsync(Job job, JobTask task)
-    {
-        if (task.IsFinished)
-        {
-            return;
-        }
-        if (task.IsTransitioning)
-        {
-            // TODO: take over pause with cancel
-            return;
-        }
-
-        if (task.IsActive)
-        {
-            task.ChangeState(JobTaskState.Cancelling);
-            await _jobManager.UpdateJobAsync(job);
-            await PauseJobTaskAsync(job, task, false);
-        }
-
-        task.ChangeState(JobTaskState.Cancelled);
-        await _jobManager.UpdateJobAsync(job);
-    }
-
-    public async Task PauseJobTaskAsync(Job job, JobTask task)
-    {
-        await PauseJobTaskAsync(job, task, true);
-    }
-
-    public async Task UnpauseJobTaskAsync(Job job, JobTask task)
-    {
-        if (task.IsDone)
-        {
-            throw new JobTaskAlreadyDoneException();
-        }
-        if (task.IsActive)
-        {
-            return;
-        }
-
-        task.ChangeState(JobTaskState.Inactive);
-        await _jobManager.UpdateJobAsync(job);
-    }
-
     private async Task PauseJobAsync(Job job, bool changeState)
     {
         if (job.IsDone || job.IsTransitioning)
@@ -131,33 +87,6 @@ public class JobStateManager : IJobStateManager
         if (changeState)
         {
             job.ChangeState(JobState.Paused);
-            await _jobManager.UpdateJobAsync(job);
-        }
-    }
-
-    private async Task PauseJobTaskAsync(Job job, JobTask task, bool changeState)
-    {
-        if (task.IsDone || task.IsTransitioning)
-        {
-            return;
-        }
-
-        if (task.IsActive)
-        {
-            // TODO: restore state
-
-            if (changeState)
-            {
-                task.ChangeState(JobTaskState.Pausing);
-                await _jobManager.UpdateJobAsync(job);
-            }
-
-            await _jobTaskWorkerService.StopJobTaskWorkerAsync(task);
-        }
-
-        if (changeState)
-        {
-            task.ChangeState(JobTaskState.Paused);
             await _jobManager.UpdateJobAsync(job);
         }
     }

@@ -1,5 +1,4 @@
 ﻿using Ardalis.Specification;
-using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;
@@ -75,15 +74,6 @@ public interface IJobManager : ITransientDependency
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     Task SetJobActiveAsync(Job job, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Sets job task as active.
-    /// </summary>
-    /// <param name="job">Job.</param>
-    /// <param name="jobTask">Job task.</param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    Task SetJobTaskActiveAsync(Job job, JobTask jobTask, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Sets job as done.

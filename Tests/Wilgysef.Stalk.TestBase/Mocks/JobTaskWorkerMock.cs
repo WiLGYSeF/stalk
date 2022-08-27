@@ -6,6 +6,8 @@ namespace Wilgysef.Stalk.TestBase.Mocks;
 
 public class JobTaskWorkerMock : JobTaskWorker
 {
+    public static int DelayInterval { get; } = 10;
+
     public event EventHandler WorkEvent;
 
     private bool _finishWork = false;
@@ -34,15 +36,16 @@ public class JobTaskWorkerMock : JobTaskWorker
     {
         while (!cancellationToken.IsCancellationRequested && !_finishWork)
         {
-            await Task.Delay(100, cancellationToken);
+            await Task.Delay(DelayInterval, cancellationToken);
         }
+        Debug.WriteLine($"{JobTask.Id} finished");
     }
 
     protected override async Task DownloadAsync(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested && !_finishWork)
         {
-            await Task.Delay(100, cancellationToken);
+            await Task.Delay(DelayInterval, cancellationToken);
         }
     }
 }

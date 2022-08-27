@@ -1,7 +1,6 @@
-﻿using Wilgysef.Stalk.Core.JobTaskWorkerServices;
-using Wilgysef.Stalk.Core.JobWorkerServices;
+﻿using System.Diagnostics;
+using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
-using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Core.JobWorkers;
@@ -94,12 +93,9 @@ public class JobWorker : IJobWorker
             }
             else
             {
-                Job.ChangeState(JobState.Inactive);
+                Job.Deactivate();
                 await jobManager.UpdateJobAsync(Job, CancellationToken.None);
             }
-
-            var jobWorkerCollectionService = scope.GetRequiredService<IJobWorkerCollectionService>();
-            jobWorkerCollectionService.RemoveJobWorker(this);
         }
     }
 
@@ -133,7 +129,7 @@ public class JobWorker : IJobWorker
             cancellationToken.ThrowIfCancellationRequested();
 
             var jobTask = jobTasks[jobTaskIndex++];
-            _tasks.Add(await jobTaskWorkerService.StartJobTaskWorkerAsync(Job, jobTask, cancellationToken));
+            _tasks.Add(await jobTaskWorkerService.StartJobTaskWorkerAsync(jobTask, cancellationToken));
         }
     }
 

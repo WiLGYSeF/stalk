@@ -1,4 +1,4 @@
-﻿using IdGen;
+﻿using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 
@@ -6,6 +6,8 @@ namespace Wilgysef.Stalk.Core.Models.JobTasks;
 
 public class JobTaskBuilder
 {
+    public Job? Job { get; set; }
+
     public long Id { get; set; }
 
     public string? Name { get; set; }
@@ -43,6 +45,7 @@ public class JobTaskBuilder
 
     public JobTaskBuilder From(JobTask task)
     {
+        Job = task.Job;
         Id = task.Id;
         Name = task.Name;
         State = task.State;
@@ -69,6 +72,7 @@ public class JobTaskBuilder
         }
 
         return JobTask.Create(
+            Job!,
             Id,
             Name,
             State,
@@ -83,6 +87,12 @@ public class JobTaskBuilder
             DelayedUntil,
             Result,
             ParentTask);
+    }
+
+    public JobTaskBuilder WithJob(Job job)
+    {
+        Job = job;
+        return this;
     }
 
     public JobTaskBuilder WithId(long id)
