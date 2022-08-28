@@ -220,14 +220,12 @@ public class WorkAsyncTest : BaseTest
             TimeSpan.FromSeconds(3));
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
-        job.State.ShouldBe(JobState.Inactive);
-
         // TODO: remove
-        job.Tasks.ToList().ForEach(t => Debug.WriteLine(new
-        {
-            t.Id,
-            t.State,
-        }));
+        var customMessage = string.Join(
+            Environment.NewLine,
+            job.Tasks.Select(t => $"{t.Id} {t.State}"));
+
+        job.State.ShouldBe(JobState.Inactive, customMessage);
 
         var jobWorkerCollectionService = GetRequiredService<IJobWorkerCollectionService>();
         jobWorkerCollectionService.Workers.ShouldBeEmpty();

@@ -88,8 +88,8 @@ public class WorkAsyncTest : BaseTest
         workerInstance.CancellationTokenSource.Cancel();
 
         var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
-        var extractMethod = _extractorMock.Invocations.Single(i => i.Method.Name == typeof(IExtractor).GetMethod("ExtractAsync")!.Name);
-        extractMethod.Arguments[0].ShouldBe(new Uri(jobTask.Uri));
+        var extractMethodInvocations = _extractorMock.Invocations.Where(i => i.Method.Name == typeof(IExtractor).GetMethod("ExtractAsync")!.Name);
+        extractMethodInvocations.Any(i => (Uri)i.Arguments[0] == new Uri(jobTask.Uri)).ShouldBeTrue();
 
         job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(3);
     }
@@ -130,8 +130,8 @@ public class WorkAsyncTest : BaseTest
         job.IsDone.ShouldBeTrue();
 
         var jobTask = job.Tasks.Single();
-        var downloadMethod = _downloaderMock.Invocations.Single(i => i.Method.Name == typeof(IDownloader).GetMethod("DownloadAsync")!.Name);
-        downloadMethod.Arguments[0].ShouldBe(new Uri(jobTask.Uri));
+        var downloadMethodInvocation = _downloaderMock.Invocations.Single(i => i.Method.Name == typeof(IDownloader).GetMethod("DownloadAsync")!.Name);
+        downloadMethodInvocation.Arguments[0].ShouldBe(new Uri(jobTask.Uri));
     }
 
     private static async IAsyncEnumerable<DownloadResult> DownloadAsync(

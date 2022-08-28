@@ -4,7 +4,18 @@ namespace Wilgysef.Stalk.Core.ItemIdSetServices;
 
 public interface IItemIdSetService : ITransientDependency
 {
-    IItemIdSet GetItemIdSet(string path);
+    /// <summary>
+    /// Gets an item Id set.
+    /// </summary>
+    /// <param name="path">Path.</param>
+    /// <returns>Item Ids.</returns>
+    Task<IItemIdSet> GetItemIdSetAsync(string path);
 
-    int WriteChanges(string path, IItemIdSet itemIds);
+    /// <summary>
+    /// Write item Id set changes.
+    /// </summary>
+    /// <param name="path">Path.</param>
+    /// <param name="itemIds">Item Ids.</param>
+    /// <returns>Number of item Ids written.</returns>
+    Task<int> WriteChangesAsync(string path, IItemIdSet itemIds);
 }
