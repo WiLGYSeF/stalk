@@ -33,7 +33,7 @@ public class JobTaskWorkerService : IJobTaskWorkerService
 
         _jobTaskWorkerCollectionService.AddJobTaskWorker(worker, task, cancellationTokenSource);
 
-        await _jobTaskManager.SetJobTaskActiveAsync(jobTask, CancellationToken.None);
+        await _jobTaskManager.SetJobTaskActiveAsync(jobTask, cancellationTokenSource.Token);
 
         // return task, do not await
         return task;

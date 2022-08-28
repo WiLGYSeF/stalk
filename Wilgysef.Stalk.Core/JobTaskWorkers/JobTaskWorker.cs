@@ -78,7 +78,12 @@ public class JobTaskWorker : IJobTaskWorker
         catch (OperationCanceledException) { }
         catch (Exception exc)
         {
-            JobTask.Fail(errorMessage: exc.Message, errorDetail: exc.ToString());
+            var workerException = exc as JobTaskWorkerException;
+
+            JobTask.Fail(
+                errorCode: workerException?.Code,
+                errorMessage: exc.Message,
+                errorDetail: workerException?.Details ?? exc.ToString());
         }
         finally
         {
@@ -99,14 +104,11 @@ public class JobTaskWorker : IJobTaskWorker
 
     protected virtual async Task ExtractAsync(CancellationToken cancellationToken)
     {
-        var jobTaskUri = new Uri(JobTask!.Uri);
+        using var scope = _lifetimeScope.BeginLifetimeScope();
 
-        IExtractor? extractor = null;
-        using (var scope = _lifetimeScope.BeginLifetimeScope())
-        {
-            extractor = scope.GetRequiredService<IEnumerable<IExtractor>>()
-                .FirstOrDefault(e => e.CanExtract(jobTaskUri));
-        }
+        var jobTaskUri = new Uri(JobTask!.Uri);
+        var extractor = scope.GetRequiredService<IEnumerable<IExtractor>>()
+            .FirstOrDefault(e => e.CanExtract(jobTaskUri));
 
         if (extractor == null)
         {
@@ -116,51 +118,44 @@ public class JobTaskWorker : IJobTaskWorker
                 $"No extractor was able to extract from {jobTaskUri}");
         }
 
-        using (var scope = _lifetimeScope.BeginLifetimeScope())
+        var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
+        var newTasks = new List<JobTask>();
+
+        await foreach (var result in extractor.ExtractAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
         {
-            var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
-
-            var newTasks = new List<JobTask>();
-
-            await foreach (var result in extractor.ExtractAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
-            {
-                newTasks.Add(new JobTaskBuilder()
-                    .WithJob(JobTask.Job)
-                    .WithId(idGenerator.CreateId())
-                    .WithExtractResult(JobTask, result)
-                    .Create());
-            }
-
-            var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
-            await jobTaskManager.CreateJobTasksAsync(newTasks, CancellationToken.None);
+            newTasks.Add(new JobTaskBuilder()
+                .WithId(idGenerator.CreateId())
+                .WithExtractResult(JobTask, result)
+                .Create());
         }
+
+        var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
+        await jobTaskManager.CreateJobTasksAsync(newTasks, CancellationToken.None);
     }
 
     protected virtual async Task DownloadAsync(CancellationToken cancellationToken)
     {
+        using var scope = _lifetimeScope.BeginLifetimeScope();
+        var downloaders = scope.GetRequiredService<IEnumerable<IDownloader>>();
+        var itemIdSetService = scope.GetRequiredService<IItemIdSetService>();
+
+        var defaultDownloader = downloaders.FirstOrDefault(d => d is IDefaultDownloader)
+            ?? downloaders.Single();
+
         var jobTaskUri = new Uri(JobTask!.Uri);
-
-        IDownloader? downloader = null;
-        IItemIdSet? itemIds = null;
-
-        using (var scope = _lifetimeScope.BeginLifetimeScope())
-        {
-            var downloaders = scope.GetRequiredService<IEnumerable<IDownloader>>();
-            var defaultDownloader = downloaders.First(d => d is IDefaultDownloader);
-            downloader = scope.GetRequiredService<IEnumerable<IDownloader>>()
-                .FirstOrDefault(d => d is not IDefaultDownloader && d.CanDownload(jobTaskUri))
-                ?? defaultDownloader;
-
-            var itemIdSetService = scope.GetRequiredService<IItemIdSetService>();
-            if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
-            {
-                itemIds = itemIdSetService.GetItemIdSet(JobConfig.ItemIdPath);
-            }
-        }
+        var downloader = scope.GetRequiredService<IEnumerable<IDownloader>>()
+            .FirstOrDefault(d => d is not IDefaultDownloader && d.CanDownload(jobTaskUri))
+            ?? defaultDownloader;
 
         if (downloader == null)
         {
             throw new InvalidOperationException("No downloader found.");
+        }
+
+        IItemIdSet? itemIds = null;
+        if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
+        {
+            itemIds = itemIdSetService.GetItemIdSet(JobConfig.ItemIdPath);
         }
 
         await foreach (var result in downloader.DownloadAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
@@ -170,8 +165,6 @@ public class JobTaskWorker : IJobTaskWorker
 
         if (itemIds != null)
         {
-            using var scope = _lifetimeScope.BeginLifetimeScope();
-            var itemIdSetService = scope.GetRequiredService<IItemIdSetService>();
             itemIdSetService.WriteChanges(JobConfig.ItemIdPath!, itemIds);
         }
     }

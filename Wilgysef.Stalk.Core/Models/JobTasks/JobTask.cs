@@ -83,9 +83,21 @@ public class JobTask : Entity
     public virtual JobTaskResult Result { get; protected set; } = null!;
 
     /// <summary>
+    /// Job foreign key Id.
+    /// </summary>
+    [ForeignKey(nameof(Job))]
+    public virtual long JobId { get; protected set; }
+
+    /// <summary>
     /// Job the job task belongs to.
     /// </summary>
     public virtual Job Job { get; protected set; } = null!;
+
+    /// <summary>
+    /// Parent task foreign key Id.
+    /// </summary>
+    [ForeignKey(nameof(ParentTask))]
+    public virtual long ParentTaskId { get; protected set; }
 
     /// <summary>
     /// Parent task.
@@ -177,8 +189,9 @@ public class JobTask : Entity
     /// <param name="type">Job task type.</param>
     /// <returns>Job task.</returns>
     public static JobTask Create(
-        Job job,
         long id,
+        Job? job,
+        long jobId,
         string uri,
         string? name = null,
         int priority = 0,
@@ -187,6 +200,8 @@ public class JobTask : Entity
         return new JobTask
         {
             Id = id,
+            Job = job!,
+            JobId = jobId,
             Name = name,
             State = JobTaskState.Inactive,
             Priority = priority,
@@ -196,8 +211,9 @@ public class JobTask : Entity
     }
 
     internal static JobTask Create(
-        Job job,
         long id,
+        Job? job,
+        long jobId,
         string? name,
         JobTaskState state,
         int priority,
@@ -210,6 +226,7 @@ public class JobTask : Entity
         DateTime? finished,
         DateTime? delayedUntil,
         JobTaskResult? result,
+        long parentTaskId,
         JobTask? parentTask)
     {
         if (!started.HasValue && state != JobTaskState.Inactive)
@@ -219,8 +236,9 @@ public class JobTask : Entity
 
         var task = new JobTask
         {
-            Job = job,
             Id = id,
+            Job = job!,
+            JobId = jobId,
             Name = name,
             State = state,
             Priority = priority,
@@ -231,6 +249,7 @@ public class JobTask : Entity
             Started = started,
             DelayedUntil = delayedUntil,
             Result = result ?? JobTaskResult.Create(),
+            ParentTaskId = parentTaskId,
             ParentTask = parentTask,
         };
 
@@ -289,6 +308,11 @@ public class JobTask : Entity
 
     public IMetadataObject GetMetadata()
     {
+        if (MetadataJson == null)
+        {
+            return new MetadataObject(MetadataKeySeparator);
+        }
+
         var metadata = JsonSerializer.Deserialize<IDictionary<string, object>>(
             MetadataJson!,
             new JsonSerializerOptions
@@ -473,6 +497,5 @@ public class JobTask : Entity
             errorCode: errorCode,
             errorMessage: errorMessage,
             errorDetail: errorDetail);
-        Finish();
     }
 }

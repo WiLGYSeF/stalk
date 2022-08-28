@@ -2,6 +2,7 @@
 using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Models.JobTasks;
 
 namespace Wilgysef.Stalk.Core.Tests.Utilities;
 
@@ -55,7 +56,18 @@ internal class JobWorkerStarter
         {
             if (EnsureTaskSuccesses)
             {
-                Worker.Job!.Tasks.All(t => t.Result.Success.GetValueOrDefault(true)).ShouldBeTrue();
+                var failures = new List<JobTaskResult>();
+                foreach (var task in Worker.Job!.Tasks)
+                {
+                    if (!task.Result.Success.GetValueOrDefault(true))
+                    {
+                        failures.Add(task.Result);
+                    }
+                }
+
+                failures.ShouldBeEmpty(string.Join(
+                    Environment.NewLine,
+                    new[] { "Task(s) failed:" }.Concat(failures.Select(f => f.ErrorDetail))));
             }
             WorkerTask.Exception.ShouldBeNull();
 

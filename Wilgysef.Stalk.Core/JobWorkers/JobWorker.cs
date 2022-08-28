@@ -65,14 +65,14 @@ public class JobWorker : IJobWorker
 
         try
         {
-            do
+            while (Job.HasUnfinishedTasks)
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
                 await CreateJobTaskWorkers(cancellationToken);
                 if (_tasks.Count == 0)
                 {
-                    break;
+                    continue;
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
@@ -90,7 +90,6 @@ public class JobWorker : IJobWorker
                     RemoveCompletedTasks(taskArray);
                 }
             }
-            while (_tasks.Count > 0);
 
             // TODO: handle job with all paused tasks
 

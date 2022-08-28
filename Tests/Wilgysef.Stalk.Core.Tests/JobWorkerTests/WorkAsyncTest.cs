@@ -1,4 +1,5 @@
 ﻿using Shouldly;
+using System.Diagnostics;
 using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkerServices;
@@ -193,6 +194,8 @@ public class WorkAsyncTest : BaseTest
     [Fact]
     public async Task Work_Job_Cancel()
     {
+        // TODO: unstable test
+
         var job = new JobBuilder()
             .WithRandomInitializedState(JobState.Inactive)
             .WithRandomTasks(JobTaskState.Inactive, 1)
@@ -207,7 +210,7 @@ public class WorkAsyncTest : BaseTest
             TimeSpan.FromSeconds(3));
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
-        job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBeGreaterThanOrEqualTo(1);
+        job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBe(1);
 
         workerInstance.CancellationTokenSource.Cancel();
 
@@ -218,6 +221,13 @@ public class WorkAsyncTest : BaseTest
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.State.ShouldBe(JobState.Inactive);
+
+        // TODO: remove
+        job.Tasks.ToList().ForEach(t => Debug.WriteLine(new
+        {
+            t.Id,
+            t.State,
+        }));
 
         var jobWorkerCollectionService = GetRequiredService<IJobWorkerCollectionService>();
         jobWorkerCollectionService.Workers.ShouldBeEmpty();

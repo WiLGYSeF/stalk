@@ -457,10 +457,11 @@ public class Job : Entity
             throw new InvalidOperationException("Job still has unfinished tasks.");
         }
 
+        var failedTaskCount = Tasks.Count(t => t.State == JobTaskState.Failed);
         var config = GetConfig();
-        ChangeState(Tasks.Count(t => t.State == JobTaskState.Failed) > config.MaxFailures
+
+        ChangeState((failedTaskCount > config.MaxFailures || failedTaskCount == Tasks.Count)
             ? JobState.Failed
             : JobState.Completed);
-        Finish();
     }
 }

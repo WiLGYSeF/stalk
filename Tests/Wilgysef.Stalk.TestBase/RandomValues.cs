@@ -5,7 +5,7 @@ namespace Wilgysef.Stalk.TestBase;
 
 public static class RandomValues
 {
-    private static char[] _randomStringCharset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
+    public static char[] RandomStringDefaultCharset = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789".ToCharArray();
 
     public static int RandomInt(int toExclusive)
     {
@@ -44,7 +44,7 @@ public static class RandomValues
 
     public static string RandomString(int length)
     {
-        return RandomString(length, _randomStringCharset);
+        return RandomString(length, RandomStringDefaultCharset);
     }
 
     public static string RandomString(int length, char[] charset)
@@ -96,6 +96,23 @@ public static class RandomValues
     public static long RandomJobTaskId()
     {
         return RandomLong(1, 1_000_000_000L);
+    }
+
+    public static string RandomDirPath(int depth, char separator = '/')
+    {
+        var builder = new StringBuilder();
+        for (var i = 0; i < depth; i++)
+        {
+            builder.Append(RandomString(RandomInt(4, 16)));
+            builder.Append(separator);
+        }
+        return builder.ToString();
+    }
+
+    public static string RandomFilePath(int depth, char separator = '/')
+    {
+        var path = RandomDirPath(depth - 1);
+        return path + separator + RandomString(RandomInt(10, 20)) + "." + RandomString(3);
     }
 
     public static string RandomUri(

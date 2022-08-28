@@ -6,9 +6,11 @@ namespace Wilgysef.Stalk.Core.Models.JobTasks;
 
 public class JobTaskBuilder
 {
+    public long Id { get; set; }
+
     public Job? Job { get; set; }
 
-    public long Id { get; set; }
+    public long JobId { get; set; }
 
     public string? Name { get; set; }
 
@@ -33,6 +35,8 @@ public class JobTaskBuilder
     public DateTime? DelayedUntil { get; set; }
 
     public JobTaskResult Result { get; set; } = JobTaskResult.Create();
+
+    public long ParentTaskId { get; set; }
 
     public JobTask? ParentTask { get; set; }
 
@@ -72,8 +76,9 @@ public class JobTaskBuilder
         }
 
         return JobTask.Create(
-            Job!,
             Id,
+            Job!,
+            JobId,
             Name,
             State,
             Priority,
@@ -86,7 +91,14 @@ public class JobTaskBuilder
             Finished,
             DelayedUntil,
             Result,
+            ParentTaskId,
             ParentTask);
+    }
+
+    public JobTaskBuilder WithId(long id)
+    {
+        Id = id;
+        return this;
     }
 
     public JobTaskBuilder WithJob(Job job)
@@ -95,9 +107,9 @@ public class JobTaskBuilder
         return this;
     }
 
-    public JobTaskBuilder WithId(long id)
+    public JobTaskBuilder WithJobId(long jobId)
     {
-        Id = id;
+        JobId = jobId;
         return this;
     }
 
@@ -179,15 +191,23 @@ public class JobTaskBuilder
         return this;
     }
 
+    public JobTaskBuilder WithParentId(long parentTaskId)
+    {
+        ParentTaskId = parentTaskId;
+        return this;
+    }
+
     public JobTaskBuilder WithExtractResult(JobTask jobTask, ExtractResult result)
     {
-        return WithName(result.Name)
+        return WithJobId(jobTask.Job.Id)
+            .WithName(result.Name)
             .WithState(JobTaskState.Inactive)
-            .WithPriority(result.Priority ?? jobTask.Priority)
+            .WithUri(result.Uri.AbsoluteUri)
+            .WithPriority(result.Priority)
             .WithItemId(result.ItemId)
             .WithItemData(result.ItemData)
             .WithMetadata(result.Metadata)
             .WithType(result.Type)
-            .WithParent(jobTask);
+            .WithParentId(jobTask.Id);
     }
 }
