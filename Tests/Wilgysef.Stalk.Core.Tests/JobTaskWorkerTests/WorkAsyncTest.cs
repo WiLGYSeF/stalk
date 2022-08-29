@@ -1,6 +1,5 @@
 ﻿using Moq;
 using Shouldly;
-using Wilgysef.Stalk.Core.FileServices;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.Models.Jobs;
@@ -99,7 +98,7 @@ public class WorkAsyncTest : BaseTest
         workerInstance.CancellationTokenSource.Cancel();
 
         var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
-        var extractMethodInvocations = _extractorMock.Invocations.Where(i => i.Method.Name == typeof(IExtractor).GetMethod("ExtractAsync")!.Name);
+        var extractMethodInvocations = _extractorMock.GetInvocations("ExtractAsync");
         extractMethodInvocations.Any(i => (Uri)i.Arguments[0] == new Uri(jobTask.Uri)).ShouldBeTrue();
 
         job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(3);
@@ -150,15 +149,15 @@ public class WorkAsyncTest : BaseTest
         job.IsDone.ShouldBeTrue();
 
         var jobTask = job.Tasks.Single();
-        var downloadMethodInvocation = _downloaderMock.Invocations.Single(i => i.Method.Name == typeof(IDownloader).GetMethod("DownloadAsync")!.Name);
+        var downloadMethodInvocation = _downloaderMock.GetInvocation("DownloadAsync");
         downloadMethodInvocation.Arguments[0].ShouldBe(new Uri(jobTask.Uri));
 
         if (testItemIds)
         {
-            var getItemIdSetMethodInvocation = _itemIdSetService.Invocations.Single(i => i.Method.Name == typeof(IItemIdSetService).GetMethod("GetItemIdSetAsync")!.Name);
+            var getItemIdSetMethodInvocation = _itemIdSetService.GetInvocation("GetItemIdSetAsync");
             getItemIdSetMethodInvocation.Arguments[0].ShouldBe(job.GetConfig().ItemIdPath);
 
-            var writeChangesMethodInvocation = _itemIdSetService.Invocations.Single(i => i.Method.Name == typeof(IItemIdSetService).GetMethod("WriteChangesAsync")!.Name);
+            var writeChangesMethodInvocation = _itemIdSetService.GetInvocation("WriteChangesAsync");
             writeChangesMethodInvocation.Arguments[0].ShouldBe(job.GetConfig().ItemIdPath);
             (writeChangesMethodInvocation.Arguments[1] as IItemIdSet)!.Count.ShouldBe(1);
         }
