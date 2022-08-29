@@ -4,19 +4,23 @@ public class ItemIdSet : IItemIdSet
 {
     public int Count => _itemIds.Count;
 
+    public IReadOnlyCollection<string> Items => _itemIds;
+
     public IReadOnlyCollection<string> PendingItems => _pendingItemIds;
 
     private readonly HashSet<string> _itemIds = new();
-    // TODO: should this be here?
+    // TODO: this should not be here
     private readonly HashSet<string> _pendingItemIds = new();
 
-    private readonly object _lock = new object();
+    private readonly object _lock = new();
+
+    public ItemIdSet() { }
 
     public ItemIdSet(IEnumerable<string> items)
     {
         foreach (var item in items)
         {
-            Add(item);
+            _itemIds.Add(item);
         }
     }
 
@@ -25,6 +29,14 @@ public class ItemIdSet : IItemIdSet
         lock (_lock)
         {
             _pendingItemIds.Add(item);
+            return _itemIds.Add(item);
+        }
+    }
+
+    public bool AddNoPending(string item)
+    {
+        lock (_lock)
+        {
             return _itemIds.Add(item);
         }
     }
@@ -59,11 +71,6 @@ public class ItemIdSet : IItemIdSet
     {
         lock (_lock)
         {
-            foreach (var item in _pendingItemIds)
-            {
-                _itemIds.Add(item);
-            }
-
             var count = _pendingItemIds.Count;
             _pendingItemIds.Clear();
             return count;

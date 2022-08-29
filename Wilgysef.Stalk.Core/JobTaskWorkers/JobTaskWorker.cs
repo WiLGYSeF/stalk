@@ -155,7 +155,7 @@ public class JobTaskWorker : IJobTaskWorker
         IItemIdSet? itemIds = null;
         if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
         {
-            itemIds = itemIdSetService.GetItemIdSet(JobConfig.ItemIdPath);
+            itemIds = await itemIdSetService.GetItemIdSetAsync(JobConfig.ItemIdPath);
         }
 
         await foreach (var result in downloader.DownloadAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
@@ -165,7 +165,7 @@ public class JobTaskWorker : IJobTaskWorker
 
         if (itemIds != null)
         {
-            itemIdSetService.WriteChanges(JobConfig.ItemIdPath!, itemIds);
+            await itemIdSetService.WriteChangesAsync(JobConfig.ItemIdPath!, itemIds);
         }
     }
 }

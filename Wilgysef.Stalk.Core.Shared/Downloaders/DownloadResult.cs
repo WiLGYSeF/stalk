@@ -18,7 +18,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         public DownloadResult(
             string path,
             Uri uri,
-            string itemId = null,
+            string itemId,
             string itemData = null,
             IMetadataObject metadata = null)
         {
