@@ -34,10 +34,10 @@ public class WindowsFilenameSlug : IFilenameSlug
             return "";
         }
 
-        var driveLetter = GetDriveLetter(path);
-        if (driveLetter != null)
+        var prefix = GetPathPrefix(path);
+        if (prefix.Length > 0)
         {
-            path = path[2..];
+            path = path[prefix.Length..];
         }
 
         var parts = GetPathParts(path);
@@ -47,9 +47,9 @@ public class WindowsFilenameSlug : IFilenameSlug
         }
 
         var result = string.Join(PathSeparator, parts);
-        if (driveLetter != null)
+        if (prefix.Length > 0)
         {
-            result = driveLetter.ToString() + VolumeSeparator + result;
+            result = prefix + result;
         }
         return result;
     }
@@ -106,6 +106,40 @@ public class WindowsFilenameSlug : IFilenameSlug
             });
         }
         return builder.ToString();
+    }
+
+    private string GetPathPrefix(string path)
+    {
+        var driveLetter = GetDriveLetter(path);
+        if (driveLetter != null)
+        {
+            return driveLetter.ToString() + VolumeSeparator;
+        }
+
+        var uncPathPrefix = GetUncPathPrefix(path);
+        if (uncPathPrefix.HasValue)
+        {
+            return $@"\\{uncPathPrefix.Value.Server}\{uncPathPrefix.Value.Share}";
+        }
+
+        return "";
+    }
+
+    private (string Server, string Share)? GetUncPathPrefix(string path)
+    {
+        if (!(path[0] == '\\' && path[1] == '\\'))
+        {
+            return null;
+        }
+
+        var firstIndex = path.IndexOf('\\', 2);
+        if (firstIndex == path.Length - 1)
+        {
+            return null;
+        }
+
+        var secondIndex = path.IndexOf('\\', firstIndex + 1);
+        return (path[2..firstIndex], path[(firstIndex + 1)..secondIndex]);
     }
 
     private char? GetDriveLetter(string path)
