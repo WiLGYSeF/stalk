@@ -30,6 +30,7 @@ public class WindowsFilenameSlugTest : BaseTest
     [InlineData(@"\\.\C:\test\asdf", @"\\.\C:\test\asdf")]
     [InlineData(@"\\?\C:\test\asdf", @"\\?\C:\test\asdf")]
     [InlineData(@"\\server\share\test\asdf", @"\\server\share\test\asdf")]
+    [InlineData(@"C:\CON\test", @"C:\CON_\test")]
     public void Slug_Path(string path, string expected)
     {
         _windowsFilenameSlug.SlugifyPath(path).ShouldBe(expected);
@@ -45,6 +46,7 @@ public class WindowsFilenameSlugTest : BaseTest
     [InlineData("test/abc", "test\u2215abc")]
     [InlineData(@"C:\test\asdf", "C\uff1a\uff3ctest\uff3casdf")]
     [InlineData(@"<>/:""\|?*", "\uff1c\uff1e\u2215\uff1a\u201c\uff3c\uff5c\uff1f\uff0a")]
+    [InlineData("CON", "CON_")]
     public void Slug_Filename(string filename, string expected)
     {
         _windowsFilenameSlug.SlugifyFile(filename).ShouldBe(expected);
