@@ -8,6 +8,7 @@ using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
+using Wilgysef.Stalk.Core.Shared.StringFormatters;
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
@@ -79,6 +80,8 @@ public class JobTaskWorker : IJobTaskWorker
         catch (Exception exc)
         {
             var workerException = exc as JobTaskWorkerException;
+
+            // TODO: condtitionally create copy task on fail
 
             JobTask.Fail(
                 errorCode: workerException?.Code,
@@ -157,6 +160,8 @@ public class JobTaskWorker : IJobTaskWorker
         {
             itemIds = await itemIdSetService.GetItemIdSetAsync(JobConfig.ItemIdPath);
         }
+
+        var formatter = scope.GetRequiredService<IStringFormatter>();
 
         await foreach (var result in downloader.DownloadAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
         {

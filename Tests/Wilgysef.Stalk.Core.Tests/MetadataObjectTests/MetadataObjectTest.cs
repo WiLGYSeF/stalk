@@ -1,7 +1,7 @@
 ﻿using Shouldly;
 using Wilgysef.Stalk.Core.MetadataObjects;
 
-namespace Wilgysef.Stalk.Core.Tests.MetadataObjectsTests;
+namespace Wilgysef.Stalk.Core.Tests.MetadataObjectTests;
 
 public class MetadataObjectTest
 {

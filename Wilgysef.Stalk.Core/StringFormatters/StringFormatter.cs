@@ -1,10 +1,11 @@
 ﻿using System.Text;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.StringFormatters;
 using Wilgysef.Stalk.Core.StringFormatters.FormatTokens;
 
 namespace Wilgysef.Stalk.Core.StringFormatters;
 
-public class StringFormatter : IStringFormatter
+public class StringFormatter : IStringFormatter, ITransientDependency
 {
     public string Format(string value, IDictionary<string, object> formatValues)
     {

@@ -22,7 +22,8 @@ public class JobSingleSpecification : Specification<Job>
             throw new ArgumentNullException(nameof(jobId));
         }
 
-        Query.Include(j => j.Tasks);
+        Query
+            .Include(j => j.Tasks);
 
         if (jobId.HasValue)
         {
