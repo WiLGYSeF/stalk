@@ -154,6 +154,10 @@ public class JobTaskWorker : IJobTaskWorker
         {
             throw new InvalidOperationException("No downloader found.");
         }
+        if (!JobConfig.DownloadData)
+        {
+            return;
+        }
 
         IItemIdSet? itemIds = null;
         if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
@@ -163,7 +167,14 @@ public class JobTaskWorker : IJobTaskWorker
 
         var formatter = scope.GetRequiredService<IStringFormatter>();
 
-        await foreach (var result in downloader.DownloadAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
+        await foreach (var result in downloader.DownloadAsync(
+            jobTaskUri,
+            JobConfig.DownloadFilenameTemplate,
+            JobTask.ItemId,
+            JobTask.ItemData,
+            JobConfig.MetadataFilenameTemplate,
+            JobTask.GetMetadata(),
+            cancellationToken))
         {
             itemIds?.Add(result.ItemId);
         }

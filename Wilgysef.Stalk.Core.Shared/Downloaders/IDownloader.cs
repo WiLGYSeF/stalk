@@ -13,7 +13,10 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         IAsyncEnumerable<DownloadResult> DownloadAsync(
             //HttpClient client,
             Uri uri,
+            string filenameTemplate,
+            string itemId,
             string itemData,
+            string metadataTemplate,
             IMetadataObject metadata,
             CancellationToken cancellationToken = default);
     }

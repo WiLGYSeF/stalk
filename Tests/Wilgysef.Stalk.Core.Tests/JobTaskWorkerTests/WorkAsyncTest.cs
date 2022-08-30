@@ -42,6 +42,9 @@ public class WorkAsyncTest : BaseTest
         _downloaderMock.Setup(m => m.DownloadAsync(
             It.IsAny<Uri>(),
             It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
             It.IsAny<IMetadataObject>(),
             It.IsAny<CancellationToken>()))
                 .Returns(DownloadAsync);
@@ -165,7 +168,10 @@ public class WorkAsyncTest : BaseTest
 
     private static async IAsyncEnumerable<DownloadResult> DownloadAsync(
         Uri uri,
+        string filenameTemplate,
+        string itemId,
         string itemData,
+        string metadataFilenameTemplate,
         IMetadataObject metadata,
         CancellationToken cancellationToken = default)
     {

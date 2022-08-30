@@ -7,7 +7,7 @@ public class MetadataObject : IMetadataObject
 {
     public char KeySeparator { get; set; }
 
-    public IReadOnlyDictionary<string, object> Dictionary => _dictionary;
+    public IDictionary<string, object> Dictionary => _dictionary;
 
     public bool HasValues => _dictionary.Count > 0;
 
