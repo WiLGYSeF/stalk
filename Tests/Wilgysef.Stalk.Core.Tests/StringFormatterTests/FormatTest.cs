@@ -24,6 +24,7 @@ public class FormatTest
     }
 
     [Theory]
+    [InlineData("jj${test,4:F|a|fa|s|\"as\"}as${j}${k}fd", "-abc-")]
     [InlineData("-{test}-", "-abc-")]
     [InlineData("-{notexist}-", "--")]
     [InlineData("-{notexist|test}-", "-abc-")]

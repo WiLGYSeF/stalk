@@ -4,6 +4,14 @@ namespace Wilgysef.Stalk.Core.StringFormatters;
 
 internal class FormatTokenizer
 {
+    public static string FormatInitString = FormatInitChar.ToString();
+    public static string FormatBeginString = FormatBeginChar.ToString();
+    public static string FormatEndString = FormatEndChar.ToString();
+    public static string FormatAlignmentString = FormatAlignmentChar.ToString();
+    public static string FormatFormatterString = FormatFormatterChar.ToString();
+    public static string FormatDefaultString = FormatDefaultChar.ToString();
+
+    private const char FormatInitChar = '$';
     private const char FormatBeginChar = '{';
     private const char FormatEndChar = '}';
 
@@ -11,73 +19,57 @@ internal class FormatTokenizer
     private const char FormatFormatterChar = ':';
     private const char FormatDefaultChar = '|';
 
-    private readonly string FormatBeginString = FormatBeginChar.ToString();
-    private readonly string FormatEndString = FormatEndChar.ToString();
-
-    private readonly string FormatAlignmentString = FormatAlignmentChar.ToString();
-    private readonly string FormatFormatterString = FormatFormatterChar.ToString();
-    private readonly string FormatDefaultString = FormatDefaultChar.ToString();
-
     public IEnumerable<FormatToken> GetTokens(string value)
     {
         for (var index = 0; index < value.Length; index++)
         {
-            if (value[index] == FormatBeginChar)
+            switch (value[index])
             {
-                yield return new FormatToken(FormatTokenType.FormatBegin, FormatBeginString);
-                continue;
-            }
-            if (value[index] == FormatEndChar)
-            {
-                yield return new FormatToken(FormatTokenType.FormatEnd, FormatEndString);
-                continue;
+                case FormatInitChar:
+                    yield return new FormatToken(FormatTokenType.FormatInit);
+                    break;
+                case FormatBeginChar:
+                    yield return new FormatToken(FormatTokenType.FormatBegin);
+                    break;
+                case FormatEndChar:
+                    yield return new FormatToken(FormatTokenType.FormatEnd);
+                    break;
+                case FormatAlignmentChar:
+                    yield return new FormatToken(FormatTokenType.FormatAlignment);
+                    break;
+                case FormatFormatterChar:
+                    yield return new FormatToken(FormatTokenType.FormatFormatter);
+                    break;
+                case FormatDefaultChar:
+                    yield return new FormatToken(FormatTokenType.FormatDefault);
+                    break;
             }
 
             var endIndex = index;
-            for (; endIndex < value.Length && value[endIndex] != FormatBeginChar && value[endIndex] != FormatEndChar; endIndex++) ;
+            while (endIndex < value.Length && IsConstantChar(value[endIndex]))
+            {
+                endIndex++;
+            }
 
             if (endIndex != index)
             {
                 yield return new FormatToken(FormatTokenType.Constant, value[index..endIndex]);
                 index = endIndex - 1;
-                continue;
             }
         }
     }
 
-    public List<FormatToken> GetFormatTokens(string value)
+    private bool IsConstantChar(char c)
     {
-        var tokens = new List<FormatToken>();
-
-        for (var index = 0; index < value.Length; index++)
+        return c switch
         {
-            if (value[index] == FormatAlignmentChar)
-            {
-                tokens.Add(new FormatToken(FormatTokenType.FormatAlignment, FormatAlignmentString));
-                continue;
-            }
-            if (value[index] == FormatFormatterChar)
-            {
-                tokens.Add(new FormatToken(FormatTokenType.FormatFormatter, FormatFormatterString));
-                continue;
-            }
-            if (value[index] == FormatDefaultChar)
-            {
-                tokens.Add(new FormatToken(FormatTokenType.FormatDefault, FormatDefaultString));
-                continue;
-            }
-
-            var endIndex = index;
-            for (; endIndex < value.Length && value[endIndex] != FormatAlignmentChar && value[endIndex] != FormatFormatterChar && value[endIndex] != FormatDefaultChar; endIndex++) ;
-
-            if (endIndex != index)
-            {
-                tokens.Add(new FormatToken(FormatTokenType.Constant, value[index..endIndex]));
-                index = endIndex - 1;
-                continue;
-            }
-        }
-
-        return tokens;
+            FormatInitChar => false,
+            FormatBeginChar => false,
+            FormatEndChar => false,
+            FormatAlignmentChar => false,
+            FormatFormatterChar => false,
+            FormatDefaultChar => false,
+            _ => true,
+        };
     }
 }
