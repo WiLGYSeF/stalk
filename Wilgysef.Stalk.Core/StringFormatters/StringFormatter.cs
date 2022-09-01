@@ -83,7 +83,7 @@ public class StringFormatter : IStringFormatter, ITransientDependency
                     }
                     break;
                 default:
-                    break;
+                    throw new NotImplementedException();
             }
         }
 
