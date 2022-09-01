@@ -8,9 +8,9 @@ public class JobConfig
     public int MaxTaskWorkerCount { get; set; } = 4;
 
     /// <summary>
-    /// File destination path.
+    /// Download filename template.
     /// </summary>
-    public string? DestinationPath { get; set; }
+    public string? DownloadFilenameTemplate { get; set; }
 
     /// <summary>
     /// Whether to download data.
@@ -18,9 +18,9 @@ public class JobConfig
     public bool DownloadData { get; set; } = true;
 
     /// <summary>
-    /// Metadata path.
+    /// Metadata filename template.
     /// </summary>
-    public string? MetadataPath { get; set; }
+    public string? MetadataFilenameTemplate { get; set; }
 
     /// <summary>
     /// Whether to save metadata.

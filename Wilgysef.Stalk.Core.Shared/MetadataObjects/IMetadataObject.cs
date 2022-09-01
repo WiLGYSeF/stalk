@@ -6,7 +6,7 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
     {
         char KeySeparator { get; set; }
 
-        IReadOnlyDictionary<string, object> Dictionary { get; }
+        IDictionary<string, object> Dictionary { get; }
 
         bool HasValues { get; }
 
