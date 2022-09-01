@@ -1,4 +1,5 @@
-﻿using Wilgysef.Stalk.Core.FileServices;
+﻿using Wilgysef.Stalk.Core.FilenameSlugs;
+using Wilgysef.Stalk.Core.FileServices;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
@@ -12,13 +13,19 @@ internal class DefaultDownloader : IDefaultDownloader
 {
     private readonly IFileService _fileService;
     private readonly IStringFormatter _stringFormatter;
+    private readonly IFilenameSlugSelector _filenameSlugSelector;
+    private readonly HttpClient _httpClient;
 
     public DefaultDownloader(
         IFileService fileService,
-        IStringFormatter stringFormatter)
+        IStringFormatter stringFormatter,
+        IFilenameSlugSelector filenameSlugSelector,
+        HttpClient httpClient)
     {
         _fileService = fileService;
         _stringFormatter = stringFormatter;
+        _filenameSlugSelector = filenameSlugSelector;
+        _httpClient = httpClient;
     }
 
     public bool CanDownload(Uri uri)
@@ -43,9 +50,12 @@ internal class DefaultDownloader : IDefaultDownloader
         metadata.TryAddValue(metadataObjectConsts.OriginUri, uri);
         metadata.TryAddValue(metadataObjectConsts.RetrievedKey, DateTime.Now);
 
-        var filename = _stringFormatter.Format(filenameTemplate, metadata.Dictionary);
+        var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
+        var filename = filenameSlug.SlugifyPath(
+            _stringFormatter.Format(filenameTemplate, metadata.Dictionary));
 
         // TODO: download file
+        var a = await _httpClient.GetAsync("https://example.com", cancellationToken);
 
         var metadataFilename = SaveMetadata(metadataFilenameTemplate, metadata.Dictionary);
 
@@ -67,7 +77,9 @@ internal class DefaultDownloader : IDefaultDownloader
             return null;
         }
 
-        var metadataFilename = _stringFormatter.Format(metadataFilenameTemplate, metadata);
+        var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
+        var metadataFilename = filenameSlug.SlugifyPath(
+            _stringFormatter.Format(metadataFilenameTemplate, metadata));
 
         try
         {
