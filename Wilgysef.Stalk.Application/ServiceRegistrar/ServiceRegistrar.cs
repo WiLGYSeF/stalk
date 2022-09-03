@@ -6,7 +6,6 @@ using AutoMapper.Contrib.Autofac.DependencyInjection;
 using IdGen;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
 using Polly;
 using Polly.Extensions.Http;
 using System.Reflection;
@@ -49,15 +48,13 @@ public class ServiceRegistrar
     /// Register application dependencies.
     /// </summary>
     /// <param name="builder">Container builder.</param>
-    public void RegisterApplication(ContainerBuilder builder, IServiceCollection? services = null)
+    public void RegisterApplication(ContainerBuilder builder, IServiceCollection services)
     {
         var assemblies = GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter)
-            .ToArray();
+            .ToList().ToArray();
 
-        services ??= new ServiceCollection();
         services.AddHttpClient(Constants.HttpClientExtractorDownloaderName)
             .AddExtractorDownloaderClientPolicy();
-        builder.Populate(services);
 
         builder.Register(c => c.Resolve<IHttpClientFactory>().CreateClient())
             .As<HttpClient>();
@@ -106,13 +103,6 @@ public class ServiceRegistrar
         builder.RegisterType<Startup>()
             .AsSelf()
             .SingleInstance();
-    }
-
-    private IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
-    {
-        return HttpPolicyExtensions
-            .HandleTransientHttpError()
-            .WaitAndRetryAsync(6, retryAttempt => TimeSpan.FromSeconds(5));
     }
 
     private IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle> RegisterAssemblyTypes(

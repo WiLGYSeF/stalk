@@ -2,7 +2,6 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using Wilgysef.Stalk.Core.Downloaders;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
@@ -61,6 +60,9 @@ public class DefaultDownloaderTest : BaseTest
             result.ItemData.ShouldBe(itemData);
             result.MetadataPath.ShouldBe(metadataFilename);
         }
+
+        _requestLog.RequestEntries.Count.ShouldBe(1);
+        _requestLog.RequestEntries.Single().Request.RequestUri.ShouldBe(uri);
 
         _fileService.Files.Keys.Count().ShouldBe(2);
         (_fileService.Files[filename] as MemoryStream)!.ToArray().ShouldBe(TestDownloadData);

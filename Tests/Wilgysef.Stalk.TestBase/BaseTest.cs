@@ -126,7 +126,7 @@ public class BaseTest
     private IServiceProvider GetServiceProvider(ContainerBuilder? builder = null)
     {
         return new AutofacServiceProviderFactory()
-            .CreateServiceProvider(builder ?? CreateContainerBuilder());
+            .CreateServiceProvider(builder ?? CreateContainerBuilder(new ServiceCollection()));
     }
 
     private DbContextOptionsBuilder<StalkDbContext> GetDbContextOptionsBuilder()
@@ -135,14 +135,9 @@ public class BaseTest
             .UseInMemoryDatabase(DatabaseName);
     }
 
-    private ContainerBuilder CreateContainerBuilder(IServiceCollection? services = null)
+    private ContainerBuilder CreateContainerBuilder(IServiceCollection services)
     {
         var builder = new ContainerBuilder();
-
-        if (services != null)
-        {
-            builder.Populate(services);
-        }
 
         var serviceRegistrar = new ServiceRegistrar(GetDbContextOptionsBuilder().Options)
         {
