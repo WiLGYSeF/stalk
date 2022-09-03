@@ -157,7 +157,7 @@ public class MetadataObjectTest
     }
 
     [Fact]
-    public void InitializeValues()
+    public void Initialize_Values()
     {
         var dict = new Dictionary<string, object>
         {
@@ -166,7 +166,15 @@ public class MetadataObjectTest
                 "aaa",
                 new Dictionary<string, object>
                 {
-                    { "asdf", 2 },
+                    { "asdf.test", 2 },
+                    { "aaa", 4 },
+                    {
+                        "nest",
+                        new Dictionary<string, object>
+                        {
+                            { "value", 5 },
+                        }
+                    }
                 }
             },
             { "test.key", 3 },
@@ -174,7 +182,43 @@ public class MetadataObjectTest
         var metadata = new MetadataObject(dict, '.');
 
         metadata.GetValue("abc").ShouldBe(1);
-        metadata.GetValue("aaa.asdf").ShouldBe(2);
+        metadata.GetValue("aaa.asdf.test").ShouldBe(2);
+        metadata.GetValue("aaa.aaa").ShouldBe(4);
+        metadata.GetValue("aaa.nest.value").ShouldBe(5);
+        metadata.GetValue("test.key").ShouldBe(3);
+    }
+
+    [Fact]
+    public void Initialize_Values_ObjectDictionary()
+    {
+        var dict = new Dictionary<string, object>
+        {
+            { "abc", 1 },
+            {
+                "aaa",
+                new Dictionary<object, object>
+                {
+                    { "asdf.test", 2 },
+                    { "aaa", 4 },
+                    { 123, 99 },
+                    {
+                        "nest",
+                        new Dictionary<object, object>
+                        {
+                            { "value", 5 },
+                        }
+                    }
+                }
+            },
+            { "test.key", 3 },
+        };
+        var metadata = new MetadataObject(dict, '.');
+
+        metadata.GetValue("abc").ShouldBe(1);
+        metadata.GetValue("aaa.asdf.test").ShouldBe(2);
+        metadata.GetValue("aaa.aaa").ShouldBe(4);
+        metadata.GetValue("aaa.123").ShouldBe(99);
+        metadata.GetValue("aaa.nest.value").ShouldBe(5);
         metadata.GetValue("test.key").ShouldBe(3);
     }
 }

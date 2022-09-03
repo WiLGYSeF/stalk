@@ -3,13 +3,19 @@ using Autofac.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
+using Wilgysef.Stalk.Core.FileServices;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.EntityFrameworkCore;
+using Wilgysef.Stalk.TestBase.Mocks;
 
 namespace Wilgysef.Stalk.TestBase;
 
 public class BaseTest
 {
+    public bool RegisterExtractors { get; set; } = false;
+
+    public bool RegisterDownloaders { get; set; } = false;
+
     private IServiceProvider? _serviceProvider;
     private IServiceProvider ServiceProvider
     {
@@ -19,8 +25,9 @@ public class BaseTest
 
     private readonly List<(Type Implementation, Type Service, ServiceRegistrationType RegistrationType)> _replaceServices = new();
     private readonly List<(object Implementation, Type Service)> _replaceServiceInstances = new();
+    private readonly List<(Func<IComponentContext, object>, Type Service)> _replaceServiceDelegates = new();
 
-    private string _databaseName = Guid.NewGuid().ToString();
+    private readonly string _databaseName = Guid.NewGuid().ToString();
     private string DatabaseName => _databaseName;
 
     #region Service Registration
@@ -110,10 +117,16 @@ public class BaseTest
         _serviceProvider = null;
     }
 
+    public void ReplaceServiceDelegate<T>(Func<IComponentContext, T> @delegate) where T : class
+    {
+        _replaceServiceDelegates.Add((@delegate, typeof(T)));
+        _serviceProvider = null;
+    }
+
     private IServiceProvider GetServiceProvider(ContainerBuilder? builder = null)
     {
         return new AutofacServiceProviderFactory()
-            .CreateServiceProvider(builder ?? CreateContainerBuilder());
+            .CreateServiceProvider(builder ?? CreateContainerBuilder(new ServiceCollection()));
     }
 
     private DbContextOptionsBuilder<StalkDbContext> GetDbContextOptionsBuilder()
@@ -122,21 +135,16 @@ public class BaseTest
             .UseInMemoryDatabase(DatabaseName);
     }
 
-    private ContainerBuilder CreateContainerBuilder(IServiceCollection? services = null)
+    private ContainerBuilder CreateContainerBuilder(IServiceCollection services)
     {
         var builder = new ContainerBuilder();
 
-        if (services != null)
-        {
-            builder.Populate(services);
-        }
-
         var serviceRegistrar = new ServiceRegistrar(GetDbContextOptionsBuilder().Options)
         {
-            RegisterExtractors = false,
-            RegisterDownloaders = false,
+            RegisterExtractors = RegisterExtractors,
+            RegisterDownloaders = RegisterDownloaders,
         };
-        serviceRegistrar.RegisterApplication(builder);
+        serviceRegistrar.RegisterApplication(builder, services);
 
         foreach (var (implementation, service, type) in _replaceServices)
         {
@@ -161,6 +169,11 @@ public class BaseTest
                 .SingleInstance();
         }
 
+        foreach (var (@delegate, service) in _replaceServiceDelegates)
+        {
+            builder.Register(@delegate).As(service);
+        }
+
         return builder;
     }
 
@@ -169,6 +182,31 @@ public class BaseTest
         Transient,
         Scoped,
         Singleton,
+    }
+
+    #endregion
+
+    #region Mocks
+
+    public HttpRequestMessageLog ReplaceHttpClient(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> callback)
+    {
+        var requestLog = new HttpRequestMessageLog();
+        ReplaceServiceDelegate(c => new HttpClient(new MockHttpMessageHandler(callback, requestLog)));
+        return requestLog;
+    }
+
+    public HttpRequestMessageLog ReplaceHttpClient(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> callback)
+    {
+        var requestLog = new HttpRequestMessageLog();
+        ReplaceServiceDelegate(c => new HttpClient(new MockHttpMessageHandler(callback, requestLog)));
+        return requestLog;
+    }
+
+    public MockFileService ReplaceFileService()
+    {
+        var fileService = new MockFileService();
+        ReplaceServiceInstance<IFileService>(fileService);
+        return fileService;
     }
 
     #endregion
