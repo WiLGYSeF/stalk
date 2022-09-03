@@ -1,7 +1,5 @@
 ﻿using Wilgysef.Stalk.Core.JobTaskWorkerServices;
-using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
-using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Core.JobWorkers;
@@ -10,7 +8,20 @@ public class JobWorker : IJobWorker
 {
     public Job? Job { get; private set; } = null!;
 
-    public int WorkerLimit { get; set; } = 4;
+    private int _workerLimit = 4;
+
+    public int WorkerLimit
+    {
+        get => _workerLimit;
+        set
+        {
+            if (value < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), "Worker limit must be at least 1.");
+            }
+            _workerLimit = value;
+        }
+    }
 
     public int TaskWaitTimeoutMilliseconds { get; set; } = 10 * 1000;
 
@@ -54,11 +65,17 @@ public class JobWorker : IJobWorker
 
         try
         {
-            await ReloadJobAsync();
-
-            while (!cancellationToken.IsCancellationRequested && Job.HasUnfinishedTasks)
+            while (Job.HasUnfinishedTasks)
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 await CreateJobTaskWorkers(cancellationToken);
+                if (_tasks.Count == 0)
+                {
+                    continue;
+                }
+
+                cancellationToken.ThrowIfCancellationRequested();
 
                 var taskArray = _tasks.ToArray();
                 var taskCompletedIndex = Task.WaitAny(taskArray, TaskWaitTimeoutMilliseconds, cancellationToken);
@@ -67,15 +84,19 @@ public class JobWorker : IJobWorker
                 {
                     if (taskArray.Any(t => t.Exception != null))
                     {
-
+                        // TODO: do something?
                     }
 
                     RemoveCompletedTasks(taskArray);
                 }
-
-                await ReloadJobAsync();
             }
+
+            // TODO: handle job with all paused tasks
+
+            await ReloadJobAsync();
+            Job.Done();
         }
+        catch (OperationCanceledException) { }
         catch (Exception exc)
         {
             throw;
@@ -85,21 +106,8 @@ public class JobWorker : IJobWorker
             using var scope = _lifetimeScope.BeginLifetimeScope();
             var jobManager = scope.GetRequiredService<IJobManager>();
 
-            await ReloadJobAsync(scope);
-
-            // TODO: fix state
-            if (!Job.HasUnfinishedTasks)
-            {
-                await jobManager.SetJobDoneAsync(Job, CancellationToken.None);
-            }
-            else
-            {
-                Job.ChangeState(JobState.Inactive);
-                await jobManager.UpdateJobAsync(Job, CancellationToken.None);
-            }
-
-            var jobWorkerCollectionService = scope.GetRequiredService<IJobWorkerCollectionService>();
-            jobWorkerCollectionService.RemoveJobWorker(this);
+            Job.Deactivate();
+            await jobManager.UpdateJobAsync(Job, CancellationToken.None);
         }
     }
 
@@ -117,7 +125,10 @@ public class JobWorker : IJobWorker
             return;
         }
 
+        await ReloadJobAsync();
+
         var jobTasks = Job!.GetQueuedTasksByPriority();
+
         if (jobTasks.Count == 0)
         {
             return;
@@ -133,7 +144,7 @@ public class JobWorker : IJobWorker
             cancellationToken.ThrowIfCancellationRequested();
 
             var jobTask = jobTasks[jobTaskIndex++];
-            _tasks.Add(await jobTaskWorkerService.StartJobTaskWorkerAsync(Job, jobTask, cancellationToken));
+            _tasks.Add(await jobTaskWorkerService.StartJobTaskWorkerAsync(jobTask, cancellationToken));
         }
     }
 

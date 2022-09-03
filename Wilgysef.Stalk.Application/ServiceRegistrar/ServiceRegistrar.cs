@@ -1,12 +1,17 @@
 ﻿using Autofac;
 using Autofac.Builder;
+using Autofac.Extensions.DependencyInjection;
 using Autofac.Features.Scanning;
 using AutoMapper.Contrib.Autofac.DependencyInjection;
 using IdGen;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Polly;
+using Polly.Extensions.Http;
 using System.Reflection;
+using Wilgysef.Stalk.Application.HttpClientPolicies;
 using Wilgysef.Stalk.Core;
+using Wilgysef.Stalk.Core.Shared;
 using Wilgysef.Stalk.Core.Shared.Cqrs;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
@@ -43,10 +48,16 @@ public class ServiceRegistrar
     /// Register application dependencies.
     /// </summary>
     /// <param name="builder">Container builder.</param>
-    public void RegisterApplication(ContainerBuilder builder, IServiceCollection? services = null)
+    public void RegisterApplication(ContainerBuilder builder, IServiceCollection services)
     {
         var assemblies = GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter)
-            .ToArray();
+            .ToList().ToArray();
+
+        services.AddHttpClient(Constants.HttpClientExtractorDownloaderName)
+            .AddExtractorDownloaderClientPolicy();
+
+        builder.Register(c => c.Resolve<IHttpClientFactory>().CreateClient())
+            .As<HttpClient>();
 
         builder.RegisterAutoMapper(true, assemblies);
 

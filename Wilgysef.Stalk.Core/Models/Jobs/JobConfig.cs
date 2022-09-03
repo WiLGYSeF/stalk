@@ -8,9 +8,9 @@ public class JobConfig
     public int MaxTaskWorkerCount { get; set; } = 4;
 
     /// <summary>
-    /// File destination path.
+    /// Download filename template.
     /// </summary>
-    public string? DestinationPath { get; set; }
+    public string? DownloadFilenameTemplate { get; set; }
 
     /// <summary>
     /// Whether to download data.
@@ -18,9 +18,9 @@ public class JobConfig
     public bool DownloadData { get; set; } = true;
 
     /// <summary>
-    /// Metadata path.
+    /// Metadata filename template.
     /// </summary>
-    public string? MetadataPath { get; set; }
+    public string? MetadataFilenameTemplate { get; set; }
 
     /// <summary>
     /// Whether to save metadata.
@@ -48,12 +48,7 @@ public class JobConfig
     public int LogLevel { get; set; }
 
     /// <summary>
-    /// Whether each item should be placed in its own directory.
+    /// Maximum task failures before a job is considered failed.
     /// </summary>
-    public bool ItemDirectories { get; set; }
-
-    /// <summary>
-    /// Maximum task failures before a job iss considered failed.
-    /// </summary>
-    public int MaxFailures { get; set; } = 10;
+    public int? MaxFailures { get; set; }
 }

@@ -11,7 +11,7 @@ namespace Wilgysef.Stalk.Core.Tests.JobStateManagerTests;
 public class PauseJobTaskAsyncTest : BaseTest
 {
     private readonly IJobManager _jobManager;
-    private readonly IJobStateManager _jobStateManager;
+    private readonly IJobTaskStateManager _jobTaskStateManager;
 
     private readonly ManualResetEventSlim _manualResetEventSlimOuter = new();
     private readonly ManualResetEventSlim _manualResetEventSlimInner = new();
@@ -29,7 +29,7 @@ public class PauseJobTaskAsyncTest : BaseTest
         ReplaceServiceInstance<IJobTaskWorkerService, IJobTaskWorkerService>(jobTaskWorkerService.Object);
 
         _jobManager = GetRequiredService<IJobManager>();
-        _jobStateManager = GetRequiredService<IJobStateManager>();
+        _jobTaskStateManager = GetRequiredService<IJobTaskStateManager>();
     }
 
     [Theory]
@@ -50,7 +50,7 @@ public class PauseJobTaskAsyncTest : BaseTest
 
         await _jobManager.CreateJobAsync(job);
 
-        var task = Task.Run(async () => await _jobStateManager.PauseJobTaskAsync(job, jobTask));
+        var task = Task.Run(async () => await _jobTaskStateManager.PauseJobTaskAsync(jobTask));
 
         // timeout
         var setTask = Task.Run(async () =>

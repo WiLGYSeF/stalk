@@ -1,5 +1,4 @@
 ﻿using Ardalis.Specification;
-using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;
@@ -21,6 +20,15 @@ public interface IJobManager : ITransientDependency
     /// <param name="cancellationToken"></param>
     /// <returns>Job.</returns>
     Task<Job> GetJobAsync(long id, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets a job by its Id.
+    /// </summary>
+    /// <param name="id">Job Id.</param>
+    /// <param name="readOnly">Indicates if the entity is intended to be read-only.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Job.</returns>
+    Task<Job> GetJobAsync(long id, bool readOnly, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets a job by a job task Id.
@@ -75,23 +83,6 @@ public interface IJobManager : ITransientDependency
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     Task SetJobActiveAsync(Job job, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Sets job task as active.
-    /// </summary>
-    /// <param name="job">Job.</param>
-    /// <param name="jobTask">Job task.</param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    Task SetJobTaskActiveAsync(Job job, JobTask jobTask, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Sets job as done.
-    /// </summary>
-    /// <param name="job">Job.</param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    Task SetJobDoneAsync(Job job, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Sets all active and transitioning jobs and tasks to their inactive and transitioned states.

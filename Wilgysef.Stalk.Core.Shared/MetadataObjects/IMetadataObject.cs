@@ -1,8 +1,14 @@
-﻿namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
+﻿using System.Collections.Generic;
+
+namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
 {
     public interface IMetadataObject
     {
         char KeySeparator { get; set; }
+
+        IDictionary<string, object> Dictionary { get; }
+
+        bool HasValues { get; }
 
         object this[string key] { get; set; }
 

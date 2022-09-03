@@ -1,6 +1,5 @@
 ﻿using Ardalis.Specification;
 using Wilgysef.Stalk.Core.DomainEvents.Events;
-using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.Core.Specifications;
@@ -31,8 +30,13 @@ public class JobManager : IJobManager
 
     public async Task<Job> GetJobAsync(long id, CancellationToken cancellationToken = default)
     {
+        return await GetJobAsync(id, false, cancellationToken);
+    }
+
+    public async Task<Job> GetJobAsync(long id, bool readOnly, CancellationToken cancellationToken = default)
+    {
         var entity = await _unitOfWork.JobRepository.FirstOrDefaultAsync(
-            new JobSingleSpecification(jobId: id),
+            new JobSingleSpecification(jobId: id, readOnly: readOnly),
             cancellationToken);
         if (entity == null)
         {
@@ -74,9 +78,10 @@ public class JobManager : IJobManager
 
     public async Task<Job> UpdateJobAsync(Job job, CancellationToken cancellationToken = default)
     {
-        var entity = _unitOfWork.JobRepository.Update(job);
+        // TODO: change this?
+        _unitOfWork.JobRepository.Update(job);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return entity;
+        return job;
     }
 
     public async Task DeleteJobAsync(Job job, CancellationToken cancellationToken = default)
@@ -99,31 +104,7 @@ public class JobManager : IJobManager
 
         job.ChangeState(JobState.Active);
 
-        _unitOfWork.JobRepository.Update(job);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task SetJobTaskActiveAsync(Job job, JobTask jobTask, CancellationToken cancellationToken = default)
-    {
-        if (jobTask.IsActive)
-        {
-            return;
-        }
-
-        jobTask.ChangeState(JobTaskState.Active);
-
-        _unitOfWork.JobRepository.Update(job);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task SetJobDoneAsync(Job job, CancellationToken cancellationToken = default)
-    {
-        job.ChangeState(!job.HasUnfinishedTasks
-            ? JobState.Completed
-            : JobState.Failed);
-
-        _unitOfWork.JobRepository.Update(job);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await UpdateJobAsync(job, cancellationToken);
     }
 
     public async Task DeactivateJobsAsync(CancellationToken cancellationToken = default)
@@ -142,7 +123,6 @@ public class JobManager : IJobManager
             }
         }
 
-        _unitOfWork.JobRepository.UpdateRange(jobs);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Text.Json;
 using Wilgysef.Stalk.Core.MetadataObjects;
+using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
@@ -80,6 +81,23 @@ public class JobTask : Entity
     /// Job task result.
     /// </summary>
     public virtual JobTaskResult Result { get; protected set; } = null!;
+
+    /// <summary>
+    /// Job foreign key Id.
+    /// </summary>
+    [ForeignKey(nameof(Job))]
+    public virtual long JobId { get; protected set; }
+
+    /// <summary>
+    /// Job the job task belongs to.
+    /// </summary>
+    public virtual Job Job { get; protected set; } = null!;
+
+    /// <summary>
+    /// Parent task foreign key Id.
+    /// </summary>
+    [ForeignKey(nameof(ParentTask))]
+    public virtual long ParentTaskId { get; protected set; }
 
     /// <summary>
     /// Parent task.
@@ -163,6 +181,7 @@ public class JobTask : Entity
     /// <summary>
     /// Creates a job task.
     /// </summary>
+    /// <param name="job">Job the job task belongs to.</param>
     /// <param name="id">Job task Id.</param>
     /// <param name="uri">Job task URI.</param>
     /// <param name="name">Job task name.</param>
@@ -171,6 +190,8 @@ public class JobTask : Entity
     /// <returns>Job task.</returns>
     public static JobTask Create(
         long id,
+        Job? job,
+        long jobId,
         string uri,
         string? name = null,
         int priority = 0,
@@ -179,6 +200,8 @@ public class JobTask : Entity
         return new JobTask
         {
             Id = id,
+            Job = job!,
+            JobId = jobId,
             Name = name,
             State = JobTaskState.Inactive,
             Priority = priority,
@@ -189,6 +212,8 @@ public class JobTask : Entity
 
     internal static JobTask Create(
         long id,
+        Job? job,
+        long jobId,
         string? name,
         JobTaskState state,
         int priority,
@@ -201,6 +226,7 @@ public class JobTask : Entity
         DateTime? finished,
         DateTime? delayedUntil,
         JobTaskResult? result,
+        long parentTaskId,
         JobTask? parentTask)
     {
         if (!started.HasValue && state != JobTaskState.Inactive)
@@ -211,6 +237,8 @@ public class JobTask : Entity
         var task = new JobTask
         {
             Id = id,
+            Job = job!,
+            JobId = jobId,
             Name = name,
             State = state,
             Priority = priority,
@@ -221,6 +249,7 @@ public class JobTask : Entity
             Started = started,
             DelayedUntil = delayedUntil,
             Result = result ?? JobTaskResult.Create(),
+            ParentTaskId = parentTaskId,
             ParentTask = parentTask,
         };
 
@@ -279,7 +308,17 @@ public class JobTask : Entity
 
     public IMetadataObject GetMetadata()
     {
-        var metadata = JsonSerializer.Deserialize<IDictionary<string, object>>(MetadataJson!);
+        if (MetadataJson == null)
+        {
+            return new MetadataObject(MetadataKeySeparator);
+        }
+
+        var metadata = JsonSerializer.Deserialize<IDictionary<string, object>>(
+            MetadataJson!,
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            });
         if (metadata == null)
         {
             throw new InvalidOperationException("Metadata must be a dictionary.");
@@ -458,6 +497,5 @@ public class JobTask : Entity
             errorCode: errorCode,
             errorMessage: errorMessage,
             errorDetail: errorDetail);
-        Finish();
     }
 }

@@ -56,7 +56,7 @@ public class BackgroundJobDispatcherTest : BaseTest
 
         await _backgroundJobDispatcher.ExecuteJobsAsync();
 
-        await WithLifetimeScopeAsync(async scope =>
+        using (var scope = BeginLifetimeScope())
         {
             var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
             var job = await backgroundJobManager.FindJobAsync(1);
@@ -65,7 +65,7 @@ public class BackgroundJobDispatcherTest : BaseTest
 
             job.NextRun.ShouldNotBeNull();
             (DateTime.Now.AddSeconds(123) - job.NextRun.Value).Duration().TotalSeconds.ShouldBeInRange(0, 3);
-        });
+        }
     }
 
     [Fact]
@@ -81,13 +81,13 @@ public class BackgroundJobDispatcherTest : BaseTest
 
         await _backgroundJobDispatcher.ExecuteJobsAsync();
 
-        await WithLifetimeScopeAsync(async scope =>
+        using (var scope = BeginLifetimeScope())
         {
             var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
             var job = await backgroundJobManager.FindJobAsync(1);
             job!.Attempts.ShouldBe(0);
             job.Abandoned.ShouldBeTrue();
-        });
+        };
     }
 
     [Fact]
@@ -102,13 +102,13 @@ public class BackgroundJobDispatcherTest : BaseTest
 
         await _backgroundJobDispatcher.ExecuteJobsAsync();
 
-        await WithLifetimeScopeAsync(async scope =>
+        using (var scope = BeginLifetimeScope())
         {
             var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
             var job = await backgroundJobManager.FindJobAsync(1);
             job!.Attempts.ShouldBe(1);
             job.Abandoned.ShouldBeFalse();
-        });
+        };
     }
 
     [Fact]
@@ -123,23 +123,23 @@ public class BackgroundJobDispatcherTest : BaseTest
 
         await _backgroundJobDispatcher.ExecuteJobsAsync();
 
-        await WithLifetimeScopeAsync(async scope =>
+        using (var scope = BeginLifetimeScope())
         {
             var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
             var job = await backgroundJobManager.FindJobAsync(1);
             job!.ChangeNextRun(null);
             await backgroundJobManager.UpdateJobAsync(job);
-        });
+        }
 
         await _backgroundJobDispatcher.ExecuteJobsAsync();
 
-        await WithLifetimeScopeAsync(async scope =>
+        using (var scope = BeginLifetimeScope())
         {
             var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
             var job = await backgroundJobManager.FindJobAsync(1);
             job!.Attempts.ShouldBe(2);
             job.Abandoned.ShouldBeFalse();
-        });
+        }
     }
 
     [Fact]
@@ -154,13 +154,13 @@ public class BackgroundJobDispatcherTest : BaseTest
 
         await _backgroundJobDispatcher.ExecuteJobsAsync();
 
-        await WithLifetimeScopeAsync(async scope =>
+        using (var scope = BeginLifetimeScope())
         {
             var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
             var job = await backgroundJobManager.FindJobAsync(1);
             job!.Attempts.ShouldBe(0);
             job.Abandoned.ShouldBeTrue();
-        });
+        }
     }
 
     private class TestJobHandler : BackgroundJobHandler<TestJobArgs>

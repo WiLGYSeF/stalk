@@ -27,16 +27,10 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// TODO: remove debug
-var context = app.Services.GetRequiredService<IComponentContext>();
-var services = context.ComponentRegistry.Registrations
-    .Where(r => r.Services.Any(s => s.Description.StartsWith("Wilgysef")))
-    .ToList();
-
 using (var scope = app.Services.CreateScope())
 {
     var appStartup = scope.ServiceProvider.GetRequiredService<Startup>();
-    await appStartup.StartAsync();
+    await appStartup.StartAsync(app.Services.GetAutofacRoot());
 }
 
 app.Run();

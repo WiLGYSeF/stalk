@@ -11,6 +11,12 @@ namespace Wilgysef.Stalk.Core.Shared.ServiceLocators
         IServiceLifetimeScope BeginLifetimeScope();
 
         /// <summary>
+        /// Begins a lifetime scope for services from the root application scope.
+        /// </summary>
+        /// <returns>Lifetime scope.</returns>
+        IServiceLifetimeScope BeginLifetimeScopeFromRoot();
+
+        /// <summary>
         /// Gets service.
         /// </summary>
         /// <typeparam name="T">Service type.</typeparam>

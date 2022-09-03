@@ -4,11 +4,11 @@ public class JobConfigDto
 {
     public int? MaxTaskWorkerCount { get; set; }
 
-    public string? DestinationPath { get; set; }
+    public string? DownloadFilenameTemplate { get; set; }
 
     public bool? DownloadData { get; set; }
 
-    public string? MetadataPath { get; set; }
+    public string? MetadataFilenameTemplate { get; set; }
 
     public bool? SaveMetadata { get; set; }
 
@@ -19,8 +19,6 @@ public class JobConfigDto
     public string? LogPath { get; set; }
 
     public int? LogLevel { get; set; }
-
-    public bool? ItemDirectories { get; set; }
 
     public int? MaxFailures { get; set; }
 }

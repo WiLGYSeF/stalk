@@ -13,6 +13,24 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
         public string ItemData { get; }
 
+        public string MetadataPath { get; }
+
         public IMetadataObject Metadata { get; }
+
+        public DownloadResult(
+            string path,
+            Uri uri,
+            string itemId,
+            string itemData = null,
+            string metadataPath = null,
+            IMetadataObject metadata = null)
+        {
+            Path = path;
+            Uri = uri;
+            ItemId = itemId;
+            ItemData = itemData;
+            MetadataPath = metadataPath;
+            Metadata = metadata;
+        }
     }
 }

@@ -295,7 +295,12 @@ public class Job : Entity
             return new JobConfig();
         }
 
-        var config = JsonSerializer.Deserialize<JobConfig>(ConfigJson);
+        var config = JsonSerializer.Deserialize<JobConfig>(
+            ConfigJson,
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            });
         if (config == null)
         {
             throw new InvalidOperationException($"{nameof(ConfigJson)} is not valid config.");
@@ -443,5 +448,20 @@ public class Job : Entity
             default:
                 break;
         }
+    }
+
+    internal void Done()
+    {
+        if (HasUnfinishedTasks)
+        {
+            throw new InvalidOperationException("Job still has unfinished tasks.");
+        }
+
+        var failedTaskCount = Tasks.Count(t => t.State == JobTaskState.Failed);
+        var config = GetConfig();
+
+        ChangeState((failedTaskCount > config.MaxFailures || failedTaskCount == Tasks.Count)
+            ? JobState.Failed
+            : JobState.Completed);
     }
 }

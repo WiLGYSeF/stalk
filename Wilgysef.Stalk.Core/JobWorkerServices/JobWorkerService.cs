@@ -1,5 +1,4 @@
 ﻿using Wilgysef.Stalk.Core.JobWorkerFactories;
-using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 
@@ -54,6 +53,11 @@ public class JobWorkerService : IJobWorkerService
                 await worker.WorkAsync(cancellationTokenSource.Token);
             }
             catch (OperationCanceledException) { }
+            finally
+            {
+                // this is singleton
+                _jobWorkerCollectionService.RemoveJobWorker(worker);
+            }
         }
     }
 

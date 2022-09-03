@@ -1,152 +1,117 @@
 ﻿using System.Text;
+using System.Text.RegularExpressions;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.StringFormatters;
-using Wilgysef.Stalk.Core.StringFormatters.FormatTokens;
 
 namespace Wilgysef.Stalk.Core.StringFormatters;
 
-public class StringFormatter : IStringFormatter
+public class StringFormatter : IStringFormatter, ITransientDependency
 {
+    private static Regex _formatRegex = new(@"(?<=(?:^|[^$])(?:\$\$)*)(\${(?<format>(?:\\}|[^}])+)})", RegexOptions.Compiled);
+
+    private static Regex _formatInternalRegex = new(@"((?<char>^|[,|:])(?<value>(?:""(?<literal>(?:\\""|[^""])*)""|\\,|\\\||\\:|[^,|:])+))", RegexOptions.Compiled);
+
+    private const string _formatRegexFormatGroup = "format";
+
+    private const string _formatInternalRegexCharGroup = "char";
+    private const string _formatInternalRegexValueGroup = "value";
+    private const string _formatInternalRegexLiteralGroup = "literal";
+
+    private const char _formatInitChar = '$';
+    private const char _formatBeginChar = '{';
+    private const char _formatEndChar = '}';
+
+    private const char _formatAlignmentChar = ',';
+    private const char _formatFormatterChar = ':';
+    private const char _formatDefaultChar = '|';
+
     public string Format(string value, IDictionary<string, object> formatValues)
     {
-        var tokenizer = new FormatTokenizer();
-        using var tokenEnumerator = tokenizer.GetTokens(value).GetEnumerator();
-
         var builder = new StringBuilder();
-        FormatToken? lastToken = null;
-        var inFormat = false;
-        
-        while (tokenEnumerator.MoveNext())
+        MatchCollection matches = _formatRegex.Matches(value);
+
+        var lastIndex = 0;
+        foreach (Match match in matches.Cast<Match>())
         {
-            var token = tokenEnumerator.Current;
+            builder.Append(value[lastIndex..match.Index].Replace("$$", "$"));
+            lastIndex = match.Index + match.Length;
 
-            switch (token.Type)
-            {
-                case FormatTokenType.Constant:
-                    if (inFormat)
-                    {
-                        builder.Append(FormatFormatter(tokenizer, token.Value, formatValues));
-                    }
-                    else
-                    {
-                        builder.Append(token.Value);
-                    }
-                    break;
-                case FormatTokenType.FormatBegin:
-                    if (lastToken?.Type == FormatTokenType.FormatBegin)
-                    {
-                        inFormat = !inFormat;
-                        if (!inFormat)
-                        {
-                            builder.Append('{');
-                        }
-                    }
-                    else
-                    {
-                        inFormat = true;
-                    }
-                    break;
-                case FormatTokenType.FormatEnd:
-                    if (!inFormat)
-                    {
-                        // TODO: do not write double close braces
-                        builder.Append('}');
-                    }
-                    inFormat = false;
-                    break;
-                default:
-                    throw new NotImplementedException();
-            }
-
-            lastToken = token;
+            builder.Append(FormatInternal(match, formatValues));
         }
-
-        if (lastToken?.Type == FormatTokenType.FormatBegin)
-        {
-            builder.Append('{');
-        }
+        builder.Append(value[lastIndex..].Replace("$$", "$"));
 
         return builder.ToString();
     }
 
-    private string FormatFormatter(FormatTokenizer tokenizer, string value, IDictionary<string, object> formatValues)
+    private string FormatInternal(Match match, IDictionary<string, object> formatValues)
     {
-        var tokens = tokenizer.GetFormatTokens(value);
-        object? result = null;
-        var alignment = GetFormatTokenValue(tokens, FormatTokenType.FormatAlignment, out _);
-        var formatter = GetFormatTokenValue(tokens, FormatTokenType.FormatFormatter, out _);
-        var defaultValue = GetFormatDefaultTokenValue(tokens, formatValues, out _);
+        MatchCollection matches = _formatInternalRegex.Matches(match.Groups[_formatRegexFormatGroup].Value);
+        string? key = null;
+        string? formatter = null;
+        string? alignment = null;
+        object? defaultValue = null;
 
-        if (tokens.Count > 0 && tokens[0].Type == FormatTokenType.Constant)
+        foreach (Match m in matches.Cast<Match>())
         {
-            formatValues.TryGetValue(tokens[0].Value, out result);
-        }
-
-        string resultValue;
-        if (formatter != null)
-        {
-            throw new NotImplementedException();
-        }
-        else
-        {
-            resultValue = (result ?? "").ToString() ?? "";
-        }
-
-        if (result == null && defaultValue != null)
-        {
-            resultValue = defaultValue;
-        }
-
-        if (alignment != null)
-        {
-            if (int.TryParse(alignment, out var alignmentValue))
+            var charValue = m.Groups[_formatInternalRegexCharGroup].Value;
+            if (charValue.Length == 0)
             {
-                resultValue = AlignString(resultValue, alignmentValue);
-            }
-        }
-
-        return resultValue;
-    }
-
-    private string? GetFormatTokenValue(IList<FormatToken> tokens, FormatTokenType type, out int index)
-    {
-        string? result = null;
-        index = -1;
-
-        for (var i = 0; i < tokens.Count; i++)
-        {
-            if (tokens[i].Type != type)
-            {
+                key ??= m.Groups[_formatInternalRegexValueGroup].Value;
                 continue;
             }
 
-            index = i + 1;
-            if (i < tokens.Count - 1 && tokens[i + 1].Type == FormatTokenType.Constant)
+            switch (charValue[0])
             {
-                result = tokens[i + 1].Value;
+                case _formatAlignmentChar:
+                    alignment = m.Groups[_formatInternalRegexValueGroup].Value;
+                    break;
+                case _formatFormatterChar:
+                    formatter = m.Groups[_formatInternalRegexValueGroup].Value;
+                    break;
+                case _formatDefaultChar:
+                    if (defaultValue == null)
+                    {
+                        if (m.Groups[_formatInternalRegexLiteralGroup].Success)
+                        {
+                            defaultValue = m.Groups[_formatInternalRegexLiteralGroup].Value
+                                .Replace("\\\"", "\"");
+                        }
+                        else
+                        {
+                            formatValues.TryGetValue(m.Groups[_formatInternalRegexValueGroup].Value, out defaultValue);
+                        }
+                    }
+                    break;
+                default:
+                    throw new NotImplementedException();
             }
         }
 
-        return result;
+        if (!formatValues.TryGetValue(key ?? "", out var value))
+        {
+            value = defaultValue ?? "";
+        }
+
+        string valueStr = FormatObject(value, formatter);
+
+        if (alignment != null && int.TryParse(alignment, out var alignmentValue))
+        {
+            valueStr = AlignString(valueStr, alignmentValue);
+        }
+
+        return valueStr;
     }
 
-    private string? GetFormatDefaultTokenValue(IList<FormatToken> tokens, IDictionary<string, object> formatValues, out int index)
+    private string FormatObject(object value, string? format)
     {
-        var result = GetFormatTokenValue(tokens, FormatTokenType.FormatDefault, out index);
-        if (index == -1 || result == null)
+        if (format == null)
         {
-            return null;
+            return value.ToString() ?? "";
         }
 
-        if (result.StartsWith('"'))
-        {
-            result = result[1..];
-            return result[^1] == '"' ? result[..^1] : result;
-        }
-        if (!formatValues.TryGetValue(result, out var resultValue))
-        {
-            return null;
-        }
-        return resultValue.ToString();
+        // TODO: formatters
+
+        return value.ToString() ?? "";
     }
 
     private string AlignString(string value, int alignment)

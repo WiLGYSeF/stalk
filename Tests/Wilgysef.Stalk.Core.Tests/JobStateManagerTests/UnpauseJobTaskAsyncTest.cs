@@ -1,5 +1,6 @@
 ﻿using Shouldly;
 using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.TestBase;
@@ -9,12 +10,12 @@ namespace Wilgysef.Stalk.Core.Tests.JobStateManagerTests;
 public class UnpauseJobTaskAsyncTest : BaseTest
 {
     private readonly IJobManager _jobManager;
-    private readonly IJobStateManager _jobStateManager;
+    private readonly IJobTaskStateManager _jobTaskStateManager;
 
     public UnpauseJobTaskAsyncTest()
     {
         _jobManager = GetRequiredService<IJobManager>();
-        _jobStateManager = GetRequiredService<IJobStateManager>();
+        _jobTaskStateManager = GetRequiredService<IJobTaskStateManager>();
     }
 
     [Theory]
@@ -37,11 +38,12 @@ public class UnpauseJobTaskAsyncTest : BaseTest
 
         if (throwsException)
         {
-            await Should.ThrowAsync<JobTaskAlreadyDoneException>(_jobStateManager.UnpauseJobTaskAsync(job, jobTask));
+            await Should.ThrowAsync<JobTaskAlreadyDoneException>(
+                async () => await _jobTaskStateManager.UnpauseJobTaskAsync(jobTask));
             return;
         }
 
-        await _jobStateManager.UnpauseJobTaskAsync(job, jobTask);
+        await _jobTaskStateManager.UnpauseJobTaskAsync(jobTask);
         job = await _jobManager.GetJobAsync(job.Id);
         jobTask = job.Tasks.First();
 

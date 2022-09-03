@@ -1,5 +1,6 @@
 ﻿using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.Models;
@@ -10,6 +11,11 @@ public interface IUnitOfWork : IScopedDependency
     /// Job repository.
     /// </summary>
     IJobRepository JobRepository { get; }
+
+    /// <summary>
+    /// Job task repository.
+    /// </summary>
+    IJobTaskRepository JobTaskRepository { get; }
 
     /// <summary>
     /// Background job repository.

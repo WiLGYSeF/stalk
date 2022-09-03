@@ -1,17 +1,21 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System.Data.Common;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
+using Wilgysef.Stalk.Core.FileServices;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.EntityFrameworkCore;
+using Wilgysef.Stalk.TestBase.Mocks;
 
 namespace Wilgysef.Stalk.TestBase;
 
 public class BaseTest
 {
+    public bool RegisterExtractors { get; set; } = false;
+
+    public bool RegisterDownloaders { get; set; } = false;
+
     private IServiceProvider? _serviceProvider;
     private IServiceProvider ServiceProvider
     {
@@ -19,10 +23,12 @@ public class BaseTest
         set => _serviceProvider = value;
     }
 
-    private DbConnection? _connection;
-
     private readonly List<(Type Implementation, Type Service, ServiceRegistrationType RegistrationType)> _replaceServices = new();
     private readonly List<(object Implementation, Type Service)> _replaceServiceInstances = new();
+    private readonly List<(Func<IComponentContext, object>, Type Service)> _replaceServiceDelegates = new();
+
+    private readonly string _databaseName = Guid.NewGuid().ToString();
+    private string DatabaseName => _databaseName;
 
     #region Service Registration
 
@@ -111,47 +117,34 @@ public class BaseTest
         _serviceProvider = null;
     }
 
+    public void ReplaceServiceDelegate<T>(Func<IComponentContext, T> @delegate) where T : class
+    {
+        _replaceServiceDelegates.Add((@delegate, typeof(T)));
+        _serviceProvider = null;
+    }
+
     private IServiceProvider GetServiceProvider(ContainerBuilder? builder = null)
     {
         return new AutofacServiceProviderFactory()
-            .CreateServiceProvider(builder ?? CreateContainerBuilder());
+            .CreateServiceProvider(builder ?? CreateContainerBuilder(new ServiceCollection()));
     }
 
     private DbContextOptionsBuilder<StalkDbContext> GetDbContextOptionsBuilder()
     {
-        if (_connection == null)
-        {
-            _connection = new SqliteConnection("DataSource=:memory:");
-            _connection.Open();
-
-            // TODO: replace null?
-            using var context = new StalkDbContext(
-                new DbContextOptionsBuilder<StalkDbContext>()
-                    .UseSqlite(_connection)
-                    .Options,
-                null);
-            context.Database.EnsureCreated();
-        }
-
         return new DbContextOptionsBuilder<StalkDbContext>()
-            .UseSqlite(_connection);
+            .UseInMemoryDatabase(DatabaseName);
     }
 
-    private ContainerBuilder CreateContainerBuilder(IServiceCollection? services = null)
+    private ContainerBuilder CreateContainerBuilder(IServiceCollection services)
     {
         var builder = new ContainerBuilder();
 
-        if (services != null)
-        {
-            builder.Populate(services);
-        }
-
         var serviceRegistrar = new ServiceRegistrar(GetDbContextOptionsBuilder().Options)
         {
-            RegisterExtractors = false,
-            RegisterDownloaders = false,
+            RegisterExtractors = RegisterExtractors,
+            RegisterDownloaders = RegisterDownloaders,
         };
-        serviceRegistrar.RegisterApplication(builder);
+        serviceRegistrar.RegisterApplication(builder, services);
 
         foreach (var (implementation, service, type) in _replaceServices)
         {
@@ -176,6 +169,11 @@ public class BaseTest
                 .SingleInstance();
         }
 
+        foreach (var (@delegate, service) in _replaceServiceDelegates)
+        {
+            builder.Register(@delegate).As(service);
+        }
+
         return builder;
     }
 
@@ -184,6 +182,31 @@ public class BaseTest
         Transient,
         Scoped,
         Singleton,
+    }
+
+    #endregion
+
+    #region Mocks
+
+    public HttpRequestMessageLog ReplaceHttpClient(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> callback)
+    {
+        var requestLog = new HttpRequestMessageLog();
+        ReplaceServiceDelegate(c => new HttpClient(new MockHttpMessageHandler(callback, requestLog)));
+        return requestLog;
+    }
+
+    public HttpRequestMessageLog ReplaceHttpClient(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> callback)
+    {
+        var requestLog = new HttpRequestMessageLog();
+        ReplaceServiceDelegate(c => new HttpClient(new MockHttpMessageHandler(callback, requestLog)));
+        return requestLog;
+    }
+
+    public MockFileService ReplaceFileService()
+    {
+        var fileService = new MockFileService();
+        ReplaceServiceInstance<IFileService>(fileService);
+        return fileService;
     }
 
     #endregion
@@ -268,6 +291,11 @@ public class BaseTest
     /// <returns><see langword="true"/> if the condition was met, <see langword="false"/> if the timeout occurred.</returns>
     public static async Task<bool> WaitUntilAsync(Func<Task<bool>> condition, TimeSpan timeout, TimeSpan interval)
     {
+        if (interval == TimeSpan.Zero)
+        {
+            return await WaitUntilAsync(condition, timeout);
+        }
+
         var startTime = DateTime.Now;
 
         while (DateTime.Now - startTime < timeout)
@@ -287,26 +315,12 @@ public class BaseTest
     #region Scope
 
     /// <summary>
-    /// Creates a lifetime scope.
+    /// Begins a lifetime scope.
     /// </summary>
-    /// <param name="action">Action.</param>
-    public void WithLifetimeScope(Action<IServiceLifetimeScope> action)
+    public IServiceLifetimeScope BeginLifetimeScope()
     {
         var serviceLocator = GetRequiredService<IServiceLocator>();
-        using var scope = serviceLocator.BeginLifetimeScope();
-        action(scope);
-    }
-
-    /// <summary>
-    /// Creates a lifetime scope.
-    /// </summary>
-    /// <param name="action">Action.</param>
-    /// <returns></returns>
-    public async Task WithLifetimeScopeAsync(Func<IServiceLifetimeScope, Task> action)
-    {
-        var serviceLocator = GetRequiredService<IServiceLocator>();
-        using var scope = serviceLocator.BeginLifetimeScope();
-        await action(scope);
+        return serviceLocator.BeginLifetimeScope();
     }
 
     #endregion
