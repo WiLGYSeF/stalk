@@ -1,4 +1,6 @@
-﻿using Wilgysef.Stalk.Core.FilenameSlugs;
+﻿using System.Security.Cryptography;
+using System.Text;
+using Wilgysef.Stalk.Core.FilenameSlugs;
 using Wilgysef.Stalk.Core.FileServices;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
@@ -6,11 +8,15 @@ using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.StringFormatters;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
+using System;
+using System.IO;
 
 namespace Wilgysef.Stalk.Core.Downloaders;
 
 internal class DefaultDownloader : IDefaultDownloader
 {
+    private const int DownloadBufferSize = 4 * 1024;
+
     private readonly IFileService _fileService;
     private readonly IStringFormatter _stringFormatter;
     private readonly IFilenameSlugSelector _filenameSlugSelector;
@@ -44,25 +50,41 @@ internal class DefaultDownloader : IDefaultDownloader
     {
         var metadataObjectConsts = new MetadataObjectConsts(metadata.KeySeparator);
 
-        metadata.TryAddValue(metadataObjectConsts.FilenameTemplateKey, filenameTemplate);
+        metadata.TryAddValue(metadataObjectConsts.FileFilenameTemplateKey, filenameTemplate);
         metadata.TryAddValue(metadataObjectConsts.MetadataFilenameTemplateKey, metadataFilenameTemplate);
-        metadata.TryAddValue(metadataObjectConsts.OriginItemId, itemId);
-        metadata.TryAddValue(metadataObjectConsts.OriginUri, uri);
+        metadata.TryAddValue(metadataObjectConsts.OriginItemIdKey, itemId);
+        metadata.TryAddValue(metadataObjectConsts.OriginUriKey, uri.ToString());
         metadata.TryAddValue(metadataObjectConsts.RetrievedKey, DateTime.Now);
 
         var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
         var filename = filenameSlug.SlugifyPath(
             _stringFormatter.Format(filenameTemplate, metadata.Dictionary));
 
-        // TODO: download file
-        var a = await _httpClient.GetAsync("https://example.com", cancellationToken);
+        var response = await _httpClient.GetAsync(uri, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var fileStream = _fileService.Open(filename, FileMode.CreateNew);
+
+        var hashName = "SHA256";
+        var downloadFileResult = await SaveStreamAsync(
+            stream,
+            fileStream,
+            null,
+            HashAlgorithm.Create(hashName),
+            cancellationToken);
+
+        metadata.TryAddValue(metadataObjectConsts.FileSizeKey, downloadFileResult.FileSize);
+        if (downloadFileResult.Hash != null)
+        {
+            metadata.TryAddValue(metadataObjectConsts.FileHashKey, downloadFileResult.Hash);
+            metadata.TryAddValue(metadataObjectConsts.FileHashAlgorithmKey, hashName);
+        }
 
         var metadataFilename = SaveMetadata(metadataFilenameTemplate, metadata.Dictionary);
 
-        await Task.Delay(1);
-
         yield return new DownloadResult(
-            null,
+            filename,
             uri,
             itemId,
             itemData: itemData,
@@ -94,5 +116,47 @@ internal class DefaultDownloader : IDefaultDownloader
         catch (IOException) { }
 
         return metadataFilename;
+    }
+
+    private async Task<DownloadFileResult> SaveStreamAsync(
+        Stream stream,
+        Stream output,
+        byte[]? buffer = null,
+        HashAlgorithm? hashAlgorithm = null,
+        CancellationToken cancellationToken = default)
+    {
+        long fileSize = 0;
+        buffer ??= new byte[DownloadBufferSize];
+
+        while(true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var bytesRead = await stream.ReadAsync(buffer, cancellationToken);
+            fileSize += bytesRead;
+
+            cancellationToken.ThrowIfCancellationRequested();
+            await output.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
+
+            if (hashAlgorithm != null)
+            {
+                hashAlgorithm.TransformBlock(buffer, 0, bytesRead, null, 0);
+            }
+
+            if (bytesRead == 0)
+            {
+                break;
+            }
+        }
+
+        if (hashAlgorithm != null)
+        {
+            hashAlgorithm.TransformFinalBlock(buffer, 0, 0);
+        }
+
+        return new DownloadFileResult(
+            fileSize,
+            hashAlgorithm?.Hash != null
+                ? Convert.ToHexString(hashAlgorithm.Hash).ToLower()
+                : null);
     }
 }

@@ -7,8 +7,12 @@ using IdGen;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Polly;
+using Polly.Extensions.Http;
 using System.Reflection;
+using Wilgysef.Stalk.Application.HttpClientPolicies;
 using Wilgysef.Stalk.Core;
+using Wilgysef.Stalk.Core.Shared;
 using Wilgysef.Stalk.Core.Shared.Cqrs;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
@@ -51,7 +55,8 @@ public class ServiceRegistrar
             .ToArray();
 
         services ??= new ServiceCollection();
-        services.AddHttpClient();
+        services.AddHttpClient(Constants.HttpClientExtractorDownloaderName)
+            .AddExtractorDownloaderClientPolicy();
         builder.Populate(services);
 
         builder.Register(c => c.Resolve<IHttpClientFactory>().CreateClient())
@@ -101,6 +106,13 @@ public class ServiceRegistrar
         builder.RegisterType<Startup>()
             .AsSelf()
             .SingleInstance();
+    }
+
+    private IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
+    {
+        return HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .WaitAndRetryAsync(6, retryAttempt => TimeSpan.FromSeconds(5));
     }
 
     private IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle> RegisterAssemblyTypes(

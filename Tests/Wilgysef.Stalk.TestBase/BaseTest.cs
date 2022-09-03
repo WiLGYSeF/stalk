@@ -3,8 +3,10 @@ using Autofac.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
+using Wilgysef.Stalk.Core.FileServices;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.EntityFrameworkCore;
+using Wilgysef.Stalk.TestBase.Mocks;
 
 namespace Wilgysef.Stalk.TestBase;
 
@@ -185,6 +187,31 @@ public class BaseTest
         Transient,
         Scoped,
         Singleton,
+    }
+
+    #endregion
+
+    #region Mocks
+
+    public HttpRequestMessageLog ReplaceHttpClient(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> callback)
+    {
+        var requestLog = new HttpRequestMessageLog();
+        ReplaceServiceDelegate(c => new HttpClient(new MockHttpMessageHandler(callback, requestLog)));
+        return requestLog;
+    }
+
+    public HttpRequestMessageLog ReplaceHttpClient(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> callback)
+    {
+        var requestLog = new HttpRequestMessageLog();
+        ReplaceServiceDelegate(c => new HttpClient(new MockHttpMessageHandler(callback, requestLog)));
+        return requestLog;
+    }
+
+    public MockFileService ReplaceFileService()
+    {
+        var fileService = new MockFileService();
+        ReplaceServiceInstance<IFileService>(fileService);
+        return fileService;
     }
 
     #endregion

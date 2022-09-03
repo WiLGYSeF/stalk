@@ -11,18 +11,7 @@ public class MetadataObject : IMetadataObject
 
     public bool HasValues => _dictionary.Count > 0;
 
-    public MetadataObject(char keySeparator)
-    {
-        KeySeparator = keySeparator;
-    }
-
-    public MetadataObject(IDictionary<string, object> dictionary, char keySeparator) : this(keySeparator)
-    {
-        foreach (var pair in dictionary)
-        {
-            this[pair.Key] = pair.Value;
-        }
-    }
+    private readonly Dictionary<string, object> _dictionary = new();
 
     public object this[string key]
     {
@@ -30,7 +19,15 @@ public class MetadataObject : IMetadataObject
         set => SetValue(key, value, false);
     }
 
-    private readonly Dictionary<string, object> _dictionary = new();
+    public MetadataObject(char keySeparator)
+    {
+        KeySeparator = keySeparator;
+    }
+
+    public MetadataObject(IDictionary<string, object> dictionary, char keySeparator) : this(keySeparator)
+    {
+        SetValues(dictionary, null);
+    }
 
     public void AddValue(string key, object value)
     {
@@ -54,7 +51,7 @@ public class MetadataObject : IMetadataObject
     {
         return TryGetValue(key, out var value)
             ? value
-            : throw new ArgumentException("Could not get value by key.");
+            : throw new ArgumentException("Could not get value by key.", nameof(key));
     }
 
     public bool TryGetValue(string key, [MaybeNullWhen(false)] out object value)
@@ -169,4 +166,49 @@ public class MetadataObject : IMetadataObject
         return value != null;
     }
 
+    private void SetValues(IDictionary<string, object> dictionary, string? root)
+    {
+        foreach (var (key, value) in dictionary)
+        {
+            var keyStr = root != null ? root + KeySeparator + key : key;
+            if (value is IDictionary<string, object> stringDict)
+            {
+                SetValues(stringDict, keyStr);
+            }
+            else if (value is IDictionary<object, object> objectDict)
+            {
+                SetValues(objectDict, keyStr);
+            }
+            else
+            {
+                this[keyStr] = value;
+            }
+        }
+    }
+
+    private void SetValues(IDictionary<object, object> dictionary, string? root)
+    {
+        foreach (var (key, value) in dictionary)
+        {
+            var keyToString = key.ToString();
+            if (keyToString == null)
+            {
+                continue;
+            }
+
+            var keyStr = root != null ? root + KeySeparator + keyToString : keyToString;
+            if (value is IDictionary<string, object> stringDict)
+            {
+                SetValues(stringDict, keyStr);
+            }
+            else if (value is IDictionary<object, object> objectDict)
+            {
+                SetValues(objectDict, keyStr);
+            }
+            else
+            {
+                this[keyStr] = value;
+            }
+        }
+    }
 }
