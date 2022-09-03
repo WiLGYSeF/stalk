@@ -1,28 +1,17 @@
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using System.Data.Common;
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 namespace Wilgysef.Stalk.WebApi.Tests;
 
 public class WebApiFactory : IDisposable
 {
-    private DbConnection? _connection;
+    private readonly string _databaseName = Guid.NewGuid().ToString();
+    private string DatabaseName => _databaseName;
 
     public WebApplicationFactory<Program> CreateApplication()
     {
-        if (_connection == null)
-        {
-            _connection = new SqliteConnection("DataSource=:memory:");
-            _connection.Open();
-
-            // TODO: replace null
-            using var context = new StalkDbContext(SetOptions().Options, null);
-            context.Database.EnsureCreated();
-        }
-
         return new WebApplicationFactory<Program>()
             .WithWebHostBuilder(builder =>
             {
@@ -30,7 +19,8 @@ public class WebApiFactory : IDisposable
                 {
                     services.AddDbContext<StalkDbContext>(options =>
                     {
-                        SetOptions(options);
+                        // TODO: use MySql?
+                        options.UseInMemoryDatabase(DatabaseName);
                     });
                 });
             });
@@ -38,26 +28,6 @@ public class WebApiFactory : IDisposable
 
     public void Dispose()
     {
-        if (_connection != null)
-        {
-            _connection.Dispose();
-            _connection = null;
-        }
-
         GC.SuppressFinalize(this);
-    }
-
-    private DbContextOptionsBuilder<StalkDbContext> SetOptions(DbContextOptionsBuilder<StalkDbContext>? builder = null)
-    {
-        builder ??= new DbContextOptionsBuilder<StalkDbContext>();
-
-        SetOptions((DbContextOptionsBuilder)builder);
-        return builder;
-    }
-
-    private DbContextOptionsBuilder SetOptions(DbContextOptionsBuilder builder)
-    {
-        return builder
-            .UseSqlite(_connection);
     }
 }

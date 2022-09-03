@@ -90,7 +90,7 @@ public class JobController : ControllerBase
         return await _unpauseJobCommandHandler.HandleCommandAsync(new UnpauseJob(id));
     }
 
-    [HttpGet]
+    [HttpGet("{id}")]
     public async Task<JobDto> GetJobAsync(long id)
     {
         return await _getJobCommandHandler.HandleQueryAsync(new GetJob(id));

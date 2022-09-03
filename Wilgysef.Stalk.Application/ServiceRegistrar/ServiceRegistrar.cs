@@ -65,6 +65,7 @@ public class ServiceRegistrar
             .As<IIdGenerator<long>>()
             .SingleInstance();
 
+        // WebApi tests add DbContext for testing
         if (!(services?.Any(s => s.ServiceType == typeof(StalkDbContext)) ?? false))
         {
             builder.Register(c => DbContextOptions);
