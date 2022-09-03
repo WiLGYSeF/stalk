@@ -1,4 +1,7 @@
-﻿using IdGen;
+﻿using Autofac;
+using IdGen;
+using Microsoft.Extensions.DependencyInjection;
+using Wilgysef.Stalk.Application.ServiceRegistrar;
 using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.Core.BackgroundJobs.Args;
 using Wilgysef.Stalk.Core.Models.Jobs;
@@ -8,10 +11,10 @@ namespace Wilgysef.Stalk.Application;
 
 public class Startup
 {
+    private readonly IRootLifetimeScopeService _rootLifetimeScope;
     private readonly IJobManager _jobManager;
     private readonly IBackgroundJobManager _backgroundJobManager;
     private readonly IIdGenerator<long> _idGenerator;
-    private readonly IServiceLocator _serviceLocator;
 
     private readonly CancellationTokenSource _backgroundTaskTokenSource = new();
 
@@ -20,24 +23,32 @@ public class Startup
     private bool _started = false;
 
     public Startup(
+        IRootLifetimeScopeService rootLifetimeScope,
         IJobManager jobManager,
         IBackgroundJobManager backgroundJobManager,
-        IIdGenerator<long> idGenerator,
-        IServiceLocator serviceLocator)
+        IIdGenerator<long> idGenerator)
     {
+        _rootLifetimeScope = rootLifetimeScope;
         _jobManager = jobManager;
         _backgroundJobManager = backgroundJobManager;
         _idGenerator = idGenerator;
-        _serviceLocator = serviceLocator;
     }
 
-    public async Task StartAsync()
+    /// <summary>
+    /// Initialize the application.
+    /// </summary>
+    /// <param name="rootLifetimeScope">Root lifetime scope.</param>
+    /// <returns></returns>
+    /// <exception cref="InvalidOperationException">Application was already started.</exception>
+    public async Task StartAsync(ILifetimeScope rootLifetimeScope)
     {
         if (_started)
         {
             throw new InvalidOperationException("Already started.");
         }
         _started = true;
+
+        _rootLifetimeScope.LifetimeScope = rootLifetimeScope;
 
         // deactivate any jobs that may have an active state from an unclean shutdown
         await _jobManager.DeactivateJobsAsync();
@@ -51,11 +62,9 @@ public class Startup
             true);
 
         // start the background job dispatcher
-        _backgroundJobTask = new Task(
+        _backgroundJobTask = Task.Run(
             async () => await DispatchBackgroundJobsAsync(5 * 1000, _backgroundTaskTokenSource.Token),
-            _backgroundTaskTokenSource.Token,
-            TaskCreationOptions.LongRunning);
-        _backgroundJobTask.Start();
+            _backgroundTaskTokenSource.Token);
     }
 
     private async Task DispatchBackgroundJobsAsync(int interval, CancellationToken cancellationToken)
@@ -65,7 +74,7 @@ public class Startup
             cancellationToken.ThrowIfCancellationRequested();
             await Task.Delay(interval, cancellationToken);
 
-            using var scope = _serviceLocator.BeginLifetimeScope();
+            using var scope = _rootLifetimeScope.BeginLifetimeScope();
             var backgroundJobDispatcher = scope.GetRequiredService<IBackgroundJobDispatcher>();
 
             cancellationToken.ThrowIfCancellationRequested();

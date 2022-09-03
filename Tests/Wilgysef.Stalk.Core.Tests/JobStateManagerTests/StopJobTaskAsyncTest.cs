@@ -1,6 +1,6 @@
 ﻿using Moq;
 using Shouldly;
-using Wilgysef.Stalk.Core.JobWorkerManagers;
+using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
@@ -11,7 +11,7 @@ namespace Wilgysef.Stalk.Core.Tests.JobStateManagerTests;
 public class StopJobTaskAsyncTest : BaseTest
 {
     private readonly IJobManager _jobManager;
-    private readonly IJobStateManager _jobStateManager;
+    private readonly IJobTaskStateManager _jobTaskStateManager;
 
     private readonly ManualResetEventSlim _manualResetEventSlimOuter = new();
     private readonly ManualResetEventSlim _manualResetEventSlimInner = new();
@@ -29,7 +29,7 @@ public class StopJobTaskAsyncTest : BaseTest
         ReplaceServiceInstance<IJobTaskWorkerService, IJobTaskWorkerService>(jobTaskWorkerService.Object);
 
         _jobManager = GetRequiredService<IJobManager>();
-        _jobStateManager = GetRequiredService<IJobStateManager>();
+        _jobTaskStateManager = GetRequiredService<IJobTaskStateManager>();
     }
 
     [Theory]
@@ -50,7 +50,7 @@ public class StopJobTaskAsyncTest : BaseTest
 
         await _jobManager.CreateJobAsync(job);
 
-        var task = Task.Run(async () => await _jobStateManager.StopJobTaskAsync(job, jobTask));
+        var task = Task.Run(async () => await _jobTaskStateManager.StopJobTaskAsync(jobTask));
 
         // timeout
         var setTask = Task.Run(async () =>

@@ -29,5 +29,14 @@
         public const string JobTaskActive = "Stalk:001002";
 
         #endregion
+
+        #region Job Task Worker Error Codes
+
+        /// <summary>
+        /// No extractor could be found to extract from the URI.
+        /// </summary>
+        public const string JobTaskWorkerNoExtractor = "Stalk:002001";
+
+        #endregion
     }
 }

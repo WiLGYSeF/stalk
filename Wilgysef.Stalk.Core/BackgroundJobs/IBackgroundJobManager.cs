@@ -58,6 +58,13 @@ public interface IBackgroundJobManager : ITransientDependency
     /// <returns>Background job, or <see langword="null"/> if there are no queued background jobs.</returns>
     Task<BackgroundJob?> GetNextPriorityJobAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Abandon expired background jobs.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Background jobs that have been abandoned.</returns>
+    Task<List<BackgroundJob>> AbandonExpiredJobsAsync(CancellationToken cancellationToken = default);
+
     Task UpdateJobAsync(BackgroundJob job, CancellationToken cancellationToken = default);
 
     Task DeleteJobAsync(BackgroundJob job, CancellationToken cancellationToken = default);

@@ -1,10 +1,12 @@
 ﻿using Wilgysef.Stalk.Core.Models.JobTasks;
 
-namespace Wilgysef.Stalk.Core.JobWorkers;
+namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
-public interface IJobTaskWorker
+public interface IJobTaskWorker : IDisposable
 {
-    JobTaskWorker WithJobTask(JobTask job);
+    public JobTask? JobTask { get; }
+
+    IJobTaskWorker WithJobTask(JobTask jobTask);
 
     Task WorkAsync(CancellationToken cancellationToken = default);
 }

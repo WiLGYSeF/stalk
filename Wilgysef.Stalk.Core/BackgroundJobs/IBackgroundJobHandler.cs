@@ -5,6 +5,11 @@ namespace Wilgysef.Stalk.Core.BackgroundJobs;
 public interface IBackgroundJobHandler<T> : ITransientDependency where T : BackgroundJobArgs
 {
     /// <summary>
+    /// The background job being executed.
+    /// </summary>
+    BackgroundJob BackgroundJob { get; internal set; }
+
+    /// <summary>
     /// Executes background job.
     /// </summary>
     /// <param name="args">Background job args.</param>

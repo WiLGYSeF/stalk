@@ -14,10 +14,9 @@ public class JobWorkerFactory : IJobWorkerFactory
         _serviceLocator = serviceLocator;
     }
 
-    public JobWorker CreateWorker(Job job)
+    public IJobWorker CreateWorker(Job job)
     {
-        var jobWorker = new JobWorker(_serviceLocator);
-        jobWorker.WithJob(job);
-        return jobWorker;
+        return new JobWorker(_serviceLocator.BeginLifetimeScopeFromRoot())
+            .WithJob(job);
     }
 }

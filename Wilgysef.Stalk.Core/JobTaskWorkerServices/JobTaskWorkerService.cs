@@ -1,66 +1,68 @@
-﻿using Wilgysef.Stalk.Core.JobWorkerFactories;
-using Wilgysef.Stalk.Core.JobWorkers;
+﻿using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
 using Wilgysef.Stalk.Core.Models.JobTasks;
+using Wilgysef.Stalk.Core.Shared.Exceptions;
 
-namespace Wilgysef.Stalk.Core.JobWorkerManagers;
+namespace Wilgysef.Stalk.Core.JobTaskWorkerServices;
 
 public class JobTaskWorkerService : IJobTaskWorkerService
 {
-    public IReadOnlyCollection<JobTaskWorker> Workers => _jobTaskWorkers;
-
-    private readonly List<JobTaskWorker> _jobTaskWorkers = new();
-    private readonly Dictionary<JobTaskWorker, JobTaskWorkerObjects> _jobTaskWorkerObjects = new();
-
+    private readonly IJobTaskManager _jobTaskManager;
     private readonly IJobTaskWorkerFactory _jobTaskWorkerFactory;
+    private readonly IJobTaskWorkerCollectionService _jobTaskWorkerCollectionService;
 
     public JobTaskWorkerService(
-        IJobTaskWorkerFactory jobTaskWorkerFactory)
+        IJobTaskManager jobTaskManager,
+        IJobTaskWorkerFactory jobTaskWorkerFactory,
+        IJobTaskWorkerCollectionService jobTaskWorkerCollectionService)
     {
+        _jobTaskManager = jobTaskManager;
         _jobTaskWorkerFactory = jobTaskWorkerFactory;
+        _jobTaskWorkerCollectionService = jobTaskWorkerCollectionService;
     }
 
-    public bool StartJobTaskWorker(JobTask jobTask)
+    public async Task<Task> StartJobTaskWorkerAsync(JobTask jobTask, CancellationToken jobCancellationToken)
     {
+        if (_jobTaskWorkerCollectionService.GetJobTaskWorker(jobTask) != null)
+        {
+            throw new JobTaskActiveException();
+        }
+
         var worker = _jobTaskWorkerFactory.CreateWorker(jobTask);
-        var cancellationTokenSource = new CancellationTokenSource();
+        var cancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(jobCancellationToken);
+        var task = Task.Run(DoWorkAsync, jobCancellationToken);
 
-        var task = new Task(
-            async () => await worker.WorkAsync(cancellationTokenSource.Token),
-            cancellationTokenSource.Token,
-            TaskCreationOptions.LongRunning);
+        _jobTaskWorkerCollectionService.AddJobTaskWorker(worker, task, cancellationTokenSource);
 
-        _jobTaskWorkers.Add(worker);
-        _jobTaskWorkerObjects.Add(worker, new JobTaskWorkerObjects(task, cancellationTokenSource));
+        await _jobTaskManager.SetJobTaskActiveAsync(jobTask, cancellationTokenSource.Token);
 
-        task.Start();
-        return true;
+        // return task, do not await
+        return task;
+
+        async Task DoWorkAsync()
+        {
+            try
+            {
+                await worker.WorkAsync(cancellationTokenSource.Token);
+            }
+            catch (OperationCanceledException) { }
+            finally
+            {
+                // this is singleton
+                _jobTaskWorkerCollectionService.RemoveJobTaskWorker(worker);
+            }
+        }
     }
 
     public async Task<bool> StopJobTaskWorkerAsync(JobTask task)
     {
-        var worker = _jobTaskWorkers.SingleOrDefault(w => w.JobTask != null && w.JobTask.Id == task.Id);
+        var worker = _jobTaskWorkerCollectionService.GetJobTaskWorker(task);
         if (worker == null)
         {
             return false;
         }
 
-        var objects = _jobTaskWorkerObjects[worker];
-        objects.CancellationTokenSource.Cancel();
-
-        await objects.Task;
+        _jobTaskWorkerCollectionService.CancelJobTaskWorkerToken(worker);
+        await _jobTaskWorkerCollectionService.GetJobTaskWorkerTask(worker);
         return true;
-    }
-
-    private class JobTaskWorkerObjects
-    {
-        public Task Task { get; set; }
-
-        public CancellationTokenSource CancellationTokenSource { get; set; }
-
-        public JobTaskWorkerObjects(Task task, CancellationTokenSource cancellationTokenSource)
-        {
-            Task = task;
-            CancellationTokenSource = cancellationTokenSource;
-        }
     }
 }

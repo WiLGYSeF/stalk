@@ -1,10 +1,16 @@
-﻿using Wilgysef.Stalk.Core.Shared.Enums;
+﻿using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Shared.Extractors;
 
 namespace Wilgysef.Stalk.Core.Models.JobTasks;
 
 public class JobTaskBuilder
 {
     public long Id { get; set; }
+
+    public Job? Job { get; set; }
+
+    public long JobId { get; set; }
 
     public string? Name { get; set; }
 
@@ -30,6 +36,8 @@ public class JobTaskBuilder
 
     public JobTaskResult Result { get; set; } = JobTaskResult.Create();
 
+    public long ParentTaskId { get; set; }
+
     public JobTask? ParentTask { get; set; }
 
     public JobTaskBuilder() { }
@@ -41,6 +49,7 @@ public class JobTaskBuilder
 
     public JobTaskBuilder From(JobTask task)
     {
+        Job = task.Job;
         Id = task.Id;
         Name = task.Name;
         State = task.State;
@@ -68,6 +77,8 @@ public class JobTaskBuilder
 
         return JobTask.Create(
             Id,
+            Job!,
+            JobId,
             Name,
             State,
             Priority,
@@ -80,12 +91,25 @@ public class JobTaskBuilder
             Finished,
             DelayedUntil,
             Result,
+            ParentTaskId,
             ParentTask);
     }
 
     public JobTaskBuilder WithId(long id)
     {
         Id = id;
+        return this;
+    }
+
+    public JobTaskBuilder WithJob(Job job)
+    {
+        Job = job;
+        return this;
+    }
+
+    public JobTaskBuilder WithJobId(long jobId)
+    {
+        JobId = jobId;
         return this;
     }
 
@@ -157,7 +181,7 @@ public class JobTaskBuilder
 
     public JobTaskBuilder WithResult(JobTaskResult? result)
     {
-        Result = result;
+        Result = result ?? JobTaskResult.Create();
         return this;
     }
 
@@ -165,5 +189,25 @@ public class JobTaskBuilder
     {
         ParentTask = parentTask;
         return this;
+    }
+
+    public JobTaskBuilder WithParentId(long parentTaskId)
+    {
+        ParentTaskId = parentTaskId;
+        return this;
+    }
+
+    public JobTaskBuilder WithExtractResult(JobTask jobTask, ExtractResult result)
+    {
+        return WithJobId(jobTask.Job.Id)
+            .WithName(result.Name)
+            .WithState(JobTaskState.Inactive)
+            .WithUri(result.Uri.AbsoluteUri)
+            .WithPriority(result.Priority)
+            .WithItemId(result.ItemId)
+            .WithItemData(result.ItemData)
+            .WithMetadata(result.Metadata)
+            .WithType(result.Type)
+            .WithParentId(jobTask.Id);
     }
 }

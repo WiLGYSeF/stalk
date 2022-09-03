@@ -43,25 +43,13 @@ public class BackgroundJobManager : IBackgroundJobManager
 
         var jobArgs = job.DeserializeArgs();
 
-        BackgroundJob? existingJob = null;
-
-        foreach (var queuedJob in queuedJobs)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var args = queuedJob.DeserializeArgs();
-            if (compareTo(jobArgs, args))
-            {
-                existingJob = queuedJob;
-                break;
-            }
-        }
+        var matchingJobs = queuedJobs.Where(j => compareTo(jobArgs, j.DeserializeArgs()));
 
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (existingJob != null)
+        if (matchingJobs.Any())
         {
-            _unitOfWork.BackgroundJobRepository.Remove(existingJob);
+            _unitOfWork.BackgroundJobRepository.RemoveRange(matchingJobs);
         }
 
         return await EnqueueJobAsync(job, saveChanges, cancellationToken);
@@ -82,6 +70,23 @@ public class BackgroundJobManager : IBackgroundJobManager
         return await _unitOfWork.BackgroundJobRepository.FirstOrDefaultAsync(
             new QueuedBackgroundJobSpecification(_backgroundJobCollectionService.ActiveJobs),
             cancellationToken);
+    }
+
+    public async Task<List<BackgroundJob>> AbandonExpiredJobsAsync(CancellationToken cancellationToken = default)
+    {
+        var jobs = await _unitOfWork.BackgroundJobRepository.ListAsync(
+            new ExpiredBackgroundJobSpecification(_backgroundJobCollectionService.ActiveJobs),
+            cancellationToken);
+
+        foreach (var job in jobs)
+        {
+            job.Abandon();
+        }
+
+        _unitOfWork.BackgroundJobRepository.UpdateRange(jobs);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return jobs;
     }
 
     public async Task UpdateJobAsync(BackgroundJob job, CancellationToken cancellationToken = default)

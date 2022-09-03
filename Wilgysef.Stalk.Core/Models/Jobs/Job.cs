@@ -295,12 +295,26 @@ public class Job : Entity
             return new JobConfig();
         }
 
-        var config = JsonSerializer.Deserialize<JobConfig>(ConfigJson);
+        var config = JsonSerializer.Deserialize<JobConfig>(
+            ConfigJson,
+            new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+            });
         if (config == null)
         {
             throw new InvalidOperationException($"{nameof(ConfigJson)} is not valid config.");
         }
         return config;
+    }
+
+    public List<JobTask> GetQueuedTasksByPriority()
+    {
+        return Tasks
+            .Where(t => t.IsQueued)
+            .OrderByDescending(t => t.Priority)
+            .ThenBy(t => t.Started)
+            .ToList();
     }
 
     /// <summary>
@@ -413,5 +427,41 @@ public class Job : Entity
         {
             DelayedUntil = dateTime;
         }
+    }
+
+    /// <summary>
+    /// Sets active and transitioning state to their inactive and transitioned states.
+    /// </summary>
+    internal void Deactivate()
+    {
+        switch (State)
+        {
+            case JobState.Active:
+                ChangeState(JobState.Inactive);
+                break;
+            case JobState.Cancelling:
+                ChangeState(JobState.Cancelled);
+                break;
+            case JobState.Pausing:
+                ChangeState(JobState.Paused);
+                break;
+            default:
+                break;
+        }
+    }
+
+    internal void Done()
+    {
+        if (HasUnfinishedTasks)
+        {
+            throw new InvalidOperationException("Job still has unfinished tasks.");
+        }
+
+        var failedTaskCount = Tasks.Count(t => t.State == JobTaskState.Failed);
+        var config = GetConfig();
+
+        ChangeState((failedTaskCount > config.MaxFailures || failedTaskCount == Tasks.Count)
+            ? JobState.Failed
+            : JobState.Completed);
     }
 }

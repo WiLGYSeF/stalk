@@ -30,8 +30,13 @@ public class JobManager : IJobManager
 
     public async Task<Job> GetJobAsync(long id, CancellationToken cancellationToken = default)
     {
+        return await GetJobAsync(id, false, cancellationToken);
+    }
+
+    public async Task<Job> GetJobAsync(long id, bool readOnly, CancellationToken cancellationToken = default)
+    {
         var entity = await _unitOfWork.JobRepository.FirstOrDefaultAsync(
-            new JobSingleSpecification(jobId: id),
+            new JobSingleSpecification(jobId: id, readOnly: readOnly),
             cancellationToken);
         if (entity == null)
         {
@@ -73,9 +78,10 @@ public class JobManager : IJobManager
 
     public async Task<Job> UpdateJobAsync(Job job, CancellationToken cancellationToken = default)
     {
-        var entity = _unitOfWork.JobRepository.Update(job);
+        // TODO: change this?
+        _unitOfWork.JobRepository.Update(job);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
-        return entity;
+        return job;
     }
 
     public async Task DeleteJobAsync(Job job, CancellationToken cancellationToken = default)
@@ -91,20 +97,14 @@ public class JobManager : IJobManager
 
     public async Task SetJobActiveAsync(Job job, CancellationToken cancellationToken = default)
     {
+        if (job.IsActive)
+        {
+            return;
+        }
+
         job.ChangeState(JobState.Active);
 
-        _unitOfWork.JobRepository.Update(job);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
-    }
-
-    public async Task SetJobDoneAsync(Job job, CancellationToken cancellationToken = default)
-    {
-        job.ChangeState(!job.HasUnfinishedTasks
-            ? JobState.Completed
-            : JobState.Failed);
-
-        _unitOfWork.JobRepository.Update(job);
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
+        await UpdateJobAsync(job, cancellationToken);
     }
 
     public async Task DeactivateJobsAsync(CancellationToken cancellationToken = default)
@@ -114,44 +114,15 @@ public class JobManager : IJobManager
         foreach (var job in jobs)
         {
             cancellationToken.ThrowIfCancellationRequested();
-
-            switch (job.State)
-            {
-                case JobState.Active:
-                    job.ChangeState(JobState.Inactive);
-                    break;
-                case JobState.Cancelling:
-                    job.ChangeState(JobState.Cancelled);
-                    break;
-                case JobState.Pausing:
-                    job.ChangeState(JobState.Paused);
-                    break;
-                default:
-                    break;
-            }
+            job.Deactivate();
 
             foreach (var task in job.Tasks)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-
-                switch (task.State)
-                {
-                    case JobTaskState.Active:
-                        task.ChangeState(JobTaskState.Inactive);
-                        break;
-                    case JobTaskState.Cancelling:
-                        task.ChangeState(JobTaskState.Cancelled);
-                        break;
-                    case JobTaskState.Pausing:
-                        task.ChangeState(JobTaskState.Paused);
-                        break;
-                    default:
-                        break;
-                }
+                task.Deactivate();
             }
         }
 
-        _unitOfWork.JobRepository.UpdateRange(jobs);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }

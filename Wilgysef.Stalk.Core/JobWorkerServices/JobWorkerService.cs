@@ -1,5 +1,4 @@
 ﻿using Wilgysef.Stalk.Core.JobWorkerFactories;
-using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 
@@ -39,18 +38,27 @@ public class JobWorkerService : IJobWorkerService
 
         var worker = _jobWorkerFactory.CreateWorker(job);
         var cancellationTokenSource = new CancellationTokenSource();
-
-        var task = new Task(
-            async () => await worker.WorkAsync(cancellationTokenSource.Token),
-            cancellationTokenSource.Token,
-            TaskCreationOptions.LongRunning);
+        var task = Task.Run(DoWorkAsync);
 
         _jobWorkerCollectionService.AddJobWorker(worker, task, cancellationTokenSource);
 
         await _jobManager.SetJobActiveAsync(job);
-        task.Start();
 
         return true;
+
+        async Task DoWorkAsync()
+        {
+            try
+            {
+                await worker.WorkAsync(cancellationTokenSource.Token);
+            }
+            catch (OperationCanceledException) { }
+            finally
+            {
+                // this is singleton
+                _jobWorkerCollectionService.RemoveJobWorker(worker);
+            }
+        }
     }
 
     public async Task<bool> StopJobWorkerAsync(Job job)
@@ -63,12 +71,13 @@ public class JobWorkerService : IJobWorkerService
 
         _jobWorkerCollectionService.CancelJobWorkerToken(worker);
         await _jobWorkerCollectionService.GetJobWorkerTask(worker);
+        _jobWorkerCollectionService.RemoveJobWorker(worker);
         return true;
     }
 
     public List<Job> GetJobsByPriority()
     {
-        return _jobWorkerCollectionService.Jobs
+        return _jobWorkerCollectionService.GetActiveJobs()
             .OrderByDescending(j => j.Priority)
             .ThenBy(j => j.Tasks.Count(t => t.IsActive))
             .ToList();

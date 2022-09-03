@@ -4,7 +4,7 @@ using Wilgysef.Stalk.Core.Models.Jobs;
 
 namespace Wilgysef.Stalk.Core.BackgroundJobs.Executors;
 
-public class WorkPrioritizedJobsJob : IBackgroundJobHandler<WorkPrioritizedJobsArgs>
+public class WorkPrioritizedJobsJob : BackgroundJobHandler<WorkPrioritizedJobsArgs>
 {
     private readonly IJobManager _jobManager;
     private readonly IJobWorkerService _jobWorkerService;
@@ -17,7 +17,7 @@ public class WorkPrioritizedJobsJob : IBackgroundJobHandler<WorkPrioritizedJobsA
         _jobWorkerService = jobWorkerService;
     }
 
-    public async Task ExecuteJobAsync(WorkPrioritizedJobsArgs args, CancellationToken cancellationToken = default)
+    public override async Task ExecuteJobAsync(WorkPrioritizedJobsArgs args, CancellationToken cancellationToken = default)
     {
         if (_jobWorkerService.CanStartAdditionalWorkers)
         {

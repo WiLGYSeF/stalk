@@ -2,9 +2,15 @@
 
 namespace Wilgysef.Stalk.Core.JobWorkers;
 
-public interface IJobWorker
+public interface IJobWorker : IDisposable
 {
-    JobWorker WithJob(Job job);
+    Job? Job { get; }
+
+    int WorkerLimit { get; set; }
+
+    int TaskWaitTimeoutMilliseconds { get; set; }
+
+    IJobWorker WithJob(Job job);
 
     Task WorkAsync(CancellationToken cancellationToken = default);
 }

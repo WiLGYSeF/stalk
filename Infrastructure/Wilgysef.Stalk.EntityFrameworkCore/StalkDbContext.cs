@@ -51,7 +51,7 @@ public class StalkDbContext : DbContext, IStalkDbContext
             var events = entity.DomainEvents.ToArray();
             entity.DomainEvents.Clear();
 
-            await _domainEventDispatcher.DispatchEvents(events, cancellationToken);
+            await _domainEventDispatcher.DispatchEventsAsync(events, cancellationToken);
         }
     }
 }
