@@ -1,10 +1,12 @@
 ﻿using Autofac;
 using Autofac.Builder;
+using Autofac.Extensions.DependencyInjection;
 using Autofac.Features.Scanning;
 using AutoMapper.Contrib.Autofac.DependencyInjection;
 using IdGen;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using System.Reflection;
 using Wilgysef.Stalk.Core;
 using Wilgysef.Stalk.Core.Shared.Cqrs;
@@ -47,6 +49,13 @@ public class ServiceRegistrar
     {
         var assemblies = GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter)
             .ToArray();
+
+        services ??= new ServiceCollection();
+        services.AddHttpClient();
+        builder.Populate(services);
+
+        builder.Register(c => c.Resolve<IHttpClientFactory>().CreateClient())
+            .As<HttpClient>();
 
         builder.RegisterAutoMapper(true, assemblies);
 

@@ -10,6 +10,10 @@ namespace Wilgysef.Stalk.TestBase;
 
 public class BaseTest
 {
+    public bool RegisterExtractors { get; set; } = false;
+
+    public bool RegisterDownloaders { get; set; } = false;
+
     private IServiceProvider? _serviceProvider;
     private IServiceProvider ServiceProvider
     {
@@ -19,8 +23,9 @@ public class BaseTest
 
     private readonly List<(Type Implementation, Type Service, ServiceRegistrationType RegistrationType)> _replaceServices = new();
     private readonly List<(object Implementation, Type Service)> _replaceServiceInstances = new();
+    private readonly List<(Func<IComponentContext, object>, Type Service)> _replaceServiceDelegates = new();
 
-    private string _databaseName = Guid.NewGuid().ToString();
+    private readonly string _databaseName = Guid.NewGuid().ToString();
     private string DatabaseName => _databaseName;
 
     #region Service Registration
@@ -110,6 +115,12 @@ public class BaseTest
         _serviceProvider = null;
     }
 
+    public void ReplaceServiceDelegate<T>(Func<IComponentContext, T> @delegate) where T : class
+    {
+        _replaceServiceDelegates.Add((@delegate, typeof(T)));
+        _serviceProvider = null;
+    }
+
     private IServiceProvider GetServiceProvider(ContainerBuilder? builder = null)
     {
         return new AutofacServiceProviderFactory()
@@ -133,10 +144,10 @@ public class BaseTest
 
         var serviceRegistrar = new ServiceRegistrar(GetDbContextOptionsBuilder().Options)
         {
-            RegisterExtractors = false,
-            RegisterDownloaders = false,
+            RegisterExtractors = RegisterExtractors,
+            RegisterDownloaders = RegisterDownloaders,
         };
-        serviceRegistrar.RegisterApplication(builder);
+        serviceRegistrar.RegisterApplication(builder, services);
 
         foreach (var (implementation, service, type) in _replaceServices)
         {
@@ -159,6 +170,11 @@ public class BaseTest
                 .As(service)
                 .PropertiesAutowired()
                 .SingleInstance();
+        }
+
+        foreach (var (@delegate, service) in _replaceServiceDelegates)
+        {
+            builder.Register(@delegate).As(service);
         }
 
         return builder;
