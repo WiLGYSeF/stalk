@@ -43,9 +43,11 @@ void ConfigureServices()
 
     builder.Host.ConfigureContainer<ContainerBuilder>((context, containerBuilder) =>
     {
+        // TODO: create appsettings and move dev connectionstring
+
         var serviceRegistrar = new ServiceRegistrar(
             new DbContextOptionsBuilder<StalkDbContext>()
-                .UseSqlite("DataSource=abc.db")
+                .UseMySql("server=localhost;database=stalk;user=user;password=NlZbRHyeYXV6mIA;", new MySqlServerVersion(new Version(8, 0, 3)))
                 .Options);
         serviceRegistrar.RegisterApplication(containerBuilder, builder.Services);
     });

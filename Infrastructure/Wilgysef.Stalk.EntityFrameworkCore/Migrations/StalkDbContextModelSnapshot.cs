@@ -15,35 +15,37 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "6.0.7");
+            modelBuilder
+                .HasAnnotation("ProductVersion", "6.0.7")
+                .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("Wilgysef.Stalk.Core.BackgroundJobs.BackgroundJob", b =>
                 {
                     b.Property<long>("Id")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.Property<bool>("Abandoned")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<int>("Attempts")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<string>("JobArgs")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("JobArgsName")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime?>("MaximumLifetime")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("NextRun")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("Priority")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -53,28 +55,28 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
             modelBuilder.Entity("Wilgysef.Stalk.Core.Models.Jobs.Job", b =>
                 {
                     b.Property<long>("Id")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.Property<string>("ConfigJson")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime?>("DelayedUntil")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("Finished")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Name")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<int>("Priority")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("Started")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("State")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -84,47 +86,47 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
             modelBuilder.Entity("Wilgysef.Stalk.Core.Models.JobTasks.JobTask", b =>
                 {
                     b.Property<long>("Id")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.Property<DateTime?>("DelayedUntil")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("Finished")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("ItemData")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("ItemId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<long?>("JobId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.Property<string>("MetadataJson")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Name")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<long?>("ParentTaskId")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.Property<int>("Priority")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("Started")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("State")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<int>("Type")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<string>("Uri")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 
@@ -148,19 +150,19 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                     b.OwnsOne("Wilgysef.Stalk.Core.Models.JobTasks.JobTaskResult", "Result", b1 =>
                         {
                             b1.Property<long>("JobTaskId")
-                                .HasColumnType("INTEGER");
+                                .HasColumnType("bigint");
 
                             b1.Property<string>("ErrorCode")
-                                .HasColumnType("TEXT");
+                                .HasColumnType("longtext");
 
                             b1.Property<string>("ErrorDetail")
-                                .HasColumnType("TEXT");
+                                .HasColumnType("longtext");
 
                             b1.Property<string>("ErrorMessage")
-                                .HasColumnType("TEXT");
+                                .HasColumnType("longtext");
 
                             b1.Property<bool?>("Success")
-                                .HasColumnType("INTEGER");
+                                .HasColumnType("tinyint(1)");
 
                             b1.HasKey("JobTaskId");
 
