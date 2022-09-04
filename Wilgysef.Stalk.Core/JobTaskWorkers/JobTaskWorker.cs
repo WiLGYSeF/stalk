@@ -1,5 +1,4 @@
-﻿using IdGen;
-using Wilgysef.Stalk.Core.Downloaders;
+﻿using Wilgysef.Stalk.Core.Downloaders;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
@@ -7,6 +6,7 @@ using Wilgysef.Stalk.Core.Shared;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
+using Wilgysef.Stalk.Core.Shared.IdGenerators;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.Core.Shared.StringFormatters;
 

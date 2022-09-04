@@ -4,6 +4,9 @@ using Microsoft.EntityFrameworkCore;
 using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
 using Wilgysef.Stalk.EntityFrameworkCore;
+using Wilgysef.Stalk.WebApi.Middleware;
+
+var responseExceptions = true;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,6 +27,11 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
+
+app.UseExceptionHandler(new ExceptionHandler
+{
+    ExceptionsInResponse = responseExceptions,
+}.GetExceptionHandlerOptions());
 
 app.MapControllers();
 

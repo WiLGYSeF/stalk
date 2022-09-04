@@ -1,8 +1,8 @@
-﻿using IdGen;
-using Wilgysef.Stalk.Core.BackgroundJobs;
+﻿using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.Core.BackgroundJobs.Args;
 using Wilgysef.Stalk.Core.DomainEvents.Events;
 using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Shared.IdGenerators;
 
 namespace Wilgysef.Stalk.Core.DomainEvents.Handlers;
 
