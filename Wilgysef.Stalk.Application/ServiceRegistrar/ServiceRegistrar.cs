@@ -5,6 +5,7 @@ using Autofac.Features.Scanning;
 using AutoMapper.Contrib.Autofac.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using System.Reflection;
 using Wilgysef.Stalk.Application.HttpClientPolicies;
 using Wilgysef.Stalk.Application.IdGenerators;
@@ -38,9 +39,14 @@ public class ServiceRegistrar
 
     public DbContextOptions<StalkDbContext> DbContextOptions { get; set; }
 
-    public ServiceRegistrar(DbContextOptions<StalkDbContext> options)
+    public ILogger Logger { get; set; }
+
+    public ServiceRegistrar(
+        DbContextOptions<StalkDbContext> options,
+        ILogger logger)
     {
         DbContextOptions = options;
+        Logger = logger;
     }
 
     /// <summary>
@@ -54,6 +60,9 @@ public class ServiceRegistrar
 
         services.AddHttpClient(Constants.HttpClientExtractorDownloaderName)
             .AddExtractorDownloaderClientPolicy();
+
+        // TODO: fix
+        //builder.Populate(services);
 
         builder.Register(c => c.Resolve<IHttpClientFactory>().CreateClient())
             .As<HttpClient>();
@@ -75,6 +84,10 @@ public class ServiceRegistrar
                 .As<StalkDbContext>()
                 .InstancePerLifetimeScope();
         }
+
+        builder.Register(c => Logger)
+            .As<ILogger>()
+            .SingleInstance();
 
         RegisterAssemblyTypes<ITransientDependency>(builder, assemblies)
             .InstancePerDependency();

@@ -139,7 +139,7 @@ public class BaseTest
     {
         var builder = new ContainerBuilder();
 
-        var serviceRegistrar = new ServiceRegistrar(GetDbContextOptionsBuilder().Options)
+        var serviceRegistrar = new ServiceRegistrar(GetDbContextOptionsBuilder().Options, null)
         {
             RegisterExtractors = RegisterExtractors,
             RegisterDownloaders = RegisterDownloaders,
