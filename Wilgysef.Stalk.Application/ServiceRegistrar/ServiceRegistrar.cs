@@ -3,19 +3,18 @@ using Autofac.Builder;
 using Autofac.Extensions.DependencyInjection;
 using Autofac.Features.Scanning;
 using AutoMapper.Contrib.Autofac.DependencyInjection;
-using IdGen;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Polly;
-using Polly.Extensions.Http;
 using System.Reflection;
 using Wilgysef.Stalk.Application.HttpClientPolicies;
+using Wilgysef.Stalk.Application.IdGenerators;
 using Wilgysef.Stalk.Core;
 using Wilgysef.Stalk.Core.Shared;
 using Wilgysef.Stalk.Core.Shared.Cqrs;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Extractors;
+using Wilgysef.Stalk.Core.Shared.IdGenerators;
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 namespace Wilgysef.Stalk.Application.ServiceRegistrar;
@@ -61,7 +60,7 @@ public class ServiceRegistrar
 
         builder.RegisterAutoMapper(true, assemblies);
 
-        builder.Register(c => new IdGenerator(IdGeneratorId, IdGeneratorOptions.Default))
+        builder.Register(c => new IdGenerator(new IdGen.IdGenerator(IdGeneratorId, IdGen.IdGeneratorOptions.Default)))
             .As<IIdGenerator<long>>()
             .SingleInstance();
 

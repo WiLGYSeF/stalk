@@ -1,13 +1,13 @@
-﻿using IdGen;
-using Wilgysef.Stalk.Application.Contracts.Commands.JobTasks;
+﻿using Wilgysef.Stalk.Application.Contracts.Commands.JobTasks;
 using Wilgysef.Stalk.Application.Contracts.Dtos;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Cqrs;
+using Wilgysef.Stalk.Core.Shared.IdGenerators;
 
 namespace Wilgysef.Stalk.Application.Commands;
 
-public class JobTaskCommandHandler : CommandQuery,
+public class JobTaskCommandHandler : Command,
     ICommandHandler<CreateJobTask, JobDto>,
     ICommandHandler<StopJobTask, JobDto>,
     ICommandHandler<DeleteJobTask, JobDto>,
