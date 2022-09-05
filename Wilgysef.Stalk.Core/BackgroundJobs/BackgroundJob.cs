@@ -18,6 +18,8 @@ public class BackgroundJob : Entity
 
     public virtual DateTime? MaximumLifetime { get; protected set; }
 
+    public virtual int? MaxAttempts { get; protected set; }
+
     public virtual bool Abandoned { get; protected set; }
 
     public virtual string JobArgsName { get; protected set; } = null!;
@@ -40,6 +42,7 @@ public class BackgroundJob : Entity
         TimeSpan? delayFor = null,
         DateTime? maximumLifetime = null,
         TimeSpan? maximumLifespan = null,
+        int? maximumAttempts = null,
         string? argsName = null) where T : BackgroundJobArgs
     {
         argsName ??= args.GetType().FullName;
@@ -54,6 +57,7 @@ public class BackgroundJob : Entity
             Id = id,
             JobArgsName = argsName,
             Priority = priority,
+            MaxAttempts = maximumAttempts,
             JobArgs = SerializeArgs(args),
         };
 
@@ -117,6 +121,19 @@ public class BackgroundJob : Entity
         }
     }
 
+    public void ChangeMaxAttempts(int? maxAttempts)
+    {
+        if (Abandoned)
+        {
+            throw new BackgroundJobAbandonedException();
+        }
+
+        if (MaxAttempts != maxAttempts)
+        {
+            MaxAttempts = maxAttempts;
+        }
+    }
+
     internal void JobFailed()
     {
         if (Abandoned)
@@ -126,7 +143,8 @@ public class BackgroundJob : Entity
 
         Attempts++;
 
-        if (MaximumLifetime.HasValue && MaximumLifetime <= DateTime.Now)
+        if (MaxAttempts.HasValue && Attempts >= MaxAttempts.Value
+            || MaximumLifetime.HasValue && MaximumLifetime <= DateTime.Now)
         {
             Abandon();
             return;

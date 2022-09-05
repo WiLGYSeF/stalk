@@ -46,7 +46,7 @@ public class JobEventHandler :
             BackgroundJob.Create(
                 _idGenerator.CreateId(),
                 new WorkPrioritizedJobsArgs(),
-                maximumLifespan: TimeSpan.FromSeconds(3)),
+                maximumAttempts: 2),
             false,
             cancellationToken);
     }

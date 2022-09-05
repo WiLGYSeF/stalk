@@ -85,9 +85,12 @@ public class ServiceRegistrar
                 .InstancePerLifetimeScope();
         }
 
-        builder.Register(c => Logger)
-            .As<ILogger>()
-            .SingleInstance();
+        if (Logger != null)
+        {
+            builder.Register(c => Logger)
+                .As<ILogger>()
+                .SingleInstance();
+        }
 
         RegisterAssemblyTypes<ITransientDependency>(builder, assemblies)
             .InstancePerDependency();

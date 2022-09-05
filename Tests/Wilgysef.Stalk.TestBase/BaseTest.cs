@@ -2,6 +2,8 @@ using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Debug;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
 using Wilgysef.Stalk.Core.FileServices;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
@@ -10,7 +12,7 @@ using Wilgysef.Stalk.TestBase.Mocks;
 
 namespace Wilgysef.Stalk.TestBase;
 
-public class BaseTest
+public abstract class BaseTest
 {
     public bool RegisterExtractors { get; set; } = false;
 
@@ -139,7 +141,9 @@ public class BaseTest
     {
         var builder = new ContainerBuilder();
 
-        var serviceRegistrar = new ServiceRegistrar(GetDbContextOptionsBuilder().Options, null)
+        var serviceRegistrar = new ServiceRegistrar(
+            GetDbContextOptionsBuilder().Options,
+            new LoggerFactory(new[] { new DebugLoggerProvider() }).CreateLogger("test"))
         {
             RegisterExtractors = RegisterExtractors,
             RegisterDownloaders = RegisterDownloaders,

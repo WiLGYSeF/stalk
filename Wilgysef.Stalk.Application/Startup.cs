@@ -58,7 +58,7 @@ public class Startup
             BackgroundJob.Create(
                 _idGenerator.CreateId(),
                 new WorkPrioritizedJobsArgs(),
-                maximumLifespan: TimeSpan.FromSeconds(3)),
+                maximumAttempts: 2),
             true);
 
         // start the background job dispatcher
