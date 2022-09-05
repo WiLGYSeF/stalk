@@ -1,7 +1,5 @@
 ﻿using Autofac;
-using Microsoft.Extensions.DependencyInjection;
 using Quartz;
-using Quartz.Impl;
 using Quartz.Spi;
 using Wilgysef.Stalk.Application.ScheduledJobs;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
@@ -9,7 +7,6 @@ using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.Core.BackgroundJobs.Args;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.IdGenerators;
-using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Application;
 
@@ -78,8 +75,7 @@ public class Startup
         scheduler.JobFactory = _scheduleJobFactory;
 
         await scheduler.ScheduleJob(
-            Quartz.JobBuilder.Create<BackgroundJobDispatcherJob>()
-                .Build(),
+            Quartz.JobBuilder.Create<BackgroundJobDispatcherJob>().Build(),
             TriggerBuilder.Create()
                 .WithSimpleSchedule(b => b.WithIntervalInSeconds(5).RepeatForever())
                 .Build());
