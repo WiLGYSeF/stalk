@@ -1,5 +1,9 @@
 ﻿using Autofac;
 using Microsoft.Extensions.DependencyInjection;
+using Quartz;
+using Quartz.Impl;
+using Quartz.Spi;
+using Wilgysef.Stalk.Application.ScheduledJobs;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
 using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.Core.BackgroundJobs.Args;
@@ -14,11 +18,11 @@ public class Startup
     private readonly IRootLifetimeScopeService _rootLifetimeScope;
     private readonly IJobManager _jobManager;
     private readonly IBackgroundJobManager _backgroundJobManager;
+    private readonly ISchedulerFactory _schedulerFactory;
+    private readonly IJobFactory _scheduleJobFactory;
     private readonly IIdGenerator<long> _idGenerator;
 
-    private readonly CancellationTokenSource _backgroundTaskTokenSource = new();
-
-    private Task _backgroundJobTask;
+    private readonly CancellationTokenSource _schedulerTokenSource = new();
 
     private bool _started = false;
 
@@ -26,11 +30,15 @@ public class Startup
         IRootLifetimeScopeService rootLifetimeScope,
         IJobManager jobManager,
         IBackgroundJobManager backgroundJobManager,
+        ISchedulerFactory schedulerFactory,
+        IJobFactory scheduleJobFactory,
         IIdGenerator<long> idGenerator)
     {
         _rootLifetimeScope = rootLifetimeScope;
         _jobManager = jobManager;
         _backgroundJobManager = backgroundJobManager;
+        _schedulerFactory = schedulerFactory;
+        _scheduleJobFactory = scheduleJobFactory;
         _idGenerator = idGenerator;
     }
 
@@ -61,24 +69,21 @@ public class Startup
                 maximumAttempts: 2),
             true);
 
-        // start the background job dispatcher
-        _backgroundJobTask = Task.Run(
-            async () => await DispatchBackgroundJobsAsync(5 * 1000, _backgroundTaskTokenSource.Token),
-            _backgroundTaskTokenSource.Token);
+        await StartScheduledJobs();
     }
 
-    private async Task DispatchBackgroundJobsAsync(int interval, CancellationToken cancellationToken)
+    private async Task StartScheduledJobs()
     {
-        while (true)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            await Task.Delay(interval, cancellationToken);
+        var scheduler = await _schedulerFactory.GetScheduler();
+        scheduler.JobFactory = _scheduleJobFactory;
 
-            using var scope = _rootLifetimeScope.BeginLifetimeScope();
-            var backgroundJobDispatcher = scope.GetRequiredService<IBackgroundJobDispatcher>();
+        await scheduler.ScheduleJob(
+            Quartz.JobBuilder.Create<BackgroundJobDispatcherJob>()
+                .Build(),
+            TriggerBuilder.Create()
+                .WithSimpleSchedule(b => b.WithIntervalInSeconds(5).RepeatForever())
+                .Build());
 
-            cancellationToken.ThrowIfCancellationRequested();
-            await backgroundJobDispatcher.ExecuteJobsAsync(cancellationToken);
-        }
+        await scheduler.Start(_schedulerTokenSource.Token);
     }
 }
