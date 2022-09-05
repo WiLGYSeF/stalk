@@ -6,6 +6,8 @@ using AutoMapper.Contrib.Autofac.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Quartz;
+using Quartz.Impl;
 using System.Reflection;
 using Wilgysef.Stalk.Application.HttpClientPolicies;
 using Wilgysef.Stalk.Application.IdGenerators;
@@ -58,20 +60,31 @@ public class ServiceRegistrar
         var assemblies = GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter)
             .ToList().ToArray();
 
+        // Polly registration
         services.AddHttpClient(Constants.HttpClientExtractorDownloaderName)
             .AddExtractorDownloaderClientPolicy();
 
         // TODO: fix
         //builder.Populate(services);
 
+        // HttpClient registration
         builder.Register(c => c.Resolve<IHttpClientFactory>().CreateClient())
             .As<HttpClient>();
 
         builder.RegisterAutoMapper(true, assemblies);
 
+        // IdGen registration
         builder.Register(c => new IdGenerator(new IdGen.IdGenerator(IdGeneratorId, IdGen.IdGeneratorOptions.Default)))
             .As<IIdGenerator<long>>()
             .SingleInstance();
+
+        // Quartz registration
+        builder.Register(c => new StdSchedulerFactory())
+            .As<ISchedulerFactory>()
+            .SingleInstance();
+        RegisterAssemblyTypes<IJob>(builder, assemblies)
+            .AsSelf()
+            .InstancePerDependency();
 
         // WebApi tests add DbContext for testing
         if (!(services?.Any(s => s.ServiceType == typeof(StalkDbContext)) ?? false))
@@ -106,13 +119,13 @@ public class ServiceRegistrar
 
         if (RegisterExtractors)
         {
-            RegisterAssemblyTypes(typeof(IExtractor), builder, assemblies)
+            RegisterAssemblyTypes<IExtractor>(builder, assemblies)
                 .InstancePerDependency();
         }
 
         if (RegisterDownloaders)
         {
-            RegisterAssemblyTypes(typeof(IDownloader), builder, assemblies)
+            RegisterAssemblyTypes<IDownloader>(builder, assemblies)
                 .InstancePerDependency();
         }
 
@@ -141,7 +154,7 @@ public class ServiceRegistrar
 
     private bool EligibleAssemblyFilter(Assembly assembly) => assembly.FullName != null && assembly.FullName.StartsWith("Wilgysef");
 
-    private IEnumerable<Assembly> GetAssemblies(Assembly assembly, Func<Assembly, bool> filter)
+    private IEnumerable<Assembly> GetAssemblies(Assembly assembly, Func<Assembly, bool>? filter = null)
     {
         var stack = new Stack<Assembly>();
         var assembyNames = new HashSet<string>();
@@ -151,7 +164,7 @@ public class ServiceRegistrar
         while (stack.Count > 0)
         {
             var asm = stack.Pop();
-            if (!filter(asm))
+            if (filter != null && !filter(asm))
             {
                 continue;
             }
