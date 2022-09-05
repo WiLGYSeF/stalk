@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
 using Wilgysef.Stalk.Core.FilenameSlugs;
 using Wilgysef.Stalk.Core.FileServices;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
@@ -9,11 +10,13 @@ using YamlDotNet.Serialization.NamingConventions;
 
 namespace Wilgysef.Stalk.Core.Downloaders;
 
-internal class DefaultDownloader : IDefaultDownloader
+public class DefaultDownloader : IDefaultDownloader
 {
-    private const int DownloadBufferSize = 4 * 1024;
+    public int DownloadBufferSize { get; set; } = 4 * 1024;
 
     public string Name => "Default";
+
+    public ILogger? Logger { get; set; }
 
     private readonly IFileService _fileService;
     private readonly IStringFormatter _stringFormatter;
@@ -46,14 +49,46 @@ internal class DefaultDownloader : IDefaultDownloader
         IMetadataObject metadata,
         CancellationToken cancellationToken = default)
     {
-        var metadataObjectConsts = new MetadataObjectConsts(metadata.KeySeparator);
+        var downloadFileResult = await SaveFileAsync(
+            uri,
+            filenameTemplate,
+            metadata,
+            cancellationToken);
 
-        metadata.TryAddValue(metadataObjectConsts.FileFilenameTemplateKey, filenameTemplate);
-        metadata.TryAddValue(metadataObjectConsts.MetadataFilenameTemplateKey, metadataFilenameTemplate);
-        metadata.TryAddValue(metadataObjectConsts.OriginItemIdKey, itemId);
-        metadata.TryAddValue(metadataObjectConsts.OriginUriKey, uri.ToString());
-        metadata.TryAddValue(metadataObjectConsts.RetrievedKey, DateTime.Now);
+        var metadataConsts = new MetadataObjectConsts(metadata.KeySeparator);
+        metadata.TryAddValue(metadataConsts.FileFilenameTemplateKey, filenameTemplate);
+        metadata.TryAddValue(metadataConsts.MetadataFilenameTemplateKey, metadataFilenameTemplate);
+        metadata.TryAddValue(metadataConsts.OriginItemIdKey, itemId);
+        metadata.TryAddValue(metadataConsts.OriginUriKey, uri.ToString());
+        metadata.TryAddValue(metadataConsts.RetrievedKey, DateTime.Now);
 
+        metadata.TryAddValue(metadataConsts.FileSizeKey, downloadFileResult.FileSize);
+        if (downloadFileResult.Hash != null)
+        {
+            metadata.TryAddValue(metadataConsts.FileHashKey, downloadFileResult.Hash);
+            metadata.TryAddValue(metadataConsts.FileHashAlgorithmKey, downloadFileResult.HashName);
+        }
+
+        var metadataFilename = await SaveMetadataAsync(
+            metadataFilenameTemplate,
+            metadata.Dictionary,
+            cancellationToken);
+
+        yield return new DownloadResult(
+            downloadFileResult.Filename,
+            uri,
+            itemId,
+            itemData: itemData,
+            metadataPath: metadataFilename,
+            metadata: metadata);
+    }
+
+    protected async Task<DownloadFileResult> SaveFileAsync(
+        Uri uri,
+        string filenameTemplate,
+        IMetadataObject metadata,
+        CancellationToken cancellationToken = default)
+    {
         var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
         var filename = filenameSlug.SlugifyPath(
             _stringFormatter.Format(filenameTemplate, metadata.Dictionary));
@@ -65,58 +100,19 @@ internal class DefaultDownloader : IDefaultDownloader
         using var fileStream = _fileService.Open(filename, FileMode.CreateNew);
 
         var hashName = "SHA256";
-        var downloadFileResult = await SaveStreamAsync(
+        var result = await SaveStreamAsync(
             stream,
             fileStream,
             null,
             HashAlgorithm.Create(hashName),
             cancellationToken);
+        result.Filename = filename;
+        result.HashName = hashName;
 
-        metadata.TryAddValue(metadataObjectConsts.FileSizeKey, downloadFileResult.FileSize);
-        if (downloadFileResult.Hash != null)
-        {
-            metadata.TryAddValue(metadataObjectConsts.FileHashKey, downloadFileResult.Hash);
-            metadata.TryAddValue(metadataObjectConsts.FileHashAlgorithmKey, hashName);
-        }
-
-        var metadataFilename = SaveMetadata(metadataFilenameTemplate, metadata.Dictionary);
-
-        yield return new DownloadResult(
-            filename,
-            uri,
-            itemId,
-            itemData: itemData,
-            metadataPath: metadataFilename,
-            metadata: metadata);
+        return result;
     }
 
-    private string? SaveMetadata(string? metadataFilenameTemplate, IDictionary<string, object> metadata)
-    {
-        if (metadataFilenameTemplate == null)
-        {
-            return null;
-        }
-
-        var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
-        var metadataFilename = filenameSlug.SlugifyPath(
-            _stringFormatter.Format(metadataFilenameTemplate, metadata));
-
-        try
-        {
-            using var stream = _fileService.Open(metadataFilename, FileMode.CreateNew);
-            using var writer = new StreamWriter(stream);
-
-            var serializer = new SerializerBuilder()
-                .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                .Build();
-            serializer.Serialize(writer, metadata);
-        }
-        catch (IOException) { }
-
-        return metadataFilename;
-    }
-
-    private async Task<DownloadFileResult> SaveStreamAsync(
+    protected async Task<DownloadFileResult> SaveStreamAsync(
         Stream stream,
         Stream output,
         byte[]? buffer = null,
@@ -152,9 +148,43 @@ internal class DefaultDownloader : IDefaultDownloader
         }
 
         return new DownloadFileResult(
+            null,
             fileSize,
             hashAlgorithm?.Hash != null
                 ? Convert.ToHexString(hashAlgorithm.Hash).ToLower()
-                : null);
+                : null,
+            null);
+    }
+
+    protected Task<string?> SaveMetadataAsync(
+        string? metadataFilenameTemplate,
+        IDictionary<string, object> metadata,
+        CancellationToken cancellationToken = default)
+    {
+        if (metadataFilenameTemplate == null)
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
+        var metadataFilename = filenameSlug.SlugifyPath(
+            _stringFormatter.Format(metadataFilenameTemplate, metadata));
+
+        try
+        {
+            using var stream = _fileService.Open(metadataFilename, FileMode.CreateNew);
+            using var writer = new StreamWriter(stream);
+
+            var serializer = new SerializerBuilder()
+                .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                .Build();
+            serializer.Serialize(writer, metadata);
+        }
+        catch (IOException exception)
+        {
+            Logger?.LogError(exception, "Could not write metadata to {PATH}", metadataFilename);
+        }
+
+        return Task.FromResult<string?>(metadataFilename);
     }
 }

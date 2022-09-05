@@ -43,11 +43,7 @@ app.UseExceptionHandler(new ExceptionHandler
     ExceptionsInResponse = responseExceptions,
 }.GetExceptionHandlerOptions());
 
-app.Use(async (context, next) =>
-{
-    logger.LogInformation("{@path}", context.Request.Path);
-    await next();
-});
+app.Use(new LoggingHandler(logger).HandleAsync);
 
 app.MapControllers();
 

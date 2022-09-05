@@ -77,7 +77,7 @@ public class Startup
         await scheduler.ScheduleJob(
             Quartz.JobBuilder.Create<BackgroundJobDispatcherJob>().Build(),
             TriggerBuilder.Create()
-                .WithSimpleSchedule(b => b.WithIntervalInSeconds(5).RepeatForever())
+                .WithSimpleSchedule(b => b.WithIntervalInSeconds(10).RepeatForever())
                 .Build());
 
         await scheduler.Start(_schedulerTokenSource.Token);
