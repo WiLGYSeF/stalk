@@ -5,6 +5,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
+using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.EntityFrameworkCore;
 using Wilgysef.Stalk.WebApi.Middleware;
 
@@ -71,7 +72,8 @@ void ConfigureServices()
                 .UseLoggerFactory(loggerFactory)
                 .EnableSensitiveDataLogging()
                 .Options,
-            logger);
+            logger,
+            null);
         serviceRegistrar.RegisterApplication(containerBuilder, builder.Services);
     });
 }

@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl;
 using System.Reflection;
+using Wilgysef.Stalk.Application.AssemblyLoaders;
 using Wilgysef.Stalk.Application.HttpClientPolicies;
 using Wilgysef.Stalk.Application.IdGenerators;
 using Wilgysef.Stalk.Core;
@@ -43,12 +44,16 @@ public class ServiceRegistrar
 
     public ILogger Logger { get; set; }
 
+    public string ExternalAssembliesPath { get; set; }
+
     public ServiceRegistrar(
         DbContextOptions<StalkDbContext> options,
-        ILogger logger)
+        ILogger logger,
+        string externalAssembliesPath)
     {
         DbContextOptions = options;
         Logger = logger;
+        ExternalAssembliesPath = externalAssembliesPath;
     }
 
     /// <summary>
@@ -57,8 +62,12 @@ public class ServiceRegistrar
     /// <param name="builder">Container builder.</param>
     public void RegisterApplication(ContainerBuilder builder, IServiceCollection services)
     {
-        var assemblies = GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter)
-            .ToList().ToArray();
+        var assemblies = GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter).ToList();
+        var externalAssemblies = AssemblyLoader.LoadAssemblies(ExternalAssembliesPath);
+
+        var loadedAssemblies = ToArray(
+            assemblies.Count + externalAssemblies.Count,
+            assemblies.Concat(externalAssemblies));
 
         // Polly registration
         services.AddHttpClient(Constants.HttpClientExtractorDownloaderName)
@@ -71,7 +80,7 @@ public class ServiceRegistrar
         builder.Register(c => c.Resolve<IHttpClientFactory>().CreateClient())
             .As<HttpClient>();
 
-        builder.RegisterAutoMapper(true, assemblies);
+        builder.RegisterAutoMapper(true, loadedAssemblies);
 
         // IdGen registration
         builder.Register(c => new IdGenerator(new IdGen.IdGenerator(IdGeneratorId, IdGen.IdGeneratorOptions.Default)))
@@ -82,7 +91,7 @@ public class ServiceRegistrar
         builder.Register(c => new StdSchedulerFactory())
             .As<ISchedulerFactory>()
             .SingleInstance();
-        RegisterAssemblyTypes<IJob>(builder, assemblies)
+        RegisterAssemblyTypes<IJob>(builder, loadedAssemblies)
             .AsSelf()
             .InstancePerDependency();
 
@@ -105,27 +114,27 @@ public class ServiceRegistrar
                 .SingleInstance();
         }
 
-        RegisterAssemblyTypes<ITransientDependency>(builder, assemblies)
+        RegisterAssemblyTypes<ITransientDependency>(builder, loadedAssemblies)
             .InstancePerDependency();
-        RegisterAssemblyTypes<IScopedDependency>(builder, assemblies)
+        RegisterAssemblyTypes<IScopedDependency>(builder, loadedAssemblies)
             .InstancePerLifetimeScope();
-        RegisterAssemblyTypes<ISingletonDependency>(builder, assemblies)
+        RegisterAssemblyTypes<ISingletonDependency>(builder, loadedAssemblies)
             .SingleInstance();
 
-        RegisterAssemblyTypes(typeof(ICommandHandler<,>), builder, assemblies)
+        RegisterAssemblyTypes(typeof(ICommandHandler<,>), builder, loadedAssemblies)
             .InstancePerDependency();
-        RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, assemblies)
+        RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, loadedAssemblies)
             .InstancePerDependency();
 
         if (RegisterExtractors)
         {
-            RegisterAssemblyTypes<IExtractor>(builder, assemblies)
+            RegisterAssemblyTypes<IExtractor>(builder, loadedAssemblies)
                 .InstancePerDependency();
         }
 
         if (RegisterDownloaders)
         {
-            RegisterAssemblyTypes<IDownloader>(builder, assemblies)
+            RegisterAssemblyTypes<IDownloader>(builder, loadedAssemblies)
                 .InstancePerDependency();
         }
 
@@ -180,5 +189,18 @@ public class ServiceRegistrar
                 }
             }
         }
+    }
+
+    private T[] ToArray<T>(int count, IEnumerable<T> items)
+    {
+        var arr = new T[count];
+        var index = 0;
+
+        foreach (var item in items)
+        {
+            arr[index++] = item;
+        }
+
+        return arr;
     }
 }
