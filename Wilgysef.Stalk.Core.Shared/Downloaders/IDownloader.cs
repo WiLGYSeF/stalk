@@ -7,6 +7,8 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 {
     public interface IDownloader
     {
+        string Name { get; }
+
         bool CanDownload(Uri uri);
 
         IAsyncEnumerable<DownloadResult> DownloadAsync(

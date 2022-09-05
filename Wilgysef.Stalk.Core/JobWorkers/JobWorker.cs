@@ -1,4 +1,5 @@
-﻿using Wilgysef.Stalk.Core.JobTaskWorkerServices;
+﻿using Microsoft.Extensions.Logging;
+using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
@@ -24,6 +25,8 @@ public class JobWorker : IJobWorker
     }
 
     public int TaskWaitTimeoutMilliseconds { get; set; } = 10 * 1000;
+
+    public ILogger? Logger { get; set; }
 
     private readonly List<Task> _tasks = new();
 
@@ -55,6 +58,8 @@ public class JobWorker : IJobWorker
         }
 
         _working = true;
+
+        Logger?.LogInformation("Job {JOB_ID} starting.", Job.Id);
 
         if (!Job.IsActive)
         {
@@ -96,13 +101,18 @@ public class JobWorker : IJobWorker
             await ReloadJobAsync();
             Job.Done();
         }
-        catch (OperationCanceledException) { }
-        catch (Exception exc)
+        catch (OperationCanceledException)
         {
             throw;
         }
+        catch (Exception exception)
+        {
+            Logger?.LogError(exception, "Job {JOB_ID} threw unexpected exception.", Job.Id);
+        }
         finally
         {
+            Logger?.LogInformation("Job {JOB_ID} stopping.", Job.Id);
+
             using var scope = _lifetimeScope.BeginLifetimeScope();
             var jobManager = scope.GetRequiredService<IJobManager>();
 

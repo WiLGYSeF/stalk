@@ -1,12 +1,22 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using Serilog;
+using Serilog.Extensions.Logging;
 using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
 using Wilgysef.Stalk.EntityFrameworkCore;
 using Wilgysef.Stalk.WebApi.Middleware;
 
 var responseExceptions = true;
+
+var loggerFactory = new SerilogLoggerFactory(new LoggerConfiguration()
+    .MinimumLevel.Debug()
+    .WriteTo.Console(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
+    .WriteTo.Debug(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
+    .CreateLogger());
+var logger = loggerFactory
+    .CreateLogger("default");
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -33,6 +43,12 @@ app.UseExceptionHandler(new ExceptionHandler
     ExceptionsInResponse = responseExceptions,
 }.GetExceptionHandlerOptions());
 
+app.Use(async (context, next) =>
+{
+    logger.LogInformation("{@path}", context.Request.Path);
+    await next();
+});
+
 app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
@@ -56,7 +72,8 @@ void ConfigureServices()
         var serviceRegistrar = new ServiceRegistrar(
             new DbContextOptionsBuilder<StalkDbContext>()
                 .UseMySql("server=localhost;database=stalk;user=user;password=NlZbRHyeYXV6mIA;", new MySqlServerVersion(new Version(8, 0, 3)))
-                .Options);
+                .Options,
+            logger);
         serviceRegistrar.RegisterApplication(containerBuilder, builder.Services);
     });
 }
