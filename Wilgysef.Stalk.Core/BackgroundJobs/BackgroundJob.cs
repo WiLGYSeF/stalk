@@ -89,10 +89,7 @@ public class BackgroundJob : Entity
             throw new BackgroundJobAbandonedException();
         }
 
-        if (Priority != priority)
-        {
-            Priority = priority;
-        }
+        Priority = priority;
     }
 
     public void ChangeNextRun(DateTime? nextRun)
@@ -102,10 +99,7 @@ public class BackgroundJob : Entity
             throw new BackgroundJobAbandonedException();
         }
 
-        if (NextRun != nextRun)
-        {
-            NextRun = nextRun;
-        }
+        NextRun = nextRun;
     }
 
     public void ChangeMaximumLifetime(DateTime? maximumLifetime)
@@ -115,10 +109,7 @@ public class BackgroundJob : Entity
             throw new BackgroundJobAbandonedException();
         }
 
-        if (MaximumLifetime != maximumLifetime)
-        {
-            MaximumLifetime = maximumLifetime;
-        }
+        MaximumLifetime = maximumLifetime;
     }
 
     public void ChangeMaxAttempts(int? maxAttempts)
@@ -128,10 +119,7 @@ public class BackgroundJob : Entity
             throw new BackgroundJobAbandonedException();
         }
 
-        if (MaxAttempts != maxAttempts)
-        {
-            MaxAttempts = maxAttempts;
-        }
+        MaxAttempts = maxAttempts;
     }
 
     internal void JobFailed()

@@ -368,10 +368,7 @@ public class JobTask : Entity
     {
         if (metadata == null)
         {
-            if (MetadataJson != null)
-            {
-                MetadataJson = null;
-            }
+            MetadataJson = null;
             return;
         }
 
@@ -390,10 +387,7 @@ public class JobTask : Entity
 
         var metadataJson = Encoding.UTF8.GetString(stream.ToArray());
 
-        if (MetadataJson != metadataJson)
-        {
-            MetadataJson = metadataJson;
-        }
+        MetadataJson = metadataJson;
     }
 
     /// <summary>
@@ -444,10 +438,7 @@ public class JobTask : Entity
             throw new JobTaskAlreadyDoneException();
         }
 
-        if (DelayedUntil != dateTime)
-        {
-            DelayedUntil = dateTime;
-        }
+        DelayedUntil = dateTime;
     }
 
     /// <summary>

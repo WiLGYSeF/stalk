@@ -263,7 +263,10 @@ public class Job : Entity
             throw new JobAlreadyDoneException();
         }
 
-        Tasks.Add(task);
+        if (!Tasks.Contains(task))
+        {
+            Tasks.Add(task);
+        }
     }
 
     /// <summary>
@@ -366,10 +369,7 @@ public class Job : Entity
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             }));
 
-        if (ConfigJson != serialized)
-        {
-            ConfigJson = serialized;
-        }
+        ConfigJson = serialized;
     }
 
     /// <summary>
@@ -423,10 +423,7 @@ public class Job : Entity
             throw new JobAlreadyDoneException();
         }
 
-        if (DelayedUntil != dateTime)
-        {
-            DelayedUntil = dateTime;
-        }
+        DelayedUntil = dateTime;
     }
 
     /// <summary>
