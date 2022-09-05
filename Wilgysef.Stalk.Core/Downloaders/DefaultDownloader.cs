@@ -1,21 +1,19 @@
 ﻿using System.Security.Cryptography;
-using System.Text;
 using Wilgysef.Stalk.Core.FilenameSlugs;
 using Wilgysef.Stalk.Core.FileServices;
-using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.StringFormatters;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
-using System;
-using System.IO;
 
 namespace Wilgysef.Stalk.Core.Downloaders;
 
 internal class DefaultDownloader : IDefaultDownloader
 {
     private const int DownloadBufferSize = 4 * 1024;
+
+    public string Name => "Default";
 
     private readonly IFileService _fileService;
     private readonly IStringFormatter _stringFormatter;
@@ -128,7 +126,7 @@ internal class DefaultDownloader : IDefaultDownloader
         long fileSize = 0;
         buffer ??= new byte[DownloadBufferSize];
 
-        while(true)
+        while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var bytesRead = await stream.ReadAsync(buffer, cancellationToken);

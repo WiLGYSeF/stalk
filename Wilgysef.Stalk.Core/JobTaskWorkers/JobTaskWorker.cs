@@ -1,4 +1,5 @@
-﻿using Wilgysef.Stalk.Core.Downloaders;
+﻿using Microsoft.Extensions.Logging;
+using Wilgysef.Stalk.Core.Downloaders;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
@@ -15,6 +16,8 @@ namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 public class JobTaskWorker : IJobTaskWorker
 {
     public JobTask? JobTask { get; protected set; }
+
+    public ILogger? Logger { get; set; }
 
     private JobConfig JobConfig { get; set; }
 
@@ -47,6 +50,8 @@ public class JobTaskWorker : IJobTaskWorker
 
         _working = true;
 
+        Logger?.LogInformation("Job task {JOBTASK_ID} starting.", JobTask.Id);
+
         using (var scope = _lifetimeScope.BeginLifetimeScope())
         {
             var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
@@ -76,20 +81,27 @@ public class JobTaskWorker : IJobTaskWorker
 
             JobTask.Success();
         }
-        catch (OperationCanceledException) { }
-        catch (Exception exc)
+        catch (OperationCanceledException)
         {
-            var workerException = exc as JobTaskWorkerException;
+            throw;
+        }
+        catch (Exception exception)
+        {
+            Logger?.LogError(exception, "Job task {JOBTASK_ID} failed.", JobTask.Id);
+
+            var workerException = exception as JobTaskWorkerException;
 
             // TODO: condtitionally create copy task on fail
 
             JobTask.Fail(
                 errorCode: workerException?.Code,
-                errorMessage: exc.Message,
-                errorDetail: workerException?.Details ?? exc.ToString());
+                errorMessage: exception.Message,
+                errorDetail: workerException?.Details ?? exception.ToString());
         }
         finally
         {
+            Logger?.LogInformation("Job task {JOBTASK_ID} stopping.", JobTask.Id);
+
             using var scope = _lifetimeScope.BeginLifetimeScope();
             var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
 
@@ -121,11 +133,17 @@ public class JobTaskWorker : IJobTaskWorker
                 $"No extractor was able to extract from {jobTaskUri}");
         }
 
+        Logger?.LogInformation("Job task {JOBTASK_ID} using extractor {EXTRACTOR}.", JobTask.Id, extractor.Name);
+
         var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
         var newTasks = new List<JobTask>();
 
+        Logger?.LogInformation("Job task {JOBTASK_ID} extracting from {URI}", JobTask.Id, jobTaskUri);
+
         await foreach (var result in extractor.ExtractAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
         {
+            Logger?.LogInformation("Job task {JOBTASK_ID} extracted {URI}", JobTask.Id, result.Uri);
+
             newTasks.Add(new JobTaskBuilder()
                 .WithId(idGenerator.CreateId())
                 .WithExtractResult(JobTask, result)
@@ -159,6 +177,8 @@ public class JobTaskWorker : IJobTaskWorker
             return;
         }
 
+        Logger?.LogInformation("Job task {JOBTASK_ID} using downloader {DOWNLOADER}.", JobTask.Id, downloader.Name);
+
         IItemIdSet? itemIds = null;
         if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
         {
@@ -166,6 +186,8 @@ public class JobTaskWorker : IJobTaskWorker
         }
 
         var formatter = scope.GetRequiredService<IStringFormatter>();
+
+        Logger?.LogInformation("Job task {JOBTASK_ID} downloading from {URI}", JobTask.Id, jobTaskUri);
 
         await foreach (var result in downloader.DownloadAsync(
             jobTaskUri,
@@ -176,6 +198,8 @@ public class JobTaskWorker : IJobTaskWorker
             JobTask.GetMetadata(),
             cancellationToken))
         {
+            Logger?.LogInformation("Job task {JOBTASK_ID} downloaded {URI}", JobTask.Id, result.Uri);
+
             itemIds?.Add(result.ItemId);
         }
 

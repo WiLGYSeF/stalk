@@ -11,8 +11,9 @@ using Wilgysef.Stalk.WebApi.Middleware;
 var responseExceptions = true;
 
 var loggerFactory = new SerilogLoggerFactory(new LoggerConfiguration()
-    .WriteTo.Console()
-    .WriteTo.Debug()
+    .MinimumLevel.Debug()
+    .WriteTo.Console(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
+    .WriteTo.Debug(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
     .CreateLogger());
 var logger = loggerFactory
     .CreateLogger("default");
