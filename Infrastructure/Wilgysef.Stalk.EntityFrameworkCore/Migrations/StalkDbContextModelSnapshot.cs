@@ -112,7 +112,7 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("longtext");
 
-                    b.Property<long>("ParentTaskId")
+                    b.Property<long?>("ParentTaskId")
                         .HasColumnType("bigint");
 
                     b.Property<int>("Priority")
@@ -150,9 +150,7 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
 
                     b.HasOne("Wilgysef.Stalk.Core.Models.JobTasks.JobTask", "ParentTask")
                         .WithMany()
-                        .HasForeignKey("ParentTaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("ParentTaskId");
 
                     b.OwnsOne("Wilgysef.Stalk.Core.Models.JobTasks.JobTaskResult", "Result", b1 =>
                         {

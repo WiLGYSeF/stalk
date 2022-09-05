@@ -72,6 +72,8 @@ void ConfigureServices()
         var serviceRegistrar = new ServiceRegistrar(
             new DbContextOptionsBuilder<StalkDbContext>()
                 .UseMySql("server=localhost;database=stalk;user=user;password=NlZbRHyeYXV6mIA;", new MySqlServerVersion(new Version(8, 0, 3)))
+                .UseLoggerFactory(loggerFactory)
+                .EnableSensitiveDataLogging()
                 .Options,
             logger);
         serviceRegistrar.RegisterApplication(containerBuilder, builder.Services);

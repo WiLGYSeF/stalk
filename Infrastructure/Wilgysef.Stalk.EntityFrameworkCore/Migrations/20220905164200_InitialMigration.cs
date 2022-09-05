@@ -84,7 +84,7 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                     Result_ErrorDetail = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     JobId = table.Column<long>(type: "bigint", nullable: false),
-                    ParentTaskId = table.Column<long>(type: "bigint", nullable: false)
+                    ParentTaskId = table.Column<long>(type: "bigint", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -99,8 +99,7 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                         name: "FK_JobTasks_JobTasks_ParentTaskId",
                         column: x => x.ParentTaskId,
                         principalTable: "JobTasks",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        principalColumn: "Id");
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 

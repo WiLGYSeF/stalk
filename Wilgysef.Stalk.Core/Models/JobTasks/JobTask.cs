@@ -97,7 +97,7 @@ public class JobTask : Entity
     /// Parent task foreign key Id.
     /// </summary>
     [ForeignKey(nameof(ParentTask))]
-    public virtual long ParentTaskId { get; protected set; }
+    public virtual long? ParentTaskId { get; protected set; }
 
     /// <summary>
     /// Parent task.
@@ -226,7 +226,7 @@ public class JobTask : Entity
         DateTime? finished,
         DateTime? delayedUntil,
         JobTaskResult? result,
-        long parentTaskId,
+        long? parentTaskId,
         JobTask? parentTask)
     {
         if (!started.HasValue && state != JobTaskState.Inactive)

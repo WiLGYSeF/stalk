@@ -8,10 +8,6 @@ public class JobTaskBuilder
 {
     public long Id { get; set; }
 
-    public Job? Job { get; set; }
-
-    public long JobId { get; set; }
-
     public string? Name { get; set; }
 
     public JobTaskState State { get; set; } = JobTaskState.Inactive;
@@ -36,7 +32,11 @@ public class JobTaskBuilder
 
     public JobTaskResult Result { get; set; } = JobTaskResult.Create();
 
-    public long ParentTaskId { get; set; }
+    public long JobId { get; set; }
+
+    public Job? Job { get; set; }
+
+    public long? ParentTaskId { get; set; }
 
     public JobTask? ParentTask { get; set; }
 
@@ -49,7 +49,6 @@ public class JobTaskBuilder
 
     public JobTaskBuilder From(JobTask task)
     {
-        Job = task.Job;
         Id = task.Id;
         Name = task.Name;
         State = task.State;
@@ -64,6 +63,9 @@ public class JobTaskBuilder
         Finished = task.Finished;
         DelayedUntil = task.DelayedUntil;
         Result = task.Result;
+        JobId = task.JobId;
+        Job = task.Job;
+        ParentTaskId = task.ParentTaskId;
         ParentTask = task.ParentTask;
         return this;
     }
@@ -98,18 +100,6 @@ public class JobTaskBuilder
     public JobTaskBuilder WithId(long id)
     {
         Id = id;
-        return this;
-    }
-
-    public JobTaskBuilder WithJob(Job job)
-    {
-        Job = job;
-        return this;
-    }
-
-    public JobTaskBuilder WithJobId(long jobId)
-    {
-        JobId = jobId;
         return this;
     }
 
@@ -182,6 +172,18 @@ public class JobTaskBuilder
     public JobTaskBuilder WithResult(JobTaskResult? result)
     {
         Result = result ?? JobTaskResult.Create();
+        return this;
+    }
+
+    public JobTaskBuilder WithJobId(long jobId)
+    {
+        JobId = jobId;
+        return this;
+    }
+
+    public JobTaskBuilder WithJob(Job job)
+    {
+        Job = job;
         return this;
     }
 

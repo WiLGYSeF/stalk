@@ -11,7 +11,7 @@ using Wilgysef.Stalk.EntityFrameworkCore;
 namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
 {
     [DbContext(typeof(StalkDbContext))]
-    [Migration("20220905151151_InitialMigration")]
+    [Migration("20220905164200_InitialMigration")]
     partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -114,7 +114,7 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("longtext");
 
-                    b.Property<long>("ParentTaskId")
+                    b.Property<long?>("ParentTaskId")
                         .HasColumnType("bigint");
 
                     b.Property<int>("Priority")
@@ -152,9 +152,7 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
 
                     b.HasOne("Wilgysef.Stalk.Core.Models.JobTasks.JobTask", "ParentTask")
                         .WithMany()
-                        .HasForeignKey("ParentTaskId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .HasForeignKey("ParentTaskId");
 
                     b.OwnsOne("Wilgysef.Stalk.Core.Models.JobTasks.JobTaskResult", "Result", b1 =>
                         {
