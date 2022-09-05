@@ -21,6 +21,7 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                     Attempts = table.Column<int>(type: "int", nullable: false),
                     NextRun = table.Column<DateTime>(type: "datetime(6)", nullable: true),
                     MaximumLifetime = table.Column<DateTime>(type: "datetime(6)", nullable: true),
+                    MaxAttempts = table.Column<int>(type: "int", nullable: true),
                     Abandoned = table.Column<bool>(type: "tinyint(1)", nullable: false),
                     JobArgsName = table.Column<string>(type: "longtext", nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
@@ -82,8 +83,8 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     Result_ErrorDetail = table.Column<string>(type: "longtext", nullable: true)
                         .Annotation("MySql:CharSet", "utf8mb4"),
-                    ParentTaskId = table.Column<long>(type: "bigint", nullable: true),
-                    JobId = table.Column<long>(type: "bigint", nullable: true)
+                    JobId = table.Column<long>(type: "bigint", nullable: false),
+                    ParentTaskId = table.Column<long>(type: "bigint", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -92,12 +93,14 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                         name: "FK_JobTasks_Jobs_JobId",
                         column: x => x.JobId,
                         principalTable: "Jobs",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_JobTasks_JobTasks_ParentTaskId",
                         column: x => x.ParentTaskId,
                         principalTable: "JobTasks",
-                        principalColumn: "Id");
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 })
                 .Annotation("MySql:CharSet", "utf8mb4");
 

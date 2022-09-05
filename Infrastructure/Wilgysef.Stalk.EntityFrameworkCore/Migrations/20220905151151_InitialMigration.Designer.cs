@@ -11,7 +11,7 @@ using Wilgysef.Stalk.EntityFrameworkCore;
 namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
 {
     [DbContext(typeof(StalkDbContext))]
-    [Migration("20220827012225_InitialMigration")]
+    [Migration("20220905151151_InitialMigration")]
     partial class InitialMigration
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -39,6 +39,9 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                     b.Property<string>("JobArgsName")
                         .IsRequired()
                         .HasColumnType("longtext");
+
+                    b.Property<int?>("MaxAttempts")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("MaximumLifetime")
                         .HasColumnType("datetime(6)");
@@ -102,7 +105,7 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                     b.Property<string>("ItemId")
                         .HasColumnType("longtext");
 
-                    b.Property<long?>("JobId")
+                    b.Property<long>("JobId")
                         .HasColumnType("bigint");
 
                     b.Property<string>("MetadataJson")
@@ -111,7 +114,7 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                     b.Property<string>("Name")
                         .HasColumnType("longtext");
 
-                    b.Property<long?>("ParentTaskId")
+                    b.Property<long>("ParentTaskId")
                         .HasColumnType("bigint");
 
                     b.Property<int>("Priority")
@@ -141,13 +144,17 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
 
             modelBuilder.Entity("Wilgysef.Stalk.Core.Models.JobTasks.JobTask", b =>
                 {
-                    b.HasOne("Wilgysef.Stalk.Core.Models.Jobs.Job", null)
+                    b.HasOne("Wilgysef.Stalk.Core.Models.Jobs.Job", "Job")
                         .WithMany("Tasks")
-                        .HasForeignKey("JobId");
+                        .HasForeignKey("JobId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.HasOne("Wilgysef.Stalk.Core.Models.JobTasks.JobTask", "ParentTask")
                         .WithMany()
-                        .HasForeignKey("ParentTaskId");
+                        .HasForeignKey("ParentTaskId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
 
                     b.OwnsOne("Wilgysef.Stalk.Core.Models.JobTasks.JobTaskResult", "Result", b1 =>
                         {
@@ -173,6 +180,8 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                             b1.WithOwner()
                                 .HasForeignKey("JobTaskId");
                         });
+
+                    b.Navigation("Job");
 
                     b.Navigation("ParentTask");
 
