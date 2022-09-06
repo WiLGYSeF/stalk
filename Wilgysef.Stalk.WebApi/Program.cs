@@ -20,6 +20,7 @@ var logger = loggerFactory.CreateLogger("default");
 
 var builder = WebApplication.CreateBuilder(args);
 
+ConfigureConfiguration();
 ConfigureServices();
 ConfigureSwagger();
 
@@ -84,13 +85,10 @@ void ConfigureSwagger()
     builder.Services.AddSwaggerGen();
 }
 
-
 void ConfigureConfiguration()
 {
     builder.Host.ConfigureAppConfiguration((context, configuration) =>
     {
-        configuration.Sources.Clear();
-
         configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
     });
 }

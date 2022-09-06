@@ -68,7 +68,9 @@ public class ServiceRegistrar
     public void RegisterApplication(ContainerBuilder builder, IServiceCollection services)
     {
         var assemblies = GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter).ToList();
-        var externalAssemblies = AssemblyLoader.LoadAssemblies(ExternalAssembliesPath);
+        var externalAssemblies = ExternalAssembliesPath != null
+            ? AssemblyLoader.LoadAssemblies(ExternalAssembliesPath)
+            : new List<Assembly>();
 
         var loadedAssemblies = ToArray(
             assemblies.Count + externalAssemblies.Count,
@@ -133,9 +135,10 @@ public class ServiceRegistrar
 
         var options = loadedAssemblies.SelectMany(a => a.GetTypes())
             .Where(t => t.IsClass && t.GetInterfaces().Contains(typeof(IOptionSection)));
+        var getOptionFunc = GetOptionSection ?? GetOptionSectionDefault;
         foreach (var option in options)
         {
-            builder.Register(c => (object)GetOptionSection(option))
+            builder.Register(c => (object)getOptionFunc(option))
                 .As(option)
                 .InstancePerDependency();
         }
@@ -155,6 +158,11 @@ public class ServiceRegistrar
         builder.RegisterType<Startup>()
             .AsSelf()
             .SingleInstance();
+
+        IOptionSection GetOptionSectionDefault(Type type)
+        {
+            return (Activator.CreateInstance(type) as IOptionSection)!;
+        }
     }
 
     private IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle> RegisterAssemblyTypes(
