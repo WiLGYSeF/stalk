@@ -137,7 +137,7 @@ public class MetadataObject : IMetadataObject
         SetValues(dictionary, null);
     }
 
-    private void SetValue(string key, object value, bool throwIfExisting)
+    private void SetValue(string key, object? value, bool throwIfExisting)
     {
         if (!TryGetPenultimateTrie(key, out var trie, out var ultimateKey))
         {
@@ -152,8 +152,10 @@ public class MetadataObject : IMetadataObject
             throw new ArgumentException("Key already exists", nameof(key));
         }
 
-        var newTrie = new Trie<string, object?>(ultimateKey, value);
-        newTrie.Terminal = true;
+        var newTrie = new Trie<string, object?>(ultimateKey, value)
+        {
+            Terminal = true
+        };
         trie[ultimateKey] = newTrie;
     }
 
