@@ -7,9 +7,9 @@ using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
 using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.EntityFrameworkCore;
+using Wilgysef.Stalk.WebApi.Extensions;
 using Wilgysef.Stalk.WebApi.Middleware;
-
-var responseExceptions = true;
+using Wilgysef.Stalk.WebApi.Options;
 
 var loggerFactory = new SerilogLoggerFactory(new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -25,6 +25,7 @@ ConfigureServices();
 ConfigureSwagger();
 
 var app = builder.Build();
+var appOptions = GetOptions<AppOptions>(app.Configuration);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -37,12 +38,8 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.UseExceptionHandler(new ExceptionHandler
-{
-    ExceptionsInResponse = responseExceptions,
-}.GetExceptionHandlerOptions());
-
-app.Use(new LoggingHandler(logger).HandleAsync);
+ConfigureExceptionHandler();
+ConfigureLoggingHandler();
 
 app.MapControllers();
 
@@ -53,6 +50,15 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+void ConfigureConfiguration()
+{
+    builder.Host.ConfigureAppConfiguration((context, configuration) =>
+    {
+        configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+        configuration.AddJsonFile("appsettings.secrets.json", optional: true, reloadOnChange: true);
+    });
+}
 
 void ConfigureServices()
 {
@@ -85,27 +91,40 @@ void ConfigureSwagger()
     builder.Services.AddSwaggerGen();
 }
 
-void ConfigureConfiguration()
+void ConfigureExceptionHandler()
 {
-    builder.Host.ConfigureAppConfiguration((context, configuration) =>
+    var exceptionHandler = new ExceptionHandler
     {
-        configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+        ExceptionsInResponse = appOptions.ExceptionsInResponse,
+    };
+
+    app.Configuration.RegisterRepeatChangeCallback(_ =>
+    {
+        var appOptions = GetOptions<AppOptions>(app.Configuration);
+        exceptionHandler.ExceptionsInResponse = appOptions.ExceptionsInResponse;
     });
+
+    app.UseExceptionHandler(exceptionHandler.GetExceptionHandlerOptions());
 }
 
-T? GetOptions<T>(IConfiguration configuration) where T : IOptionSection
+void ConfigureLoggingHandler()
+{
+    app.Use(new LoggingHandler(logger).HandleAsync);
+}
+
+T GetOptions<T>(IConfiguration configuration) where T : IOptionSection
 {
     var optionsInstance = Activator.CreateInstance<T>();
-    return configuration.GetSection(optionsInstance.Label).Get<T>();
+    return configuration.GetSection(optionsInstance.Label).Get<T>() ?? optionsInstance;
 }
 
-IOptionSection? GetOptionsByType(Type type, IConfiguration configuration)
+IOptionSection GetOptionsByType(Type type, IConfiguration configuration)
 {
     if (Activator.CreateInstance(type) is not IOptionSection optionsInstance)
     {
         throw new ArgumentException("Type must be assignable from IOptionSection.");
     }
-    return (IOptionSection?)configuration.GetSection(optionsInstance.Label).Get(type);
+    return (IOptionSection)(configuration.GetSection(optionsInstance.Label).Get(type) ?? optionsInstance);
 }
 
 public partial class Program { }
