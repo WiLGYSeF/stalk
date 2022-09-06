@@ -6,8 +6,6 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
     {
         char KeySeparator { get; set; }
 
-        IDictionary<string, object> Dictionary { get; }
-
         bool HasValues { get; }
 
         object this[string key] { get; set; }
@@ -23,5 +21,11 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         bool ContainsValue(string key);
 
         bool RemoveValue(string key);
+
+        IMetadataObject Copy();
+
+        IDictionary<string, object> GetDictionary();
+
+        void From(IDictionary<object, object> dictionary);
     }
 }

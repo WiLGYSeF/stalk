@@ -1,6 +1,7 @@
 ﻿using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
+using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
 namespace Wilgysef.Stalk.Core.Models.JobTasks;
 
@@ -20,7 +21,7 @@ public class JobTaskBuilder
 
     public string? ItemData { get; set; }
 
-    public object? Metadata { get; set; }
+    public IMetadataObject? Metadata { get; set; }
 
     public JobTaskType Type { get; set; } = JobTaskType.Extract;
 
@@ -56,8 +57,7 @@ public class JobTaskBuilder
         Uri = task.Uri;
         ItemId = task.ItemId;
         ItemData = task.ItemData;
-        // TODO: copy metadata
-        //Metadata = task.Metadata;
+        Metadata = task.GetMetadata().Copy();
         Type = task.Type;
         Started = task.Started;
         Finished = task.Finished;
@@ -139,7 +139,7 @@ public class JobTaskBuilder
         return this;
     }
 
-    public JobTaskBuilder WithMetadata(object? metadata)
+    public JobTaskBuilder WithMetadata(IMetadataObject? metadata)
     {
         Metadata = metadata;
         return this;

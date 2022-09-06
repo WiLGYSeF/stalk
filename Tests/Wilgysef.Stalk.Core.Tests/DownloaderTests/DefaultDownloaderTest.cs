@@ -70,10 +70,9 @@ public class DefaultDownloaderTest : BaseTest
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
-        var metadataWritten = new MetadataObject(
-            deserializer.Deserialize<IDictionary<string, object>>(
-                Encoding.UTF8.GetString((_fileService.Files[metadataFilename] as MemoryStream)!.ToArray())),
-            metadata.KeySeparator);
+        var metadataWritten = new MetadataObject(metadata.KeySeparator);
+        metadataWritten.From(deserializer.Deserialize<IDictionary<object, object>>(
+                Encoding.UTF8.GetString((_fileService.Files[metadataFilename] as MemoryStream)!.ToArray())));
 
         var metadataConsts = new MetadataObjectConsts(metadataWritten.KeySeparator);
         var hashName = "SHA256";

@@ -71,7 +71,7 @@ public class DefaultDownloader : IDefaultDownloader
 
         var metadataFilename = await SaveMetadataAsync(
             metadataFilenameTemplate,
-            metadata.Dictionary,
+            metadata.GetDictionary(),
             cancellationToken);
 
         yield return new DownloadResult(
@@ -91,7 +91,7 @@ public class DefaultDownloader : IDefaultDownloader
     {
         var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
         var filename = filenameSlug.SlugifyPath(
-            _stringFormatter.Format(filenameTemplate, metadata.Dictionary));
+            _stringFormatter.Format(filenameTemplate, metadata.GetDictionary()));
 
         var response = await _httpClient.GetAsync(uri, cancellationToken);
         response.EnsureSuccessStatusCode();

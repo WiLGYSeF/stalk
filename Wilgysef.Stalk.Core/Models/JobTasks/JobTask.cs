@@ -220,7 +220,7 @@ public class JobTask : Entity
         string uri,
         string? itemId,
         string? itemData,
-        object? metadata,
+        IMetadataObject? metadata,
         JobTaskType type,
         DateTime? started,
         DateTime? finished,
@@ -296,7 +296,7 @@ public class JobTask : Entity
     /// </summary>
     /// <param name="metadata">Job task metadata.</param>
     // TODO: change to class?
-    public void ChangeMetadata(object? metadata)
+    public void ChangeMetadata(IMetadataObject? metadata)
     {
         if (IsDone)
         {
@@ -313,17 +313,21 @@ public class JobTask : Entity
             return new MetadataObject(MetadataKeySeparator);
         }
 
-        var metadata = JsonSerializer.Deserialize<IDictionary<string, object>>(
+        var metadataDictionary = JsonSerializer.Deserialize<IDictionary<object, object?>>(
             MetadataJson!,
             new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
             });
-        if (metadata == null)
+        if (metadataDictionary == null)
         {
             throw new InvalidOperationException("Metadata must be a dictionary.");
         }
-        return new MetadataObject(metadata, MetadataKeySeparator);
+
+        var metadata = new MetadataObject(MetadataKeySeparator);
+        metadata.From(metadataDictionary);
+
+        return metadata;
     }
 
     /// <summary>
@@ -364,7 +368,7 @@ public class JobTask : Entity
     /// </summary>
     /// <param name="metadata">Job task metadata.</param>
     /// <exception cref="ArgumentException">Metadata does not serialize to an object.</exception>
-    internal void SetMetadata(object? metadata)
+    internal void SetMetadata(IMetadataObject? metadata)
     {
         if (metadata == null)
         {
@@ -372,7 +376,7 @@ public class JobTask : Entity
             return;
         }
 
-        using var jsonDocument = JsonSerializer.SerializeToDocument(metadata, new JsonSerializerOptions
+        using var jsonDocument = JsonSerializer.SerializeToDocument(metadata.GetDictionary(), new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         });
