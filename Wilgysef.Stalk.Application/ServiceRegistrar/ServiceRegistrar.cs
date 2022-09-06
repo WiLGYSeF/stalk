@@ -47,18 +47,18 @@ public class ServiceRegistrar
 
     public string ExternalAssembliesPath { get; set; }
 
-    public Func<Type, IOptionSection> GetConfig { get; set; }
+    public Func<Type, IOptionSection> GetOptionSection { get; set; }
 
     public ServiceRegistrar(
         DbContextOptions<StalkDbContext> options,
         ILogger logger,
         string externalAssembliesPath,
-        Func<Type, IOptionSection> getConfig)
+        Func<Type, IOptionSection> getOptionSection)
     {
         DbContextOptions = options;
         Logger = logger;
         ExternalAssembliesPath = externalAssembliesPath;
-        GetConfig = getConfig;
+        GetOptionSection = getOptionSection;
     }
 
     /// <summary>
@@ -131,18 +131,14 @@ public class ServiceRegistrar
         RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, loadedAssemblies)
             .InstancePerDependency();
 
-        //var classes = loadedAssemblies
-        //    .SelectMany(a => a.GetTypes())
-        //    .Where(t => t.GetInterfaces().Contains(typeof(IOptionSection)) && t.IsClass);
-        //foreach (var @class in classes)
-        //{
-        //    builder.Register(c => Convert.ChangeType(GetConfig(@class), @class))
-        //        .As(@class)
-        //        .InstancePerDependency();
-        //}
-
-        RegisterAssemblyTypes<IOptionSection>(builder, loadedAssemblies)
-            .InstancePerDependency();
+        var options = loadedAssemblies.SelectMany(a => a.GetTypes())
+            .Where(t => t.IsClass && t.GetInterfaces().Contains(typeof(IOptionSection)));
+        foreach (var option in options)
+        {
+            builder.Register(c => (object)GetOptionSection(option))
+                .As(option)
+                .InstancePerDependency();
+        }
 
         if (RegisterExtractors)
         {

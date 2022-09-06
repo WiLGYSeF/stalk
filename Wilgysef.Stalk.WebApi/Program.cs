@@ -20,7 +20,6 @@ var logger = loggerFactory.CreateLogger("default");
 
 var builder = WebApplication.CreateBuilder(args);
 
-ConfigureConfiguration();
 ConfigureServices();
 ConfigureSwagger();
 
@@ -56,8 +55,6 @@ app.Run();
 
 void ConfigureServices()
 {
-    builder.Services.AddAutofac();
-
     builder.Services.AddControllers();
 
     builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
@@ -86,6 +83,7 @@ void ConfigureSwagger()
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
 }
+
 
 void ConfigureConfiguration()
 {
