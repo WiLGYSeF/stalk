@@ -19,6 +19,7 @@ using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.IdGenerators;
+using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 namespace Wilgysef.Stalk.Application.ServiceRegistrar;
@@ -46,14 +47,18 @@ public class ServiceRegistrar
 
     public string ExternalAssembliesPath { get; set; }
 
+    public Func<Type, IOptionSection> GetConfig { get; set; }
+
     public ServiceRegistrar(
         DbContextOptions<StalkDbContext> options,
         ILogger logger,
-        string externalAssembliesPath)
+        string externalAssembliesPath,
+        Func<Type, IOptionSection> getConfig)
     {
         DbContextOptions = options;
         Logger = logger;
         ExternalAssembliesPath = externalAssembliesPath;
+        GetConfig = getConfig;
     }
 
     /// <summary>
@@ -124,6 +129,19 @@ public class ServiceRegistrar
         RegisterAssemblyTypes(typeof(ICommandHandler<,>), builder, loadedAssemblies)
             .InstancePerDependency();
         RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, loadedAssemblies)
+            .InstancePerDependency();
+
+        //var classes = loadedAssemblies
+        //    .SelectMany(a => a.GetTypes())
+        //    .Where(t => t.GetInterfaces().Contains(typeof(IOptionSection)) && t.IsClass);
+        //foreach (var @class in classes)
+        //{
+        //    builder.Register(c => Convert.ChangeType(GetConfig(@class), @class))
+        //        .As(@class)
+        //        .InstancePerDependency();
+        //}
+
+        RegisterAssemblyTypes<IOptionSection>(builder, loadedAssemblies)
             .InstancePerDependency();
 
         if (RegisterExtractors)

@@ -2,6 +2,7 @@
 using Wilgysef.Stalk.Application.Contracts.Queries.Jobs;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Cqrs;
+using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.Core.Specifications;
 
 namespace Wilgysef.Stalk.Application.Queries;
@@ -13,7 +14,8 @@ public class JobQueryHandler : Query,
     private readonly IJobManager _jobManager;
 
     public JobQueryHandler(
-        IJobManager jobManager)
+        IJobManager jobManager,
+        ExtractorsOptions options)
     {
         _jobManager = jobManager;
     }

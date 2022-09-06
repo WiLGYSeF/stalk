@@ -5,7 +5,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
-using Wilgysef.Stalk.Core.Shared.Extractors;
+using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.EntityFrameworkCore;
 using Wilgysef.Stalk.WebApi.Middleware;
 
@@ -16,13 +16,11 @@ var loggerFactory = new SerilogLoggerFactory(new LoggerConfiguration()
     .WriteTo.Console(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
     .WriteTo.Debug(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
     .CreateLogger());
-var logger = loggerFactory
-    .CreateLogger("default");
+var logger = loggerFactory.CreateLogger("default");
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-
+ConfigureConfiguration();
 ConfigureServices();
 ConfigureSwagger();
 
@@ -60,20 +58,25 @@ void ConfigureServices()
 {
     builder.Services.AddAutofac();
 
+    builder.Services.AddControllers();
+
     builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
     builder.Host.ConfigureContainer<ContainerBuilder>((context, containerBuilder) =>
     {
-        // TODO: create appsettings and move dev connectionstring
+        var connectionString = context.Configuration.GetConnectionString("Default");
+
+        var extractorsOptions = GetOptions<ExtractorsOptions>(context.Configuration);
 
         var serviceRegistrar = new ServiceRegistrar(
             new DbContextOptionsBuilder<StalkDbContext>()
-                .UseMySql("server=localhost;database=stalk;user=user;password=NlZbRHyeYXV6mIA;", new MySqlServerVersion(new Version(8, 0, 3)))
+                .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
                 .UseLoggerFactory(loggerFactory)
                 .EnableSensitiveDataLogging()
                 .Options,
             logger,
-            null);
+            extractorsOptions.Path,
+            t => GetOptionsByType(t, context.Configuration));
         serviceRegistrar.RegisterApplication(containerBuilder, builder.Services);
     });
 }
@@ -82,6 +85,31 @@ void ConfigureSwagger()
 {
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
+}
+
+void ConfigureConfiguration()
+{
+    builder.Host.ConfigureAppConfiguration((context, configuration) =>
+    {
+        configuration.Sources.Clear();
+
+        configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+    });
+}
+
+T? GetOptions<T>(IConfiguration configuration) where T : IOptionSection
+{
+    var optionsInstance = Activator.CreateInstance<T>();
+    return configuration.GetSection(optionsInstance.Label).Get<T>();
+}
+
+IOptionSection? GetOptionsByType(Type type, IConfiguration configuration)
+{
+    if (Activator.CreateInstance(type) is not IOptionSection optionsInstance)
+    {
+        throw new ArgumentException("Type must be assignable from IOptionSection.");
+    }
+    return (IOptionSection?)configuration.GetSection(optionsInstance.Label).Get(type);
 }
 
 public partial class Program { }
