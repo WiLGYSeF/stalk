@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl;
 using System.Reflection;
+using Wilgysef.Stalk.Application.AssemblyLoaders;
 using Wilgysef.Stalk.Application.HttpClientPolicies;
 using Wilgysef.Stalk.Application.IdGenerators;
 using Wilgysef.Stalk.Core;
@@ -18,6 +19,7 @@ using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.IdGenerators;
+using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 namespace Wilgysef.Stalk.Application.ServiceRegistrar;
@@ -43,12 +45,20 @@ public class ServiceRegistrar
 
     public ILogger Logger { get; set; }
 
+    public string ExternalAssembliesPath { get; set; }
+
+    public Func<Type, IOptionSection> GetOptionSection { get; set; }
+
     public ServiceRegistrar(
         DbContextOptions<StalkDbContext> options,
-        ILogger logger)
+        ILogger logger,
+        string externalAssembliesPath,
+        Func<Type, IOptionSection> getOptionSection)
     {
         DbContextOptions = options;
         Logger = logger;
+        ExternalAssembliesPath = externalAssembliesPath;
+        GetOptionSection = getOptionSection;
     }
 
     /// <summary>
@@ -57,8 +67,14 @@ public class ServiceRegistrar
     /// <param name="builder">Container builder.</param>
     public void RegisterApplication(ContainerBuilder builder, IServiceCollection services)
     {
-        var assemblies = GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter)
-            .ToList().ToArray();
+        var assemblies = GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter).ToList();
+        var externalAssemblies = ExternalAssembliesPath != null
+            ? AssemblyLoader.LoadAssemblies(ExternalAssembliesPath)
+            : new List<Assembly>();
+
+        var loadedAssemblies = ToArray(
+            assemblies.Count + externalAssemblies.Count,
+            assemblies.Concat(externalAssemblies));
 
         // Polly registration
         services.AddHttpClient(Constants.HttpClientExtractorDownloaderName)
@@ -71,7 +87,7 @@ public class ServiceRegistrar
         builder.Register(c => c.Resolve<IHttpClientFactory>().CreateClient())
             .As<HttpClient>();
 
-        builder.RegisterAutoMapper(true, assemblies);
+        builder.RegisterAutoMapper(true, loadedAssemblies);
 
         // IdGen registration
         builder.Register(c => new IdGenerator(new IdGen.IdGenerator(IdGeneratorId, IdGen.IdGeneratorOptions.Default)))
@@ -82,7 +98,7 @@ public class ServiceRegistrar
         builder.Register(c => new StdSchedulerFactory())
             .As<ISchedulerFactory>()
             .SingleInstance();
-        RegisterAssemblyTypes<IJob>(builder, assemblies)
+        RegisterAssemblyTypes<IJob>(builder, loadedAssemblies)
             .AsSelf()
             .InstancePerDependency();
 
@@ -105,33 +121,48 @@ public class ServiceRegistrar
                 .SingleInstance();
         }
 
-        RegisterAssemblyTypes<ITransientDependency>(builder, assemblies)
+        RegisterAssemblyTypes<ITransientDependency>(builder, loadedAssemblies)
             .InstancePerDependency();
-        RegisterAssemblyTypes<IScopedDependency>(builder, assemblies)
+        RegisterAssemblyTypes<IScopedDependency>(builder, loadedAssemblies)
             .InstancePerLifetimeScope();
-        RegisterAssemblyTypes<ISingletonDependency>(builder, assemblies)
+        RegisterAssemblyTypes<ISingletonDependency>(builder, loadedAssemblies)
             .SingleInstance();
 
-        RegisterAssemblyTypes(typeof(ICommandHandler<,>), builder, assemblies)
+        RegisterAssemblyTypes(typeof(ICommandHandler<,>), builder, loadedAssemblies)
             .InstancePerDependency();
-        RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, assemblies)
+        RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, loadedAssemblies)
             .InstancePerDependency();
+
+        var options = loadedAssemblies.SelectMany(a => a.GetTypes())
+            .Where(t => t.IsClass && t.GetInterfaces().Contains(typeof(IOptionSection)));
+        var getOptionFunc = GetOptionSection ?? GetOptionSectionDefault;
+        foreach (var option in options)
+        {
+            builder.Register(c => (object)getOptionFunc(option))
+                .As(option)
+                .InstancePerDependency();
+        }
 
         if (RegisterExtractors)
         {
-            RegisterAssemblyTypes<IExtractor>(builder, assemblies)
+            RegisterAssemblyTypes<IExtractor>(builder, loadedAssemblies)
                 .InstancePerDependency();
         }
 
         if (RegisterDownloaders)
         {
-            RegisterAssemblyTypes<IDownloader>(builder, assemblies)
+            RegisterAssemblyTypes<IDownloader>(builder, loadedAssemblies)
                 .InstancePerDependency();
         }
 
         builder.RegisterType<Startup>()
             .AsSelf()
             .SingleInstance();
+
+        IOptionSection GetOptionSectionDefault(Type type)
+        {
+            return (Activator.CreateInstance(type) as IOptionSection)!;
+        }
     }
 
     private IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle> RegisterAssemblyTypes(
@@ -180,5 +211,18 @@ public class ServiceRegistrar
                 }
             }
         }
+    }
+
+    private T[] ToArray<T>(int count, IEnumerable<T> items)
+    {
+        var arr = new T[count];
+        var index = 0;
+
+        foreach (var item in items)
+        {
+            arr[index++] = item;
+        }
+
+        return arr;
     }
 }

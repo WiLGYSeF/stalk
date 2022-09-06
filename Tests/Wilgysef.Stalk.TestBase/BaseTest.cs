@@ -141,9 +141,12 @@ public abstract class BaseTest
     {
         var builder = new ContainerBuilder();
 
+        // TODO: change null?
         var serviceRegistrar = new ServiceRegistrar(
             GetDbContextOptionsBuilder().Options,
-            new LoggerFactory(new[] { new DebugLoggerProvider() }).CreateLogger("test"))
+            new LoggerFactory(new[] { new DebugLoggerProvider() }).CreateLogger("test"),
+            null,
+            null)
         {
             RegisterExtractors = RegisterExtractors,
             RegisterDownloaders = RegisterDownloaders,
