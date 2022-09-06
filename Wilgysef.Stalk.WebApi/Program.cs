@@ -5,28 +5,27 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
-using Wilgysef.Stalk.Core.Shared.Extractors;
+using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.EntityFrameworkCore;
+using Wilgysef.Stalk.WebApi.Extensions;
 using Wilgysef.Stalk.WebApi.Middleware;
-
-var responseExceptions = true;
+using Wilgysef.Stalk.WebApi.Options;
 
 var loggerFactory = new SerilogLoggerFactory(new LoggerConfiguration()
     .MinimumLevel.Debug()
     .WriteTo.Console(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
     .WriteTo.Debug(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
     .CreateLogger());
-var logger = loggerFactory
-    .CreateLogger("default");
+var logger = loggerFactory.CreateLogger("default");
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-
+ConfigureConfiguration();
 ConfigureServices();
 ConfigureSwagger();
 
 var app = builder.Build();
+var appOptions = GetOptions<AppOptions>(app.Configuration);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -39,12 +38,8 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
-app.UseExceptionHandler(new ExceptionHandler
-{
-    ExceptionsInResponse = responseExceptions,
-}.GetExceptionHandlerOptions());
-
-app.Use(new LoggingHandler(logger).HandleAsync);
+ConfigureExceptionHandler();
+ConfigureLoggingHandler();
 
 app.MapControllers();
 
@@ -56,24 +51,36 @@ using (var scope = app.Services.CreateScope())
 
 app.Run();
 
+void ConfigureConfiguration()
+{
+    builder.Host.ConfigureAppConfiguration((context, configuration) =>
+    {
+        configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+        configuration.AddJsonFile("appsettings.secrets.json", optional: true, reloadOnChange: true);
+    });
+}
+
 void ConfigureServices()
 {
-    builder.Services.AddAutofac();
+    builder.Services.AddControllers();
 
     builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
     builder.Host.ConfigureContainer<ContainerBuilder>((context, containerBuilder) =>
     {
-        // TODO: create appsettings and move dev connectionstring
+        var connectionString = context.Configuration.GetConnectionString("Default");
+
+        var extractorsOptions = GetOptions<ExtractorsOptions>(context.Configuration);
 
         var serviceRegistrar = new ServiceRegistrar(
             new DbContextOptionsBuilder<StalkDbContext>()
-                .UseMySql("server=localhost;database=stalk;user=user;password=NlZbRHyeYXV6mIA;", new MySqlServerVersion(new Version(8, 0, 3)))
+                .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
                 .UseLoggerFactory(loggerFactory)
                 .EnableSensitiveDataLogging()
                 .Options,
             logger,
-            null);
+            extractorsOptions.Path,
+            t => GetOptionsByType(t, context.Configuration));
         serviceRegistrar.RegisterApplication(containerBuilder, builder.Services);
     });
 }
@@ -82,6 +89,42 @@ void ConfigureSwagger()
 {
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
+}
+
+void ConfigureExceptionHandler()
+{
+    var exceptionHandler = new ExceptionHandler
+    {
+        ExceptionsInResponse = appOptions.ExceptionsInResponse,
+    };
+
+    app.Configuration.RegisterRepeatChangeCallback(_ =>
+    {
+        var appOptions = GetOptions<AppOptions>(app.Configuration);
+        exceptionHandler.ExceptionsInResponse = appOptions.ExceptionsInResponse;
+    });
+
+    app.UseExceptionHandler(exceptionHandler.GetExceptionHandlerOptions());
+}
+
+void ConfigureLoggingHandler()
+{
+    app.Use(new LoggingHandler(logger).HandleAsync);
+}
+
+T GetOptions<T>(IConfiguration configuration) where T : IOptionSection
+{
+    var optionsInstance = Activator.CreateInstance<T>();
+    return configuration.GetSection(optionsInstance.Label).Get<T>() ?? optionsInstance;
+}
+
+IOptionSection GetOptionsByType(Type type, IConfiguration configuration)
+{
+    if (Activator.CreateInstance(type) is not IOptionSection optionsInstance)
+    {
+        throw new ArgumentException("Type must be assignable from IOptionSection.");
+    }
+    return (IOptionSection)(configuration.GetSection(optionsInstance.Label).Get(type) ?? optionsInstance);
 }
 
 public partial class Program { }

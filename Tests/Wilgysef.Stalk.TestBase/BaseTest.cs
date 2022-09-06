@@ -145,6 +145,7 @@ public abstract class BaseTest
         var serviceRegistrar = new ServiceRegistrar(
             GetDbContextOptionsBuilder().Options,
             new LoggerFactory(new[] { new DebugLoggerProvider() }).CreateLogger("test"),
+            null,
             null)
         {
             RegisterExtractors = RegisterExtractors,

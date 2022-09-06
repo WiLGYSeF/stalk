@@ -19,6 +19,7 @@ using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.IdGenerators;
+using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.EntityFrameworkCore;
 
 namespace Wilgysef.Stalk.Application.ServiceRegistrar;
@@ -46,14 +47,18 @@ public class ServiceRegistrar
 
     public string ExternalAssembliesPath { get; set; }
 
+    public Func<Type, IOptionSection> GetOptionSection { get; set; }
+
     public ServiceRegistrar(
         DbContextOptions<StalkDbContext> options,
         ILogger logger,
-        string externalAssembliesPath)
+        string externalAssembliesPath,
+        Func<Type, IOptionSection> getOptionSection)
     {
         DbContextOptions = options;
         Logger = logger;
         ExternalAssembliesPath = externalAssembliesPath;
+        GetOptionSection = getOptionSection;
     }
 
     /// <summary>
@@ -63,7 +68,9 @@ public class ServiceRegistrar
     public void RegisterApplication(ContainerBuilder builder, IServiceCollection services)
     {
         var assemblies = GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter).ToList();
-        var externalAssemblies = AssemblyLoader.LoadAssemblies(ExternalAssembliesPath);
+        var externalAssemblies = ExternalAssembliesPath != null
+            ? AssemblyLoader.LoadAssemblies(ExternalAssembliesPath)
+            : new List<Assembly>();
 
         var loadedAssemblies = ToArray(
             assemblies.Count + externalAssemblies.Count,
@@ -126,6 +133,16 @@ public class ServiceRegistrar
         RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, loadedAssemblies)
             .InstancePerDependency();
 
+        var options = loadedAssemblies.SelectMany(a => a.GetTypes())
+            .Where(t => t.IsClass && t.GetInterfaces().Contains(typeof(IOptionSection)));
+        var getOptionFunc = GetOptionSection ?? GetOptionSectionDefault;
+        foreach (var option in options)
+        {
+            builder.Register(c => (object)getOptionFunc(option))
+                .As(option)
+                .InstancePerDependency();
+        }
+
         if (RegisterExtractors)
         {
             RegisterAssemblyTypes<IExtractor>(builder, loadedAssemblies)
@@ -141,6 +158,11 @@ public class ServiceRegistrar
         builder.RegisterType<Startup>()
             .AsSelf()
             .SingleInstance();
+
+        IOptionSection GetOptionSectionDefault(Type type)
+        {
+            return (Activator.CreateInstance(type) as IOptionSection)!;
+        }
     }
 
     private IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle> RegisterAssemblyTypes(
