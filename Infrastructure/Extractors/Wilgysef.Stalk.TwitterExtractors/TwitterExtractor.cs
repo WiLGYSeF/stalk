@@ -1,4 +1,5 @@
-﻿using Wilgysef.Stalk.Core.Shared.Extractors;
+﻿using Microsoft.Extensions.Logging;
+using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
 namespace Wilgysef.Stalk.TwitterExtractors;
@@ -6,6 +7,8 @@ namespace Wilgysef.Stalk.TwitterExtractors;
 public class TwitterExtractor : IExtractor
 {
     public string Name => "Twitter";
+
+    public ILogger? Logger { get; set; }
 
     public bool CanExtract(Uri uri)
     {
