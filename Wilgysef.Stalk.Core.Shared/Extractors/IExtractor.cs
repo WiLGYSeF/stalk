@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Threading;
@@ -9,6 +10,8 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
     public interface IExtractor
     {
         string Name { get; }
+
+        ILogger Logger { get; set; }
 
         bool CanExtract(Uri uri);
 
