@@ -9,7 +9,6 @@ using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.IdGenerators;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
-using Wilgysef.Stalk.Core.Shared.StringFormatters;
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
@@ -161,7 +160,7 @@ public class JobTaskWorker : IJobTaskWorker
         var itemIdSetService = scope.GetRequiredService<IItemIdSetService>();
 
         var defaultDownloader = downloaders.FirstOrDefault(d => d is IDefaultDownloader)
-            ?? downloaders.Single();
+            ?? downloaders.SingleOrDefault();
 
         var jobTaskUri = new Uri(JobTask!.Uri);
         var downloader = scope.GetRequiredService<IEnumerable<IDownloader>>()
@@ -184,8 +183,6 @@ public class JobTaskWorker : IJobTaskWorker
         {
             itemIds = await itemIdSetService.GetItemIdSetAsync(JobConfig.ItemIdPath);
         }
-
-        var formatter = scope.GetRequiredService<IStringFormatter>();
 
         Logger?.LogInformation("Job task {JOBTASK_ID} downloading from {URI}", JobTask.Id, jobTaskUri);
 
