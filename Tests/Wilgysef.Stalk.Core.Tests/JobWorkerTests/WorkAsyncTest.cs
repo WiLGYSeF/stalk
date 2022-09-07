@@ -15,6 +15,8 @@ namespace Wilgysef.Stalk.Core.Tests.JobWorkerTests;
 
 public class WorkAsyncTest : BaseTest
 {
+    private const int TaskWorkerLimitDefault = 4;
+
     private readonly JobTaskWorkerFactoryMock _jobTaskWorkerFactory;
     private readonly IJobManager _jobManager;
     private readonly IJobWorkerFactory _jobWorkerFactory;
@@ -38,7 +40,7 @@ public class WorkAsyncTest : BaseTest
     {
         var job = new JobBuilder()
             .WithRandomInitializedState(JobState.Inactive)
-            .WithRandomTasks(JobTaskState.Inactive, _jobWorkerStarter.TaskWorkerLimit - 1)
+            .WithRandomTasks(JobTaskState.Inactive, TaskWorkerLimitDefault - 1)
             .Create();
         await _jobManager.CreateJobAsync(job);
 
@@ -61,7 +63,7 @@ public class WorkAsyncTest : BaseTest
         {
             job = new JobBuilder()
                 .WithRandomInitializedState(JobState.Inactive)
-                .WithRandomTasks(JobTaskState.Inactive, _jobWorkerStarter.TaskWorkerLimit + 1)
+                .WithRandomTasks(JobTaskState.Inactive, TaskWorkerLimitDefault + 1)
                 .Create();
             var jobManager = scope.GetRequiredService<IJobManager>();
             await jobManager.CreateJobAsync(job);
@@ -87,7 +89,7 @@ public class WorkAsyncTest : BaseTest
         {
             job = new JobBuilder()
                 .WithRandomInitializedState(JobState.Inactive)
-                .WithRandomTasks(JobTaskState.Inactive, _jobWorkerStarter.TaskWorkerLimit + 1)
+                .WithRandomTasks(JobTaskState.Inactive, TaskWorkerLimitDefault + 1)
                 .Create();
             await _jobManager.CreateJobAsync(job);
         }

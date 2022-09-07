@@ -7,7 +7,21 @@ namespace Wilgysef.Stalk.Core.JobWorkers;
 
 public class JobWorker : IJobWorker
 {
-    public Job? Job { get; private set; } = null!;
+    private Job? _job;
+
+    public Job? Job
+    {
+        get => _job;
+        private set
+        {
+            _job = value;
+            _jobConfig = _job?.GetConfig();
+
+            WorkerLimit = _jobConfig?.MaxTaskWorkerCount ?? 4;
+        }
+    }
+
+    private JobConfig? _jobConfig = null;
 
     private int _workerLimit = 4;
 
@@ -179,6 +193,7 @@ public class JobWorker : IJobWorker
     {
         var jobManager = scope.GetRequiredService<IJobManager>();
         var job = await jobManager.GetJobAsync(Job!.Id);
+
         Job = job;
         return job;
     }

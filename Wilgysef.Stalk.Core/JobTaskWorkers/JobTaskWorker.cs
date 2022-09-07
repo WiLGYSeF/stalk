@@ -191,7 +191,7 @@ public class JobTaskWorker : IJobTaskWorker
             JobConfig.DownloadFilenameTemplate,
             JobTask.ItemId,
             JobTask.ItemData,
-            JobConfig.MetadataFilenameTemplate,
+            JobConfig.SaveMetadata ? JobConfig.MetadataFilenameTemplate : null,
             JobTask.GetMetadata(),
             cancellationToken))
         {
