@@ -2,6 +2,6 @@
 {
     public class Constants
     {
-        public const string HttpClientExtractorDownloaderName = "ExtractorDownloaderClient";
+        public const string HttpClientName = "HttpClient";
     }
 }

@@ -77,14 +77,14 @@ public class ServiceRegistrar
             assemblies.Concat(externalAssemblies));
 
         // Polly registration
-        services.AddHttpClient(Constants.HttpClientExtractorDownloaderName)
+        services.AddHttpClient(Constants.HttpClientName)
             .AddExtractorDownloaderClientPolicy();
 
         // TODO: fix
         //builder.Populate(services);
 
         // HttpClient registration
-        builder.Register(c => c.Resolve<IHttpClientFactory>().CreateClient())
+        builder.Register(c => c.Resolve<IHttpClientFactory>().CreateClient(Constants.HttpClientName))
             .As<HttpClient>();
 
         builder.RegisterAutoMapper(true, loadedAssemblies);
