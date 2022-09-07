@@ -16,4 +16,9 @@ public class TwitterExtractor : IExtractor
     {
         throw new NotImplementedException();
     }
+
+    public void SetHttpClient(HttpClient client)
+    {
+        throw new NotImplementedException();
+    }
 }

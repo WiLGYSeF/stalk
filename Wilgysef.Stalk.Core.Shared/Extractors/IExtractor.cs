@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
@@ -16,5 +17,7 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
             string itemData,
             IMetadataObject metadata,
             CancellationToken cancellationToken = default);
+
+        void SetHttpClient(HttpClient client);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
 using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
@@ -44,13 +45,17 @@ public class JobWorker : IJobWorker
 
     private readonly List<Task> _tasks = new();
 
-    private readonly IServiceLifetimeScope _lifetimeScope;
-
     private bool _working = false;
 
-    public JobWorker(IServiceLifetimeScope lifetimeScope)
+    private readonly IServiceLifetimeScope _lifetimeScope;
+    private readonly HttpClient _httpClient;
+
+    public JobWorker(
+        IServiceLifetimeScope lifetimeScope,
+        HttpClient httpClient)
     {
         _lifetimeScope = lifetimeScope;
+        _httpClient = httpClient;
     }
 
     public IJobWorker WithJob(Job job)
@@ -75,11 +80,16 @@ public class JobWorker : IJobWorker
 
         Logger?.LogInformation("Job {JOB_ID} starting.", Job.Id);
 
-        if (!Job.IsActive)
+        using (var scope = _lifetimeScope.BeginLifetimeScope())
         {
-            using var scope = _lifetimeScope.BeginLifetimeScope();
-            var jobManager = scope.GetRequiredService<IJobManager>();
-            await jobManager.SetJobActiveAsync(Job, cancellationToken);
+            if (!Job.IsActive)
+            {
+                var jobManager = scope.GetRequiredService<IJobManager>();
+                await jobManager.SetJobActiveAsync(Job, cancellationToken);
+            }
+
+            var jobHttpClienCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
+            jobHttpClienCollectionService.SetHttpClient(Job.Id, _httpClient);
         }
 
         try
@@ -138,6 +148,7 @@ public class JobWorker : IJobWorker
     public void Dispose()
     {
         _lifetimeScope.Dispose();
+        _httpClient.Dispose();
 
         GC.SuppressFinalize(this);
     }
