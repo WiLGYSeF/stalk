@@ -1,4 +1,5 @@
-﻿using Shouldly;
+﻿using Autofac;
+using Shouldly;
 using System.Diagnostics;
 using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkerFactories;
@@ -25,9 +26,10 @@ public class WorkAsyncTest : BaseTest
 
     public WorkAsyncTest()
     {
-        _jobTaskWorkerFactory = new JobTaskWorkerFactoryMock(GetRequiredService<IServiceLocator>());
+        ReplaceSingletonServiceDelegate<IJobTaskWorkerFactory>(c => new JobTaskWorkerFactoryMock(
+            c.Resolve<IServiceLocator>()));
 
-        ReplaceServiceInstance<JobTaskWorkerFactoryMock, IJobTaskWorkerFactory>(_jobTaskWorkerFactory);
+        _jobTaskWorkerFactory = (JobTaskWorkerFactoryMock)GetRequiredService<IJobTaskWorkerFactory>();
 
         _jobManager = GetRequiredService<IJobManager>();
         _jobWorkerFactory = GetRequiredService<IJobWorkerFactory>();
