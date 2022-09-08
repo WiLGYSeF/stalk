@@ -9,7 +9,10 @@ internal static class HttpResponseMessageExtensions
         var content = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
         {
-            throw new HttpRequestException(response.ReasonPhrase, null, response.StatusCode);
+            var innerException = content?.Length > 0
+                ? new Exception(content)
+                : null;
+            throw new HttpRequestException(response.ReasonPhrase, innerException, response.StatusCode);
         }
 
         var deserialized = Deserialize<T>(content);

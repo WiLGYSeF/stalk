@@ -168,6 +168,7 @@ public abstract class BaseTest
             RegisterExtractors = RegisterExtractors,
             RegisterDownloaders = RegisterDownloaders,
         };
+        serviceRegistrar.RegisterApplication(services);
         serviceRegistrar.RegisterApplication(builder, services);
 
         foreach (var (implementation, service, type) in _replaceServices)

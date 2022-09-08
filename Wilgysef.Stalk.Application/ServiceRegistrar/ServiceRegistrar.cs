@@ -61,6 +61,13 @@ public class ServiceRegistrar
         GetOptionSection = getOptionSection;
     }
 
+    public void RegisterApplication(IServiceCollection services)
+    {
+        // Polly registration
+        services.AddHttpClient(Constants.HttpClientName)
+            .AddExtractorDownloaderClientPolicy();
+    }
+
     /// <summary>
     /// Register application dependencies.
     /// </summary>
@@ -75,13 +82,6 @@ public class ServiceRegistrar
         var loadedAssemblies = ToArray(
             assemblies.Count + externalAssemblies.Count,
             assemblies.Concat(externalAssemblies));
-
-        // Polly registration
-        services.AddHttpClient(Constants.HttpClientName)
-            .AddExtractorDownloaderClientPolicy();
-
-        // TODO: fix
-        //builder.Populate(services);
 
         // HttpClient registration
         builder.Register(c => c.Resolve<IHttpClientFactory>().CreateClient(Constants.HttpClientName))

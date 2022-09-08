@@ -1,10 +1,14 @@
 using Autofac;
+using Autofac.Core;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
+using Polly;
 using Serilog;
 using Serilog.Extensions.Logging;
 using Wilgysef.Stalk.Application;
+using Wilgysef.Stalk.Application.HttpClientPolicies;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
+using Wilgysef.Stalk.Core.Shared;
 using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.EntityFrameworkCore;
 using Wilgysef.Stalk.WebApi.Extensions;
@@ -66,21 +70,23 @@ void ConfigureServices()
 
     builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
+    var connectionString = builder.Configuration.GetConnectionString("Default");
+    var extractorsOptions = GetOptions<ExtractorsOptions>(builder.Configuration);
+
+    var serviceRegistrar = new ServiceRegistrar(
+        new DbContextOptionsBuilder<StalkDbContext>()
+            .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
+            //.UseLoggerFactory(loggerFactory)
+            //.EnableSensitiveDataLogging()
+            .Options,
+        logger,
+        extractorsOptions.Path,
+        t => GetOptionsByType(t, builder.Configuration));
+
+    serviceRegistrar.RegisterApplication(builder.Services);
+
     builder.Host.ConfigureContainer<ContainerBuilder>((context, containerBuilder) =>
     {
-        var connectionString = context.Configuration.GetConnectionString("Default");
-
-        var extractorsOptions = GetOptions<ExtractorsOptions>(context.Configuration);
-
-        var serviceRegistrar = new ServiceRegistrar(
-            new DbContextOptionsBuilder<StalkDbContext>()
-                .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
-                .UseLoggerFactory(loggerFactory)
-                .EnableSensitiveDataLogging()
-                .Options,
-            logger,
-            extractorsOptions.Path,
-            t => GetOptionsByType(t, context.Configuration));
         serviceRegistrar.RegisterApplication(containerBuilder, builder.Services);
     });
 }
