@@ -1,9 +1,8 @@
 ﻿using Wilgysef.Stalk.Core.Models.Jobs;
-using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.JobWorkerServices;
 
-public interface IJobWorkerService : ITransientDependency
+public interface IJobWorkerService
 {
     /// <summary>
     /// Whether additional workers can be started.

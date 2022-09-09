@@ -1,6 +1,8 @@
-﻿namespace Wilgysef.Stalk.Core.FileServices;
+﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
 
-public class FileService : IFileService
+namespace Wilgysef.Stalk.Core.FileServices;
+
+public class FileService : IFileService, ITransientDependency
 {
     public Stream Open(string path, FileMode fileMode)
     {

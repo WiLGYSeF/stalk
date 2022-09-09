@@ -1,8 +1,6 @@
-﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
+﻿namespace Wilgysef.Stalk.Core.Models;
 
-namespace Wilgysef.Stalk.Core.Models;
-
-public interface IRepository<T> : IScopedDependency where T : class
+public interface IRepository<T> where T : class
 {
     #region Find
 

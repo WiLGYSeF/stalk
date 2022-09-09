@@ -1,9 +1,8 @@
 ﻿using Ardalis.Specification;
-using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;
 
-public interface IJobManager : ITransientDependency
+public interface IJobManager
 {
     /// <summary>
     /// Creates a job.

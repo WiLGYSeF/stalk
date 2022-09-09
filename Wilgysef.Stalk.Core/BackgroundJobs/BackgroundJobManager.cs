@@ -1,8 +1,9 @@
 ﻿using Wilgysef.Stalk.Core.Models;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.BackgroundJobs;
 
-public class BackgroundJobManager : IBackgroundJobManager
+public class BackgroundJobManager : IBackgroundJobManager, ITransientDependency
 {
     private readonly IUnitOfWork _unitOfWork;
     private readonly IBackgroundJobCollectionService _backgroundJobCollectionService;

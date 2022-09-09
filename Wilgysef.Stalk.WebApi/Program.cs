@@ -1,14 +1,10 @@
 using Autofac;
-using Autofac.Core;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
-using Polly;
 using Serilog;
 using Serilog.Extensions.Logging;
 using Wilgysef.Stalk.Application;
-using Wilgysef.Stalk.Application.HttpClientPolicies;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
-using Wilgysef.Stalk.Core.Shared;
 using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.EntityFrameworkCore;
 using Wilgysef.Stalk.WebApi.Extensions;

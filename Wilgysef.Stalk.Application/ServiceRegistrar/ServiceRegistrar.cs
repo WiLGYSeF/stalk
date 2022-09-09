@@ -1,6 +1,5 @@
 ﻿using Autofac;
 using Autofac.Builder;
-using Autofac.Extensions.DependencyInjection;
 using Autofac.Features.Scanning;
 using AutoMapper.Contrib.Autofac.DependencyInjection;
 using Microsoft.EntityFrameworkCore;

@@ -1,8 +1,6 @@
-﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
+﻿namespace Wilgysef.Stalk.Core.BackgroundJobs;
 
-namespace Wilgysef.Stalk.Core.BackgroundJobs;
-
-public interface IBackgroundJobCollectionService : ISingletonDependency
+public interface IBackgroundJobCollectionService
 {
     /// <summary>
     /// Active background jobs.

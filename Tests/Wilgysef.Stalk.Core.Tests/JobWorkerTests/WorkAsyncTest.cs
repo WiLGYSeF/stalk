@@ -1,6 +1,5 @@
 ﻿using Autofac;
 using Shouldly;
-using System.Diagnostics;
 using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkerServices;

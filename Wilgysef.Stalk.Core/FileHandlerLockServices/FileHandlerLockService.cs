@@ -1,6 +1,8 @@
-﻿namespace Wilgysef.Stalk.Core.FileHandlerLockServices;
+﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
 
-public class FileHandlerLockService : IFileHandlerLockService
+namespace Wilgysef.Stalk.Core.FileHandlerLockServices;
+
+public class FileHandlerLockService : IFileHandlerLockService, ITransientDependency
 {
     private readonly IFileHandlerLockCollectionService _fileHandlerLockCollectionService;
 

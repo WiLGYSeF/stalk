@@ -1,8 +1,9 @@
-﻿using Wilgysef.Stalk.Core.Shared.ServiceLocators;
+﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
+using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Core.DomainEvents;
 
-public class DomainEventDispatcher : IDomainEventDispatcher
+public class DomainEventDispatcher : IDomainEventDispatcher, ITransientDependency
 {
     private readonly IServiceLocator _serviceLocator;
 

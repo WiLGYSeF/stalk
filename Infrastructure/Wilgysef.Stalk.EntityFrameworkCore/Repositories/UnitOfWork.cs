@@ -2,10 +2,11 @@
 using Wilgysef.Stalk.Core.Models;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.EntityFrameworkCore.Repositories;
 
-public class UnitOfWork : IUnitOfWork
+public class UnitOfWork : IUnitOfWork, IScopedDependency
 {
     public IJobRepository JobRepository { get; }
 

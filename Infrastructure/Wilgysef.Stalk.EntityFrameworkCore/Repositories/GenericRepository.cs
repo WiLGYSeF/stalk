@@ -2,10 +2,11 @@
 using Ardalis.Specification.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Wilgysef.Stalk.Core.Models;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.EntityFrameworkCore.Repositories;
 
-public abstract class GenericRepository<T> : IRepository<T>, ISpecificationRepository<T> where T : class
+public abstract class GenericRepository<T> : IRepository<T>, ISpecificationRepository<T>, IScopedDependency where T : class
 {
     private readonly DbSet<T> _dbSet;
 
