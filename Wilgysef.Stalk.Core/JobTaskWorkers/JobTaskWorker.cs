@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using System.Net.Http;
 using Wilgysef.Stalk.Core.Downloaders;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
