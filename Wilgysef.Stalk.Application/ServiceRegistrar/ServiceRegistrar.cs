@@ -48,7 +48,7 @@ public class ServiceRegistrar
     {
         // Polly registration
         services.AddHttpClient(Constants.HttpClientName)
-            .AddExtractorDownloaderClientPolicy();
+            .AddHttpClientPolicy();
     }
 
     /// <summary>

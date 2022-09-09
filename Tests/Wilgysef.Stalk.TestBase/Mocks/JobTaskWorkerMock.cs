@@ -12,13 +12,10 @@ public class JobTaskWorkerMock : JobTaskWorker
     private bool _finishWork = false;
     private bool _throwException = false;
 
-    private readonly IServiceLifetimeScope _lifetimeScope;
-
-    public JobTaskWorkerMock(IServiceLifetimeScope lifetimeScope)
-        : base(lifetimeScope)
-    {
-        _lifetimeScope = lifetimeScope;
-    }
+    public JobTaskWorkerMock(
+        IServiceLifetimeScope lifetimeScope,
+        HttpClient httpClient)
+        : base(lifetimeScope, httpClient) { }
 
     public void Finish()
     {

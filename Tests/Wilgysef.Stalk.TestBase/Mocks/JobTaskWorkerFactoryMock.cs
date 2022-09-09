@@ -12,16 +12,21 @@ public class JobTaskWorkerFactoryMock : IJobTaskWorkerFactory
     private readonly List<IJobTaskWorker> _jobTaskWorkers = new();
 
     private readonly IServiceLocator _serviceLocator;
+    private readonly HttpClient _httpClient;
 
     public JobTaskWorkerFactoryMock(
-        IServiceLocator serviceLocator)
+        IServiceLocator serviceLocator,
+        HttpClient httpClient)
     {
         _serviceLocator = serviceLocator;
+        _httpClient = httpClient;
     }
 
     public IJobTaskWorker CreateWorker(JobTask jobTask)
     {
-        var worker = new JobTaskWorkerMock(_serviceLocator.BeginLifetimeScopeFromRoot());
+        var worker = new JobTaskWorkerMock(
+            _serviceLocator.BeginLifetimeScopeFromRoot(),
+            _httpClient);
         worker.WithJobTask(jobTask);
         worker.WorkEvent += (sender, args) => OnWorkEvent(worker);
         _jobTaskWorkers.Add(worker);

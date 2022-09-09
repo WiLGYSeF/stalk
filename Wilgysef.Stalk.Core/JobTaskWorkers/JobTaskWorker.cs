@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Net.Http;
 using Wilgysef.Stalk.Core.Downloaders;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
+using Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared;
@@ -20,13 +22,17 @@ public class JobTaskWorker : IJobTaskWorker
 
     private JobConfig JobConfig { get; set; }
 
-    private readonly IServiceLifetimeScope _lifetimeScope;
-
     private bool _working = false;
 
-    public JobTaskWorker(IServiceLifetimeScope lifetimeScope)
+    private readonly IServiceLifetimeScope _lifetimeScope;
+    private HttpClient _httpClient;
+
+    public JobTaskWorker(
+        IServiceLifetimeScope lifetimeScope,
+        HttpClient httpClient)
     {
         _lifetimeScope = lifetimeScope;
+        _httpClient = httpClient;
     }
 
     public IJobTaskWorker WithJobTask(JobTask jobTask)
@@ -59,6 +65,13 @@ public class JobTaskWorker : IJobTaskWorker
             if (!JobTask.IsActive)
             {
                 await jobTaskManager.SetJobTaskActiveAsync(JobTask, CancellationToken.None);
+            }
+
+            var jobHttpClienCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
+            if (jobHttpClienCollectionService.TryGetHttpClient(JobTask.Job.Id, out var client))
+            {
+                _httpClient.Dispose();
+                _httpClient = client;
             }
         }
 
@@ -112,6 +125,7 @@ public class JobTaskWorker : IJobTaskWorker
     public void Dispose()
     {
         _lifetimeScope.Dispose();
+        _httpClient.Dispose();
 
         GC.SuppressFinalize(this);
     }
@@ -131,6 +145,8 @@ public class JobTaskWorker : IJobTaskWorker
                 "No extractor found.",
                 $"No extractor was able to extract from {jobTaskUri}");
         }
+
+        extractor.SetHttpClient(_httpClient);
 
         Logger?.LogInformation("Job task {JOBTASK_ID} using extractor {EXTRACTOR}.", JobTask.Id, extractor.Name);
 
@@ -175,6 +191,8 @@ public class JobTaskWorker : IJobTaskWorker
         {
             return;
         }
+
+        downloader.SetHttpClient(_httpClient);
 
         Logger?.LogInformation("Job task {JOBTASK_ID} using downloader {DOWNLOADER}.", JobTask.Id, downloader.Name);
 

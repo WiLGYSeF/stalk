@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
@@ -22,5 +23,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             string metadataTemplate,
             IMetadataObject metadata,
             CancellationToken cancellationToken = default);
+
+        void SetHttpClient(HttpClient client);
     }
 }

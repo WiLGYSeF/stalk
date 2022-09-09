@@ -1,5 +1,6 @@
 ﻿using Autofac;
 using Shouldly;
+using System.Net;
 using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkerServices;
@@ -25,10 +26,16 @@ public class WorkAsyncTest : BaseTest
 
     public WorkAsyncTest()
     {
+        ReplaceHttpClient(
+           (request, cancellationToken) => new HttpResponseMessage(HttpStatusCode.OK)
+           {
+               Content = new StreamContent(new MemoryStream())
+           });
         ReplaceSingletonServiceDelegate<IJobTaskWorkerFactory>(c => new JobTaskWorkerFactoryMock(
-            c.Resolve<IServiceLocator>()));
+            c.Resolve<IServiceLocator>(),
+            c.Resolve<HttpClient>()));
 
-        _jobTaskWorkerFactory = (JobTaskWorkerFactoryMock)GetRequiredService<IJobTaskWorkerFactory>();
+        _jobTaskWorkerFactory = GetRequiredService<IJobTaskWorkerFactory>() as JobTaskWorkerFactoryMock;
 
         _jobManager = GetRequiredService<IJobManager>();
         _jobWorkerFactory = GetRequiredService<IJobWorkerFactory>();

@@ -21,7 +21,7 @@ public class DefaultDownloader : IDefaultDownloader
     private readonly IFileService _fileService;
     private readonly IStringFormatter _stringFormatter;
     private readonly IFilenameSlugSelector _filenameSlugSelector;
-    private readonly HttpClient _httpClient;
+    private HttpClient _httpClient;
 
     public DefaultDownloader(
         IFileService fileService,
@@ -81,6 +81,11 @@ public class DefaultDownloader : IDefaultDownloader
             itemData: itemData,
             metadataPath: metadataFilename,
             metadata: metadata);
+    }
+
+    public void SetHttpClient(HttpClient client)
+    {
+        _httpClient = client;
     }
 
     protected async Task<DownloadFileResult> SaveFileAsync(

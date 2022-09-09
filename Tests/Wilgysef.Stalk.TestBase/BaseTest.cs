@@ -166,6 +166,8 @@ public abstract class BaseTest
         };
         serviceRegistrar.RegisterServices(services);
         serviceRegistrar.RegisterDbContext(builder, GetDbContextOptionsBuilder().Options);
+
+        builder.Populate(services);
         serviceRegistrar.RegisterServices(
             builder,
             new LoggerFactory(new[] { new DebugLoggerProvider() }).CreateLogger("test"),
