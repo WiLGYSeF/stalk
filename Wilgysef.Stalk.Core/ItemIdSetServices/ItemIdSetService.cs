@@ -1,9 +1,10 @@
 ﻿using Wilgysef.Stalk.Core.FileHandlerLockServices;
 using Wilgysef.Stalk.Core.FileServices;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.ItemIdSetServices;
 
-public class ItemIdSetService : IItemIdSetService
+public class ItemIdSetService : IItemIdSetService, ITransientDependency
 {
     private readonly IItemSetCollectionService _itemSetCollectionService;
     private readonly IFileHandlerLockService _fileHandlerLockService;

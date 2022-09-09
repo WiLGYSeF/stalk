@@ -1,9 +1,10 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.ItemIdSetServices;
 
-public class ItemIdSetCollectionService : IItemSetCollectionService
+public class ItemIdSetCollectionService : IItemSetCollectionService, ISingletonDependency
 {
     private readonly ConcurrentDictionary<string, IItemIdSet> _itemIdSets = new();
 

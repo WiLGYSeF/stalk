@@ -1,8 +1,6 @@
-﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
+﻿namespace Wilgysef.Stalk.Core.ItemIdSetServices;
 
-namespace Wilgysef.Stalk.Core.ItemIdSetServices;
-
-public interface IItemIdSetService : ITransientDependency
+public interface IItemIdSetService
 {
     /// <summary>
     /// Gets an item Id set.

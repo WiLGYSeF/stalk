@@ -1,6 +1,8 @@
-﻿namespace Wilgysef.Stalk.Core.FileHandlerLockServices;
+﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
 
-public class FileHandlerLockCollectionService : IFileHandlerLockCollectionService
+namespace Wilgysef.Stalk.Core.FileHandlerLockServices;
+
+public class FileHandlerLockCollectionService : IFileHandlerLockCollectionService, ISingletonDependency
 {
     private readonly Dictionary<string, object> _fileLocks = new();
 

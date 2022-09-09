@@ -1,8 +1,6 @@
-﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
+﻿namespace Wilgysef.Stalk.Core.Models.JobTasks;
 
-namespace Wilgysef.Stalk.Core.Models.JobTasks;
-
-public interface IJobTaskManager : ITransientDependency
+public interface IJobTaskManager
 {
     /// <summary>
     /// Creates a job task.

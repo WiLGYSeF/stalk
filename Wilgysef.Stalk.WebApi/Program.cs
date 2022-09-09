@@ -66,22 +66,27 @@ void ConfigureServices()
 
     builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
+    var connectionString = builder.Configuration.GetConnectionString("Default");
+    var extractorsOptions = GetOptions<ExtractorsOptions>(builder.Configuration);
+
+    var serviceRegistrar = new ServiceRegistrar();
+    serviceRegistrar.RegisterServices(builder.Services);
+
     builder.Host.ConfigureContainer<ContainerBuilder>((context, containerBuilder) =>
     {
-        var connectionString = context.Configuration.GetConnectionString("Default");
-
-        var extractorsOptions = GetOptions<ExtractorsOptions>(context.Configuration);
-
-        var serviceRegistrar = new ServiceRegistrar(
+        serviceRegistrar.RegisterDbContext(
+            containerBuilder,
             new DbContextOptionsBuilder<StalkDbContext>()
                 .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
-                .UseLoggerFactory(loggerFactory)
-                .EnableSensitiveDataLogging()
-                .Options,
+                //.UseLoggerFactory(loggerFactory)
+                //.EnableSensitiveDataLogging()
+                .Options);
+
+        serviceRegistrar.RegisterServices(
+            containerBuilder,
             logger,
             extractorsOptions.Path,
-            t => GetOptionsByType(t, context.Configuration));
-        serviceRegistrar.RegisterApplication(containerBuilder, builder.Services);
+            t => GetOptionsByType(t, builder.Configuration));
     });
 }
 

@@ -1,9 +1,8 @@
 ﻿using Wilgysef.Stalk.Core.Models.JobTasks;
-using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkerServices;
 
-public interface IJobTaskWorkerService : ITransientDependency
+public interface IJobTaskWorkerService
 {
     /// <summary>
     /// Starts a job task worker with the job task.

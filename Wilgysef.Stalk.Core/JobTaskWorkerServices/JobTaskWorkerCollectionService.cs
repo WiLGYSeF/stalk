@@ -1,10 +1,11 @@
 ﻿using System.Collections.Concurrent;
 using Wilgysef.Stalk.Core.JobTaskWorkers;
 using Wilgysef.Stalk.Core.Models.JobTasks;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkerServices;
 
-public class JobTaskWorkerCollectionService : IJobTaskWorkerCollectionService
+public class JobTaskWorkerCollectionService : IJobTaskWorkerCollectionService, ISingletonDependency
 {
     public IReadOnlyCollection<IJobTaskWorker> Workers => (IReadOnlyCollection<JobTaskWorker>)_jobTaskWorkers.Keys;
 

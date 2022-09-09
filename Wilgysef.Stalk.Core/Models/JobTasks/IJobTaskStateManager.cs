@@ -1,8 +1,6 @@
-﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
+﻿namespace Wilgysef.Stalk.Core.Models.JobTasks;
 
-namespace Wilgysef.Stalk.Core.Models.JobTasks;
-
-public interface IJobTaskStateManager : ITransientDependency
+public interface IJobTaskStateManager
 {
     /// <summary>
     /// Stops active job task.

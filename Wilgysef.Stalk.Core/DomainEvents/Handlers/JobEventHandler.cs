@@ -1,6 +1,7 @@
 ﻿using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.Core.BackgroundJobs.Args;
 using Wilgysef.Stalk.Core.DomainEvents.Events;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.IdGenerators;
 
@@ -9,7 +10,8 @@ namespace Wilgysef.Stalk.Core.DomainEvents.Handlers;
 public class JobEventHandler :
     IDomainEventHandler<JobCreatedEvent>,
     IDomainEventHandler<JobStateChangedEvent>,
-    IDomainEventHandler<JobPriorityChangedEvent>
+    IDomainEventHandler<JobPriorityChangedEvent>,
+    ITransientDependency
 {
     private readonly IBackgroundJobManager _backgroundJobManager;
     private readonly IIdGenerator<long> _idGenerator;
