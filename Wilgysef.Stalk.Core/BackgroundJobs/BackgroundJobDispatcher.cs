@@ -1,9 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Core.BackgroundJobs;
 
-public class BackgroundJobDispatcher : IBackgroundJobDispatcher
+public class BackgroundJobDispatcher : IBackgroundJobDispatcher, ITransientDependency
 {
     public ILogger? Logger { get; set; }
 

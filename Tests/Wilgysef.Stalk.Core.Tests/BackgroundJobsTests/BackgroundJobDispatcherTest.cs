@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Shouldly;
+﻿using Shouldly;
 using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.TestBase;
 

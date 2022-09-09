@@ -2,18 +2,19 @@
 using Ardalis.Specification.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Wilgysef.Stalk.Core.Models;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.EntityFrameworkCore.Repositories;
 
-public abstract class GenericRepository<T> : IRepository<T>, ISpecificationRepository<T> where T : class
+public abstract class GenericRepository<T> : IRepository<T>, ISpecificationRepository<T>, IScopedDependency where T : class
 {
-    private readonly DbSet<T> _dbSet;
+    private readonly IStalkDbContext _dbContext;
 
     private readonly ISpecificationEvaluator _specificationEvaluator;
 
-    public GenericRepository(DbSet<T> dbSet)
+    public GenericRepository(IStalkDbContext dbContext)
     {
-        _dbSet = dbSet;
+        _dbContext = dbContext;
         _specificationEvaluator = SpecificationEvaluator.Default;
     }
 
@@ -21,17 +22,17 @@ public abstract class GenericRepository<T> : IRepository<T>, ISpecificationRepos
 
     public virtual T? Find(params object?[]? keyValues)
     {
-        return _dbSet.Find(keyValues);
+        return GetDbSet().Find(keyValues);
     }
 
     public virtual async Task<T?> FindAsync(params object?[]? keyValues)
     {
-        return await _dbSet.FindAsync(keyValues);
+        return await GetDbSet().FindAsync(keyValues);
     }
 
     public virtual async Task<T?> FindAsync(object?[]? keyValues, CancellationToken cancellationToken = default)
     {
-        return await _dbSet.FindAsync(keyValues, cancellationToken);
+        return await GetDbSet().FindAsync(keyValues, cancellationToken);
     }
 
     #endregion
@@ -40,12 +41,12 @@ public abstract class GenericRepository<T> : IRepository<T>, ISpecificationRepos
 
     public virtual List<T> List()
     {
-        return _dbSet.ToList();
+        return GetDbSet().ToList();
     }
 
     public virtual async Task<List<T>> ListAsync(CancellationToken cancellationToken = default)
     {
-        return await _dbSet.ToListAsync(cancellationToken);
+        return await GetDbSet().ToListAsync(cancellationToken);
     }
 
     #endregion
@@ -53,12 +54,12 @@ public abstract class GenericRepository<T> : IRepository<T>, ISpecificationRepos
     #region Count
     public virtual int Count()
     {
-        return _dbSet.Count();
+        return GetDbSet().Count();
     }
 
     public virtual async Task<int> CountAsync(CancellationToken cancellationToken = default)
     {
-        return await _dbSet.CountAsync(cancellationToken);
+        return await GetDbSet().CountAsync(cancellationToken);
     }
 
     #endregion
@@ -67,37 +68,37 @@ public abstract class GenericRepository<T> : IRepository<T>, ISpecificationRepos
 
     public virtual T Add(T entity)
     {
-        return _dbSet.Add(entity).Entity;
+        return GetDbSet().Add(entity).Entity;
     }
 
     public virtual async Task<T> AddAsync(T entity, CancellationToken cancellationToken = default)
     {
-        return (await _dbSet.AddAsync(entity, cancellationToken)).Entity;
+        return (await GetDbSet().AddAsync(entity, cancellationToken)).Entity;
     }
 
     public virtual void AddRange(params T[] entities)
     {
-        _dbSet.AddRange(entities);
+        GetDbSet().AddRange(entities);
     }
 
     public virtual void AddRange(IEnumerable<T> entities)
     {
-        _dbSet.AddRange(entities);
+        GetDbSet().AddRange(entities);
     }
 
     public virtual async Task AddRangeAsync(params T[] entities)
     {
-        await _dbSet.AddRangeAsync(entities);
+        await GetDbSet().AddRangeAsync(entities);
     }
 
     public virtual async Task AddRangeAsync(T[] entities, CancellationToken cancellationToken = default)
     {
-        await _dbSet.AddRangeAsync(entities, cancellationToken);
+        await GetDbSet().AddRangeAsync(entities, cancellationToken);
     }
 
     public virtual async Task AddRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
     {
-        await _dbSet.AddRangeAsync(entities, cancellationToken);
+        await GetDbSet().AddRangeAsync(entities, cancellationToken);
     }
 
     #endregion
@@ -106,17 +107,17 @@ public abstract class GenericRepository<T> : IRepository<T>, ISpecificationRepos
 
     public virtual T Remove(T entity)
     {
-        return _dbSet.Remove(entity).Entity;
+        return GetDbSet().Remove(entity).Entity;
     }
 
     public virtual void RemoveRange(params T[] entities)
     {
-        _dbSet.RemoveRange(entities);
+        GetDbSet().RemoveRange(entities);
     }
 
     public virtual void RemoveRange(IEnumerable<T> entities)
     {
-        _dbSet.RemoveRange(entities);
+        GetDbSet().RemoveRange(entities);
     }
 
     #endregion
@@ -125,20 +126,25 @@ public abstract class GenericRepository<T> : IRepository<T>, ISpecificationRepos
 
     public virtual T Update(T entity)
     {
-        return _dbSet.Update(entity).Entity;
+        return GetDbSet().Update(entity).Entity;
     }
 
     public virtual void UpdateRange(params T[] entities)
     {
-        _dbSet.UpdateRange(entities);
+        GetDbSet().UpdateRange(entities);
     }
 
     public virtual void UpdateRange(IEnumerable<T> entities)
     {
-        _dbSet.UpdateRange(entities);
+        GetDbSet().UpdateRange(entities);
     }
 
     #endregion
+
+    protected virtual DbSet<T> GetDbSet()
+    {
+        return _dbContext.Set<T>();
+    }
 
     #region Specifications
 
@@ -188,12 +194,12 @@ public abstract class GenericRepository<T> : IRepository<T>, ISpecificationRepos
 
     protected virtual IQueryable<T> ApplySpecification(ISpecification<T> specification, bool evaluateCriteriaOnly = false)
     {
-        return _specificationEvaluator.GetQuery(_dbSet.AsQueryable(), specification, evaluateCriteriaOnly);
+        return _specificationEvaluator.GetQuery(GetDbSet().AsQueryable(), specification, evaluateCriteriaOnly);
     }
 
     protected virtual IQueryable<TResult> ApplySpecification<TResult>(ISpecification<T, TResult> specification)
     {
-        return _specificationEvaluator.GetQuery(_dbSet.AsQueryable(), specification);
+        return _specificationEvaluator.GetQuery(GetDbSet().AsQueryable(), specification);
     }
 
     #endregion

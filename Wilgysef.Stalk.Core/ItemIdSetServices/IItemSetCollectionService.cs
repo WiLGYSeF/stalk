@@ -1,9 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.ItemIdSetServices;
 
-public interface IItemSetCollectionService : ISingletonDependency
+public interface IItemSetCollectionService
 {
     /// <summary>
     /// Adds an item Id set.

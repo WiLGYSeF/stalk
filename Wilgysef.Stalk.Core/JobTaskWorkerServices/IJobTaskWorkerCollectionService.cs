@@ -1,10 +1,9 @@
 ﻿using Wilgysef.Stalk.Core.JobTaskWorkers;
 using Wilgysef.Stalk.Core.Models.JobTasks;
-using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkerServices;
 
-public interface IJobTaskWorkerCollectionService : ISingletonDependency
+public interface IJobTaskWorkerCollectionService
 {
     /// <summary>
     /// Job task workers.

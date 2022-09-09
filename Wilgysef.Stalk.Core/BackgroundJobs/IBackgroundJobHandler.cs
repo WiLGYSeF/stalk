@@ -1,8 +1,6 @@
-﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
+﻿namespace Wilgysef.Stalk.Core.BackgroundJobs;
 
-namespace Wilgysef.Stalk.Core.BackgroundJobs;
-
-public interface IBackgroundJobHandler<T> : ITransientDependency where T : BackgroundJobArgs
+public interface IBackgroundJobHandler<T> where T : BackgroundJobArgs
 {
     /// <summary>
     /// The background job being executed.

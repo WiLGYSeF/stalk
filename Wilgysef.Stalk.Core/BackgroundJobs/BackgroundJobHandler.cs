@@ -1,6 +1,8 @@
-﻿namespace Wilgysef.Stalk.Core.BackgroundJobs;
+﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
 
-public abstract class BackgroundJobHandler<T> : IBackgroundJobHandler<T> where T : BackgroundJobArgs
+namespace Wilgysef.Stalk.Core.BackgroundJobs;
+
+public abstract class BackgroundJobHandler<T> : IBackgroundJobHandler<T>, ITransientDependency where T : BackgroundJobArgs
 {
     public BackgroundJob BackgroundJob { get; set; } = null!;
 

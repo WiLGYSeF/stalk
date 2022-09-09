@@ -1,8 +1,6 @@
-﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
+﻿namespace Wilgysef.Stalk.Core.FileHandlerLockServices;
 
-namespace Wilgysef.Stalk.Core.FileHandlerLockServices;
-
-public interface IFileHandlerLockCollectionService : ISingletonDependency
+public interface IFileHandlerLockCollectionService
 {
     /// <summary>
     /// Gets a file handler lock.

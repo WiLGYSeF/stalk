@@ -1,8 +1,9 @@
 ﻿using System.Collections.Concurrent;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.BackgroundJobs;
 
-public class BackgroundJobCollectionService : IBackgroundJobCollectionService
+public class BackgroundJobCollectionService : IBackgroundJobCollectionService, ISingletonDependency
 {
     public IReadOnlyCollection<BackgroundJob> ActiveJobs => (IReadOnlyCollection<BackgroundJob>)_backgroundTasks.Keys;
 

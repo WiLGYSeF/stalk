@@ -1,23 +1,24 @@
 ﻿using System.Text;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.FilenameSlugs;
 
-public class WindowsFilenameSlug : IFilenameSlug
+public class WindowsFilenameSlug : IFilenameSlug, ITransientDependency
 {
     public string Name => "Windows";
 
     public char PathSeparator => '\\';
 
-    public char PathSeparatorAlt => '/';
+    public static char PathSeparatorAlt => '/';
 
-    public char VolumeSeparator => ':';
+    public static char VolumeSeparator => ':';
 
     private bool _useUnicode = true;
 
     // TODO: support turning off unicode
     public bool UseUnicode { get => _useUnicode; set => throw new NotImplementedException(); }
 
-    private static HashSet<string> _specialFilenames = new()
+    private readonly static HashSet<string> _specialFilenames = new()
     {
         "AUX",
         "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",

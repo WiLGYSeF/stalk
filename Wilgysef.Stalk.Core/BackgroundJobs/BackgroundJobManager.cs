@@ -1,23 +1,27 @@
 ﻿using Wilgysef.Stalk.Core.Models;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.BackgroundJobs;
 
-public class BackgroundJobManager : IBackgroundJobManager
+public class BackgroundJobManager : IBackgroundJobManager, ITransientDependency
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IBackgroundJobRepository _backgroundJobRepository;
     private readonly IBackgroundJobCollectionService _backgroundJobCollectionService;
 
     public BackgroundJobManager(
         IUnitOfWork unitOfWork,
+        IBackgroundJobRepository backgroundJobRepository,
         IBackgroundJobCollectionService backgroundJobCollectionService)
     {
         _unitOfWork = unitOfWork;
+        _backgroundJobRepository = backgroundJobRepository;
         _backgroundJobCollectionService = backgroundJobCollectionService;
     }
 
     public async Task<BackgroundJob> EnqueueJobAsync(BackgroundJob job, bool saveChanges, CancellationToken cancellationToken = default)
     {
-        var entity = await _unitOfWork.BackgroundJobRepository.AddAsync(job, cancellationToken);
+        var entity = await _backgroundJobRepository.AddAsync(job, cancellationToken);
         if (saveChanges)
         {
             await _unitOfWork.SaveChangesAsync(cancellationToken);
@@ -36,7 +40,7 @@ public class BackgroundJobManager : IBackgroundJobManager
         Func<BackgroundJobArgs, BackgroundJobArgs, bool> compareTo,
         CancellationToken cancellationToken = default)
     {
-        var queuedJobs = await _unitOfWork.BackgroundJobRepository.ListAsync(
+        var queuedJobs = await _backgroundJobRepository.ListAsync(
             new BackgroundJobQuerySpecification(_backgroundJobCollectionService.ActiveJobs, job),
             cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
@@ -49,7 +53,7 @@ public class BackgroundJobManager : IBackgroundJobManager
 
         if (matchingJobs.Any())
         {
-            _unitOfWork.BackgroundJobRepository.RemoveRange(matchingJobs);
+            _backgroundJobRepository.RemoveRange(matchingJobs);
         }
 
         return await EnqueueJobAsync(job, saveChanges, cancellationToken);
@@ -57,24 +61,24 @@ public class BackgroundJobManager : IBackgroundJobManager
 
     public async Task<BackgroundJob?> FindJobAsync(long id, CancellationToken cancellationToken = default)
     {
-        return await _unitOfWork.BackgroundJobRepository.FindAsync(new object?[] { id }, cancellationToken: cancellationToken);
+        return await _backgroundJobRepository.FindAsync(new object?[] { id }, cancellationToken: cancellationToken);
     }
 
     public async Task<List<BackgroundJob>> GetJobsAsync(CancellationToken cancellationToken = default)
     {
-        return await _unitOfWork.BackgroundJobRepository.ListAsync(cancellationToken);
+        return await _backgroundJobRepository.ListAsync(cancellationToken);
     }
 
     public async Task<BackgroundJob?> GetNextPriorityJobAsync(CancellationToken cancellationToken = default)
     {
-        return await _unitOfWork.BackgroundJobRepository.FirstOrDefaultAsync(
+        return await _backgroundJobRepository.FirstOrDefaultAsync(
             new QueuedBackgroundJobSpecification(_backgroundJobCollectionService.ActiveJobs),
             cancellationToken);
     }
 
     public async Task<List<BackgroundJob>> AbandonExpiredJobsAsync(CancellationToken cancellationToken = default)
     {
-        var jobs = await _unitOfWork.BackgroundJobRepository.ListAsync(
+        var jobs = await _backgroundJobRepository.ListAsync(
             new ExpiredBackgroundJobSpecification(_backgroundJobCollectionService.ActiveJobs),
             cancellationToken);
 
@@ -83,7 +87,7 @@ public class BackgroundJobManager : IBackgroundJobManager
             job.Abandon();
         }
 
-        _unitOfWork.BackgroundJobRepository.UpdateRange(jobs);
+        _backgroundJobRepository.UpdateRange(jobs);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
         return jobs;
@@ -91,13 +95,13 @@ public class BackgroundJobManager : IBackgroundJobManager
 
     public async Task UpdateJobAsync(BackgroundJob job, CancellationToken cancellationToken = default)
     {
-        _unitOfWork.BackgroundJobRepository.Update(job);
+        _backgroundJobRepository.Update(job);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     public async Task DeleteJobAsync(BackgroundJob job, CancellationToken cancellationToken = default)
     {
-        _unitOfWork.BackgroundJobRepository.Remove(job);
+        _backgroundJobRepository.Remove(job);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 }
