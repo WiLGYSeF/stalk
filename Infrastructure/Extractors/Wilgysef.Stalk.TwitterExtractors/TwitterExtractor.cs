@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Text.RegularExpressions;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
@@ -10,9 +11,11 @@ public class TwitterExtractor : IExtractor
 
     public ILogger? Logger { get; set; }
 
+    private Regex _uriRegex = new(@"(?:https?://)?(?:www\.)?twitter\.com(?:\:(?:80|443))?/(?<user>[^/]+)(?:/status/(?<tweet>[0-9]+))?", RegexOptions.Compiled);
+
     public bool CanExtract(Uri uri)
     {
-        throw new NotImplementedException();
+        return _uriRegex.IsMatch(uri.AbsoluteUri);
     }
 
     public IAsyncEnumerable<ExtractResult> ExtractAsync(Uri uri, string itemData, IMetadataObject metadata, CancellationToken cancellationToken = default)
