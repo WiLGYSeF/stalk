@@ -8,16 +8,19 @@ namespace Wilgysef.Stalk.Core.Models.JobTasks;
 public class JobTaskManager : IJobTaskManager, ITransientDependency
 {
     private readonly IUnitOfWork _unitOfWork;
+    private readonly IJobTaskRepository _jobTaskRepository;
 
     public JobTaskManager(
-        IUnitOfWork unitOfWork)
+        IUnitOfWork unitOfWork,
+        IJobTaskRepository jobTaskRepository)
     {
         _unitOfWork = unitOfWork;
+        _jobTaskRepository = jobTaskRepository;
     }
 
     public async Task<JobTask> CreateJobTaskAsync(JobTask jobTask, CancellationToken cancellationToken = default)
     {
-        var entity = await _unitOfWork.JobTaskRepository.AddAsync(jobTask, cancellationToken);
+        var entity = await _jobTaskRepository.AddAsync(jobTask, cancellationToken);
 
         // TODO: events?
 
@@ -27,13 +30,13 @@ public class JobTaskManager : IJobTaskManager, ITransientDependency
 
     public async Task CreateJobTasksAsync(IEnumerable<JobTask> jobTasks, CancellationToken cancellationToken = default)
     {
-        await _unitOfWork.JobTaskRepository.AddRangeAsync(jobTasks, cancellationToken);
+        await _jobTaskRepository.AddRangeAsync(jobTasks, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<JobTask> GetJobTaskAsync(long id, CancellationToken cancellationToken = default)
     {
-        var entity = await _unitOfWork.JobTaskRepository.FirstOrDefaultAsync(
+        var entity = await _jobTaskRepository.FirstOrDefaultAsync(
             new JobTaskSingleSpecification(jobTaskId: id),
             cancellationToken);
         if (entity == null)
@@ -47,7 +50,7 @@ public class JobTaskManager : IJobTaskManager, ITransientDependency
     public async Task<JobTask> UpdateJobTaskAsync(JobTask jobTask, CancellationToken cancellationToken = default)
     {
         // TODO: change this?
-        _unitOfWork.JobTaskRepository.Update(jobTask);
+        _jobTaskRepository.Update(jobTask);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return jobTask;
     }
@@ -59,7 +62,7 @@ public class JobTaskManager : IJobTaskManager, ITransientDependency
             throw new JobTaskActiveException();
         }
 
-        _unitOfWork.JobTaskRepository.Remove(jobTask);
+        _jobTaskRepository.Remove(jobTask);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 

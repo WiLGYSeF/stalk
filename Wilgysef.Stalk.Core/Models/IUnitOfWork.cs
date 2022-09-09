@@ -7,21 +7,6 @@ namespace Wilgysef.Stalk.Core.Models;
 public interface IUnitOfWork
 {
     /// <summary>
-    /// Job repository.
-    /// </summary>
-    IJobRepository JobRepository { get; }
-
-    /// <summary>
-    /// Job task repository.
-    /// </summary>
-    IJobTaskRepository JobTaskRepository { get; }
-
-    /// <summary>
-    /// Background job repository.
-    /// </summary>
-    IBackgroundJobRepository BackgroundJobRepository { get; }
-
-    /// <summary>
     /// Save changes.
     /// </summary>
     /// <returns>Number of state entries written to the database.</returns>
