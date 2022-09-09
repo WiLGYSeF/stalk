@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
 using Wilgysef.Stalk.Core.FileServices;
+using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.EntityFrameworkCore;
 using Wilgysef.Stalk.TestBase.Mocks;
@@ -158,18 +159,18 @@ public abstract class BaseTest
     {
         var builder = new ContainerBuilder();
 
-        // TODO: change null?
-        var serviceRegistrar = new ServiceRegistrar(
-            GetDbContextOptionsBuilder().Options,
-            new LoggerFactory(new[] { new DebugLoggerProvider() }).CreateLogger("test"),
-            null,
-            null)
+        var serviceRegistrar = new ServiceRegistrar
         {
             RegisterExtractors = RegisterExtractors,
             RegisterDownloaders = RegisterDownloaders,
         };
-        serviceRegistrar.RegisterApplication(services);
-        serviceRegistrar.RegisterApplication(builder, services);
+        serviceRegistrar.RegisterServices(services);
+        serviceRegistrar.RegisterDbContext(builder, GetDbContextOptionsBuilder().Options);
+        serviceRegistrar.RegisterServices(
+            builder,
+            new LoggerFactory(new[] { new DebugLoggerProvider() }).CreateLogger("test"),
+            null,
+            t => (Activator.CreateInstance(t) as IOptionSection)!);
 
         foreach (var (implementation, service, type) in _replaceServices)
         {

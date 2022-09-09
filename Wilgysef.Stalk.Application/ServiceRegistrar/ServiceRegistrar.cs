@@ -41,27 +41,11 @@ public class ServiceRegistrar
 
     public int IdGeneratorId { get; set; } = 1;
 
-    public DbContextOptions<StalkDbContext> DbContextOptions { get; set; }
-
-    public ILogger Logger { get; set; }
-
-    public string ExternalAssembliesPath { get; set; }
-
-    public Func<Type, IOptionSection> GetOptionSection { get; set; }
-
-    public ServiceRegistrar(
-        DbContextOptions<StalkDbContext> options,
-        ILogger logger,
-        string externalAssembliesPath,
-        Func<Type, IOptionSection> getOptionSection)
-    {
-        DbContextOptions = options;
-        Logger = logger;
-        ExternalAssembliesPath = externalAssembliesPath;
-        GetOptionSection = getOptionSection;
-    }
-
-    public void RegisterApplication(IServiceCollection services)
+    /// <summary>
+    /// Register services.
+    /// </summary>
+    /// <param name="services">Service collection.</param>
+    public void RegisterServices(IServiceCollection services)
     {
         // Polly registration
         services.AddHttpClient(Constants.HttpClientName)
@@ -69,14 +53,34 @@ public class ServiceRegistrar
     }
 
     /// <summary>
-    /// Register application dependencies.
+    /// Register DB context.
     /// </summary>
     /// <param name="builder">Container builder.</param>
-    public void RegisterApplication(ContainerBuilder builder, IServiceCollection services)
+    /// <param name="options">DbContext options.</param>
+    public void RegisterDbContext(ContainerBuilder builder, DbContextOptions<StalkDbContext> options)
+    {
+        builder.Register(c => options);
+        builder.RegisterType<StalkDbContext>()
+            // WithParameter is broken?
+            //.WithParameter("options", DbContextOptions)
+            .As<IStalkDbContext>()
+            .As<StalkDbContext>()
+            .InstancePerLifetimeScope();
+    }
+
+    /// <summary>
+    /// Register services.
+    /// </summary>
+    /// <param name="builder">Container builder.</param>
+    public void RegisterServices(
+        ContainerBuilder builder,
+        ILogger logger,
+        string? externalAssembliesPath,
+        Func<Type, IOptionSection> getOptionSection)
     {
         var assemblies = GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter).ToList();
-        var externalAssemblies = ExternalAssembliesPath != null
-            ? AssemblyLoader.LoadAssemblies(ExternalAssembliesPath)
+        var externalAssemblies = externalAssembliesPath != null
+            ? AssemblyLoader.LoadAssemblies(externalAssembliesPath)
             : new List<Assembly>();
 
         var loadedAssemblies = ToArray(
@@ -102,21 +106,9 @@ public class ServiceRegistrar
             .AsSelf()
             .InstancePerDependency();
 
-        // WebApi tests add DbContext for testing
-        if (!(services?.Any(s => s.ServiceType == typeof(StalkDbContext)) ?? false))
+        if (logger != null)
         {
-            builder.Register(c => DbContextOptions);
-            builder.RegisterType<StalkDbContext>()
-                // WithParameter is broken?
-                //.WithParameter("options", DbContextOptions)
-                .As<IStalkDbContext>()
-                .As<StalkDbContext>()
-                .InstancePerLifetimeScope();
-        }
-
-        if (Logger != null)
-        {
-            builder.Register(c => Logger)
+            builder.Register(c => logger)
                 .As<ILogger>()
                 .SingleInstance();
         }
@@ -135,10 +127,9 @@ public class ServiceRegistrar
 
         var options = loadedAssemblies.SelectMany(a => a.GetTypes())
             .Where(t => t.IsClass && t.GetInterfaces().Contains(typeof(IOptionSection)));
-        var getOptionFunc = GetOptionSection ?? GetOptionSectionDefault;
         foreach (var option in options)
         {
-            builder.Register(c => (object)getOptionFunc(option))
+            builder.Register(c => (object)getOptionSection(option))
                 .As(option)
                 .InstancePerDependency();
         }
@@ -158,11 +149,6 @@ public class ServiceRegistrar
         builder.RegisterType<Startup>()
             .AsSelf()
             .SingleInstance();
-
-        IOptionSection GetOptionSectionDefault(Type type)
-        {
-            return (Activator.CreateInstance(type) as IOptionSection)!;
-        }
     }
 
     private IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle> RegisterAssemblyTypes(
