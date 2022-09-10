@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
+using System.Threading;
 using Wilgysef.Stalk.Core.FilenameSlugs;
 using Wilgysef.Stalk.Core.FileServices;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
@@ -35,12 +36,12 @@ public class DefaultDownloader : IDefaultDownloader
         _httpClient = httpClient;
     }
 
-    public bool CanDownload(Uri uri)
+    public virtual bool CanDownload(Uri uri)
     {
         return true;
     }
 
-    public async IAsyncEnumerable<DownloadResult> DownloadAsync(
+    public virtual async IAsyncEnumerable<DownloadResult> DownloadAsync(
         Uri uri,
         string filenameTemplate,
         string itemId,
@@ -83,12 +84,12 @@ public class DefaultDownloader : IDefaultDownloader
             metadata: metadata);
     }
 
-    public void SetHttpClient(HttpClient client)
+    public virtual void SetHttpClient(HttpClient client)
     {
         _httpClient = client;
     }
 
-    protected async Task<DownloadFileResult> SaveFileAsync(
+    protected virtual async Task<DownloadFileResult> SaveFileAsync(
         Uri uri,
         string filenameTemplate,
         IMetadataObject metadata,
@@ -98,10 +99,7 @@ public class DefaultDownloader : IDefaultDownloader
         var filename = filenameSlug.SlugifyPath(
             _stringFormatter.Format(filenameTemplate, metadata.GetDictionary()));
 
-        var response = await _httpClient.GetAsync(uri, cancellationToken);
-        response.EnsureSuccessStatusCode();
-
-        using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var stream = await GetFileStreamAsync(uri, cancellationToken);
         using var fileStream = _fileService.Open(filename, FileMode.CreateNew);
 
         var hashName = "SHA256";
@@ -117,7 +115,17 @@ public class DefaultDownloader : IDefaultDownloader
         return result;
     }
 
-    protected async Task<DownloadFileResult> SaveStreamAsync(
+    protected virtual async Task<Stream> GetFileStreamAsync(
+        Uri uri,
+        CancellationToken cancellationToken = default)
+    {
+        var response = await _httpClient.GetAsync(uri, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        return await response.Content.ReadAsStreamAsync(cancellationToken);
+    }
+
+    protected virtual async Task<DownloadFileResult> SaveStreamAsync(
         Stream stream,
         Stream output,
         byte[]? buffer = null,
@@ -161,7 +169,7 @@ public class DefaultDownloader : IDefaultDownloader
             null);
     }
 
-    protected Task<string?> SaveMetadataAsync(
+    protected virtual Task<string?> SaveMetadataAsync(
         string? metadataFilenameTemplate,
         IDictionary<string, object> metadata,
         CancellationToken cancellationToken = default)
