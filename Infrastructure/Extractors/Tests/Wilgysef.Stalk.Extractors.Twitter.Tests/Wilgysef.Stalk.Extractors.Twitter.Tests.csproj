@@ -13,7 +13,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="MockedData\UserTweets.1308334634745249793.HBaKwNLRvYvM4ygAAA==.json" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
+    <PackageReference Include="System.Linq.Async" Version="6.0.1" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
@@ -27,7 +32,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Wilgysef.Stalk.Core\Wilgysef.Stalk.Core.csproj" />
-    <ProjectReference Include="..\..\Wilgysef.Stalk.TwitterExtractors\Wilgysef.Stalk.TwitterExtractors.csproj" />
+    <ProjectReference Include="..\..\Wilgysef.Stalk.Extractors.Twitter\Wilgysef.Stalk.Extractors.Twitter.csproj" />
+    <ProjectReference Include="..\Wilgysef.Stalk.Extractors.TestBase\Wilgysef.Stalk.Extractors.TestBase.csproj" />
   </ItemGroup>
 
 </Project>

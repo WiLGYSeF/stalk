@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using System.Dynamic;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -7,7 +8,7 @@ using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
-namespace Wilgysef.Stalk.TwitterExtractors;
+namespace Wilgysef.Stalk.Extractors.Twitter;
 
 public class TwitterExtractor : IExtractor
 {
@@ -76,7 +77,7 @@ public class TwitterExtractor : IExtractor
 
         var userId = await GetUserIdAsync(userScreenName, cancellationToken);
         string? cursor = null;
-
+        
         while (true)
         {
             var userTweetsUri = GetUserTweetsUri(userId, cursor);
@@ -86,8 +87,8 @@ public class TwitterExtractor : IExtractor
             var data = await response.Content.ReadAsStringAsync(cancellationToken);
             var jObject = JObject.Parse(data);
 
-            var tweets = jObject.SelectToken(@"$.data.user.result.timeline_v2.timeline.instructions[?(@.type=='TimelineAddEntries')].entries[*].content.itemContent.tweet_results.result");
-            if (tweets == null || !tweets.Children().Any())
+            var tweets = jObject.SelectTokens(@"$.data.user.result.timeline_v2.timeline.instructions[?(@.type=='TimelineAddEntries')].entries[*].content.itemContent.tweet_results.result");
+            if (!tweets.Any())
             {
                 break;
             }
@@ -100,8 +101,10 @@ public class TwitterExtractor : IExtractor
                 }
             }
 
-            cursor = jObject.SelectToken(@"$.data.user.result.timeline_v2.timeline.instructions[?(@.type=='TimelineAddEntries')].entries[*][?(@.cursorType=='Bottom')].value")
-                ?.ToString() ?? "";
+            cursor = jObject.SelectTokens(@"$.data.user.result.timeline_v2.timeline.instructions[?(@.type=='TimelineAddEntries')].entries[*].content")
+                .FirstOrDefault(t => t["cursorType"]?.ToString() == "Bottom")
+                ?["value"]?.ToString()
+                ?? "";
             if (cursor.Length == 0)
             {
                 break;
@@ -326,21 +329,19 @@ public class TwitterExtractor : IExtractor
 
     private Uri GetUserTweetsUri(string userId, string? cursor)
     {
-        dynamic variablesObject = new
-        {
-            userId = userId,
-            count = 40,
-            includePromotedContent = true,
-            withQuickPromoteEligibilityTweetFields = true,
-            withSuperFollowsUserFields = true,
-            withDownvotePerspective = false,
-            withReactionsMetadata = false,
-            withReactionsPerspective = false,
-            withSuperFollowsTweetFields = true,
-            withVoice = true,
-            withV2Timeline = true,
-        };
-
+        dynamic variablesObject = new ExpandoObject();
+        variablesObject.userId = userId;
+        variablesObject.count = 40;
+        variablesObject.includePromotedContent = true;
+        variablesObject.withQuickPromoteEligibilityTweetFields = true;
+        variablesObject.withSuperFollowsUserFields = true;
+        variablesObject.withDownvotePerspective = false;
+        variablesObject.withReactionsMetadata = false;
+        variablesObject.withReactionsPerspective = false;
+        variablesObject.withSuperFollowsTweetFields = true;
+        variablesObject.withVoice = true;
+        variablesObject.withV2Timeline = true;
+        
         if (cursor != null)
         {
             variablesObject.cursor = cursor;

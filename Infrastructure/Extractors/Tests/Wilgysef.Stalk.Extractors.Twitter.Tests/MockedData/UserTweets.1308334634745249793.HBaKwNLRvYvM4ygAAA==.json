@@ -1,0 +1,45 @@
+﻿{
+  "data": {
+    "user": {
+      "result": {
+        "__typename": "User",
+        "timeline_v2": {
+          "timeline": {
+            "instructions": [
+              {
+                "type": "TimelineAddEntries",
+                "entries": [
+                  {
+                    "entryId": "cursor-top-1316033297449771009",
+                    "sortIndex": "1316033297449771009",
+                    "content": {
+                      "entryType": "TimelineTimelineCursor",
+                      "__typename": "TimelineTimelineCursor",
+                      "value": "HCaAgKPx9tO+wyQAAA==",
+                      "cursorType": "Top"
+                    }
+                  },
+                  {
+                    "entryId": "cursor-bottom-1316033297449771007",
+                    "sortIndex": "1316033297449771007",
+                    "content": {
+                      "entryType": "TimelineTimelineCursor",
+                      "__typename": "TimelineTimelineCursor",
+                      "value": "HBaAgKPx9tO+wyQAAA==",
+                      "cursorType": "Bottom",
+                      "stopOnEmptyResponse": true
+                    }
+                  }
+                ]
+              }
+            ],
+            "responseObjects": {
+              "feedbackActions": [],
+              "immediateReactions": []
+            }
+          }
+        }
+      }
+    }
+  }
+}
