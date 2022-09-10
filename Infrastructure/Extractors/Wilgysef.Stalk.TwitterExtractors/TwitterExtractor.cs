@@ -15,11 +15,27 @@ public class TwitterExtractor : IExtractor
     private const string UserTweetsEndpoint = "https://twitter.com/i/api/graphql/q881FFtQa69KN7jS9h_EDA/UserTweets";
     private const string TweetDetailEndpoint = "https://twitter.com/i/api/graphql/Nze3idtpjn4wcl09GpmDRg/TweetDetail";
 
+    private static readonly Dictionary<string, int> Month3Letters = new()
+    {
+        { "jan", 1 },
+        { "feb", 2 },
+        { "mar", 3 },
+        { "apr", 4 },
+        { "may", 5 },
+        { "jun", 6 },
+        { "jul", 7 },
+        { "aug", 8 },
+        { "sep", 9 },
+        { "oct", 10 },
+        { "nov", 11 },
+        { "dec", 12 },
+    };
+
     public string Name => "Twitter";
 
     public ILogger? Logger { get; set; }
 
-    private readonly Regex _uriRegex = new(@"^(?:https?://)?(?:www\.)?twitter\.com(?:\:(?:80|443))?/(?<user>[^/]+)(?:/status/(?<tweet>[0-9]+))?", RegexOptions.Compiled);
+    private readonly Regex _uriRegex = new(@"^(?:https?://)?(?:(?:www|mobile)\.)?twitter\.com(?:\:(?:80|443))?/(?<user>[^/]+)(?:/status/(?<tweet>[0-9]+))?", RegexOptions.Compiled);
     private readonly Regex _mediaUrlRegex = new(@"^(?:https://)?pbs\.twimg\.com/media/(?<id>[A-Za-z0-9_]+)\.(?<extension>[A-Za-z0-9]+)");
 
     private HttpClient _httpClient;
@@ -58,7 +74,7 @@ public class TwitterExtractor : IExtractor
         var match = _uriRegex.Match(uri.AbsoluteUri);
         var userScreenName = match.Groups["user"].Value;
 
-        var userId = await GetUserIdAsync(userScreenName);
+        var userId = await GetUserIdAsync(userScreenName, cancellationToken);
         string? cursor = null;
 
         while (true)
@@ -66,14 +82,34 @@ public class TwitterExtractor : IExtractor
             var userTweetsUri = GetUserTweetsUri(userId, cursor);
             var response = await _httpClient.GetAsync(userTweetsUri);
             response.EnsureSuccessStatusCode();
+
+            var data = await response.Content.ReadAsStringAsync(cancellationToken);
+            var jObject = JObject.Parse(data);
+
+            var tweets = jObject.SelectToken(@"$.data.user.result.timeline_v2.timeline.instructions[?(@.type=='TimelineAddEntries')].entries[*].content.itemContent.tweet_results.result");
+            if (tweets == null || !tweets.Children().Any())
+            {
+                break;
+            }
+
+            foreach (var tweet in tweets)
+            {
+                foreach (var result in ExtractTweet(tweet, metadata))
+                {
+                    yield return result;
+                }
+            }
+
+            cursor = jObject.SelectToken(@"$.data.user.result.timeline_v2.timeline.instructions[?(@.type=='TimelineAddEntries')].entries[*][?(@.cursorType=='Bottom')].value")
+                ?.ToString() ?? "";
+            if (cursor.Length == 0)
+            {
+                break;
+            }
         }
-
-        // TODO
-
-        yield return new ExtractResult(new Uri(""), "", JobTaskType.Extract);
     }
 
-    private async IAsyncEnumerable<ExtractResult> ExtractTweetAsync(Uri uri, string itemData, IMetadataObject metadata, CancellationToken cancellationToken = default)
+    private async IAsyncEnumerable<ExtractResult> ExtractTweetAsync(Uri uri, string itemData, IMetadataObject metadata, CancellationToken cancellationToken)
     {
         var match = _uriRegex.Match(uri.AbsoluteUri);
         var tweetId = match.Groups["tweet"].Value;
@@ -82,20 +118,35 @@ public class TwitterExtractor : IExtractor
         var response = await _httpClient.GetAsync(tweetUri, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        var data = await response.Content.ReadAsStringAsync();
+        var data = await response.Content.ReadAsStringAsync(cancellationToken);
         var jObject = JObject.Parse(data);
 
         var tweet = jObject.SelectToken($"$.data.threaded_conversation_with_injections_v2.instructions[?(@.type=='TimelineAddEntries')].entries..[?(@.rest_id=='{tweetId}')]");
 
-        var userScreenName = tweet.SelectToken(@"$.core.user_results.result.legacy.screen_name");
+        foreach (var result in ExtractTweet(tweet, metadata))
+        {
+            yield return result;
+        }
+    }
+
+    private IEnumerable<ExtractResult> ExtractTweet(JToken tweet, IMetadataObject metadata)
+    {
+        var userScreenName = tweet.SelectToken(@"$.core.user_results.result.legacy.screen_name")?.ToString();
+        var userId = GetUserId(tweet);
         var legacy = tweet["legacy"];
-        metadata.AddValue("created_at", legacy["created_at"]?.ToString());
-        metadata.AddValue("favorite_count", legacy["favorite_count"]?.Value<int>());
-        metadata.AddValue("lang", legacy["lang"]?.ToString());
-        metadata.AddValue("possibly_sensitive", legacy["possibly_sensitive"]?.Value<bool>());
-        metadata.AddValue("quote_count", legacy["quote_count"]?.Value<int>());
-        metadata.AddValue("reply_count", legacy["reply_count"]?.Value<int>());
-        metadata.AddValue("retweet_count", legacy["retweet_count"]?.Value<int>());
+        var tweetId = tweet["rest_id"].ToString();
+
+        metadata["created_at"] = TryParseDateTime(legacy["created_at"]?.ToString(), out _);
+        metadata["favorite_count"] = legacy["favorite_count"]?.Value<int>();
+        metadata["is_quote_status"] = legacy["is_quote_status"]?.Value<bool>();
+        metadata["lang"] = legacy["lang"]?.ToString();
+        metadata["possibly_sensitive"] = legacy["possibly_sensitive"]?.Value<bool>();
+        metadata["quote_count"] = legacy["quote_count"]?.Value<int>();
+        metadata["reply_count"] = legacy["reply_count"]?.Value<int>();
+        metadata["retweet_count"] = legacy["retweet_count"]?.Value<int>();
+        metadata["tweet_id"] = tweetId;
+        metadata["user.id"] = userId;
+        metadata["user.screen_name"] = userScreenName;
 
         foreach (var result in ExtractTweetMedia(tweet, metadata, true))
         {
@@ -111,55 +162,128 @@ public class TwitterExtractor : IExtractor
             {
                 fullText = fullText.Substring(displayTextRange[0], displayTextRange[1]);
             }
+        }
+        else
+        {
+            fullText = "";
+        }
 
-            if (fullText.Length > 0)
-            {
-                yield return new ExtractResult(
-                    new Uri($"data:text/plain;base64,{Convert.ToBase64String(Encoding.UTF8.GetBytes(fullText))}"),
-                    $"{userScreenName}#{tweetId}",
-                    JobTaskType.Download,
-                    metadata: metadata);
-            }
+        var entityUrls = GetEntityUrls(tweet);
+        if (entityUrls.Count > 0)
+        {
+            fullText += "\n" + string.Join('\n', entityUrls);
+        }
+
+        if (fullText.Length > 0)
+        {
+            yield return new ExtractResult(
+                new Uri($"data:text/plain;base64,{Convert.ToBase64String(Encoding.UTF8.GetBytes(fullText))}"),
+                $"{userId}#{tweetId}",
+                JobTaskType.Download,
+                metadata: metadata);
         }
     }
 
     private IEnumerable<ExtractResult> ExtractTweetMedia(JToken tweet, IMetadataObject metadata, bool largestSize)
     {
-        var userScreenName = tweet.SelectToken(@"$.core.user_results.result.legacy.screen_name");
+        var userId = GetUserId(tweet);
         var legacy = tweet["legacy"];
         var tweetId = legacy["id_str"]?.ToString();
         var entities = legacy["entities"];
+        if (entities != null)
+        {
+            var media = entities["media"];
+            if (media != null)
+            {
+                foreach (var mediaItem in media)
+                {
+                    var mediaUrl = mediaItem["media_url_https"]?.ToString();
+                    var mediaId = mediaItem["id_str"]?.ToString();
+                    if (mediaUrl == null || mediaId == null)
+                    {
+                        continue;
+                    }
+
+                    if (largestSize)
+                    {
+                        mediaUrl = GetLargestSizeMediaUrl(mediaUrl, mediaItem["sizes"]);
+                    }
+
+                    var mediaMetadata = metadata.Copy();
+                    mediaMetadata["mediaId"] = mediaId;
+
+                    yield return new ExtractResult(
+                        new Uri(mediaUrl),
+                        $"{userId}#{tweetId}#{mediaId}",
+                        JobTaskType.Download,
+                        metadata: mediaMetadata);
+                }
+            }
+        }
+
+        var extendedEntities = legacy["extended_entities"];
+        if (extendedEntities != null)
+        {
+            var media = entities["media"];
+            if (media != null)
+            {
+                foreach (var mediaItem in media)
+                {
+                    var mediaId = mediaItem["id_str"]?.ToString();
+                    var videoInfo = mediaItem["video_info"];
+                    if (mediaId == null || videoInfo == null)
+                    {
+                        continue;
+                    }
+
+                    var variants = videoInfo["variants"].Children().ToList();
+                    var bestVariant = variants.OrderByDescending(v => v["bitrate"]).First();
+
+                    var mediaMetadata = metadata.Copy();
+                    mediaMetadata["mediaId"] = mediaId;
+                    mediaMetadata["viewCount"] = mediaItem["mediaStats"]?["viewCount"]?.Value<int>();
+                    mediaMetadata["duration_millis"] = videoInfo["duration_millis"]?.Value<int>();
+
+                    yield return new ExtractResult(
+                        new Uri(bestVariant["url"].ToString()),
+                        $"{userId}#{tweetId}#{mediaId}",
+                        JobTaskType.Download,
+                        metadata: mediaMetadata);
+                }
+            }
+        }
+    }
+
+    private List<string> GetEntityUrls(JToken tweet)
+    {
+        var entityUrls = new List<string>();
+
+        var legacy = tweet["legacy"];
+        var entities = legacy["entities"];
         if (entities == null)
         {
-            yield break;
+            return entityUrls;
         }
 
-        var media = entities["media"];
-        if (media == null)
+        var urls = entities["urls"];
+        if (urls == null)
         {
-            yield break;
+            return entityUrls;
         }
 
-        foreach (var mediaItem in media)
+        foreach (var url in urls)
         {
-            var mediaUrl = mediaItem["media_url_https"]?.ToString();
-            var mediaId = mediaItem["id_str"]?.ToString();
-            if (mediaUrl == null || mediaId == null)
+            if (url["expanded_url"] != null)
             {
-                continue;
+                entityUrls.Add(url["expanded_url"]!.ToString());
             }
-
-            if (largestSize)
-            {
-                mediaUrl = GetLargestSizeMediaUrl(mediaUrl, mediaItem["sizes"]);
-            }
-
-            yield return new ExtractResult(
-                new Uri(mediaUrl),
-                $"{userScreenName}#{tweetId}#{mediaId}",
-                JobTaskType.Download,
-                metadata: metadata);
         }
+        return entityUrls;
+    }
+
+    private string? GetUserId(JToken tweet)
+    {
+        return tweet.SelectToken(@"$.core.user_results.result.rest_id")?.ToString();
     }
 
     private string GetLargestSizeMediaUrl(string uri, JToken? sizes)
@@ -175,7 +299,7 @@ public class TwitterExtractor : IExtractor
             : uri;
     }
 
-    private async Task<string> GetUserIdAsync(string userScreenName)
+    private async Task<string> GetUserIdAsync(string userScreenName, CancellationToken cancellationToken)
     {
         var variables = JsonSerializer.Serialize(new
         {
@@ -190,7 +314,7 @@ public class TwitterExtractor : IExtractor
         });
 
         var uri = new Uri($"{UserByScreenNameEndpoint}?variables={variables}&features={features}");
-        var response = await _httpClient.GetAsync(uri);
+        var response = await _httpClient.GetAsync(uri, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var data = await response.Content.ReadAsStringAsync();
@@ -295,6 +419,47 @@ public class TwitterExtractor : IExtractor
             return ExtractType.User;
         }
         return null;
+    }
+
+    private object TryParseDateTime(string datetime, out bool success)
+    {
+        var result = ParseDateTime(datetime);
+        success = result.HasValue;
+        return result.HasValue ? result.Value : datetime;
+    }
+
+    private DateTime? ParseDateTime(string datetime)
+    {
+        try
+        {
+            var split = datetime.Split(' ');
+            var month = split[1];
+            var day = split[2];
+            var hourMinuteSecond = split[3];
+            var year = split[5];
+
+            var timeSplit = hourMinuteSecond.Split(':');
+            var hour = timeSplit[0];
+            var minute = timeSplit[1];
+            var second = timeSplit[2];
+
+            return new DateTime(
+                int.Parse(year),
+                Month3LetterToInt(month)!.Value,
+                int.Parse(day),
+                int.Parse(hour),
+                int.Parse(minute),
+                int.Parse(second));
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private int? Month3LetterToInt(string month)
+    {
+        return Month3Letters.TryGetValue(month.ToLower(), out var value) ? value : null;
     }
 
     private enum ExtractType

@@ -12,6 +12,12 @@ public class MetadataObject : IMetadataObject
 
     private readonly Trie<string, object?> _root = new(null!, null);
 
+    #if DEBUG
+
+    private IDictionary<string, object?> Dictionary => GetDictionary();
+
+    #endif
+
     public object? this[string key]
     {
         get => GetValue(key);
