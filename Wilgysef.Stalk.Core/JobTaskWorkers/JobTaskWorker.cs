@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Wilgysef.Stalk.Core.Downloaders;
+using Wilgysef.Stalk.Core.DownloadSelectors;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
@@ -171,16 +172,11 @@ public class JobTaskWorker : IJobTaskWorker
     protected virtual async Task DownloadAsync(CancellationToken cancellationToken)
     {
         using var scope = _lifetimeScope.BeginLifetimeScope();
-        var downloaders = scope.GetRequiredService<IEnumerable<IDownloader>>();
+        var downloaderSelector = scope.GetRequiredService<IDownloadSelector>();
         var itemIdSetService = scope.GetRequiredService<IItemIdSetService>();
 
-        var defaultDownloader = downloaders.FirstOrDefault(d => d is IDefaultDownloader)
-            ?? downloaders.SingleOrDefault();
-
         var jobTaskUri = new Uri(JobTask!.Uri);
-        var downloader = scope.GetRequiredService<IEnumerable<IDownloader>>()
-            .FirstOrDefault(d => d is not IDefaultDownloader && d.CanDownload(jobTaskUri))
-            ?? defaultDownloader;
+        var downloader = downloaderSelector.SelectDownloader(jobTaskUri);
 
         if (downloader == null)
         {

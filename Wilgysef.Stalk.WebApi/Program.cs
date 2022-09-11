@@ -55,8 +55,13 @@ void ConfigureConfiguration()
 {
     builder.Host.ConfigureAppConfiguration((context, configuration) =>
     {
+        var aspNetCoreEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+            ?? "Development";
+
         configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+        configuration.AddJsonFile($"appsettings.{aspNetCoreEnvironment}.json", optional: true, reloadOnChange: true);
         configuration.AddJsonFile("appsettings.secrets.json", optional: true, reloadOnChange: true);
+        configuration.AddJsonFile($"appsettings.secrets.{aspNetCoreEnvironment}.json", optional: true, reloadOnChange: true);
     });
 }
 

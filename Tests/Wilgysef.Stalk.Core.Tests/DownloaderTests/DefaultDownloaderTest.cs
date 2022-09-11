@@ -19,7 +19,7 @@ public class DefaultDownloaderTest : BaseTest
 
     private readonly HttpRequestMessageLog _requestLog;
     private readonly MockFileService _fileService;
-    private readonly IDefaultDownloader _downloader;
+    private readonly DefaultDownloader _downloader;
 
     public DefaultDownloaderTest()
     {
@@ -33,7 +33,7 @@ public class DefaultDownloaderTest : BaseTest
         _fileService = ReplaceFileService();
 
         var downloaders = GetRequiredService<IEnumerable<IDownloader>>();
-        _downloader = (downloaders.Single(d => d is IDefaultDownloader) as IDefaultDownloader)!;
+        _downloader = (downloaders.Single(d => d is DefaultDownloader) as DefaultDownloader)!;
     }
 
     [Fact]

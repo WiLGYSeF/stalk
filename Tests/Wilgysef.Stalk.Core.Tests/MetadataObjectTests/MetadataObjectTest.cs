@@ -10,10 +10,10 @@ public class MetadataObjectTest
     {
         var metadata = new MetadataObject('.');
 
-        metadata.AddValue("abc", 1);
-        metadata.AddValue("def", 2);
-        metadata.AddValue("aaa.asdf", 3);
-        metadata.AddValue("aaa.abc", 4);
+        metadata.Add("abc", 1);
+        metadata.Add("def", 2);
+        metadata.Add("aaa.asdf", 3);
+        metadata.Add("aaa.abc", 4);
 
         metadata["abc"].ShouldBe(1);
         metadata["def"].ShouldBe(2);
@@ -26,27 +26,27 @@ public class MetadataObjectTest
     {
         var metadata = new MetadataObject('.');
 
-        metadata.AddValue("abc", 1);
-        metadata.AddValue("asdf.aaa.abc", 1);
+        metadata.Add("abc", 1);
+        metadata.Add("asdf.aaa.abc", 1);
 
         Should.Throw<ArgumentException>(() =>
         {
-            metadata.AddValue("abc.asdf", 2);
+            metadata.Add("abc.asdf", 2);
         });
 
         Should.Throw<ArgumentException>(() =>
         {
-            metadata.AddValue("abc.asdf.aaaa", 2);
+            metadata.Add("abc.asdf.aaaa", 2);
         });
 
         Should.Throw<ArgumentException>(() =>
         {
-            metadata.AddValue("asdf", 2);
+            metadata.Add("asdf", 2);
         });
 
         Should.Throw<ArgumentException>(() =>
         {
-            metadata.AddValue("asdf.aaa", 2);
+            metadata.Add("asdf.aaa", 2);
         });
     }
 
@@ -88,8 +88,8 @@ public class MetadataObjectTest
     {
         var metadata = new MetadataObject('.');
 
-        metadata.AddValue("abc", 1);
-        metadata.AddValue("aaa.asdf", 2);
+        metadata.Add("abc", 1);
+        metadata.Add("aaa.asdf", 2);
 
         metadata.GetValue("abc").ShouldBe(1);
         metadata.GetValue("aaa.asdf").ShouldBe(2);
@@ -113,8 +113,8 @@ public class MetadataObjectTest
     {
         var metadata = new MetadataObject('.');
 
-        metadata.AddValue("abc", 1);
-        metadata.AddValue("aaa.asdf", 2);
+        metadata.Add("abc", 1);
+        metadata.Add("aaa.asdf", 2);
 
         metadata.TryGetValue("abc", out var value).ShouldBeTrue();
         value.ShouldBe(1);
@@ -134,15 +134,15 @@ public class MetadataObjectTest
     {
         var metadata = new MetadataObject('.');
 
-        metadata.AddValue("abc", 1);
-        metadata.AddValue("aaa.asdf", 2);
+        metadata.Add("abc", 1);
+        metadata.Add("aaa.asdf", 2);
 
-        metadata.ContainsValue("abc").ShouldBeTrue();
-        metadata.ContainsValue("aaa").ShouldBeTrue();
-        metadata.ContainsValue("aaa.asdf").ShouldBeTrue();
+        metadata.Contains("abc").ShouldBeTrue();
+        metadata.Contains("aaa").ShouldBeTrue();
+        metadata.Contains("aaa.asdf").ShouldBeTrue();
 
-        metadata.ContainsValue("asdf").ShouldBeFalse();
-        metadata.ContainsValue("aaa.abc").ShouldBeFalse();
+        metadata.Contains("asdf").ShouldBeFalse();
+        metadata.Contains("aaa.abc").ShouldBeFalse();
     }
 
     [Fact]
@@ -150,21 +150,21 @@ public class MetadataObjectTest
     {
         var metadata = new MetadataObject('.');
 
-        metadata.AddValue("abc", 1);
-        metadata.AddValue("aaa.asdf", 2);
+        metadata.Add("abc", 1);
+        metadata.Add("aaa.asdf", 2);
 
-        metadata.RemoveValue("abc").ShouldBeTrue();
-        metadata.ContainsValue("abc").ShouldBeFalse();
+        metadata.Remove("abc").ShouldBeTrue();
+        metadata.Contains("abc").ShouldBeFalse();
 
-        metadata.RemoveValue("aaa.asdf").ShouldBeTrue();
-        metadata.ContainsValue("aaa.asdf").ShouldBeFalse();
-        metadata.ContainsValue("aaa").ShouldBeTrue();
+        metadata.Remove("aaa.asdf").ShouldBeTrue();
+        metadata.Contains("aaa.asdf").ShouldBeFalse();
+        metadata.Contains("aaa").ShouldBeTrue();
 
-        metadata.RemoveValue("aaa").ShouldBeTrue();
-        metadata.ContainsValue("aaa").ShouldBeFalse();
+        metadata.Remove("aaa").ShouldBeTrue();
+        metadata.Contains("aaa").ShouldBeFalse();
 
-        metadata.RemoveValue("asdf").ShouldBeFalse();
-        metadata.RemoveValue("aaa.abc").ShouldBeFalse();
+        metadata.Remove("asdf").ShouldBeFalse();
+        metadata.Remove("aaa.abc").ShouldBeFalse();
     }
 
     [Fact]

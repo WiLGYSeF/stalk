@@ -77,20 +77,20 @@ public class ServiceRegistrar
         string? externalAssembliesPath,
         Func<Type, IOptionSection> getOptionSection)
     {
-        var assemblies = GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter).ToList();
-        var externalAssemblies = externalAssembliesPath != null
+        var internalAssemblies = ToArray(GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter).ToList());
+        var externalAssemblies = ToArray(externalAssembliesPath != null
             ? AssemblyLoader.LoadAssemblies(externalAssembliesPath)
-            : new List<Assembly>();
+            : new List<Assembly>());
 
         var loadedAssemblies = ToArray(
-            assemblies.Count + externalAssemblies.Count,
-            assemblies.Concat(externalAssemblies));
+            internalAssemblies.Length + externalAssemblies.Length,
+            internalAssemblies.Concat(externalAssemblies));
 
         // HttpClient registration
         builder.Register(c => c.Resolve<IHttpClientFactory>().CreateClient(Constants.HttpClientName))
             .As<HttpClient>();
 
-        builder.RegisterAutoMapper(true, loadedAssemblies);
+        builder.RegisterAutoMapper(true, internalAssemblies);
 
         // IdGen registration
         builder.Register(c => new IdGenerator(new IdGen.IdGenerator(IdGeneratorId, IdGen.IdGeneratorOptions.Default)))
@@ -101,7 +101,7 @@ public class ServiceRegistrar
         builder.Register(c => new StdSchedulerFactory())
             .As<ISchedulerFactory>()
             .SingleInstance();
-        RegisterAssemblyTypes<IJob>(builder, loadedAssemblies)
+        RegisterAssemblyTypes<IJob>(builder, internalAssemblies)
             .AsSelf()
             .InstancePerDependency();
 
@@ -112,19 +112,19 @@ public class ServiceRegistrar
                 .SingleInstance();
         }
 
-        RegisterAssemblyTypes<ITransientDependency>(builder, loadedAssemblies)
+        RegisterAssemblyTypes<ITransientDependency>(builder, internalAssemblies)
             .InstancePerDependency();
-        RegisterAssemblyTypes<IScopedDependency>(builder, loadedAssemblies)
+        RegisterAssemblyTypes<IScopedDependency>(builder, internalAssemblies)
             .InstancePerLifetimeScope();
-        RegisterAssemblyTypes<ISingletonDependency>(builder, loadedAssemblies)
+        RegisterAssemblyTypes<ISingletonDependency>(builder, internalAssemblies)
             .SingleInstance();
 
-        RegisterAssemblyTypes(typeof(ICommandHandler<,>), builder, loadedAssemblies)
+        RegisterAssemblyTypes(typeof(ICommandHandler<,>), builder, internalAssemblies)
             .InstancePerDependency();
-        RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, loadedAssemblies)
+        RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, internalAssemblies)
             .InstancePerDependency();
 
-        var options = loadedAssemblies.SelectMany(a => a.GetTypes())
+        var options = internalAssemblies.SelectMany(a => a.GetTypes())
             .Where(t => t.IsClass && t.GetInterfaces().Contains(typeof(IOptionSection)));
         foreach (var option in options)
         {
@@ -196,6 +196,11 @@ public class ServiceRegistrar
                 }
             }
         }
+    }
+
+    private T[] ToArray<T>(ICollection<T> items)
+    {
+        return ToArray(items.Count, items);
     }
 
     private T[] ToArray<T>(int count, IEnumerable<T> items)

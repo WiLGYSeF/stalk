@@ -4,7 +4,7 @@ using Wilgysef.Stalk.Core.Shared.StringFormatters;
 
 namespace Wilgysef.Stalk.Core.Downloaders;
 
-public class DataDownloader : DefaultDownloader
+public class DataDownloader : DownloaderBase
 {
     public DataDownloader(
         IFileService fileService,
@@ -15,8 +15,7 @@ public class DataDownloader : DefaultDownloader
             fileService,
             stringFormatter,
             filenameSlugSelector,
-            httpClient)
-    { }
+            httpClient) { }
 
     public override bool CanDownload(Uri uri)
     {

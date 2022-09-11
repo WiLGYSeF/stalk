@@ -21,7 +21,7 @@ public class MetadataObject : IMetadataObject
     public object? this[string key]
     {
         get => GetValue(key);
-        set => SetValue(key, value, false);
+        set => SetValue(value, false, GetKeyParts(key));
     }
 
     public MetadataObject(char keySeparator)
@@ -29,16 +29,26 @@ public class MetadataObject : IMetadataObject
         KeySeparator = keySeparator;
     }
 
-    public void AddValue(string key, object? value)
+    public void Add(string key, object? value)
     {
-        SetValue(key, value, true);
+        AddByParts(value, GetKeyParts(key));
+    }
+
+    public void AddByParts(object? value, params string[] keyParts)
+    {
+        SetValue(value, true, keyParts);
     }
 
     public bool TryAddValue(string key, object? value)
     {
+        return TryAddValueByParts(value, GetKeyParts(key));
+    }
+
+    public bool TryAddValueByParts(object? value, params string[] keyParts)
+    {
         try
         {
-            SetValue(key, value, true);
+            SetValue(value, true, keyParts);
             return true;
         }
         catch
@@ -49,14 +59,24 @@ public class MetadataObject : IMetadataObject
 
     public object? GetValue(string key)
     {
-        return TryGetValue(key, out var value)
+        return GetValueByParts(GetKeyParts(key));
+    }
+
+    public object? GetValueByParts(params string[] keyParts)
+    {
+        return TryGetValueByParts(out var value, keyParts)
             ? value
-            : throw new ArgumentException("Could not get value by key.", nameof(key));
+            : throw new ArgumentException("Could not get value by key.", nameof(keyParts));
     }
 
     public bool TryGetValue(string key, out object? value)
     {
-        if (!TryGetPenultimateTrie(key, out var trie, out var ultimateKey))
+        return TryGetValueByParts(out value, GetKeyParts(key));
+    }
+
+    public bool TryGetValueByParts(out object? value, params string[] keyParts)
+    {
+        if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keyParts))
         {
             value = default;
             return false;
@@ -71,14 +91,24 @@ public class MetadataObject : IMetadataObject
         return true;
     }
 
-    public bool ContainsValue(string key)
+    public bool Contains(string key)
     {
-        return TryGetValue(key, out _);
+        return ContainsByParts(GetKeyParts(key));
     }
 
-    public bool RemoveValue(string key)
+    public bool ContainsByParts(params string[] keyParts)
     {
-        if (!TryGetPenultimateTrie(key, out var trie, out var ultimateKey))
+        return TryGetValueByParts(out _, keyParts);
+    }
+
+    public bool Remove(string key)
+    {
+        return RemoveByParts(GetKeyParts(key));
+    }
+
+    public bool RemoveByParts(params string[] keyParts)
+    {
+        if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keyParts))
         {
             return false;
         }
@@ -143,19 +173,19 @@ public class MetadataObject : IMetadataObject
         SetValues(dictionary, null);
     }
 
-    private void SetValue(string key, object? value, bool throwIfExisting)
+    private void SetValue(object? value, bool throwIfExisting, params string[] keyParts)
     {
-        if (!TryGetPenultimateTrie(key, out var trie, out var ultimateKey))
+        if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keyParts))
         {
-            trie = CreateTries(key, out ultimateKey);
+            trie = CreateTries(out ultimateKey, keyParts);
         }
         if (trie.Terminal)
         {
-            throw new ArgumentException("Subkey already exists", nameof(key));
+            throw new ArgumentException("Subkey already exists", nameof(keyParts));
         }
         if (throwIfExisting && trie.Contains(ultimateKey))
         {
-            throw new ArgumentException("Key already exists", nameof(key));
+            throw new ArgumentException("Key already exists", nameof(keyParts));
         }
 
         var newTrie = new Trie<string, object?>(ultimateKey, value)
@@ -166,11 +196,10 @@ public class MetadataObject : IMetadataObject
     }
 
     private bool TryGetPenultimateTrie(
-        string key,
         [MaybeNullWhen(false)] out ITrie<string, object?> trie,
-        [MaybeNullWhen(false)] out string ultimateKey)
+        [MaybeNullWhen(false)] out string ultimateKey,
+        params string[] keyParts)
     {
-        var keyParts = GetKeyParts(key);
         ITrie<string, object?> currentTrie = _root;
 
         for (var i = 0; i < keyParts.Length - 1; i++)
@@ -189,9 +218,8 @@ public class MetadataObject : IMetadataObject
         return true;
     }
 
-    private ITrie<string, object?> CreateTries(string key, out string ultimateKey)
+    private ITrie<string, object?> CreateTries(out string ultimateKey, params string[] keyParts)
     {
-        var keyParts = GetKeyParts(key);
         ITrie<string, object?> currentTrie = _root;
 
         for (var i = 0; i < keyParts.Length - 1; i++)
@@ -204,7 +232,7 @@ public class MetadataObject : IMetadataObject
             }
             else if (trie.Terminal)
             {
-                throw new ArgumentException("Subkey already exists", nameof(key));
+                throw new ArgumentException("Subkey already exists", nameof(keyParts));
             }
             currentTrie = trie;
         }
