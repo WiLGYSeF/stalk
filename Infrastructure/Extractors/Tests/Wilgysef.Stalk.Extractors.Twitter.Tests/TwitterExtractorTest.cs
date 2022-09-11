@@ -178,7 +178,6 @@ public class TwitterExtractorTest : BaseTest
         videoResult.ItemId.ShouldBe("1308334634745249793#1523276529123397632#1523196911448035328");
         videoResult.Uri.ShouldBe(new Uri("https://video.twimg.com/ext_tw_video/1523196911448035328/pu/vid/1280x720/r-Ybk23JsBkJIy9b.mp4?tag=12"));
         videoResult.Metadata["created_at"].ShouldBe(new DateTime(2022, 5, 8, 12, 20, 0));
-        videoResult.Metadata["duration_millis"].ShouldBe(26541);
         videoResult.Metadata["favorite_count"].ShouldBe(5823);
         videoResult.Metadata["file.extension"].ShouldBe("mp4");
         videoResult.Metadata["is_quote_status"].ShouldBe(false);
@@ -191,7 +190,9 @@ public class TwitterExtractorTest : BaseTest
         videoResult.Metadata["tweet_id"].ShouldBe("1523276529123397632");
         videoResult.Metadata["user.id"].ShouldBe("1308334634745249793");
         videoResult.Metadata["user.screen_name"].ShouldBe("amatsukauto");
-        videoResult.Metadata["view_count"].ShouldBe(76821);
+        videoResult.Metadata["video.bitrate"].ShouldBe(2176000);
+        videoResult.Metadata["video.duration_millis"].ShouldBe(26541);
+        videoResult.Metadata["video.view_count"].ShouldBe(76821);
         videoResult.Type.ShouldBe(JobTaskType.Download);
     }
 

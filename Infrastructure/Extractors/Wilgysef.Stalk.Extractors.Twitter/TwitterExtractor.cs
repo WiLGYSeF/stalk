@@ -148,8 +148,8 @@ public class TwitterExtractor : IExtractor
         metadata["reply_count"] = legacy["reply_count"]?.Value<int>();
         metadata["retweet_count"] = legacy["retweet_count"]?.Value<int>();
         metadata["tweet_id"] = tweetId;
-        metadata["user.id"] = userId;
-        metadata["user.screen_name"] = userScreenName;
+        metadata.SetByParts(userId, "user", "id");
+        metadata.SetByParts(userScreenName, "user", "screen_name");
 
         foreach (var result in ExtractTweetMedia(tweet, metadata, true))
         {
@@ -180,7 +180,7 @@ public class TwitterExtractor : IExtractor
         if (fullText.Length > 0)
         {
             var textMetadata = metadata.Copy();
-            textMetadata["file.extension"] = "txt";
+            textMetadata.SetByParts("txt", "file", "extension");
 
             yield return new ExtractResult(
                 new Uri($"data:text/plain;base64,{Convert.ToBase64String(Encoding.UTF8.GetBytes(fullText))}"),
@@ -212,7 +212,7 @@ public class TwitterExtractor : IExtractor
 
                     var mediaMetadata = metadata.Copy();
                     mediaMetadata["media_id"] = mediaId;
-                    mediaMetadata["file.extension"] = GetExtensionFromUri(new Uri(mediaUrl));
+                    mediaMetadata.SetByParts(GetExtensionFromUri(new Uri(mediaUrl)), "file", "extension");
 
                     if (largestSize)
                     {
@@ -249,9 +249,10 @@ public class TwitterExtractor : IExtractor
 
                     var mediaMetadata = metadata.Copy();
                     mediaMetadata["media_id"] = mediaId;
-                    mediaMetadata["file.extension"] = GetExtensionFromUri(videoUri);
-                    mediaMetadata["view_count"] = mediaItem["mediaStats"]?["viewCount"]?.Value<int>();
-                    mediaMetadata["duration_millis"] = videoInfo["duration_millis"]?.Value<int>();
+                    mediaMetadata.SetByParts(GetExtensionFromUri(videoUri), "file", "extension");
+                    mediaMetadata.SetByParts(bestVariant["bitrate"]?.Value<int>(), "video", "bitrate");
+                    mediaMetadata.SetByParts(videoInfo["duration_millis"]?.Value<int>(), "video", "duration_millis");
+                    mediaMetadata.SetByParts(mediaItem["mediaStats"]?["viewCount"]?.Value<int>(), "video", "view_count");
 
                     yield return new ExtractResult(
                         videoUri,

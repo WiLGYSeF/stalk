@@ -21,7 +21,7 @@ public class MetadataObject : IMetadataObject
     public object? this[string key]
     {
         get => GetValue(key);
-        set => SetValue(value, false, GetKeyParts(key));
+        set => SetByParts(value, GetKeyParts(key));
     }
 
     public MetadataObject(char keySeparator)
@@ -55,6 +55,11 @@ public class MetadataObject : IMetadataObject
         {
             return false;
         }
+    }
+
+    public void SetByParts(object? value, params string[] keyParts)
+    {
+        SetValue(value, false, keyParts);
     }
 
     public object? GetValue(string key)
@@ -171,6 +176,11 @@ public class MetadataObject : IMetadataObject
     public void From(IDictionary<object, object> dictionary)
     {
         SetValues(dictionary, null);
+    }
+
+    public string GetKey(params string[] keyParts)
+    {
+        return string.Join(KeySeparator, keyParts);
     }
 
     private void SetValue(object? value, bool throwIfExisting, params string[] keyParts)

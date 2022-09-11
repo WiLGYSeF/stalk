@@ -35,8 +35,15 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// </summary>
         /// <param name="value">Value.</param>
         /// <param name="keyParts">Key parts.</param>
-        /// /// <exception cref="ArgumentException">Subkey already exists.</exception>
+        /// <exception cref="ArgumentException">Subkey already exists.</exception>
         void AddByParts(object value, params string[] keyParts);
+
+        /// <summary>
+        /// Sets value.
+        /// </summary>
+        /// <param name="value">Value.</param>
+        /// <param name="keyParts">Key parts.</param>
+        void SetByParts(object value, params string[] keyParts);
 
         /// <summary>
         /// Adds a new value if it does not exist.
@@ -129,5 +136,12 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// </summary>
         /// <param name="dictionary">Dictionary.</param>
         void From(IDictionary<object, object> dictionary);
+
+        /// <summary>
+        /// Gets the key from key parts.
+        /// </summary>
+        /// <param name="keyParts">Key parts.</param>
+        /// <returns>Key.</returns>
+        string GetKey(params string[] keyParts);
     }
 }
