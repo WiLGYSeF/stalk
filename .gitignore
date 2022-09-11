@@ -1,4 +1,5 @@
 .vs/
 bin/
 obj/
-appsettings.secrets*
+appsettings.Development.*
+appsettings.secrets.*
