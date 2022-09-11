@@ -13,10 +13,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Remove="MockedData\UserTweets.1308334634745249793.HBaKwNLRvYvM4ygAAA==.json" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.1.0" />
     <PackageReference Include="Shouldly" Version="4.1.0" />
     <PackageReference Include="System.Linq.Async" Version="6.0.1" />

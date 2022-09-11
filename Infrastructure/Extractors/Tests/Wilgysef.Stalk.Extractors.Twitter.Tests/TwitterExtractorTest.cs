@@ -19,6 +19,8 @@ public class TwitterExtractorTest : BaseTest
     private static readonly Regex UserTweetsRegex = new(@"^https://twitter\.com/i/api/graphql/[A-Za-z0-9_]+/UserTweets", RegexOptions.Compiled);
     private static readonly Regex TweetDetailRegex = new(@"^https://twitter\.com/i/api/graphql/[A-Za-z0-9_]+/TweetDetail", RegexOptions.Compiled);
 
+    private const string GuestTokenEndpoint = "https://api.twitter.com/1.1/guest/activate.json";
+
     private readonly TwitterExtractor _twitterExtractor;
 
     public TwitterExtractorTest()
@@ -48,6 +50,10 @@ public class TwitterExtractorTest : BaseTest
                 var json = GetUriQueryVariables(request.RequestUri!);
                 var tweetId = json["focalTweetId"];
                 return GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.TweetDetail.{tweetId}.json");
+            })
+            .AddEndpoint(new Uri(GuestTokenEndpoint), (request, cancellationTOken) =>
+            {
+                return GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Activate.json");
             });
 
         _twitterExtractor = new TwitterExtractor(new HttpClient(messageHandler));
@@ -86,7 +92,7 @@ public class TwitterExtractorTest : BaseTest
         results.Count.ShouldBe(1);
         var result = results.Single();
         result.ItemId.ShouldBe("1308334634745249793#1560187874460733440#1560187870648082433");
-        result.Uri.ShouldBe(new Uri("https://pbs.twimg.com/media/FabmmiTaIAEO4zM?format=jpg&name=large"));
+        result.Uri.AbsoluteUri.ShouldBe("https://pbs.twimg.com/media/FabmmiTaIAEO4zM?format=jpg&name=large");
         result.Metadata["created_at"].ShouldBe(new DateTime(2022, 8, 18, 8, 52, 30));
         result.Metadata["favorite_count"].ShouldBe(17340);
         result.Metadata["file.extension"].ShouldBe("jpg");
@@ -114,7 +120,7 @@ public class TwitterExtractorTest : BaseTest
         results.Count.ShouldBe(1);
         var result = results.Single();
         result.ItemId.ShouldBe("1308334634745249793#1554680837861683200");
-        result.Uri.ShouldBe(new Uri("data:text/plain;base64,U3BsYXRvb24yIOOBj+OCszrlvaEgaHR0cHM6Ly90LmNvL0VXYkJQVG1FNEwKaHR0cHM6Ly93d3cudHdpdGNoLnR2L3V0b255YW4="));
+        result.Uri.AbsoluteUri.ShouldBe("data:text/plain;base64,U3BsYXRvb24yIOOBj+OCszrlvaEgaHR0cHM6Ly90LmNvL0VXYkJQVG1FNEwKaHR0cHM6Ly93d3cudHdpdGNoLnR2L3V0b255YW4=");
         result.Metadata["created_at"].ShouldBe(new DateTime(2022, 8, 3, 4, 9, 30));
         result.Metadata["favorite_count"].ShouldBe(2022);
         result.Metadata["file.extension"].ShouldBe("txt");
@@ -141,7 +147,7 @@ public class TwitterExtractorTest : BaseTest
         results.Count.ShouldBe(3);
         var textResult = results.Single(r => r.Uri.AbsoluteUri.StartsWith("data:"));
         textResult.ItemId.ShouldBe("1308334634745249793#1523276529123397632");
-        textResult.Uri.ShouldBe(new Uri("data:text/plain;base64,5paw44GX44GE44Kr44OQ44O844KS5oqV56i/44GX44G+44GX44Gf4p2VCuOBi+OBo+OBk+OBhOOBhOOBruOBp+OBn+OBj+OBleOCk+iBnuOBhOOBpuOBj+OBoOOBleOBhOODvO+8geKZoQpmdWxs77yaaHR0cHM6Ly90LmNvL25sTE9ZbENtbE0KClZvY2Fs77ya44OK44OK44Kr44Kw44OpLCDlpKnkvb/jgYbjgagKSWxsdXN077yaSmFueWhlcm8gICDmp5gKTWl477yaUGQuNDbjgIDmp5gKTW92aWXvvJpSaWVzeiAg5qeYCmh0dHBzOi8veW91dHUuYmUvSEJrdExUeUxMOVU="));
+        textResult.Uri.AbsoluteUri.ShouldBe("data:text/plain;base64,5paw44GX44GE44Kr44OQ44O844KS5oqV56i/44GX44G+44GX44Gf4p2VCuOBi+OBo+OBk+OBhOOBhOOBruOBp+OBn+OBj+OBleOCk+iBnuOBhOOBpuOBj+OBoOOBleOBhOODvO+8geKZoQpmdWxs77yaaHR0cHM6Ly90LmNvL25sTE9ZbENtbE0KClZvY2Fs77ya44OK44OK44Kr44Kw44OpLCDlpKnkvb/jgYbjgagKSWxsdXN077yaSmFueWhlcm8gICDmp5gKTWl477yaUGQuNDbjgIDmp5gKTW92aWXvvJpSaWVzeiAg5qeYCmh0dHBzOi8veW91dHUuYmUvSEJrdExUeUxMOVU=");
         textResult.Metadata["created_at"].ShouldBe(new DateTime(2022, 5, 8, 12, 20, 0));
         textResult.Metadata["favorite_count"].ShouldBe(5823);
         textResult.Metadata["file.extension"].ShouldBe("txt");
@@ -158,7 +164,7 @@ public class TwitterExtractorTest : BaseTest
 
         var thumbnailResult = results.Single(r => r.Uri.AbsoluteUri.StartsWith("https://pbs.twimg.com/ext_tw_video_thumb"));
         thumbnailResult.ItemId.ShouldBe("1308334634745249793#1523276529123397632#1523196911448035328");
-        thumbnailResult.Uri.ShouldBe(new Uri("https://pbs.twimg.com/ext_tw_video_thumb/1523196911448035328/pu/img/IjK77EYau0_-qDCu.jpg"));
+        thumbnailResult.Uri.AbsoluteUri.ShouldBe("https://pbs.twimg.com/ext_tw_video_thumb/1523196911448035328/pu/img/IjK77EYau0_-qDCu.jpg");
         thumbnailResult.Metadata["created_at"].ShouldBe(new DateTime(2022, 5, 8, 12, 20, 0));
         thumbnailResult.Metadata["favorite_count"].ShouldBe(5823);
         thumbnailResult.Metadata["file.extension"].ShouldBe("jpg");
@@ -176,7 +182,7 @@ public class TwitterExtractorTest : BaseTest
 
         var videoResult = results.Single(r => r.Uri.AbsoluteUri.StartsWith("https://video.twimg.com/ext_tw_video/"));
         videoResult.ItemId.ShouldBe("1308334634745249793#1523276529123397632#1523196911448035328");
-        videoResult.Uri.ShouldBe(new Uri("https://video.twimg.com/ext_tw_video/1523196911448035328/pu/vid/1280x720/r-Ybk23JsBkJIy9b.mp4?tag=12"));
+        videoResult.Uri.AbsoluteUri.ShouldBe("https://video.twimg.com/ext_tw_video/1523196911448035328/pu/vid/1280x720/r-Ybk23JsBkJIy9b.mp4?tag=12");
         videoResult.Metadata["created_at"].ShouldBe(new DateTime(2022, 5, 8, 12, 20, 0));
         videoResult.Metadata["favorite_count"].ShouldBe(5823);
         videoResult.Metadata["file.extension"].ShouldBe("mp4");
@@ -194,6 +200,36 @@ public class TwitterExtractorTest : BaseTest
         videoResult.Metadata["video.duration_millis"].ShouldBe(26541);
         videoResult.Metadata["video.view_count"].ShouldBe(76821);
         videoResult.Type.ShouldBe(JobTaskType.Download);
+    }
+
+    [Fact]
+    public async Task Get_Tweet_Retweet()
+    {
+        var results = await _twitterExtractor.ExtractAsync(
+            new Uri("https://twitter.com/amatsukauto/status/1567680068113285121"),
+            null!,
+            new MetadataObject('.')).ToListAsync();
+
+        results.Count.ShouldBe(2);
+        var result = results.Single(r => r.Uri.AbsoluteUri.StartsWith("data:"));
+        result.ItemId.ShouldBe("1308334634745249793#1567680068113285121");
+        result.Uri.AbsoluteUri.ShouldBe("data:text/plain;base64,UlQgQEFzdGVyQXJjYWRpYTogRElWSU5FIERVTyBUQUtJTkcgT1ZFUiBBUEVYIExFR0VORFMhCkdhbWluZyB3LyDimIHvuI9AYW1hdHN1a2F1dG8gCgrwn5KraHR0cHM6Ly90LmNvL0NXZnhtMFlVTXggaHR0cHM6Ly90LmNvL0tYTnB5THhQeQpodHRwOi8veW91dHUuYmUvM0Vobm1rWjhPQlE=");
+        result.Metadata["created_at"].ShouldBe(new DateTime(2022, 9, 8, 1, 3, 48));
+        result.Metadata["favorite_count"].ShouldBe(0);
+        result.Metadata["file.extension"].ShouldBe("txt");
+        result.Metadata["is_quote_status"].ShouldBe(false);
+        result.Metadata["lang"].ShouldBe("en");
+        result.Metadata["possibly_sensitive"].ShouldBe(false);
+        result.Metadata["quote_count"].ShouldBe(0);
+        result.Metadata["reply_count"].ShouldBe(0);
+        result.Metadata["retweet_count"].ShouldBe(257);
+        result.Metadata["retweet.tweet_id"].ShouldBe("1567677602781069314");
+        result.Metadata["retweet.user.id"].ShouldBe("1545352592884084736");
+        result.Metadata["retweet.user.screen_name"].ShouldBe("AsterArcadia");
+        result.Metadata["tweet_id"].ShouldBe("1567680068113285121");
+        result.Metadata["user.id"].ShouldBe("1308334634745249793");
+        result.Metadata["user.screen_name"].ShouldBe("amatsukauto");
+        result.Type.ShouldBe(JobTaskType.Download);
     }
 
     private static Task<HttpResponseMessage> GetResponseMessageFromManifestResource(string name, HttpStatusCode statusCode = HttpStatusCode.OK)

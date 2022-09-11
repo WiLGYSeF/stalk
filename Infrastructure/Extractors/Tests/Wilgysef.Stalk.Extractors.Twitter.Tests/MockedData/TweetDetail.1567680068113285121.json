@@ -1,0 +1,1063 @@
+﻿{
+  "data": {
+    "threaded_conversation_with_injections_v2": {
+      "instructions": [
+        {
+          "type": "TimelineAddEntries",
+          "entries": [
+            {
+              "entryId": "tweet-1567680068113285121",
+              "sortIndex": "7655691968741490686",
+              "content": {
+                "entryType": "TimelineTimelineItem",
+                "__typename": "TimelineTimelineItem",
+                "itemContent": {
+                  "itemType": "TimelineTweet",
+                  "__typename": "TimelineTweet",
+                  "tweet_results": {
+                    "result": {
+                      "__typename": "Tweet",
+                      "rest_id": "1567680068113285121",
+                      "core": {
+                        "user_results": {
+                          "result": {
+                            "__typename": "User",
+                            "id": "VXNlcjoxMzA4MzM0NjM0NzQ1MjQ5Nzkz",
+                            "rest_id": "1308334634745249793",
+                            "affiliates_highlighted_label": {},
+                            "has_nft_avatar": false,
+                            "legacy": {
+                              "created_at": "Tue Sep 22 09:17:48 +0000 2020",
+                              "default_profile": true,
+                              "default_profile_image": false,
+                              "description": "すきなときにすきなだけ ჱ̒^._.^）￤ #utoart #Tenshimp #Utomeme ￤🤍 @aoinabi @Takeshitafungi ￤Twitch https://t.co/KUDHJ2sEBi",
+                              "entities": {
+                                "description": {
+                                  "urls": [
+                                    {
+                                      "display_url": "twitch.tv/utonyan/about",
+                                      "expanded_url": "https://www.twitch.tv/utonyan/about",
+                                      "url": "https://t.co/KUDHJ2sEBi",
+                                      "indices": [
+                                        85,
+                                        108
+                                      ]
+                                    }
+                                  ]
+                                },
+                                "url": {
+                                  "urls": [
+                                    {
+                                      "display_url": "youtube.com/channel/UCdYR5…",
+                                      "expanded_url": "https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g",
+                                      "url": "https://t.co/ZlPIWvb8Sv",
+                                      "indices": [
+                                        0,
+                                        23
+                                      ]
+                                    }
+                                  ]
+                                }
+                              },
+                              "fast_followers_count": 0,
+                              "favourites_count": 5959,
+                              "followers_count": 239564,
+                              "friends_count": 202,
+                              "has_custom_timelines": false,
+                              "is_translator": false,
+                              "listed_count": 470,
+                              "location": "",
+                              "media_count": 130,
+                              "name": "天使うと ☁ AmatsukaUto",
+                              "normal_followers_count": 239564,
+                              "pinned_tweet_ids_str": [],
+                              "possibly_sensitive": false,
+                              "profile_banner_extensions": {
+                                "mediaColor": {
+                                  "r": {
+                                    "ok": {
+                                      "palette": [
+                                        {
+                                          "percentage": 89.21,
+                                          "rgb": {
+                                            "blue": 243,
+                                            "green": 227,
+                                            "red": 226
+                                          }
+                                        },
+                                        {
+                                          "percentage": 6.6,
+                                          "rgb": {
+                                            "blue": 233,
+                                            "green": 234,
+                                            "red": 253
+                                          }
+                                        },
+                                        {
+                                          "percentage": 1.51,
+                                          "rgb": {
+                                            "blue": 254,
+                                            "green": 234,
+                                            "red": 186
+                                          }
+                                        },
+                                        {
+                                          "percentage": 1.36,
+                                          "rgb": {
+                                            "blue": 243,
+                                            "green": 199,
+                                            "red": 158
+                                          }
+                                        },
+                                        {
+                                          "percentage": 0.82,
+                                          "rgb": {
+                                            "blue": 205,
+                                            "green": 194,
+                                            "red": 234
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "profile_banner_url": "https://pbs.twimg.com/profile_banners/1308334634745249793/1660738736",
+                              "profile_image_extensions": {
+                                "mediaColor": {
+                                  "r": {
+                                    "ok": {
+                                      "palette": [
+                                        {
+                                          "percentage": 89.49,
+                                          "rgb": {
+                                            "blue": 248,
+                                            "green": 230,
+                                            "red": 227
+                                          }
+                                        },
+                                        {
+                                          "percentage": 5.85,
+                                          "rgb": {
+                                            "blue": 219,
+                                            "green": 169,
+                                            "red": 135
+                                          }
+                                        },
+                                        {
+                                          "percentage": 2.75,
+                                          "rgb": {
+                                            "blue": 212,
+                                            "green": 189,
+                                            "red": 229
+                                          }
+                                        },
+                                        {
+                                          "percentage": 0.98,
+                                          "rgb": {
+                                            "blue": 145,
+                                            "green": 121,
+                                            "red": 119
+                                          }
+                                        },
+                                        {
+                                          "percentage": 0.57,
+                                          "rgb": {
+                                            "blue": 244,
+                                            "green": 227,
+                                            "red": 184
+                                          }
+                                        }
+                                      ]
+                                    }
+                                  }
+                                }
+                              },
+                              "profile_image_url_https": "https://pbs.twimg.com/profile_images/1564257988126593026/RngCt9R0_normal.jpg",
+                              "profile_interstitial_type": "",
+                              "protected": false,
+                              "screen_name": "amatsukauto",
+                              "statuses_count": 655,
+                              "translator_type": "none",
+                              "url": "https://t.co/ZlPIWvb8Sv",
+                              "verified": false,
+                              "withheld_in_countries": []
+                            },
+                            "super_follow_eligible": false,
+                            "super_followed_by": false,
+                            "super_following": false
+                          }
+                        }
+                      },
+                      "unmention_info": {},
+                      "edit_control": {
+                        "edit_tweet_ids": [
+                          "1567680068113285121"
+                        ],
+                        "editable_until_msecs": "1662600828982",
+                        "is_edit_eligible": false,
+                        "edits_remaining": "5"
+                      },
+                      "legacy": {
+                        "created_at": "Thu Sep 08 01:03:48 +0000 2022",
+                        "conversation_id_str": "1567680068113285121",
+                        "display_text_range": [
+                          0,
+                          130
+                        ],
+                        "entities": {
+                          "media": [
+                            {
+                              "display_url": "pic.twitter.com/KXNpyLxPyg",
+                              "expanded_url": "https://twitter.com/AsterArcadia/status/1567677602781069314/photo/1",
+                              "id_str": "1567676036263051270",
+                              "indices": [
+                                107,
+                                130
+                              ],
+                              "media_url_https": "https://pbs.twimg.com/media/FcGBDJBaAAYE_at.jpg",
+                              "source_status_id_str": "1567677602781069314",
+                              "source_user_id_str": "1545352592884084736",
+                              "type": "photo",
+                              "url": "https://t.co/KXNpyLxPyg",
+                              "features": {
+                                "large": {
+                                  "faces": [
+                                    {
+                                      "x": 880,
+                                      "y": 323,
+                                      "h": 100,
+                                      "w": 100
+                                    }
+                                  ]
+                                },
+                                "medium": {
+                                  "faces": [
+                                    {
+                                      "x": 825,
+                                      "y": 302,
+                                      "h": 93,
+                                      "w": 93
+                                    }
+                                  ]
+                                },
+                                "small": {
+                                  "faces": [
+                                    {
+                                      "x": 467,
+                                      "y": 171,
+                                      "h": 53,
+                                      "w": 53
+                                    }
+                                  ]
+                                },
+                                "orig": {
+                                  "faces": [
+                                    {
+                                      "x": 880,
+                                      "y": 323,
+                                      "h": 100,
+                                      "w": 100
+                                    }
+                                  ]
+                                }
+                              },
+                              "sizes": {
+                                "large": {
+                                  "h": 720,
+                                  "w": 1280,
+                                  "resize": "fit"
+                                },
+                                "medium": {
+                                  "h": 675,
+                                  "w": 1200,
+                                  "resize": "fit"
+                                },
+                                "small": {
+                                  "h": 383,
+                                  "w": 680,
+                                  "resize": "fit"
+                                },
+                                "thumb": {
+                                  "h": 150,
+                                  "w": 150,
+                                  "resize": "crop"
+                                }
+                              },
+                              "original_info": {
+                                "height": 720,
+                                "width": 1280,
+                                "focus_rects": [
+                                  {
+                                    "x": 0,
+                                    "y": 3,
+                                    "w": 1280,
+                                    "h": 717
+                                  },
+                                  {
+                                    "x": 0,
+                                    "y": 0,
+                                    "w": 720,
+                                    "h": 720
+                                  },
+                                  {
+                                    "x": 36,
+                                    "y": 0,
+                                    "w": 632,
+                                    "h": 720
+                                  },
+                                  {
+                                    "x": 172,
+                                    "y": 0,
+                                    "w": 360,
+                                    "h": 720
+                                  },
+                                  {
+                                    "x": 0,
+                                    "y": 0,
+                                    "w": 1280,
+                                    "h": 720
+                                  }
+                                ]
+                              }
+                            }
+                          ],
+                          "user_mentions": [
+                            {
+                              "id_str": "1545352592884084736",
+                              "name": "Aster Arcadia 💫💜 NIJISANJI EN",
+                              "screen_name": "AsterArcadia",
+                              "indices": [
+                                3,
+                                16
+                              ]
+                            },
+                            {
+                              "id_str": "1308334634745249793",
+                              "name": "天使うと ☁ AmatsukaUto",
+                              "screen_name": "amatsukauto",
+                              "indices": [
+                                67,
+                                79
+                              ]
+                            }
+                          ],
+                          "urls": [
+                            {
+                              "display_url": "youtu.be/3EhnmkZ8OBQ",
+                              "expanded_url": "http://youtu.be/3EhnmkZ8OBQ",
+                              "url": "https://t.co/CWfxm0YUMx",
+                              "indices": [
+                                83,
+                                106
+                              ]
+                            }
+                          ],
+                          "hashtags": [],
+                          "symbols": []
+                        },
+                        "extended_entities": {
+                          "media": [
+                            {
+                              "display_url": "pic.twitter.com/KXNpyLxPyg",
+                              "expanded_url": "https://twitter.com/AsterArcadia/status/1567677602781069314/photo/1",
+                              "id_str": "1567676036263051270",
+                              "indices": [
+                                107,
+                                130
+                              ],
+                              "media_key": "3_1567676036263051270",
+                              "media_url_https": "https://pbs.twimg.com/media/FcGBDJBaAAYE_at.jpg",
+                              "source_status_id_str": "1567677602781069314",
+                              "source_user_id_str": "1545352592884084736",
+                              "type": "photo",
+                              "url": "https://t.co/KXNpyLxPyg",
+                              "ext_media_color": {
+                                "palette": [
+                                  {
+                                    "percentage": 37.58,
+                                    "rgb": {
+                                      "blue": 31,
+                                      "green": 30,
+                                      "red": 29
+                                    }
+                                  },
+                                  {
+                                    "percentage": 31.72,
+                                    "rgb": {
+                                      "blue": 238,
+                                      "green": 230,
+                                      "red": 226
+                                    }
+                                  },
+                                  {
+                                    "percentage": 7,
+                                    "rgb": {
+                                      "blue": 200,
+                                      "green": 140,
+                                      "red": 148
+                                    }
+                                  },
+                                  {
+                                    "percentage": 4.51,
+                                    "rgb": {
+                                      "blue": 152,
+                                      "green": 174,
+                                      "red": 215
+                                    }
+                                  },
+                                  {
+                                    "percentage": 2.88,
+                                    "rgb": {
+                                      "blue": 87,
+                                      "green": 31,
+                                      "red": 70
+                                    }
+                                  }
+                                ]
+                              },
+                              "ext_media_availability": {
+                                "status": "Available"
+                              },
+                              "features": {
+                                "large": {
+                                  "faces": [
+                                    {
+                                      "x": 880,
+                                      "y": 323,
+                                      "h": 100,
+                                      "w": 100
+                                    }
+                                  ]
+                                },
+                                "medium": {
+                                  "faces": [
+                                    {
+                                      "x": 825,
+                                      "y": 302,
+                                      "h": 93,
+                                      "w": 93
+                                    }
+                                  ]
+                                },
+                                "small": {
+                                  "faces": [
+                                    {
+                                      "x": 467,
+                                      "y": 171,
+                                      "h": 53,
+                                      "w": 53
+                                    }
+                                  ]
+                                },
+                                "orig": {
+                                  "faces": [
+                                    {
+                                      "x": 880,
+                                      "y": 323,
+                                      "h": 100,
+                                      "w": 100
+                                    }
+                                  ]
+                                }
+                              },
+                              "sizes": {
+                                "large": {
+                                  "h": 720,
+                                  "w": 1280,
+                                  "resize": "fit"
+                                },
+                                "medium": {
+                                  "h": 675,
+                                  "w": 1200,
+                                  "resize": "fit"
+                                },
+                                "small": {
+                                  "h": 383,
+                                  "w": 680,
+                                  "resize": "fit"
+                                },
+                                "thumb": {
+                                  "h": 150,
+                                  "w": 150,
+                                  "resize": "crop"
+                                }
+                              },
+                              "original_info": {
+                                "height": 720,
+                                "width": 1280,
+                                "focus_rects": [
+                                  {
+                                    "x": 0,
+                                    "y": 3,
+                                    "w": 1280,
+                                    "h": 717
+                                  },
+                                  {
+                                    "x": 0,
+                                    "y": 0,
+                                    "w": 720,
+                                    "h": 720
+                                  },
+                                  {
+                                    "x": 36,
+                                    "y": 0,
+                                    "w": 632,
+                                    "h": 720
+                                  },
+                                  {
+                                    "x": 172,
+                                    "y": 0,
+                                    "w": 360,
+                                    "h": 720
+                                  },
+                                  {
+                                    "x": 0,
+                                    "y": 0,
+                                    "w": 1280,
+                                    "h": 720
+                                  }
+                                ]
+                              }
+                            }
+                          ]
+                        },
+                        "favorite_count": 0,
+                        "favorited": false,
+                        "full_text": "RT @AsterArcadia: DIVINE DUO TAKING OVER APEX LEGENDS!\nGaming w/ ☁️@amatsukauto \n\n💫https://t.co/CWfxm0YUMx https://t.co/KXNpyLxPyg",
+                        "is_quote_status": false,
+                        "lang": "en",
+                        "possibly_sensitive": false,
+                        "possibly_sensitive_editable": true,
+                        "quote_count": 0,
+                        "reply_count": 0,
+                        "retweet_count": 257,
+                        "retweeted": false,
+                        "source": "<a href=\"http://twitter.com/download/iphone\" rel=\"nofollow\">Twitter for iPhone</a>",
+                        "user_id_str": "1308334634745249793",
+                        "id_str": "1567680068113285121",
+                        "retweeted_status_result": {
+                          "result": {
+                            "__typename": "Tweet",
+                            "rest_id": "1567677602781069314",
+                            "core": {
+                              "user_results": {
+                                "result": {
+                                  "__typename": "User",
+                                  "id": "VXNlcjoxNTQ1MzUyNTkyODg0MDg0NzM2",
+                                  "rest_id": "1545352592884084736",
+                                  "affiliates_highlighted_label": {},
+                                  "has_nft_avatar": false,
+                                  "legacy": {
+                                    "created_at": "Fri Jul 08 10:22:35 +0000 2022",
+                                    "default_profile": true,
+                                    "default_profile_image": false,
+                                    "description": "Hewwo! I'm Aster Arcadia, Celestial One of NIJISANJI EN! ‍💫💜\n2nd Year Male Student of ILUNA!\nにじさんじEN所属天人のアスターアルカディアです。\nママ: @Esojiros\n🎨 #Arcadiart\n🌚 #ILUNA",
+                                    "entities": {
+                                      "description": {
+                                        "urls": []
+                                      },
+                                      "url": {
+                                        "urls": [
+                                          {
+                                            "display_url": "youtube.com/channel/UCpzxZ…",
+                                            "expanded_url": "https://www.youtube.com/channel/UCpzxZW5kghGnO5TmAFJQAVw",
+                                            "url": "https://t.co/snNDu0ZvkT",
+                                            "indices": [
+                                              0,
+                                              23
+                                            ]
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "fast_followers_count": 0,
+                                    "favourites_count": 2192,
+                                    "followers_count": 313014,
+                                    "friends_count": 76,
+                                    "has_custom_timelines": false,
+                                    "is_translator": false,
+                                    "listed_count": 1946,
+                                    "location": "header: @nrnmarie",
+                                    "media_count": 147,
+                                    "name": "Aster Arcadia 💫💜 NIJISANJI EN",
+                                    "normal_followers_count": 313014,
+                                    "pinned_tweet_ids_str": [
+                                      "1566593971270197248"
+                                    ],
+                                    "possibly_sensitive": false,
+                                    "profile_banner_extensions": {
+                                      "mediaColor": {
+                                        "r": {
+                                          "ok": {
+                                            "palette": [
+                                              {
+                                                "percentage": 60.05,
+                                                "rgb": {
+                                                  "blue": 233,
+                                                  "green": 224,
+                                                  "red": 235
+                                                }
+                                              },
+                                              {
+                                                "percentage": 10.45,
+                                                "rgb": {
+                                                  "blue": 60,
+                                                  "green": 44,
+                                                  "red": 56
+                                                }
+                                              },
+                                              {
+                                                "percentage": 5.34,
+                                                "rgb": {
+                                                  "blue": 241,
+                                                  "green": 191,
+                                                  "red": 229
+                                                }
+                                              },
+                                              {
+                                                "percentage": 5.18,
+                                                "rgb": {
+                                                  "blue": 148,
+                                                  "green": 172,
+                                                  "red": 214
+                                                }
+                                              },
+                                              {
+                                                "percentage": 2.65,
+                                                "rgb": {
+                                                  "blue": 201,
+                                                  "green": 190,
+                                                  "red": 136
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "profile_banner_url": "https://pbs.twimg.com/profile_banners/1545352592884084736/1659691587",
+                                    "profile_image_extensions": {
+                                      "mediaColor": {
+                                        "r": {
+                                          "ok": {
+                                            "palette": [
+                                              {
+                                                "percentage": 35.67,
+                                                "rgb": {
+                                                  "blue": 226,
+                                                  "green": 242,
+                                                  "red": 255
+                                                }
+                                              },
+                                              {
+                                                "percentage": 28.34,
+                                                "rgb": {
+                                                  "blue": 201,
+                                                  "green": 138,
+                                                  "red": 147
+                                                }
+                                              },
+                                              {
+                                                "percentage": 9.34,
+                                                "rgb": {
+                                                  "blue": 136,
+                                                  "green": 73,
+                                                  "red": 80
+                                                }
+                                              },
+                                              {
+                                                "percentage": 6.19,
+                                                "rgb": {
+                                                  "blue": 149,
+                                                  "green": 212,
+                                                  "red": 238
+                                                }
+                                              },
+                                              {
+                                                "percentage": 4.74,
+                                                "rgb": {
+                                                  "blue": 86,
+                                                  "green": 184,
+                                                  "red": 232
+                                                }
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    },
+                                    "profile_image_url_https": "https://pbs.twimg.com/profile_images/1549499600158879745/n2Y-LkAc_normal.png",
+                                    "profile_interstitial_type": "",
+                                    "protected": false,
+                                    "screen_name": "AsterArcadia",
+                                    "statuses_count": 934,
+                                    "translator_type": "none",
+                                    "url": "https://t.co/snNDu0ZvkT",
+                                    "verified": false,
+                                    "withheld_in_countries": []
+                                  },
+                                  "super_follow_eligible": false,
+                                  "super_followed_by": false,
+                                  "super_following": false
+                                }
+                              }
+                            },
+                            "unmention_info": {},
+                            "edit_control": {
+                              "edit_tweet_ids": [
+                                "1567677602781069314"
+                              ],
+                              "editable_until_msecs": "1662600241000",
+                              "is_edit_eligible": true,
+                              "edits_remaining": "5"
+                            },
+                            "legacy": {
+                              "created_at": "Thu Sep 08 00:54:01 +0000 2022",
+                              "conversation_id_str": "1567677602781069314",
+                              "display_text_range": [
+                                0,
+                                88
+                              ],
+                              "entities": {
+                                "media": [
+                                  {
+                                    "display_url": "pic.twitter.com/KXNpyLxPyg",
+                                    "expanded_url": "https://twitter.com/AsterArcadia/status/1567677602781069314/photo/1",
+                                    "id_str": "1567676036263051270",
+                                    "indices": [
+                                      89,
+                                      112
+                                    ],
+                                    "media_url_https": "https://pbs.twimg.com/media/FcGBDJBaAAYE_at.jpg",
+                                    "type": "photo",
+                                    "url": "https://t.co/KXNpyLxPyg",
+                                    "features": {
+                                      "large": {
+                                        "faces": [
+                                          {
+                                            "x": 880,
+                                            "y": 323,
+                                            "h": 100,
+                                            "w": 100
+                                          }
+                                        ]
+                                      },
+                                      "medium": {
+                                        "faces": [
+                                          {
+                                            "x": 825,
+                                            "y": 302,
+                                            "h": 93,
+                                            "w": 93
+                                          }
+                                        ]
+                                      },
+                                      "small": {
+                                        "faces": [
+                                          {
+                                            "x": 467,
+                                            "y": 171,
+                                            "h": 53,
+                                            "w": 53
+                                          }
+                                        ]
+                                      },
+                                      "orig": {
+                                        "faces": [
+                                          {
+                                            "x": 880,
+                                            "y": 323,
+                                            "h": 100,
+                                            "w": 100
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "sizes": {
+                                      "large": {
+                                        "h": 720,
+                                        "w": 1280,
+                                        "resize": "fit"
+                                      },
+                                      "medium": {
+                                        "h": 675,
+                                        "w": 1200,
+                                        "resize": "fit"
+                                      },
+                                      "small": {
+                                        "h": 383,
+                                        "w": 680,
+                                        "resize": "fit"
+                                      },
+                                      "thumb": {
+                                        "h": 150,
+                                        "w": 150,
+                                        "resize": "crop"
+                                      }
+                                    },
+                                    "original_info": {
+                                      "height": 720,
+                                      "width": 1280,
+                                      "focus_rects": [
+                                        {
+                                          "x": 0,
+                                          "y": 3,
+                                          "w": 1280,
+                                          "h": 717
+                                        },
+                                        {
+                                          "x": 0,
+                                          "y": 0,
+                                          "w": 720,
+                                          "h": 720
+                                        },
+                                        {
+                                          "x": 36,
+                                          "y": 0,
+                                          "w": 632,
+                                          "h": 720
+                                        },
+                                        {
+                                          "x": 172,
+                                          "y": 0,
+                                          "w": 360,
+                                          "h": 720
+                                        },
+                                        {
+                                          "x": 0,
+                                          "y": 0,
+                                          "w": 1280,
+                                          "h": 720
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ],
+                                "user_mentions": [
+                                  {
+                                    "id_str": "1308334634745249793",
+                                    "name": "天使うと ☁ AmatsukaUto",
+                                    "screen_name": "amatsukauto",
+                                    "indices": [
+                                      49,
+                                      61
+                                    ]
+                                  }
+                                ],
+                                "urls": [
+                                  {
+                                    "display_url": "youtu.be/3EhnmkZ8OBQ",
+                                    "expanded_url": "http://youtu.be/3EhnmkZ8OBQ",
+                                    "url": "https://t.co/CWfxm0YUMx",
+                                    "indices": [
+                                      65,
+                                      88
+                                    ]
+                                  }
+                                ],
+                                "hashtags": [],
+                                "symbols": []
+                              },
+                              "extended_entities": {
+                                "media": [
+                                  {
+                                    "display_url": "pic.twitter.com/KXNpyLxPyg",
+                                    "expanded_url": "https://twitter.com/AsterArcadia/status/1567677602781069314/photo/1",
+                                    "id_str": "1567676036263051270",
+                                    "indices": [
+                                      89,
+                                      112
+                                    ],
+                                    "media_key": "3_1567676036263051270",
+                                    "media_url_https": "https://pbs.twimg.com/media/FcGBDJBaAAYE_at.jpg",
+                                    "type": "photo",
+                                    "url": "https://t.co/KXNpyLxPyg",
+                                    "ext_media_color": {
+                                      "palette": [
+                                        {
+                                          "percentage": 37.58,
+                                          "rgb": {
+                                            "blue": 31,
+                                            "green": 30,
+                                            "red": 29
+                                          }
+                                        },
+                                        {
+                                          "percentage": 31.72,
+                                          "rgb": {
+                                            "blue": 238,
+                                            "green": 230,
+                                            "red": 226
+                                          }
+                                        },
+                                        {
+                                          "percentage": 7,
+                                          "rgb": {
+                                            "blue": 200,
+                                            "green": 140,
+                                            "red": 148
+                                          }
+                                        },
+                                        {
+                                          "percentage": 4.51,
+                                          "rgb": {
+                                            "blue": 152,
+                                            "green": 174,
+                                            "red": 215
+                                          }
+                                        },
+                                        {
+                                          "percentage": 2.88,
+                                          "rgb": {
+                                            "blue": 87,
+                                            "green": 31,
+                                            "red": 70
+                                          }
+                                        }
+                                      ]
+                                    },
+                                    "ext_media_availability": {
+                                      "status": "Available"
+                                    },
+                                    "features": {
+                                      "large": {
+                                        "faces": [
+                                          {
+                                            "x": 880,
+                                            "y": 323,
+                                            "h": 100,
+                                            "w": 100
+                                          }
+                                        ]
+                                      },
+                                      "medium": {
+                                        "faces": [
+                                          {
+                                            "x": 825,
+                                            "y": 302,
+                                            "h": 93,
+                                            "w": 93
+                                          }
+                                        ]
+                                      },
+                                      "small": {
+                                        "faces": [
+                                          {
+                                            "x": 467,
+                                            "y": 171,
+                                            "h": 53,
+                                            "w": 53
+                                          }
+                                        ]
+                                      },
+                                      "orig": {
+                                        "faces": [
+                                          {
+                                            "x": 880,
+                                            "y": 323,
+                                            "h": 100,
+                                            "w": 100
+                                          }
+                                        ]
+                                      }
+                                    },
+                                    "sizes": {
+                                      "large": {
+                                        "h": 720,
+                                        "w": 1280,
+                                        "resize": "fit"
+                                      },
+                                      "medium": {
+                                        "h": 675,
+                                        "w": 1200,
+                                        "resize": "fit"
+                                      },
+                                      "small": {
+                                        "h": 383,
+                                        "w": 680,
+                                        "resize": "fit"
+                                      },
+                                      "thumb": {
+                                        "h": 150,
+                                        "w": 150,
+                                        "resize": "crop"
+                                      }
+                                    },
+                                    "original_info": {
+                                      "height": 720,
+                                      "width": 1280,
+                                      "focus_rects": [
+                                        {
+                                          "x": 0,
+                                          "y": 3,
+                                          "w": 1280,
+                                          "h": 717
+                                        },
+                                        {
+                                          "x": 0,
+                                          "y": 0,
+                                          "w": 720,
+                                          "h": 720
+                                        },
+                                        {
+                                          "x": 36,
+                                          "y": 0,
+                                          "w": 632,
+                                          "h": 720
+                                        },
+                                        {
+                                          "x": 172,
+                                          "y": 0,
+                                          "w": 360,
+                                          "h": 720
+                                        },
+                                        {
+                                          "x": 0,
+                                          "y": 0,
+                                          "w": 1280,
+                                          "h": 720
+                                        }
+                                      ]
+                                    }
+                                  }
+                                ]
+                              },
+                              "favorite_count": 4639,
+                              "favorited": false,
+                              "full_text": "DIVINE DUO TAKING OVER APEX LEGENDS!\nGaming w/ ☁️@amatsukauto \n\n💫https://t.co/CWfxm0YUMx https://t.co/KXNpyLxPyg",
+                              "is_quote_status": false,
+                              "lang": "en",
+                              "possibly_sensitive": false,
+                              "possibly_sensitive_editable": true,
+                              "quote_count": 11,
+                              "reply_count": 22,
+                              "retweet_count": 257,
+                              "retweeted": false,
+                              "source": "<a href=\"https://mobile.twitter.com\" rel=\"nofollow\">Twitter Web App</a>",
+                              "user_id_str": "1545352592884084736",
+                              "id_str": "1567677602781069314"
+                            }
+                          }
+                        }
+                      },
+                      "quick_promote_eligibility": {
+                        "eligibility": "IneligibleUserUnauthorized"
+                      }
+                    }
+                  },
+                  "tweetDisplayType": "Tweet",
+                  "hasModeratedReplies": false
+                }
+              }
+            }
+          ]
+        },
+        {
+          "type": "TimelineTerminateTimeline",
+          "direction": "Top"
+        }
+      ]
+    }
+  }
+}

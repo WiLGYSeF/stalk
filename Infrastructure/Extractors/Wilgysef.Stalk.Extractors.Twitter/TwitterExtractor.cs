@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System.Dynamic;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -12,9 +13,18 @@ namespace Wilgysef.Stalk.Extractors.Twitter;
 
 public class TwitterExtractor : IExtractor
 {
+    // TODO: login?
+    // TODO: tweet replies?
+
     private const string UserByScreenNameEndpoint = "https://twitter.com/i/api/graphql/vG3rchZtwqiwlKgUYCrTRA/UserByScreenName";
     private const string UserTweetsEndpoint = "https://twitter.com/i/api/graphql/q881FFtQa69KN7jS9h_EDA/UserTweets";
     private const string TweetDetailEndpoint = "https://twitter.com/i/api/graphql/Nze3idtpjn4wcl09GpmDRg/TweetDetail";
+
+    private const string GuestTokenEndpoint = "https://api.twitter.com/1.1/guest/activate.json";
+
+    private const string DefaultAuthenticationBearerToken = "AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA";
+
+    private const string AuthorizationHeader = "Authorization";
 
     private static readonly Dictionary<string, int> Month3Letters = new()
     {
@@ -38,6 +48,8 @@ public class TwitterExtractor : IExtractor
 
     private readonly Regex _uriRegex = new(@"^(?:https?://)?(?:(?:www|mobile)\.)?twitter\.com(?:\:(?:80|443))?/(?<user>[^/]+)(?:/status/(?<tweet>[0-9]+))?", RegexOptions.Compiled);
     private readonly Regex _mediaUrlRegex = new(@"^(?:https://)?pbs\.twimg\.com/media/(?<id>[A-Za-z0-9_]+)\.(?<extension>[A-Za-z0-9]+)");
+
+    private string? _guestToken;
 
     private HttpClient _httpClient;
 
@@ -77,12 +89,11 @@ public class TwitterExtractor : IExtractor
 
         var userId = await GetUserIdAsync(userScreenName, cancellationToken);
         string? cursor = null;
-        
+
         while (true)
         {
             var userTweetsUri = GetUserTweetsUri(userId, cursor);
-            var response = await _httpClient.GetAsync(userTweetsUri);
-            response.EnsureSuccessStatusCode();
+            var response = await GetAsync(userTweetsUri, cancellationToken);
 
             var data = await response.Content.ReadAsStringAsync(cancellationToken);
             var jObject = JObject.Parse(data);
@@ -118,8 +129,7 @@ public class TwitterExtractor : IExtractor
         var tweetId = match.Groups["tweet"].Value;
 
         var tweetUri = GetTweetUri(tweetId);
-        var response = await _httpClient.GetAsync(tweetUri, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        var response = await GetAsync(tweetUri, cancellationToken);
 
         var data = await response.Content.ReadAsStringAsync(cancellationToken);
         var jObject = JObject.Parse(data);
@@ -134,7 +144,7 @@ public class TwitterExtractor : IExtractor
 
     private IEnumerable<ExtractResult> ExtractTweet(JToken tweet, IMetadataObject metadata)
     {
-        var userScreenName = tweet.SelectToken(@"$.core.user_results.result.legacy.screen_name")?.ToString();
+        var userScreenName = GetUserScreenName(tweet);
         var userId = GetUserId(tweet);
         var legacy = tweet["legacy"];
         var tweetId = tweet["rest_id"].ToString();
@@ -177,11 +187,13 @@ public class TwitterExtractor : IExtractor
             fullText += "\n" + string.Join('\n', entityUrls);
         }
 
+        var textMetadata = metadata.Copy();
+        textMetadata.SetByParts("txt", "file", "extension");
+
+        SetRetweetMetadata(tweet, textMetadata);
+
         if (fullText.Length > 0)
         {
-            var textMetadata = metadata.Copy();
-            textMetadata.SetByParts("txt", "file", "extension");
-
             yield return new ExtractResult(
                 new Uri($"data:text/plain;base64,{Convert.ToBase64String(Encoding.UTF8.GetBytes(fullText))}"),
                 $"{userId}#{tweetId}",
@@ -296,6 +308,11 @@ public class TwitterExtractor : IExtractor
         return tweet.SelectToken(@"$.core.user_results.result.rest_id")?.ToString();
     }
 
+    private string? GetUserScreenName(JToken tweet)
+    {
+        return tweet.SelectToken(@"$.core.user_results.result.legacy.screen_name")?.ToString();
+    }
+
     private string GetLargestSizeMediaUrl(string uri, JToken? sizes)
     {
         if (sizes == null || sizes["large"] == null)
@@ -307,6 +324,27 @@ public class TwitterExtractor : IExtractor
         return match.Success
             ? $"https://pbs.twimg.com/media/{match.Groups["id"]}?format={match.Groups["extension"]}&name=large"
             : uri;
+    }
+
+    private bool SetRetweetMetadata(JToken tweet, IMetadataObject metadata)
+    {
+        var legacy = tweet["legacy"];
+        var retweetedStatusResult = legacy["retweeted_status_result"];
+        if (retweetedStatusResult == null)
+        {
+            return false;
+        }
+
+        var retweetedTweet = retweetedStatusResult["result"];
+        if (retweetedTweet == null)
+        {
+            return false;
+        }
+
+        metadata.SetByParts(retweetedTweet["rest_id"]?.ToString(), "retweet", "tweet_id");
+        metadata.SetByParts(GetUserId(retweetedTweet), "retweet", "user", "id");
+        metadata.SetByParts(GetUserScreenName(retweetedTweet), "retweet", "user", "screen_name");
+        return true;
     }
 
     private async Task<string> GetUserIdAsync(string userScreenName, CancellationToken cancellationToken)
@@ -324,14 +362,53 @@ public class TwitterExtractor : IExtractor
         });
 
         var uri = new Uri($"{UserByScreenNameEndpoint}?variables={variables}&features={features}");
-        var response = await _httpClient.GetAsync(uri, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        var response = await GetAsync(uri, cancellationToken);
 
         var data = await response.Content.ReadAsStringAsync();
         var jObject = JObject.Parse(data);
 
         var userId = jObject.SelectToken("$.data.user.result.rest_id")!.ToString();
         return userId;
+    }
+
+    private async Task<string> GetGuestTokenAsync(CancellationToken cancellationToken)
+    {
+        if (_guestToken != null)
+        {
+            return _guestToken;
+        }
+
+        using var request = new HttpRequestMessage(HttpMethod.Post, GuestTokenEndpoint);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", DefaultAuthenticationBearerToken);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var data = await response.Content.ReadAsStringAsync();
+        var jObject = JObject.Parse(data);
+
+        _guestToken = jObject["guest_token"]?.ToString();
+        if (_guestToken == null)
+        {
+            throw new Exception("Could not get guest token.");
+        }
+
+        return _guestToken;
+    }
+
+    private async Task<HttpResponseMessage> GetAsync(Uri uri, CancellationToken cancellationToken)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Get, uri);
+        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", DefaultAuthenticationBearerToken);
+        request.Headers.Add("x-guest-token", await GetGuestTokenAsync(cancellationToken));
+        return await GetAsync(request, cancellationToken);
+    }
+
+    private async Task<HttpResponseMessage> GetAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return response;
     }
 
     private Uri GetUserTweetsUri(string userId, string? cursor)
@@ -348,7 +425,7 @@ public class TwitterExtractor : IExtractor
         variablesObject.withSuperFollowsTweetFields = true;
         variablesObject.withVoice = true;
         variablesObject.withV2Timeline = true;
-        
+
         if (cursor != null)
         {
             variablesObject.cursor = cursor;
