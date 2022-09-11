@@ -179,11 +179,14 @@ public class TwitterExtractor : IExtractor
 
         if (fullText.Length > 0)
         {
+            var textMetadata = metadata.Copy();
+            textMetadata["file.extension"] = "txt";
+
             yield return new ExtractResult(
                 new Uri($"data:text/plain;base64,{Convert.ToBase64String(Encoding.UTF8.GetBytes(fullText))}"),
                 $"{userId}#{tweetId}",
                 JobTaskType.Download,
-                metadata: metadata);
+                metadata: textMetadata);
         }
     }
 
@@ -207,13 +210,14 @@ public class TwitterExtractor : IExtractor
                         continue;
                     }
 
+                    var mediaMetadata = metadata.Copy();
+                    mediaMetadata["media_id"] = mediaId;
+                    mediaMetadata["file.extension"] = GetExtensionFromUri(new Uri(mediaUrl));
+
                     if (largestSize)
                     {
                         mediaUrl = GetLargestSizeMediaUrl(mediaUrl, mediaItem["sizes"]);
                     }
-
-                    var mediaMetadata = metadata.Copy();
-                    mediaMetadata["mediaId"] = mediaId;
 
                     yield return new ExtractResult(
                         new Uri(mediaUrl),
@@ -227,7 +231,7 @@ public class TwitterExtractor : IExtractor
         var extendedEntities = legacy["extended_entities"];
         if (extendedEntities != null)
         {
-            var media = entities["media"];
+            var media = extendedEntities["media"];
             if (media != null)
             {
                 foreach (var mediaItem in media)
@@ -241,14 +245,16 @@ public class TwitterExtractor : IExtractor
 
                     var variants = videoInfo["variants"].Children().ToList();
                     var bestVariant = variants.OrderByDescending(v => v["bitrate"]).First();
+                    var videoUri = new Uri(bestVariant["url"].ToString());
 
                     var mediaMetadata = metadata.Copy();
-                    mediaMetadata["mediaId"] = mediaId;
-                    mediaMetadata["viewCount"] = mediaItem["mediaStats"]?["viewCount"]?.Value<int>();
+                    mediaMetadata["media_id"] = mediaId;
+                    mediaMetadata["file.extension"] = GetExtensionFromUri(videoUri);
+                    mediaMetadata["view_count"] = mediaItem["mediaStats"]?["viewCount"]?.Value<int>();
                     mediaMetadata["duration_millis"] = videoInfo["duration_millis"]?.Value<int>();
 
                     yield return new ExtractResult(
-                        new Uri(bestVariant["url"].ToString()),
+                        videoUri,
                         $"{userId}#{tweetId}#{mediaId}",
                         JobTaskType.Download,
                         metadata: mediaMetadata);
@@ -420,6 +426,14 @@ public class TwitterExtractor : IExtractor
             return ExtractType.User;
         }
         return null;
+    }
+
+    private string? GetExtensionFromUri(Uri uri)
+    {
+        var extension = Path.GetExtension(uri.AbsolutePath);
+        return extension.Length > 0 && extension[0] == '.'
+            ? extension[1..]
+            : extension;
     }
 
     private object TryParseDateTime(string datetime, out bool success)
