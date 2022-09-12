@@ -54,4 +54,13 @@ internal class Trie<TKey, TValue> : ITrie<TKey, TValue> where TKey : notnull
         trie.Parent = null;
         return _children.Remove(key);
     }
+
+    public void Clear()
+    {
+        foreach (var child in _children.Values)
+        {
+            child.Parent = null;
+        }
+        _children.Clear();
+    }
 }

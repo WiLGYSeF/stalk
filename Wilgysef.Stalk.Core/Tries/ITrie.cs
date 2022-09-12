@@ -23,4 +23,6 @@ internal interface ITrie<TKey, TValue> where TKey : notnull
     bool Contains(TKey key);
 
     bool Remove(TKey key);
+
+    void Clear();
 }
