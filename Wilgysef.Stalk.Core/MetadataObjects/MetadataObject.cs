@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.Core.Tries;
 
@@ -167,6 +168,31 @@ public class MetadataObject : IMetadataObject
             else
             {
                 dict[trie.Key] = trie.Value;
+            }
+        }
+
+        return dictionary;
+    }
+
+    public IDictionary<string, object?> GetFlattenedDictionary()
+    {
+        IDictionary<string, object?> dictionary = new Dictionary<string, object?>();
+        var nodes = new Queue<(ITrie<string, object?> Trie, string Key)>(_root.Children.Select(t => (t, t.Key)));
+
+        while (nodes.Count > 0)
+        {
+            var (trie, key) = nodes.Dequeue();
+
+            if (trie.Count > 0)
+            {
+                foreach (var child in trie.Children)
+                {
+                    nodes.Enqueue((child, key + KeySeparator + child.Key));
+                }
+            }
+            else
+            {
+                dictionary[key] = trie.Value;
             }
         }
 

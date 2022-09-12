@@ -71,7 +71,7 @@ public abstract class DownloaderBase : IDownloader
 
         var metadataFilename = await SaveMetadataAsync(
             metadataFilenameTemplate,
-            metadata.GetDictionary(),
+            metadata.GetFlattenedDictionary(),
             cancellationToken);
 
         yield return new DownloadResult(
@@ -96,7 +96,7 @@ public abstract class DownloaderBase : IDownloader
     {
         var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
         var filename = filenameSlug.SlugifyPath(
-            _stringFormatter.Format(filenameTemplate, metadata.GetDictionary()));
+            _stringFormatter.Format(filenameTemplate, metadata.GetFlattenedDictionary()));
 
         using var stream = await GetFileStreamAsync(uri, cancellationToken);
         using var fileStream = _fileService.Open(filename, FileMode.CreateNew);

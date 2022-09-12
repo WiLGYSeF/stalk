@@ -12,6 +12,8 @@ internal interface ITrie<TKey, TValue> where TKey : notnull
 
     int Count { get; }
 
+    ITrie<TKey, TValue>? Parent { get; set; }
+
     ICollection<ITrie<TKey, TValue>> Children { get; }
 
     ITrie<TKey, TValue> this[TKey key] { get; set; }

@@ -12,6 +12,8 @@ internal class Trie<TKey, TValue> : ITrie<TKey, TValue> where TKey : notnull
 
     public int Count => _children.Count;
 
+    public ITrie<TKey, TValue>? Parent { get; set; }
+
     public ICollection<ITrie<TKey, TValue>> Children => new List<ITrie<TKey, TValue>>(_children.Values);
 
     private readonly Dictionary<TKey, ITrie<TKey, TValue>> _children = new();
@@ -22,6 +24,7 @@ internal class Trie<TKey, TValue> : ITrie<TKey, TValue> where TKey : notnull
         set
         {
             _children[key] = value;
+            value.Parent = this;
         }
     }
 
@@ -43,6 +46,12 @@ internal class Trie<TKey, TValue> : ITrie<TKey, TValue> where TKey : notnull
 
     public bool Remove(TKey key)
     {
+        if (!TryGetChild(key, out var trie))
+        {
+            return false;
+        }
+
+        trie.Parent = null;
         return _children.Remove(key);
     }
 }

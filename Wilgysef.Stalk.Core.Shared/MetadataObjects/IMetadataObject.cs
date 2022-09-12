@@ -131,6 +131,11 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// <returns>Keys and values.</returns>
         IDictionary<string, object> GetDictionary();
 
+        /// Gets an <see cref="IDictionary{TKey, TValue}"/> that contains the nested keys and values, flattened to a single layer.
+        /// </summary>
+        /// <returns>Keys and values.</returns>
+        IDictionary<string, object> GetFlattenedDictionary();
+
         /// <summary>
         /// Sets keys and values from the keys and values of an <see cref="IDictionary{TKey, TValue}"/>.
         /// </summary>

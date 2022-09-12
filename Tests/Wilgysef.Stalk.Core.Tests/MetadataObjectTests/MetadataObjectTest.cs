@@ -209,6 +209,27 @@ public class MetadataObjectTest
     }
 
     [Fact]
+    public void Get_Dictionary_Flattened()
+    {
+        var metadata = new MetadataObject('.');
+        metadata["abc"] = 1;
+        metadata["aaa.asdf.test"] = 2;
+        metadata["aaa.aaa"] = 4;
+        metadata["aaa.123"] = 99;
+        metadata["aaa.nest.value"] = 5;
+        metadata["test.key"] = 3;
+
+        var dictionary = metadata.GetFlattenedDictionary();
+
+        dictionary["abc"].ShouldBe(1);
+        dictionary["aaa.asdf.test"].ShouldBe(2);
+        dictionary["aaa.aaa"].ShouldBe(4);
+        dictionary["aaa.123"].ShouldBe(99);
+        dictionary["aaa.nest.value"].ShouldBe(5);
+        dictionary["test.key"].ShouldBe(3);
+    }
+
+    [Fact]
     public void From_Dictionary()
     {
         var dict = new Dictionary<object, object>
