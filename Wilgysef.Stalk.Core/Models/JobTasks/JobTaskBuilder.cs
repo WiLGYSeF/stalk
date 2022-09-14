@@ -201,8 +201,7 @@ public class JobTaskBuilder
 
     public JobTaskBuilder WithExtractResult(JobTask jobTask, ExtractResult result)
     {
-        return WithJobId(jobTask.Job.Id)
-            .WithName(result.Name)
+        return WithName(result.Name)
             .WithState(JobTaskState.Inactive)
             .WithUri(result.Uri.AbsoluteUri)
             .WithPriority(result.Priority)
@@ -210,6 +209,21 @@ public class JobTaskBuilder
             .WithItemData(result.ItemData)
             .WithMetadata(result.Metadata)
             .WithType(result.Type)
+            .WithJobId(jobTask.Job.Id)
+            .WithParentId(jobTask.Id);
+    }
+
+    public JobTaskBuilder WithRetryJobTask(JobTask jobTask)
+    {
+        return WithName(jobTask.Name)
+            .WithState(JobTaskState.Inactive)
+            .WithUri(jobTask.Uri)
+            .WithPriority(jobTask.Priority)
+            .WithItemId(jobTask.ItemId)
+            .WithItemData(jobTask.ItemData)
+            .WithMetadata(jobTask.GetMetadata().Copy())
+            .WithType(jobTask.Type)
+            .WithJobId(jobTask.JobId)
             .WithParentId(jobTask.Id);
     }
 }

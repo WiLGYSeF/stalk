@@ -43,7 +43,7 @@ public class JobWorker : IJobWorker
 
     public ILogger? Logger { get; set; }
 
-    private readonly List<Task> _tasks = new();
+    private readonly Dictionary<Task, long> _tasks = new();
 
     private bool _working = false;
 
@@ -106,17 +106,23 @@ public class JobWorker : IJobWorker
 
                 cancellationToken.ThrowIfCancellationRequested();
 
-                var taskArray = _tasks.ToArray();
+                var taskArray = _tasks.Keys.ToArray();
                 var taskCompletedIndex = Task.WaitAny(taskArray, TaskWaitTimeoutMilliseconds, cancellationToken);
 
                 if (taskCompletedIndex != -1)
                 {
+                    Logger?.LogDebug("Job {JOB_ID} wait for task success.", Job.Id);
+
                     if (taskArray.Any(t => t.Exception != null))
                     {
                         // TODO: do something?
                     }
 
                     RemoveCompletedTasks(taskArray);
+                }
+                else
+                {
+                    Logger?.LogDebug("Job {JOB_ID} wait for task timed out.", Job.Id);
                 }
             }
 
@@ -127,6 +133,7 @@ public class JobWorker : IJobWorker
         }
         catch (OperationCanceledException)
         {
+            Logger?.LogInformation("Job {JOB_ID} worker cancelled.", Job.Id);
             throw;
         }
         catch (Exception exception)
@@ -179,7 +186,7 @@ public class JobWorker : IJobWorker
             cancellationToken.ThrowIfCancellationRequested();
 
             var jobTask = jobTasks[jobTaskIndex++];
-            _tasks.Add(await jobTaskWorkerService.StartJobTaskWorkerAsync(jobTask, cancellationToken));
+            _tasks.Add(await jobTaskWorkerService.StartJobTaskWorkerAsync(jobTask, cancellationToken), jobTask.Id);
         }
     }
 

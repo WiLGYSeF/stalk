@@ -40,10 +40,10 @@ public class JobTaskWorkerFactoryMock : IJobTaskWorkerFactory
         _jobTaskWorkers.Remove(worker);
     }
 
-    public void FailJobTaskWorker(JobTask jobTask)
+    public void FailJobTaskWorker(JobTask jobTask, Exception? exception = null)
     {
         var worker = GetJobTaskWorkerMock(jobTask);
-        worker.Fail();
+        worker.Fail(exception);
         _jobTaskWorkers.Remove(worker);
     }
 

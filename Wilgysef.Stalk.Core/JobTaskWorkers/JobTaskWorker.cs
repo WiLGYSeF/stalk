@@ -93,6 +93,7 @@ public class JobTaskWorker : IJobTaskWorker
         }
         catch (OperationCanceledException)
         {
+            Logger?.LogInformation("Job task {JOBTASk_ID} worker cancelled.", JobTask.Id);
             throw;
         }
         catch (Exception exception)
@@ -101,7 +102,20 @@ public class JobTaskWorker : IJobTaskWorker
 
             var workerException = exception as JobTaskWorkerException;
 
-            // TODO: condtitionally create copy task on fail
+            if (RetryJobTask(JobTask, exception))
+            {
+                using var scope = _lifetimeScope.BeginLifetimeScope();
+                var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
+                var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
+
+                var retryTask = new JobTaskBuilder()
+                    .WithRetryJobTask(JobTask)
+                    .WithId(idGenerator.CreateId())
+                    .WithPriority(JobTask.Priority - 100)
+                    .Create();
+
+                await jobTaskManager.CreateJobTaskAsync(retryTask, CancellationToken.None);
+            }
 
             JobTask.Fail(
                 errorCode: workerException?.Code,
@@ -171,8 +185,8 @@ public class JobTaskWorker : IJobTaskWorker
             Logger?.LogInformation("Job task {JOBTASK_ID} extracted {URI}", JobTask.Id, result.Uri);
 
             newTasks.Add(new JobTaskBuilder()
-                .WithId(idGenerator.CreateId())
                 .WithExtractResult(JobTask, result)
+                .WithId(idGenerator.CreateId())
                 .Create());
         }
 
@@ -243,5 +257,26 @@ public class JobTaskWorker : IJobTaskWorker
         {
             await itemIdSetService.WriteChangesAsync(JobConfig.ItemIdPath!, itemIds);
         }
+    }
+
+    protected virtual bool RetryJobTask(JobTask jobTask, Exception exception)
+    {
+        switch (exception)
+        {
+            case HttpRequestException httpException:
+                return httpException.StatusCode.HasValue && IsStatusCodeRetry(httpException.StatusCode.Value);
+            default:
+                break;
+        }
+
+        return false;
+    }
+
+    protected virtual bool IsStatusCodeRetry(HttpStatusCode statusCode)
+    {
+        return statusCode == HttpStatusCode.RequestTimeout
+            || statusCode == HttpStatusCode.TooManyRequests
+            || ((int)statusCode >= 500 && (int)statusCode < 600
+                && statusCode != HttpStatusCode.HttpVersionNotSupported);
     }
 }
