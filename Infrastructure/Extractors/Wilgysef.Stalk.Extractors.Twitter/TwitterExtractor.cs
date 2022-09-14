@@ -204,75 +204,90 @@ public class TwitterExtractor : IExtractor
 
     private IEnumerable<ExtractResult> ExtractTweetMedia(JToken tweet, IMetadataObject metadata, bool largestSize)
     {
+        foreach (var media in GetEntitiesMedia(tweet, metadata, largestSize))
+        {
+            yield return media;
+        }
+
+        foreach (var media in GetExtendedEntitiesMedia(tweet, metadata))
+        {
+            yield return media;
+        }
+    }
+
+    private IEnumerable<ExtractResult> GetEntitiesMedia(JToken tweet, IMetadataObject metadata, bool largestSize)
+    {
         var userId = GetUserId(tweet);
         var legacy = tweet["legacy"];
         var tweetId = legacy["id_str"]?.ToString();
-        var entities = legacy["entities"];
-        if (entities != null)
+        var media = legacy["entities"]?["media"];
+        if (media == null)
         {
-            var media = entities["media"];
-            if (media != null)
-            {
-                foreach (var mediaItem in media)
-                {
-                    var mediaUrl = mediaItem["media_url_https"]?.ToString();
-                    var mediaId = mediaItem["id_str"]?.ToString();
-                    if (mediaUrl == null || mediaId == null)
-                    {
-                        continue;
-                    }
-
-                    var mediaMetadata = metadata.Copy();
-                    mediaMetadata["media_id"] = mediaId;
-                    mediaMetadata.SetByParts(GetExtensionFromUri(new Uri(mediaUrl)), "file", "extension");
-
-                    if (largestSize)
-                    {
-                        mediaUrl = GetLargestSizeMediaUrl(mediaUrl, mediaItem["sizes"]);
-                    }
-
-                    yield return new ExtractResult(
-                        new Uri(mediaUrl),
-                        $"{userId}#{tweetId}#{mediaId}",
-                        JobTaskType.Download,
-                        metadata: mediaMetadata);
-                }
-            }
+            yield break;
         }
 
-        var extendedEntities = legacy["extended_entities"];
-        if (extendedEntities != null)
+        foreach (var mediaItem in media)
         {
-            var media = extendedEntities["media"];
-            if (media != null)
+            var mediaId = mediaItem["id_str"]?.ToString();
+            var mediaUrl = mediaItem["media_url_https"]?.ToString();
+            if (mediaId == null || mediaUrl == null)
             {
-                foreach (var mediaItem in media)
-                {
-                    var mediaId = mediaItem["id_str"]?.ToString();
-                    var videoInfo = mediaItem["video_info"];
-                    if (mediaId == null || videoInfo == null)
-                    {
-                        continue;
-                    }
-
-                    var variants = videoInfo["variants"].Children().ToList();
-                    var bestVariant = variants.OrderByDescending(v => v["bitrate"]).First();
-                    var videoUri = new Uri(bestVariant["url"].ToString());
-
-                    var mediaMetadata = metadata.Copy();
-                    mediaMetadata["media_id"] = mediaId;
-                    mediaMetadata.SetByParts(GetExtensionFromUri(videoUri), "file", "extension");
-                    mediaMetadata.SetByParts(bestVariant["bitrate"]?.Value<int>(), "video", "bitrate");
-                    mediaMetadata.SetByParts(videoInfo["duration_millis"]?.Value<int>(), "video", "duration_millis");
-                    mediaMetadata.SetByParts(mediaItem["mediaStats"]?["viewCount"]?.Value<int>(), "video", "view_count");
-
-                    yield return new ExtractResult(
-                        videoUri,
-                        $"{userId}#{tweetId}#{mediaId}",
-                        JobTaskType.Download,
-                        metadata: mediaMetadata);
-                }
+                continue;
             }
+
+            var mediaMetadata = metadata.Copy();
+            mediaMetadata["media_id"] = mediaId;
+            mediaMetadata.SetByParts(GetExtensionFromUri(new Uri(mediaUrl)), "file", "extension");
+
+            if (largestSize)
+            {
+                mediaUrl = GetLargestSizeMediaUrl(mediaUrl, mediaItem["sizes"]);
+            }
+
+            yield return new ExtractResult(
+                new Uri(mediaUrl),
+                $"{userId}#{tweetId}#{mediaId}",
+                JobTaskType.Download,
+                metadata: mediaMetadata);
+        }
+    }
+
+    private IEnumerable<ExtractResult> GetExtendedEntitiesMedia(JToken tweet, IMetadataObject metadata)
+    {
+        var userId = GetUserId(tweet);
+        var legacy = tweet["legacy"];
+        var tweetId = legacy["id_str"]?.ToString();
+        var media = legacy["extended_entities"]?["media"];
+        if (media == null)
+        {
+            yield break;
+        }
+
+        foreach (var mediaItem in media)
+        {
+            var mediaId = mediaItem["id_str"]?.ToString();
+            var videoInfo = mediaItem["video_info"];
+            if (mediaId == null || videoInfo == null)
+            {
+                continue;
+            }
+
+            var variants = videoInfo["variants"].Children().ToList();
+            var bestVariant = variants.OrderByDescending(v => v["bitrate"]).First();
+            var videoUri = new Uri(bestVariant["url"].ToString());
+
+            var mediaMetadata = metadata.Copy();
+            mediaMetadata["media_id"] = mediaId;
+            mediaMetadata.SetByParts(GetExtensionFromUri(videoUri), "file", "extension");
+            mediaMetadata.SetByParts(bestVariant["bitrate"]?.Value<int>(), "video", "bitrate");
+            mediaMetadata.SetByParts(videoInfo["duration_millis"]?.Value<int>(), "video", "duration_millis");
+            mediaMetadata.SetByParts(mediaItem["mediaStats"]?["viewCount"]?.Value<int>(), "video", "view_count");
+
+            yield return new ExtractResult(
+                videoUri,
+                $"{userId}#{tweetId}#{mediaId}",
+                JobTaskType.Download,
+                metadata: mediaMetadata);
         }
     }
 
@@ -281,13 +296,7 @@ public class TwitterExtractor : IExtractor
         var entityUrls = new List<string>();
 
         var legacy = tweet["legacy"];
-        var entities = legacy["entities"];
-        if (entities == null)
-        {
-            return entityUrls;
-        }
-
-        var urls = entities["urls"];
+        var urls = legacy["entities"]?["urls"];
         if (urls == null)
         {
             return entityUrls;
@@ -329,13 +338,7 @@ public class TwitterExtractor : IExtractor
     private bool SetRetweetMetadata(JToken tweet, IMetadataObject metadata)
     {
         var legacy = tweet["legacy"];
-        var retweetedStatusResult = legacy["retweeted_status_result"];
-        if (retweetedStatusResult == null)
-        {
-            return false;
-        }
-
-        var retweetedTweet = retweetedStatusResult["result"];
+        var retweetedTweet = legacy["retweeted_status_result"]?["result"];
         if (retweetedTweet == null)
         {
             return false;
