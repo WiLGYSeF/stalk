@@ -88,8 +88,8 @@ public class JobWorker : IJobWorker
                 await jobManager.SetJobActiveAsync(Job, cancellationToken);
             }
 
-            var jobHttpClienCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
-            jobHttpClienCollectionService.SetHttpClient(Job.Id, _httpClient);
+            var jobHttpClientCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
+            jobHttpClientCollectionService.SetHttpClient(Job.Id, _httpClient);
         }
 
         try

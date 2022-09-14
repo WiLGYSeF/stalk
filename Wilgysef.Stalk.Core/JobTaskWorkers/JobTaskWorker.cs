@@ -1,12 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
-using Wilgysef.Stalk.Core.Downloaders;
 using Wilgysef.Stalk.Core.DownloadSelectors;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared;
-using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.IdGenerators;
@@ -67,8 +65,8 @@ public class JobTaskWorker : IJobTaskWorker
                 await jobTaskManager.SetJobTaskActiveAsync(JobTask, CancellationToken.None);
             }
 
-            var jobHttpClienCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
-            if (jobHttpClienCollectionService.TryGetHttpClient(JobTask.Job.Id, out var client))
+            var jobHttpClientCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
+            if (jobHttpClientCollectionService.TryGetHttpClient(JobTask.Job.Id, out var client))
             {
                 _httpClient.Dispose();
                 _httpClient = client;
@@ -151,12 +149,25 @@ public class JobTaskWorker : IJobTaskWorker
         Logger?.LogInformation("Job task {JOBTASK_ID} using extractor {EXTRACTOR}.", JobTask.Id, extractor.Name);
 
         var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
+        var itemIdSetService = scope.GetRequiredService<IItemIdSetService>();
         var newTasks = new List<JobTask>();
+        IItemIdSet? itemIds = null;
 
         Logger?.LogInformation("Job task {JOBTASK_ID} extracting from {URI}", JobTask.Id, jobTaskUri);
 
+        if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
+        {
+            itemIds = await itemIdSetService.GetItemIdSetAsync(JobConfig.ItemIdPath);
+        }
+
         await foreach (var result in extractor.ExtractAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
         {
+            if (itemIds != null && result.ItemId != null && itemIds.Contains(result.ItemId))
+            {
+                Logger?.LogInformation("Job task {JOBTASK_ID} skipping item {ITEM_ID} from {URI}", JobTask.Id, JobTask.ItemId, jobTaskUri);
+                continue;
+            }
+
             Logger?.LogInformation("Job task {JOBTASK_ID} extracted {URI}", JobTask.Id, result.Uri);
 
             newTasks.Add(new JobTaskBuilder()
@@ -165,8 +176,18 @@ public class JobTaskWorker : IJobTaskWorker
                 .Create());
         }
 
-        var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
-        await jobTaskManager.CreateJobTasksAsync(newTasks, CancellationToken.None);
+        if (!JobConfig.StopWithNoNewItemIds || newTasks.Any(t => t.ItemId != null))
+        {
+            var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
+            await jobTaskManager.CreateJobTasksAsync(newTasks, CancellationToken.None);
+        }
+        else
+        {
+            if (newTasks.Count > 0)
+            {
+                Logger?.LogInformation("Job task {JOBTASK_ID} skipped {JOBTASKS_COUNT} since they had no item Ids,", JobTask.Id, newTasks.Count);
+            }
+        }
     }
 
     protected virtual async Task DownloadAsync(CancellationToken cancellationToken)
@@ -195,6 +216,11 @@ public class JobTaskWorker : IJobTaskWorker
         if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
         {
             itemIds = await itemIdSetService.GetItemIdSetAsync(JobConfig.ItemIdPath);
+            if (JobTask.ItemId != null && itemIds.Contains(JobTask.ItemId))
+            {
+                Logger?.LogInformation("Job task {JOBTASK_ID} skipping item {ITEM_ID} from {URI}", JobTask.Id, JobTask.ItemId, jobTaskUri);
+                return;
+            }
         }
 
         Logger?.LogInformation("Job task {JOBTASK_ID} downloading from {URI}", JobTask.Id, jobTaskUri);
