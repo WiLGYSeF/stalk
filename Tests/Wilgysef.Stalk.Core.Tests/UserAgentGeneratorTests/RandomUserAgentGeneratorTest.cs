@@ -1,9 +1,4 @@
 ﻿using Shouldly;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Wilgysef.Stalk.Core.UserAgentGenerators;
 
 namespace Wilgysef.Stalk.Core.Tests.UserAgentGeneratorTests;
@@ -14,7 +9,19 @@ public class RandomUserAgentGeneratorTest
     public void Generate()
     {
         var generator = new RandomUserAgentGenerator();
-        var userAgent = generator.Generate();
-        userAgent.Length.ShouldBeGreaterThan(0);
+        var userAgents = new List<string>
+        {
+            generator.Generate(),
+            generator.Generate(),
+            generator.Generate(),
+        };
+
+        foreach (var userAgent in userAgents)
+        {
+            userAgent.Length.ShouldBeGreaterThan(0);
+        }
+
+        var userAgentSet = new HashSet<string>(userAgents);
+        userAgentSet.Count.ShouldBe(userAgents.Count);
     }
 }
