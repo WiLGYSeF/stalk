@@ -41,8 +41,14 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher, ITransientDepen
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            Logger?.LogInformation("Background job {JobId} {JobArgsName} starting.", job.Id, job.JobArgsName);
-            Logger?.LogDebug("Background job {JobId} {JobArgsName} starting attempt {Attempts} / {MaxAttempts}.", job.Id, job.JobArgsName, job.Attempts, job.MaxAttempts);
+            if (job.MaxAttempts.HasValue)
+            {
+                Logger?.LogInformation("Background job {JobId} {JobArgsName} starting attempt {Attempts} / {MaxAttempts}.", job.Id, job.JobArgsName, job.Attempts, job.MaxAttempts);
+            }
+            else
+            {
+                Logger?.LogInformation("Background job {JobId} {JobArgsName} starting attempt {Attempts}.", job.Id, job.JobArgsName, job.Attempts);
+            }
 
             try
             {
@@ -69,7 +75,14 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher, ITransientDepen
                 try
                 {
                     job.JobFailed();
-                    Logger?.LogError(exception, "Background job {JobId} failed, next run is at {NextRun}", job.Id, job.NextRun);
+                    if (job.NextRun != null)
+                    {
+                        Logger?.LogError(exception, "Background job {JobId} failed, next run is at {NextRun}", job.Id, job.NextRun);
+                    }
+                    else
+                    {
+                        Logger?.LogError(exception, "Background job {JobId} failed.", job.Id);
+                    }
                 }
                 catch (Exception innerException)
                 {

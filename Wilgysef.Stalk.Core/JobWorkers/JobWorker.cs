@@ -20,7 +20,9 @@ public class JobWorker : IJobWorker
             _job = value;
             _jobConfig = _job?.GetConfig();
 
-            WorkerLimit = _jobConfig?.MaxTaskWorkerCount ?? 4;
+            WorkerLimit = _jobConfig?.MaxTaskWorkerCount > 0
+                ? _jobConfig?.MaxTaskWorkerCount ?? 4
+                : 4;
         }
     }
 
