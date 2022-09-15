@@ -18,9 +18,9 @@ public class QueuedBackgroundJobSpecification : Specification<BackgroundJob>
         now ??= DateTime.Now;
 
         Query
-            .Where(j => !j.Abandoned
-                && (j.NextRun == null || j.NextRun <= now)
-                && (j.MaximumLifetime == null || j.MaximumLifetime > now)
+            .Where(BackgroundJob.IsScheduledExpression)
+            .Where(j => (!j.NextRun.HasValue || j.NextRun <= now)
+                && (!j.MaximumLifetime.HasValue || j.MaximumLifetime > now)
                 && !jobIds.Contains(j.Id))
             .OrderByDescending(j => j.Priority);
     }
