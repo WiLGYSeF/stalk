@@ -36,18 +36,15 @@ public class JobTaskWorkerMock : JobTaskWorker
 
     protected override async Task ExtractAsync(CancellationToken cancellationToken)
     {
-        while (!cancellationToken.IsCancellationRequested && !_finishWork)
-        {
-            if (_exception != null)
-            {
-                throw _exception;
-            }
-
-            await Task.Delay(DelayInterval, cancellationToken);
-        }
+        await MockWork(cancellationToken);
     }
 
     protected override async Task DownloadAsync(CancellationToken cancellationToken)
+    {
+        await MockWork(cancellationToken);
+    }
+
+    private async Task MockWork(CancellationToken cancellationToken)
     {
         while (!cancellationToken.IsCancellationRequested && !_finishWork)
         {

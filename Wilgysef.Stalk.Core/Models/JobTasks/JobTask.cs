@@ -1,13 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq.Expressions;
-using System.Text;
 using System.Text.Json;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
+using Wilgysef.Stalk.Core.Utilities;
 
 namespace Wilgysef.Stalk.Core.Models.JobTasks;
 
@@ -253,8 +253,6 @@ public class JobTask : Entity
             ParentTask = parentTask,
         };
 
-        // TODO: itemId, itemData, metadataJson checks
-
         if (!finished.HasValue && task.IsDone || finished.HasValue && !task.IsDone)
         {
             throw new ArgumentException("Finish time must be set only for a done task.", nameof(finished));
@@ -313,8 +311,8 @@ public class JobTask : Entity
             return new MetadataObject(MetadataKeySeparator);
         }
 
-        var metadataDictionary = JsonSerializer.Deserialize<IDictionary<object, object?>>(
-            MetadataJson!,
+        var metadataDictionary = JsonUtils.TryDeserialize<IDictionary<object, object?>>(
+            MetadataJson,
             new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
@@ -376,22 +374,10 @@ public class JobTask : Entity
             return;
         }
 
-        using var jsonDocument = JsonSerializer.SerializeToDocument(metadata.GetDictionary(), new JsonSerializerOptions
+        MetadataJson = JsonSerializer.Serialize(metadata.GetDictionary(), new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         });
-
-        using var stream = new MemoryStream();
-        using var writer = new Utf8JsonWriter(stream);
-
-        if (jsonDocument.RootElement.ValueKind != JsonValueKind.Object)
-        {
-            throw new ArgumentException("Metadata must serialize to a JSON object.", nameof(metadata));
-        }
-
-        var metadataJson = Encoding.UTF8.GetString(stream.ToArray());
-
-        MetadataJson = metadataJson;
     }
 
     /// <summary>

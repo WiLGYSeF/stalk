@@ -208,7 +208,7 @@ public class WorkAsyncTest : BaseTest
             .WithRandomInitializedState(JobState.Inactive)
             .WithConfig(new JobConfig
             {
-                MaxFailures = 2,
+                MaxFailures = 1,
             })
             .WithRandomTasks(JobTaskState.Inactive, 1)
             .Create();
@@ -230,12 +230,21 @@ public class WorkAsyncTest : BaseTest
 
         job = await this.WaitUntilJobAsync(
             job.Id,
+            job => job.Tasks.Count >= 2 && job.Tasks.Any(t => t.Id != jobTask.Id && t.State == JobTaskState.Active),
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
+
+        jobTask = job.Tasks.Single(t => t.Id != jobTask.Id);
+        _jobTaskWorkerFactory.FailJobTaskWorker(jobTask, new HttpRequestException(null, null, HttpStatusCode.InternalServerError));
+
+        job = await this.WaitUntilJobAsync(
+            job.Id,
             job => job.State == JobState.Failed,
             TimeSpan.FromSeconds(3));
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.State.ShouldBe(JobState.Failed);
-        job.Tasks.Count.ShouldBe(2);
+        job.Tasks.Count.ShouldBe(3);
 
         var jobWorkerCollectionService = GetRequiredService<IJobWorkerCollectionService>();
         jobWorkerCollectionService.Workers.ShouldBeEmpty();

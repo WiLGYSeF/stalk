@@ -205,7 +205,7 @@ public class BackgroundJobDispatcherTest : BaseTest
     {
         public override Task ExecuteJobAsync(TestChangeJobArgs args, CancellationToken cancellationToken = default)
         {
-            BackgroundJob.GetNextRunOffset = () => TimeSpan.FromSeconds(123);
+            BackgroundJob.GetNextRun = () => DateTime.Now.AddSeconds(123);
             throw new InvalidOperationException();
         }
     }

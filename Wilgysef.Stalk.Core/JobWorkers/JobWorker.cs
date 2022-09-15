@@ -2,6 +2,8 @@
 using Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
 using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Models.JobTasks;
+using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Core.JobWorkers;
@@ -78,7 +80,7 @@ public class JobWorker : IJobWorker
 
         _working = true;
 
-        Logger?.LogInformation("Job {JOB_ID} starting.", Job.Id);
+        Logger?.LogInformation("Job {JobId} starting.", Job.Id);
 
         using (var scope = _lifetimeScope.BeginLifetimeScope())
         {
@@ -101,7 +103,7 @@ public class JobWorker : IJobWorker
                 await CreateJobTaskWorkers(cancellationToken);
                 if (_tasks.Count == 0)
                 {
-                    continue;
+                    break;
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
@@ -111,7 +113,7 @@ public class JobWorker : IJobWorker
 
                 if (taskCompletedIndex != -1)
                 {
-                    Logger?.LogDebug("Job {JOB_ID} wait for task success.", Job.Id);
+                    Logger?.LogDebug("Job {JobId} wait for task succeeded.", Job.Id);
 
                     if (taskArray.Any(t => t.Exception != null))
                     {
@@ -122,27 +124,30 @@ public class JobWorker : IJobWorker
                 }
                 else
                 {
-                    Logger?.LogDebug("Job {JOB_ID} wait for task timed out.", Job.Id);
+                    Logger?.LogDebug("Job {JobId} wait for task timed out.", Job.Id);
                 }
             }
 
             // TODO: handle job with all paused tasks
 
             await ReloadJobAsync();
-            Job.Done();
+            if (!Job.HasActiveTasks)
+            {
+                Job.Done();
+            }
         }
         catch (OperationCanceledException)
         {
-            Logger?.LogInformation("Job {JOB_ID} worker cancelled.", Job.Id);
+            Logger?.LogInformation("Job {JobId} worker cancelled.", Job.Id);
             throw;
         }
         catch (Exception exception)
         {
-            Logger?.LogError(exception, "Job {JOB_ID} threw unexpected exception.", Job.Id);
+            Logger?.LogError(exception, "Job {JobId} threw unexpected exception.", Job.Id);
         }
         finally
         {
-            Logger?.LogInformation("Job {JOB_ID} stopping.", Job.Id);
+            Logger?.LogInformation("Job {JobId} stopping.", Job.Id);
 
             using var scope = _lifetimeScope.BeginLifetimeScope();
             var jobManager = scope.GetRequiredService<IJobManager>();
@@ -168,9 +173,12 @@ public class JobWorker : IJobWorker
         }
 
         await ReloadJobAsync();
+        if (!JobTaskFailuresLessThanMaxFailures())
+        {
+            return;
+        }
 
         var jobTasks = Job!.GetQueuedTasksByPriority();
-
         if (jobTasks.Count == 0)
         {
             return;
@@ -187,6 +195,7 @@ public class JobWorker : IJobWorker
 
             var jobTask = jobTasks[jobTaskIndex++];
             _tasks.Add(await jobTaskWorkerService.StartJobTaskWorkerAsync(jobTask, cancellationToken), jobTask.Id);
+            Logger?.LogDebug("Job {JobId} added task worker for {JobTaskId}", Job.Id, jobTask.Id);
         }
     }
 
@@ -196,9 +205,16 @@ public class JobWorker : IJobWorker
         {
             if (task.IsCompleted)
             {
-                _tasks.Remove(task);
+                _tasks.Remove(task, out var jobTaskId);
+                Logger?.LogDebug("Job {JobId} removed completed task for {JobTaskId}", Job.Id, jobTaskId);
             }
         }
+    }
+
+    private bool JobTaskFailuresLessThanMaxFailures()
+    {
+        return !_jobConfig!.MaxFailures.HasValue
+            || Job!.Tasks.Count(t => t.State == JobTaskState.Failed) <= _jobConfig.MaxFailures.Value;
     }
 
     private async Task<Job> ReloadJobAsync()

@@ -27,11 +27,11 @@ public class BackgroundJob : Entity
     public virtual string JobArgs { get; protected set; } = null!;
 
     [NotMapped]
-    public Func<TimeSpan> GetNextRunOffset { get; set; }
+    public Func<DateTime> GetNextRun { get; set; }
 
     protected BackgroundJob()
     {
-        GetNextRunOffset = GetNextRunOffsetDefault;
+        GetNextRun = GetNextRunDefault;
     }
 
     public static BackgroundJob Create<T>(
@@ -138,7 +138,7 @@ public class BackgroundJob : Entity
             return;
         }
 
-        NextRun = DateTime.Now.Add(GetNextRunOffset());
+        NextRun = GetNextRun();
     }
 
     internal void Abandon()
@@ -162,9 +162,9 @@ public class BackgroundJob : Entity
             ?? throw new InvalidBackgroundJobException();
     }
 
-    public TimeSpan GetNextRunOffsetDefault()
+    public DateTime GetNextRunDefault()
     {
-        return TimeSpan.FromSeconds(Math.Pow(2, Attempts - 1));
+        return DateTime.Now.AddSeconds(Math.Pow(2, Attempts - 1));
     }
 
     private static string SerializeArgs<T>(T args) where T : BackgroundJobArgs
