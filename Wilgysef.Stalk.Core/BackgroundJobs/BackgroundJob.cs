@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Linq.Expressions;
 using System.Text.Json;
 using Wilgysef.Stalk.Core.Models;
 
@@ -10,24 +11,90 @@ public class BackgroundJob : Entity
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public virtual long Id { get; protected set; }
 
+    /// <summary>
+    /// Background job priority.
+    /// </summary>
     public virtual int Priority { get; protected set; }
 
+    /// <summary>
+    /// Times the background job was attempted.
+    /// </summary>
     public virtual int Attempts { get; protected set; }
 
+    /// <summary>
+    /// Time the background job will be run next.
+    /// </summary>
     public virtual DateTime? NextRun { get; protected set; }
 
+    /// <summary>
+    /// Maximum lifetime of background job.
+    /// </summary>
     public virtual DateTime? MaximumLifetime { get; protected set; }
 
+    /// <summary>
+    /// Maximum number of times the background job may be attempted.
+    /// </summary>
     public virtual int? MaxAttempts { get; protected set; }
 
-    public virtual bool Abandoned { get; protected set; }
+    /// <summary>
+    /// Background job state.
+    /// </summary>
+    public virtual BackgroundJobState State { get; protected set; }
 
+    /// <summary>
+    /// Backgroun job arguments type name.
+    /// </summary>
     public virtual string JobArgsName { get; protected set; } = null!;
 
+    /// <summary>
+    /// Background job arguments.
+    /// </summary>
     public virtual string JobArgs { get; protected set; } = null!;
 
+    /// <summary>
+    /// Function that determines the next run time on job failure.
+    /// </summary>
     [NotMapped]
     public Func<DateTime> GetNextRun { get; set; }
+
+    /// <summary>
+    /// Indicates if the background job is scheduled.
+    /// </summary>
+    [NotMapped]
+    public bool IsScheduled => IsScheduledExpression.Compile()(this);
+
+    /// <summary>
+    /// Indicates if the background job has been abandoned.
+    /// </summary>
+    [NotMapped]
+    public bool IsAbandoned => IsAbandonedExpression.Compile()(this);
+
+    /// <summary>
+    /// Indicates if the background job has succeeded.
+    /// </summary>
+    [NotMapped]
+    public bool IsSucceeded => IsSucceededExpression.Compile()(this);
+
+    /// <summary>
+    /// Background job scheduled expression.
+    /// </summary>
+    [NotMapped]
+    internal static Expression<Func<BackgroundJob, bool>> IsScheduledExpression =>
+        j => j.State == BackgroundJobState.Scheduled;
+
+    /// <summary>
+    /// Background job abandoned expression.
+    /// </summary>
+    [NotMapped]
+    internal static Expression<Func<BackgroundJob, bool>> IsAbandonedExpression =>
+        j => j.State == BackgroundJobState.Abandoned;
+
+    /// <summary>
+    /// Background job succeeded expression.
+    /// </summary>
+    [NotMapped]
+    internal static Expression<Func<BackgroundJob, bool>> IsSucceededExpression =>
+        j => j.State == BackgroundJobState.Succeeded;
 
     protected BackgroundJob()
     {
@@ -84,7 +151,7 @@ public class BackgroundJob : Entity
 
     public void ChangePriority(int priority)
     {
-        if (Abandoned)
+        if (IsAbandoned)
         {
             throw new BackgroundJobAbandonedException();
         }
@@ -94,7 +161,7 @@ public class BackgroundJob : Entity
 
     public void ChangeNextRun(DateTime? nextRun)
     {
-        if (Abandoned)
+        if (IsAbandoned)
         {
             throw new BackgroundJobAbandonedException();
         }
@@ -104,7 +171,7 @@ public class BackgroundJob : Entity
 
     public void ChangeMaximumLifetime(DateTime? maximumLifetime)
     {
-        if (Abandoned)
+        if (IsAbandoned)
         {
             throw new BackgroundJobAbandonedException();
         }
@@ -114,7 +181,7 @@ public class BackgroundJob : Entity
 
     public void ChangeMaxAttempts(int? maxAttempts)
     {
-        if (Abandoned)
+        if (IsAbandoned)
         {
             throw new BackgroundJobAbandonedException();
         }
@@ -122,9 +189,21 @@ public class BackgroundJob : Entity
         MaxAttempts = maxAttempts;
     }
 
-    internal void JobFailed()
+    internal void Success()
     {
-        if (Abandoned)
+        if (IsAbandoned)
+        {
+            throw new BackgroundJobAbandonedException();
+        }
+
+        State = BackgroundJobState.Succeeded;
+        Attempts++;
+        NextRun = null;
+    }
+
+    internal void Failed()
+    {
+        if (IsAbandoned)
         {
             return;
         }
@@ -143,9 +222,9 @@ public class BackgroundJob : Entity
 
     internal void Abandon()
     {
-        if (!Abandoned)
+        if (!IsAbandoned)
         {
-            Abandoned = true;
+            State = BackgroundJobState.Abandoned;
             NextRun = null;
         }
     }

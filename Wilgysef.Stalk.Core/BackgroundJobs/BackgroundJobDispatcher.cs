@@ -56,7 +56,12 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher, ITransientDepen
                 await ExecuteJobAsync(job, cancellationToken);
 
                 Logger?.LogInformation("Background job {JobId} finished.", job.Id);
-                await backgroundJobManager.DeleteJobAsync(job, CancellationToken.None);
+
+                job.Success();
+                await backgroundJobManager.UpdateJobAsync(job, CancellationToken.None);
+
+                // TODO: delete jobs?
+                //await backgroundJobManager.DeleteJobAsync(job, CancellationToken.None);
             }
             catch (InvalidBackgroundJobException exception)
             {
@@ -74,7 +79,7 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher, ITransientDepen
             {
                 try
                 {
-                    job.JobFailed();
+                    job.Failed();
                     if (job.NextRun != null)
                     {
                         Logger?.LogError(exception, "Background job {JobId} failed, next run is at {NextRun}", job.Id, job.NextRun);
