@@ -1,10 +1,16 @@
-﻿namespace Wilgysef.Stalk.Core.Shared.CacheObjects
+﻿using System;
+
+namespace Wilgysef.Stalk.Core.Shared.CacheObjects
 {
     public interface ICacheObject
     {
-        void Add(string key, object value);
+        object this[string key] { get; set; }
 
-        bool TryAdd(string key, object value);
+        void Add(string key, object value, DateTime? expires = null);
+
+        bool TryAdd(string key, object value, DateTime? expires = null);
+
+        void Set(string key, object value, DateTime? expires = null);
 
         bool TryGetValue(string key, out object value);
 
