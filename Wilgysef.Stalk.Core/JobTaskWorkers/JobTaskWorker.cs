@@ -2,6 +2,7 @@
 using System.Net;
 using Wilgysef.Stalk.Core.DownloadSelectors;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
+using Wilgysef.Stalk.Core.JobExtractorCacheObjectCollectionServices;
 using Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
@@ -67,7 +68,7 @@ public class JobTaskWorker : IJobTaskWorker
             }
 
             var jobHttpClientCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
-            if (jobHttpClientCollectionService.TryGetHttpClient(JobTask.Job.Id, out var client))
+            if (jobHttpClientCollectionService.TryGetHttpClient(JobTask.JobId, out var client))
             {
                 _httpClient.Dispose();
                 _httpClient = client;
@@ -162,6 +163,10 @@ public class JobTaskWorker : IJobTaskWorker
         }
 
         extractor.SetHttpClient(_httpClient);
+
+        var jobExtractorCacheObjectCollectionService = scope.GetRequiredService<IJobExtractorCacheObjectCollectionService>();
+        var cacheCollection = jobExtractorCacheObjectCollectionService.GetCacheCollection(JobTask.JobId);
+        extractor.Cache = cacheCollection.GetCache(extractor);
 
         Logger?.LogInformation("Job task {JobTaskId} using extractor {Extractor}.", JobTask.Id, extractor.Name);
 

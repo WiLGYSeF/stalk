@@ -209,7 +209,7 @@ public class JobTaskBuilder
             .WithItemData(result.ItemData)
             .WithMetadata(result.Metadata)
             .WithType(result.Type)
-            .WithJobId(jobTask.Job.Id)
+            .WithJobId(jobTask.JobId)
             .WithParentId(jobTask.Id);
     }
 
