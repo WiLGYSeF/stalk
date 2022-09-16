@@ -15,6 +15,7 @@ var loggerFactory = new SerilogLoggerFactory(new LoggerConfiguration()
     .MinimumLevel.Debug()
     .WriteTo.Console(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
     .WriteTo.Debug(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
+    .WriteTo.File("logs.txt")
     .CreateLogger());
 var logger = loggerFactory.CreateLogger("default");
 

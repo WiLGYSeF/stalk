@@ -2,9 +2,9 @@
 using Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
 using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
-using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
+using Wilgysef.Stalk.Core.UserAgentGenerators;
 
 namespace Wilgysef.Stalk.Core.JobWorkers;
 
@@ -94,6 +94,12 @@ public class JobWorker : IJobWorker
 
             var jobHttpClientCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
             jobHttpClientCollectionService.SetHttpClient(Job.Id, _httpClient);
+
+            var userAgentGenerator = scope.GetService<IUserAgentGenerator>();
+            if (userAgentGenerator != null)
+            {
+                _httpClient.DefaultRequestHeaders.Add("User-Agent", userAgentGenerator.Generate());
+            }
         }
 
         try
@@ -197,7 +203,7 @@ public class JobWorker : IJobWorker
 
             var jobTask = jobTasks[jobTaskIndex++];
             _tasks.Add(await jobTaskWorkerService.StartJobTaskWorkerAsync(jobTask, cancellationToken), jobTask.Id);
-            Logger?.LogDebug("Job {JobId} added task worker for {JobTaskId}", Job.Id, jobTask.Id);
+            Logger?.LogDebug("Job {JobId} added task worker for {JobTaskId}.", Job.Id, jobTask.Id);
         }
     }
 
@@ -208,7 +214,7 @@ public class JobWorker : IJobWorker
             if (task.IsCompleted)
             {
                 _tasks.Remove(task, out var jobTaskId);
-                Logger?.LogDebug("Job {JobId} removed completed task for {JobTaskId}", Job.Id, jobTaskId);
+                Logger?.LogDebug("Job {JobId} removed completed task for {JobTaskId}.", Job.Id, jobTaskId);
             }
         }
     }
