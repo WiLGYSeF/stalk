@@ -57,7 +57,10 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher, ITransientDepen
 
                 Logger?.LogInformation("Background job {JobId} finished.", job.Id);
 
-                job.Success();
+                if (!job.IsAbandoned)
+                {
+                    job.Success();
+                }
                 await backgroundJobManager.UpdateJobAsync(job, CancellationToken.None);
 
                 // TODO: delete jobs?
