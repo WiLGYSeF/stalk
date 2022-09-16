@@ -25,11 +25,33 @@ public class MockFileService : IFileService
             {
                 result = new MemoryStream();
                 stream.CopyTo(result);
+                break;
             }
         }
 
+        if (result != null)
+        {
+            if (fileMode == FileMode.CreateNew)
+            {
+                throw new IOException();
+            }
+
+            if (fileMode == FileMode.Create)
+            {
+                result = new MemoryStream();
+            }
+            else if (fileMode == FileMode.Append)
+            {
+                result.Position = result.Length;
+            }
+        }
+        else if (fileMode == FileMode.Open || fileMode == FileMode.Truncate)
+        {
+            throw new IOException();
+        }
+
         result ??= new MemoryStream();
-        _fileStreams.Add(path, result);
+        _fileStreams[path] = result;
 
         return result;
     }

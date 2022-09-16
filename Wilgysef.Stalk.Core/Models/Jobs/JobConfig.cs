@@ -38,6 +38,11 @@ public class JobConfig
     public bool SaveItemIds { get; set; } = true;
 
     /// <summary>
+    /// Stop extracting items if all items in the batch are in the item Id set or do not have item Ids.
+    /// </summary>
+    public bool StopWithNoNewItemIds { get; set; }
+
+    /// <summary>
     /// Log path.
     /// </summary>
     public string? LogPath { get; set; }

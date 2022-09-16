@@ -18,8 +18,10 @@ public class ExpiredBackgroundJobSpecification : Specification<BackgroundJob>
         now ??= DateTime.Now;
 
         Query
-            .Where(j => !j.Abandoned
-                && (j.MaximumLifetime != null || j.MaximumLifetime <= now)
+            .Where(BackgroundJob.IsScheduledExpression)
+            .Where(j =>
+                (j.MaxAttempts.HasValue && j.Attempts >= j.MaxAttempts
+                    || j.MaximumLifetime.HasValue && j.MaximumLifetime <= now)
                 && !jobIds.Contains(j.Id));
     }
 }

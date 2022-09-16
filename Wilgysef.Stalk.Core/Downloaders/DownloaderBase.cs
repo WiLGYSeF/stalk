@@ -194,7 +194,7 @@ public abstract class DownloaderBase : IDownloader
         }
         catch (IOException exception)
         {
-            Logger?.LogError(exception, "Could not write metadata to {PATH}", metadataFilename);
+            Logger?.LogError(exception, "Could not write metadata to {Path}", metadataFilename);
         }
 
         return Task.FromResult<string?>(metadataFilename);

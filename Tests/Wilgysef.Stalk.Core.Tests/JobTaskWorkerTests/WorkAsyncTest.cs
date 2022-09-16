@@ -203,8 +203,8 @@ public class WorkAsyncTest : BaseTest
         return Task.FromResult((IItemIdSet)new ItemIdSet());
     }
 
-    private async Task<int> WriteChangesAsync(string path, IItemIdSet itemIds)
+    private Task<int> WriteChangesAsync(string path, IItemIdSet itemIds)
     {
-        return await Task.FromResult(itemIds.PendingItems.Count);
+        return Task.FromResult(itemIds.PendingItems.Count);
     }
 }

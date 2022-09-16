@@ -7,6 +7,7 @@ using Wilgysef.Stalk.Core.DomainEvents.Events;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
+using Wilgysef.Stalk.Core.Utilities;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;
 
@@ -93,6 +94,12 @@ public class Job : Entity
     /// </summary>
     [NotMapped]
     public bool HasUnfinishedTasks => Tasks.Any(t => !t.IsDone);
+
+    /// <summary>
+    /// Indicates if the job has active tasks.
+    /// </summary>
+    [NotMapped]
+    public bool HasActiveTasks => Tasks.Any(t => t.IsActive);
 
     /// <summary>
     /// Job active expression.
@@ -298,7 +305,7 @@ public class Job : Entity
             return new JobConfig();
         }
 
-        var config = JsonSerializer.Deserialize<JobConfig>(
+        var config = JsonUtils.TryDeserialize<JobConfig>(
             ConfigJson,
             new JsonSerializerOptions
             {
@@ -449,15 +456,15 @@ public class Job : Entity
 
     internal void Done()
     {
-        if (HasUnfinishedTasks)
+        if (HasActiveTasks)
         {
-            throw new InvalidOperationException("Job still has unfinished tasks.");
+            throw new InvalidOperationException("Job still has active tasks.");
         }
 
         var failedTaskCount = Tasks.Count(t => t.State == JobTaskState.Failed);
         var config = GetConfig();
 
-        ChangeState((failedTaskCount > config.MaxFailures || failedTaskCount == Tasks.Count)
+        ChangeState((failedTaskCount > config.MaxFailures || failedTaskCount == Tasks.Count(t => t.IsDone))
             ? JobState.Failed
             : JobState.Completed);
     }

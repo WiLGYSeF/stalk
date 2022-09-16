@@ -31,7 +31,7 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher, ITransientDepen
             var abandonedJobs = await backgroundJobManager.AbandonExpiredJobsAsync(cancellationToken);
             if (abandonedJobs.Count > 0)
             {
-                Logger?.LogInformation("Abandoning expired jobs, {JOB_COUNT} job(s) abandoned.", abandonedJobs.Count);
+                Logger?.LogInformation("{JobCount} expired job(s) abandoned.", abandonedJobs.Count);
             }
 
             var job = await backgroundJobManager.GetNextPriorityJobAsync(cancellationToken);
@@ -41,34 +41,60 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher, ITransientDepen
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            Logger?.LogInformation("Background job {JOB_ID} {JOB_ARGSNAME} starting.", job.Id, job.JobArgsName);
-            Logger?.LogDebug("Background job {JOB_ID} {JOB_ARGSNAME} attempt {JOB_ATTEMPT} starting.", job.Id, job.JobArgsName, job.Attempts);
+            if (job.MaxAttempts.HasValue)
+            {
+                Logger?.LogInformation("Background job {JobId} {JobArgsName} starting attempt {Attempts} / {MaxAttempts}.", job.Id, job.JobArgsName, job.Attempts, job.MaxAttempts);
+            }
+            else
+            {
+                Logger?.LogInformation("Background job {JobId} {JobArgsName} starting attempt {Attempts}.", job.Id, job.JobArgsName, job.Attempts);
+            }
 
             try
             {
                 _backgroundJobCollectionService.AddActiveJob(job);
                 await ExecuteJobAsync(job, cancellationToken);
 
-                Logger?.LogInformation("Background job {JOB_ID} finished.", job.Id);
-                await backgroundJobManager.DeleteJobAsync(job, CancellationToken.None);
+                Logger?.LogInformation("Background job {JobId} finished.", job.Id);
+
+                job.Success();
+                await backgroundJobManager.UpdateJobAsync(job, CancellationToken.None);
+
+                // TODO: delete jobs?
+                //await backgroundJobManager.DeleteJobAsync(job, CancellationToken.None);
             }
             catch (InvalidBackgroundJobException exception)
             {
-                Logger?.LogError(exception, "Background job {JOB_ID} was invalid.", job.Id);
+                Logger?.LogError(exception, "Background job {JobId} was invalid.", job.Id);
 
                 job.Abandon();
                 await backgroundJobManager.UpdateJobAsync(job, CancellationToken.None);
             }
             catch (OperationCanceledException)
             {
-                Logger?.LogInformation("Background job {JOB_ID} cancelled.", job.Id);
+                Logger?.LogInformation("Background job {JobId} task cancelled.", job.Id);
                 throw;
             }
             catch (Exception exception)
             {
-                Logger?.LogError(exception, "Background job {JOB_ID} failed.", job.Id);
+                try
+                {
+                    job.Failed();
+                    if (job.NextRun != null)
+                    {
+                        Logger?.LogError(exception, "Background job {JobId} failed, next run is at {NextRun}", job.Id, job.NextRun);
+                    }
+                    else
+                    {
+                        Logger?.LogError(exception, "Background job {JobId} failed.", job.Id);
+                    }
+                }
+                catch (Exception innerException)
+                {
+                    Logger?.LogError(innerException, "Background job {JobId} threw exception while failing, abandoning.", job.Id);
+                    job.Abandon();
+                }
 
-                job.JobFailed();
                 await backgroundJobManager.UpdateJobAsync(job, CancellationToken.None);
             }
             finally

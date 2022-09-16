@@ -163,7 +163,7 @@ public class WorkAsyncTest : BaseTest
     }
 
     [Fact]
-    public async Task Work_Job_Finish_Tasks_Failed()
+    public async Task Work_Job_Fail_Tasks()
     {
         var job = new JobBuilder()
             .WithRandomInitializedState(JobState.Inactive)
@@ -196,6 +196,55 @@ public class WorkAsyncTest : BaseTest
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.State.ShouldBe(JobState.Failed);
+
+        var jobWorkerCollectionService = GetRequiredService<IJobWorkerCollectionService>();
+        jobWorkerCollectionService.Workers.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Work_Job_Fail_Tasks_Retry()
+    {
+        var job = new JobBuilder()
+            .WithRandomInitializedState(JobState.Inactive)
+            .WithConfig(new JobConfig
+            {
+                MaxFailures = 1,
+            })
+            .WithRandomTasks(JobTaskState.Inactive, 1)
+            .Create();
+        await _jobManager.CreateJobAsync(job);
+
+        _jobWorkerStarter.EnsureTaskSuccessesOnDispose = false;
+        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
+
+        job = await this.WaitUntilJobAsync(
+            job.Id,
+            job => job.Tasks.Any(t => t.State == JobTaskState.Active),
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
+
+        job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBeGreaterThanOrEqualTo(1);
+
+        var jobTask = job.Tasks.Single(t => t.State == JobTaskState.Active);
+        _jobTaskWorkerFactory.FailJobTaskWorker(jobTask, new HttpRequestException(null, null, HttpStatusCode.InternalServerError));
+
+        job = await this.WaitUntilJobAsync(
+            job.Id,
+            job => job.Tasks.Count >= 2 && job.Tasks.Any(t => t.Id != jobTask.Id && t.State == JobTaskState.Active),
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
+
+        jobTask = job.Tasks.Single(t => t.Id != jobTask.Id);
+        _jobTaskWorkerFactory.FailJobTaskWorker(jobTask, new HttpRequestException(null, null, HttpStatusCode.InternalServerError));
+
+        job = await this.WaitUntilJobAsync(
+            job.Id,
+            job => job.State == JobState.Failed,
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
+
+        job.State.ShouldBe(JobState.Failed);
+        job.Tasks.Count.ShouldBe(3);
 
         var jobWorkerCollectionService = GetRequiredService<IJobWorkerCollectionService>();
         jobWorkerCollectionService.Workers.ShouldBeEmpty();

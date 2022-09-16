@@ -90,6 +90,7 @@ public class ServiceRegistrar
         builder.Register(c => c.Resolve<IHttpClientFactory>().CreateClient(Constants.HttpClientName))
             .As<HttpClient>();
 
+        // AutoMapper registration
         builder.RegisterAutoMapper(true, internalAssemblies);
 
         // IdGen registration

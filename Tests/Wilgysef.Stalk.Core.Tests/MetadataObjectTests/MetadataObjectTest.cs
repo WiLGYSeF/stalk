@@ -168,6 +168,20 @@ public class MetadataObjectTest
     }
 
     [Fact]
+    public void Clear()
+    {
+        var metadata = new MetadataObject('.');
+
+        metadata.Add("abc", 1);
+        metadata.Add("def", 2);
+        metadata.Add("aaa.asdf", 3);
+        metadata.Add("aaa.abc", 4);
+
+        metadata.Clear();
+        metadata.Contains("abc").ShouldBeFalse();
+    }
+
+    [Fact]
     public void Copy()
     {
         var metadata = new MetadataObject('.');

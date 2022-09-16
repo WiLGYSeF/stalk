@@ -121,6 +121,11 @@ public class MetadataObject : IMetadataObject
         return trie.Remove(ultimateKey);
     }
 
+    public void Clear()
+    {
+        _root.Clear();
+    }
+
     public IMetadataObject Copy()
     {
         var metadata = new MetadataObject(KeySeparator);

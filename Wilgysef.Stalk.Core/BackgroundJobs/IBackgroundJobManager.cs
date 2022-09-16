@@ -63,7 +63,19 @@ public interface IBackgroundJobManager
     /// <returns>Background jobs that have been abandoned.</returns>
     Task<List<BackgroundJob>> AbandonExpiredJobsAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Updates background job.
+    /// </summary>
+    /// <param name="job">Background job.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     Task UpdateJobAsync(BackgroundJob job, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Deletes background job.
+    /// </summary>
+    /// <param name="job">Background job.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     Task DeleteJobAsync(BackgroundJob job, CancellationToken cancellationToken = default);
 }

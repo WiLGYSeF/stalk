@@ -120,6 +120,11 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         bool RemoveByParts(params string[] keyParts);
 
         /// <summary>
+        /// Clears metadata.
+        /// </summary>
+        void Clear();
+
+        /// <summary>
         /// Copies keys and values.
         /// </summary>
         /// <returns>Copied object.</returns>
