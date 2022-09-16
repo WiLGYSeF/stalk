@@ -8,23 +8,25 @@ namespace Wilgysef.Stalk.WebApi.Controllers;
 [ApiController]
 public class ExtractorController : ControllerBase
 {
-    private readonly IEnumerable<IExtractor> _extractors;
+    private readonly IServiceLocator _serviceLocator;
 
     public ExtractorController(
-        IEnumerable<IExtractor> extractors)
+        IServiceLocator serviceLocator)
     {
-        _extractors = extractors;
+        _serviceLocator = serviceLocator;
     }
 
     [HttpGet("list")]
-    public async Task<object> GetExtractorsAsync()
+    public Task<object> GetExtractorsAsync()
     {
-        return new
+        var extractors = _serviceLocator.GetRequiredService<IEnumerable<IExtractor>>();
+
+        return Task.FromResult<object>(new
         {
-            Extractors = _extractors.Select(e => new
+            Extractors = extractors.Select(e => new
             {
                 e.Name,
             }).ToList(),
-        };
+        });
     }
 }
