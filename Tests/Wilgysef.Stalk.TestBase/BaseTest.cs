@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
 using Wilgysef.Stalk.Core.FileServices;
+using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.EntityFrameworkCore;
 using Wilgysef.Stalk.TestBase.Mocks;
@@ -27,7 +28,7 @@ public abstract class BaseTest
 
     private readonly List<(Type Implementation, Type Service, ServiceRegistrationType RegistrationType)> _replaceServices = new();
     private readonly List<(object Implementation, Type Service)> _replaceServiceInstances = new();
-    private readonly List<(Func<IComponentContext, object>, Type Service)> _replaceServiceDelegates = new();
+    private readonly List<(Func<IComponentContext, object>, Type Service, ServiceRegistrationType RegistrationType)> _replaceServiceDelegates = new();
 
     private readonly string _databaseName = Guid.NewGuid().ToString();
     private string DatabaseName => _databaseName;
@@ -121,7 +122,24 @@ public abstract class BaseTest
 
     public void ReplaceServiceDelegate<T>(Func<IComponentContext, T> @delegate) where T : class
     {
-        _replaceServiceDelegates.Add((@delegate, typeof(T)));
+        ReplaceTransientServiceDelegate(@delegate);
+    }
+
+    public void ReplaceTransientServiceDelegate<T>(Func<IComponentContext, T> @delegate) where T : class
+    {
+        _replaceServiceDelegates.Add((@delegate, typeof(T), ServiceRegistrationType.Transient));
+        _serviceProvider = null;
+    }
+
+    public void ReplaceScopedServiceDelegate<T>(Func<IComponentContext, T> @delegate) where T : class
+    {
+        _replaceServiceDelegates.Add((@delegate, typeof(T), ServiceRegistrationType.Scoped));
+        _serviceProvider = null;
+    }
+
+    public void ReplaceSingletonServiceDelegate<T>(Func<IComponentContext, T> @delegate) where T : class
+    {
+        _replaceServiceDelegates.Add((@delegate, typeof(T), ServiceRegistrationType.Singleton));
         _serviceProvider = null;
     }
 
@@ -141,17 +159,20 @@ public abstract class BaseTest
     {
         var builder = new ContainerBuilder();
 
-        // TODO: change null?
-        var serviceRegistrar = new ServiceRegistrar(
-            GetDbContextOptionsBuilder().Options,
-            new LoggerFactory(new[] { new DebugLoggerProvider() }).CreateLogger("test"),
-            null,
-            null)
+        var serviceRegistrar = new ServiceRegistrar
         {
             RegisterExtractors = RegisterExtractors,
             RegisterDownloaders = RegisterDownloaders,
         };
-        serviceRegistrar.RegisterApplication(builder, services);
+        serviceRegistrar.RegisterServices(services);
+        serviceRegistrar.RegisterDbContext(builder, GetDbContextOptionsBuilder().Options);
+
+        builder.Populate(services);
+        serviceRegistrar.RegisterServices(
+            builder,
+            new LoggerFactory(new[] { new DebugLoggerProvider() }).CreateLogger("test"),
+            null,
+            t => (Activator.CreateInstance(t) as IOptionSection)!);
 
         foreach (var (implementation, service, type) in _replaceServices)
         {
@@ -176,9 +197,19 @@ public abstract class BaseTest
                 .SingleInstance();
         }
 
-        foreach (var (@delegate, service) in _replaceServiceDelegates)
+        foreach (var (@delegate, service, type) in _replaceServiceDelegates)
         {
-            builder.Register(@delegate).As(service);
+            var registration = builder.Register(@delegate)
+                .As(service)
+                .PropertiesAutowired();
+
+            _ = type switch
+            {
+                ServiceRegistrationType.Transient => registration.InstancePerDependency(),
+                ServiceRegistrationType.Scoped => registration.InstancePerLifetimeScope(),
+                ServiceRegistrationType.Singleton => registration.SingleInstance(),
+                _ => throw new NotImplementedException(),
+            };
         }
 
         return builder;

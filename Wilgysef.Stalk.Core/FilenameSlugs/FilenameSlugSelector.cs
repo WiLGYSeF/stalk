@@ -1,6 +1,8 @@
-﻿namespace Wilgysef.Stalk.Core.FilenameSlugs;
+﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
 
-internal class FilenameSlugSelector : IFilenameSlugSelector
+namespace Wilgysef.Stalk.Core.FilenameSlugs;
+
+public class FilenameSlugSelector : IFilenameSlugSelector, ITransientDependency
 {
     private readonly IEnumerable<IFilenameSlug> _filenameSlugs;
 
@@ -15,7 +17,7 @@ internal class FilenameSlugSelector : IFilenameSlugSelector
         {
             PlatformID.Win32NT => _filenameSlugs.Single(s => s is WindowsFilenameSlug),
             PlatformID.Unix => _filenameSlugs.Single(s => s is UnixFilenameSlug),
-            _ => throw new NotImplementedException("OSVersion platform not supported"),
+            _ => throw new NotImplementedException("OSVersion platform not supported."),
         };
     }
 }

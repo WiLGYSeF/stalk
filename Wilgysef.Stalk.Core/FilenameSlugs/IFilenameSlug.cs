@@ -1,8 +1,6 @@
-﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
+﻿namespace Wilgysef.Stalk.Core.FilenameSlugs;
 
-namespace Wilgysef.Stalk.Core.FilenameSlugs;
-
-public interface IFilenameSlug : ITransientDependency
+public interface IFilenameSlug
 {
     string Name { get; }
 

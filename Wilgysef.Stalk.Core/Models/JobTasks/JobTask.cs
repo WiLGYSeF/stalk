@@ -1,13 +1,13 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq.Expressions;
-using System.Text;
 using System.Text.Json;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
+using Wilgysef.Stalk.Core.Utilities;
 
 namespace Wilgysef.Stalk.Core.Models.JobTasks;
 
@@ -220,7 +220,7 @@ public class JobTask : Entity
         string uri,
         string? itemId,
         string? itemData,
-        object? metadata,
+        IMetadataObject? metadata,
         JobTaskType type,
         DateTime? started,
         DateTime? finished,
@@ -252,8 +252,6 @@ public class JobTask : Entity
             ParentTaskId = parentTaskId,
             ParentTask = parentTask,
         };
-
-        // TODO: itemId, itemData, metadataJson checks
 
         if (!finished.HasValue && task.IsDone || finished.HasValue && !task.IsDone)
         {
@@ -296,7 +294,7 @@ public class JobTask : Entity
     /// </summary>
     /// <param name="metadata">Job task metadata.</param>
     // TODO: change to class?
-    public void ChangeMetadata(object? metadata)
+    public void ChangeMetadata(IMetadataObject? metadata)
     {
         if (IsDone)
         {
@@ -313,17 +311,21 @@ public class JobTask : Entity
             return new MetadataObject(MetadataKeySeparator);
         }
 
-        var metadata = JsonSerializer.Deserialize<IDictionary<string, object>>(
-            MetadataJson!,
+        var metadataDictionary = JsonUtils.TryDeserialize<IDictionary<object, object?>>(
+            MetadataJson,
             new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true,
             });
-        if (metadata == null)
+        if (metadataDictionary == null)
         {
             throw new InvalidOperationException("Metadata must be a dictionary.");
         }
-        return new MetadataObject(metadata, MetadataKeySeparator);
+
+        var metadata = new MetadataObject(MetadataKeySeparator);
+        metadata.From(metadataDictionary);
+
+        return metadata;
     }
 
     /// <summary>
@@ -364,7 +366,7 @@ public class JobTask : Entity
     /// </summary>
     /// <param name="metadata">Job task metadata.</param>
     /// <exception cref="ArgumentException">Metadata does not serialize to an object.</exception>
-    internal void SetMetadata(object? metadata)
+    internal void SetMetadata(IMetadataObject? metadata)
     {
         if (metadata == null)
         {
@@ -372,22 +374,10 @@ public class JobTask : Entity
             return;
         }
 
-        using var jsonDocument = JsonSerializer.SerializeToDocument(metadata, new JsonSerializerOptions
+        MetadataJson = JsonSerializer.Serialize(metadata.GetDictionary(), new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         });
-
-        using var stream = new MemoryStream();
-        using var writer = new Utf8JsonWriter(stream);
-
-        if (jsonDocument.RootElement.ValueKind != JsonValueKind.Object)
-        {
-            throw new ArgumentException("Metadata must serialize to a JSON object.", nameof(metadata));
-        }
-
-        var metadataJson = Encoding.UTF8.GetString(stream.ToArray());
-
-        MetadataJson = metadataJson;
     }
 
     /// <summary>

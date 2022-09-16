@@ -4,10 +4,11 @@ using Wilgysef.Stalk.Core.DomainEvents;
 using Wilgysef.Stalk.Core.Models;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.EntityFrameworkCore;
 
-public class StalkDbContext : DbContext, IStalkDbContext
+public class StalkDbContext : DbContext, IStalkDbContext, IScopedDependency
 {
     public DbSet<Job> Jobs { get; set; } = null!;
     public DbSet<JobTask> JobTasks { get; set; } = null!;

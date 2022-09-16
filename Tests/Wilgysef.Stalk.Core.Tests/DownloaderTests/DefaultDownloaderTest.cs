@@ -19,7 +19,7 @@ public class DefaultDownloaderTest : BaseTest
 
     private readonly HttpRequestMessageLog _requestLog;
     private readonly MockFileService _fileService;
-    private readonly IDefaultDownloader _downloader;
+    private readonly DefaultDownloader _downloader;
 
     public DefaultDownloaderTest()
     {
@@ -33,7 +33,7 @@ public class DefaultDownloaderTest : BaseTest
         _fileService = ReplaceFileService();
 
         var downloaders = GetRequiredService<IEnumerable<IDownloader>>();
-        _downloader = (downloaders.Single(d => d is IDefaultDownloader) as IDefaultDownloader)!;
+        _downloader = (downloaders.Single(d => d is DefaultDownloader) as DefaultDownloader)!;
     }
 
     [Fact]
@@ -70,10 +70,9 @@ public class DefaultDownloaderTest : BaseTest
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
-        var metadataWritten = new MetadataObject(
-            deserializer.Deserialize<IDictionary<string, object>>(
-                Encoding.UTF8.GetString((_fileService.Files[metadataFilename] as MemoryStream)!.ToArray())),
-            metadata.KeySeparator);
+        var metadataWritten = new MetadataObject(metadata.KeySeparator);
+        metadataWritten.From(deserializer.Deserialize<IDictionary<object, object>>(
+                Encoding.UTF8.GetString((_fileService.Files[metadataFilename] as MemoryStream)!.ToArray())));
 
         var metadataConsts = new MetadataObjectConsts(metadataWritten.KeySeparator);
         var hashName = "SHA256";

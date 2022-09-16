@@ -4,6 +4,7 @@ using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
+using Wilgysef.Stalk.Core.Shared.CacheObjects;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
@@ -72,9 +73,7 @@ public class WorkAsyncTest : BaseTest
         {
             job = new JobBuilder()
                 .WithRandomInitializedState(JobState.Inactive)
-                .WithTasks(new JobTaskBuilder()
-                    .WithRandomInitializedState(JobTaskState.Inactive)
-                    .Create())
+                .WithRandomTasks(JobTaskState.Inactive, 1)
                 .Create();
             var jobManager = scope.GetRequiredService<IJobManager>();
             await jobManager.CreateJobAsync(job);
@@ -166,6 +165,48 @@ public class WorkAsyncTest : BaseTest
         }
     }
 
+    [Fact]
+    public async Task Reuses_Cache()
+    {
+        Job job;
+        using (var scope = BeginLifetimeScope())
+        {
+            job = new JobBuilder()
+                .WithRandomInitializedState(JobState.Inactive)
+                .WithRandomTasks(JobTaskState.Inactive, 1)
+                .Create();
+            var jobManager = scope.GetRequiredService<IJobManager>();
+            await jobManager.CreateJobAsync(job);
+        }
+        var jobTaskId = job.Tasks.Single().Id;
+
+        _jobWorkerStarter.EnsureTaskSuccessesOnDispose = false;
+        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
+
+        job = await this.WaitUntilJobAsync(
+            job.Id,
+            job => job.State == JobState.Active,
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
+
+        job.State.ShouldBe(JobState.Active);
+
+        job = await this.WaitUntilJobAsync(
+            job.Id,
+            job => job.Tasks.Count >= 5,
+            TimeSpan.FromSeconds(3));
+
+        job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(5);
+        workerInstance.CancellationTokenSource.Cancel();
+
+        var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
+        var extractMethodInvocations = _extractorMock.GetInvocations("set_Cache");
+        var cache = (ICacheObject<string, object?>)extractMethodInvocations.First().Arguments[0];
+        extractMethodInvocations.All(i => i.Arguments[0] == cache).ShouldBeTrue();
+
+        job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(3);
+    }
+
     private static async IAsyncEnumerable<DownloadResult> DownloadAsync(
         Uri uri,
         string filenameTemplate,
@@ -203,8 +244,8 @@ public class WorkAsyncTest : BaseTest
         return Task.FromResult((IItemIdSet)new ItemIdSet());
     }
 
-    private async Task<int> WriteChangesAsync(string path, IItemIdSet itemIds)
+    private Task<int> WriteChangesAsync(string path, IItemIdSet itemIds)
     {
-        return await Task.FromResult(itemIds.PendingItems.Count);
+        return Task.FromResult(itemIds.PendingItems.Count);
     }
 }

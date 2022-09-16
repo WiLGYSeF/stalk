@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Shouldly;
+﻿using Shouldly;
 using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.TestBase;
 
@@ -41,8 +40,14 @@ public class BackgroundJobDispatcherTest : BaseTest
 
         await _backgroundJobDispatcher.ExecuteJobsAsync();
 
-        jobs = await _backgroundJobManager.GetJobsAsync();
-        jobs.ShouldBeEmpty();
+        using (var scope = BeginLifetimeScope())
+        {
+            var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
+            jobs = await backgroundJobManager.GetJobsAsync();
+
+            jobs.Count.ShouldBe(2);
+            jobs.All(j => j.IsSucceeded).ShouldBeTrue();
+        }
     }
 
     [Fact]
@@ -61,8 +66,8 @@ public class BackgroundJobDispatcherTest : BaseTest
         {
             var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
             var job = await backgroundJobManager.FindJobAsync(1);
-            job!.Attempts.ShouldBe(1);
-            job.Abandoned.ShouldBeFalse();
+            job!.State.ShouldBe(BackgroundJobState.Scheduled);
+            job.Attempts.ShouldBe(1);
 
             job.NextRun.ShouldNotBeNull();
             (DateTime.Now.AddSeconds(123) - job.NextRun.Value).Duration().TotalSeconds.ShouldBeInRange(0, 3);
@@ -86,8 +91,8 @@ public class BackgroundJobDispatcherTest : BaseTest
         {
             var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
             var job = await backgroundJobManager.FindJobAsync(1);
-            job!.Attempts.ShouldBe(0);
-            job.Abandoned.ShouldBeTrue();
+            job!.State.ShouldBe(BackgroundJobState.Abandoned);
+            job.Attempts.ShouldBe(0);
         };
     }
 
@@ -108,8 +113,8 @@ public class BackgroundJobDispatcherTest : BaseTest
         {
             var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
             var job = await backgroundJobManager.FindJobAsync(1);
-            job!.Attempts.ShouldBe(1);
-            job.Abandoned.ShouldBeTrue();
+            job!.State.ShouldBe(BackgroundJobState.Abandoned);
+            job.Attempts.ShouldBe(1);
         };
     }
 
@@ -129,8 +134,8 @@ public class BackgroundJobDispatcherTest : BaseTest
         {
             var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
             var job = await backgroundJobManager.FindJobAsync(1);
-            job!.Attempts.ShouldBe(1);
-            job.Abandoned.ShouldBeFalse();
+            job!.State.ShouldBe(BackgroundJobState.Scheduled);
+            job.Attempts.ShouldBe(1);
         };
     }
 
@@ -160,8 +165,8 @@ public class BackgroundJobDispatcherTest : BaseTest
         {
             var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
             var job = await backgroundJobManager.FindJobAsync(1);
-            job!.Attempts.ShouldBe(2);
-            job.Abandoned.ShouldBeFalse();
+            job!.State.ShouldBe(BackgroundJobState.Scheduled);
+            job.Attempts.ShouldBe(2);
         }
     }
 
@@ -181,8 +186,8 @@ public class BackgroundJobDispatcherTest : BaseTest
         {
             var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
             var job = await backgroundJobManager.FindJobAsync(1);
-            job!.Attempts.ShouldBe(0);
-            job.Abandoned.ShouldBeTrue();
+            job!.State.ShouldBe(BackgroundJobState.Abandoned);
+            job.Attempts.ShouldBe(0);
         }
     }
 
@@ -206,7 +211,7 @@ public class BackgroundJobDispatcherTest : BaseTest
     {
         public override Task ExecuteJobAsync(TestChangeJobArgs args, CancellationToken cancellationToken = default)
         {
-            BackgroundJob.GetNextRunOffset = () => TimeSpan.FromSeconds(123);
+            BackgroundJob.GetNextRun = () => DateTime.Now.AddSeconds(123);
             throw new InvalidOperationException();
         }
     }

@@ -40,9 +40,7 @@ public class NoExtractorTest : BaseTest
         {
             job = new JobBuilder()
                 .WithRandomInitializedState(JobState.Inactive)
-                .WithTasks(new JobTaskBuilder()
-                    .WithRandomInitializedState(JobTaskState.Inactive)
-            .Create())
+                .WithRandomTasks(JobTaskState.Inactive, 1)
                 .Create();
             var jobManager = scope.GetRequiredService<IJobManager>();
             await jobManager.CreateJobAsync(job);

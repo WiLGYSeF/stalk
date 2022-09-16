@@ -16,6 +16,8 @@ public class JobConfigDto
 
     public bool? SaveItemIds { get; set; }
 
+    public bool StopWithNoNewItemIds { get; set; }
+
     public string? LogPath { get; set; }
 
     public int? LogLevel { get; set; }

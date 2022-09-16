@@ -1,5 +1,4 @@
 ﻿using Shouldly;
-using System.Reflection;
 using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.TestBase;
 

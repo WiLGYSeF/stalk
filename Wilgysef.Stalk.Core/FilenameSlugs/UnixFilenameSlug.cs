@@ -1,8 +1,9 @@
 ﻿using System.Text;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.FilenameSlugs;
 
-public class UnixFilenameSlug : IFilenameSlug
+public class UnixFilenameSlug : IFilenameSlug, ITransientDependency
 {
     public string Name => "Unix";
 

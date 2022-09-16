@@ -1,6 +1,4 @@
-﻿using Polly;
-
-namespace Wilgysef.Stalk.WebApi.Middleware;
+﻿namespace Wilgysef.Stalk.WebApi.Middleware;
 
 public class LoggingHandler
 {

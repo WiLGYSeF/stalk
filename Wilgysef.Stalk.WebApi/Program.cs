@@ -15,6 +15,7 @@ var loggerFactory = new SerilogLoggerFactory(new LoggerConfiguration()
     .MinimumLevel.Debug()
     .WriteTo.Console(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
     .WriteTo.Debug(restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Debug)
+    .WriteTo.File("logs.txt")
     .CreateLogger());
 var logger = loggerFactory.CreateLogger("default");
 
@@ -55,8 +56,13 @@ void ConfigureConfiguration()
 {
     builder.Host.ConfigureAppConfiguration((context, configuration) =>
     {
+        var aspNetCoreEnvironment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+            ?? "Development";
+
         configuration.AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
+        configuration.AddJsonFile($"appsettings.{aspNetCoreEnvironment}.json", optional: true, reloadOnChange: true);
         configuration.AddJsonFile("appsettings.secrets.json", optional: true, reloadOnChange: true);
+        configuration.AddJsonFile($"appsettings.secrets.{aspNetCoreEnvironment}.json", optional: true, reloadOnChange: true);
     });
 }
 
@@ -66,22 +72,27 @@ void ConfigureServices()
 
     builder.Host.UseServiceProviderFactory(new AutofacServiceProviderFactory());
 
+    var connectionString = builder.Configuration.GetConnectionString("Default");
+    var extractorsOptions = GetOptions<ExtractorsOptions>(builder.Configuration);
+
+    var serviceRegistrar = new ServiceRegistrar();
+    serviceRegistrar.RegisterServices(builder.Services);
+
     builder.Host.ConfigureContainer<ContainerBuilder>((context, containerBuilder) =>
     {
-        var connectionString = context.Configuration.GetConnectionString("Default");
-
-        var extractorsOptions = GetOptions<ExtractorsOptions>(context.Configuration);
-
-        var serviceRegistrar = new ServiceRegistrar(
+        serviceRegistrar.RegisterDbContext(
+            containerBuilder,
             new DbContextOptionsBuilder<StalkDbContext>()
                 .UseMySql(connectionString, ServerVersion.AutoDetect(connectionString))
-                .UseLoggerFactory(loggerFactory)
-                .EnableSensitiveDataLogging()
-                .Options,
+                //.UseLoggerFactory(loggerFactory)
+                //.EnableSensitiveDataLogging()
+                .Options);
+
+        serviceRegistrar.RegisterServices(
+            containerBuilder,
             logger,
             extractorsOptions.Path,
-            t => GetOptionsByType(t, context.Configuration));
-        serviceRegistrar.RegisterApplication(containerBuilder, builder.Services);
+            t => GetOptionsByType(t, builder.Configuration));
     });
 }
 

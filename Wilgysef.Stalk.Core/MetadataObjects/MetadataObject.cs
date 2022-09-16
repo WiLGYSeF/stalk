@@ -1,5 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
+using Wilgysef.Stalk.Core.Tries;
 
 namespace Wilgysef.Stalk.Core.MetadataObjects;
 
@@ -7,16 +9,20 @@ public class MetadataObject : IMetadataObject
 {
     public char KeySeparator { get; set; }
 
-    public IDictionary<string, object> Dictionary => _dictionary;
+    public bool HasValues => _root.Count > 0;
 
-    public bool HasValues => _dictionary.Count > 0;
+    private readonly Trie<string, object?> _root = new(null!, null);
 
-    private readonly Dictionary<string, object> _dictionary = new();
+    #if DEBUG
 
-    public object this[string key]
+    private IDictionary<string, object?> Dictionary => GetDictionary();
+
+    #endif
+
+    public object? this[string key]
     {
         get => GetValue(key);
-        set => SetValue(key, value, false);
+        set => SetByParts(value, GetKeyParts(key));
     }
 
     public MetadataObject(char keySeparator)
@@ -24,21 +30,26 @@ public class MetadataObject : IMetadataObject
         KeySeparator = keySeparator;
     }
 
-    public MetadataObject(IDictionary<string, object> dictionary, char keySeparator) : this(keySeparator)
+    public void Add(string key, object? value)
     {
-        SetValues(dictionary, null);
+        AddByParts(value, GetKeyParts(key));
     }
 
-    public void AddValue(string key, object value)
+    public void AddByParts(object? value, params string[] keyParts)
     {
-        SetValue(key, value, true);
+        SetValue(value, true, keyParts);
     }
 
-    public bool TryAddValue(string key, object value)
+    public bool TryAddValue(string key, object? value)
+    {
+        return TryAddValueByParts(value, GetKeyParts(key));
+    }
+
+    public bool TryAddValueByParts(object? value, params string[] keyParts)
     {
         try
         {
-            SetValue(key, value, true);
+            SetValue(value, true, keyParts);
             return true;
         }
         catch
@@ -47,143 +58,228 @@ public class MetadataObject : IMetadataObject
         }
     }
 
-    public object GetValue(string key)
+    public void SetByParts(object? value, params string[] keyParts)
     {
-        return TryGetValue(key, out var value)
-            ? value
-            : throw new ArgumentException("Could not get value by key.", nameof(key));
+        SetValue(value, false, keyParts);
     }
 
-    public bool TryGetValue(string key, [MaybeNullWhen(false)] out object value)
+    public object? GetValue(string key)
     {
-        if (!TryGetPenultimateDictionary(key, out var dictionary, out var ultimateKey))
+        return GetValueByParts(GetKeyParts(key));
+    }
+
+    public object? GetValueByParts(params string[] keyParts)
+    {
+        return TryGetValueByParts(out var value, keyParts)
+            ? value
+            : throw new ArgumentException("Could not get value by key.", nameof(keyParts));
+    }
+
+    public bool TryGetValue(string key, out object? value)
+    {
+        return TryGetValueByParts(out value, GetKeyParts(key));
+    }
+
+    public bool TryGetValueByParts(out object? value, params string[] keyParts)
+    {
+        if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keyParts))
         {
             value = default;
             return false;
         }
 
-        if (!dictionary.TryGetValue(ultimateKey, out value))
+        if (!trie.TryGetChild(ultimateKey, out var leafTrie))
         {
             value = default;
             return false;
         }
+        value = leafTrie.Value;
         return true;
     }
 
-    public bool ContainsValue(string key)
+    public bool Contains(string key)
     {
-        return TryGetValue(key, out _);
+        return ContainsByParts(GetKeyParts(key));
     }
 
-    public bool RemoveValue(string key)
+    public bool ContainsByParts(params string[] keyParts)
     {
-        if (!TryGetPenultimateDictionary(key, out var dictionary, out var ultimateKey))
+        return TryGetValueByParts(out _, keyParts);
+    }
+
+    public bool Remove(string key)
+    {
+        return RemoveByParts(GetKeyParts(key));
+    }
+
+    public bool RemoveByParts(params string[] keyParts)
+    {
+        if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keyParts))
         {
             return false;
         }
-        return dictionary.Remove(ultimateKey);
+        return trie.Remove(ultimateKey);
     }
 
-    private void SetValue(string key, object value, bool throwIfExisting)
+    public void Clear()
     {
-        if (!TryGetPenultimateDictionary(key, out var dictionary, out var ultimateKey))
-        {
-            dictionary = CreateDictionaries(key, out ultimateKey);
-        }
-
-        if (throwIfExisting && dictionary.ContainsKey(ultimateKey))
-        {
-            throw new ArgumentException("Key already exists", nameof(key));
-        }
-
-        dictionary[ultimateKey] = value;
+        _root.Clear();
     }
 
-    private bool TryGetPenultimateDictionary(
-        string key,
-        [MaybeNullWhen(false)] out IDictionary<string, object> dictionary,
-        [MaybeNullWhen(false)] out string ultimateKey)
+    public IMetadataObject Copy()
     {
-        var keyParts = GetKeyParts(key);
-        IDictionary<string, object> dict = _dictionary;
+        var metadata = new MetadataObject(KeySeparator);
+        var nodes = new Queue<(string Key, ITrie<string, object?> Trie)>(_root.Children.Select(t => (t.Key, t)));
+
+        while (nodes.Count > 0)
+        {
+            var (key, trie) = nodes.Dequeue();
+
+            if (trie.Count > 0)
+            {
+                foreach (var child in trie.Children)
+                {
+                    nodes.Enqueue((key + KeySeparator + child.Key, child));
+                }
+            }
+            else
+            {
+                metadata[key] = trie.Value;
+            }
+        }
+
+        return metadata;
+    }
+
+    public IDictionary<string, object?> GetDictionary()
+    {
+        IDictionary<string, object?> dictionary = new Dictionary<string, object?>();
+        var nodes = new Queue<(ITrie<string, object?> Trie, IDictionary<string, object?> Dict)>(_root.Children.Select(t => (t, dictionary)));
+
+        while (nodes.Count > 0)
+        {
+            var (trie, dict) = nodes.Dequeue();
+
+            if (trie.Count > 0)
+            {
+                IDictionary<string, object?> newDict = new Dictionary<string, object?>();
+                dict[trie.Key] = newDict;
+
+                foreach (var child in trie.Children)
+                {
+                    nodes.Enqueue((child, newDict));
+                }
+            }
+            else
+            {
+                dict[trie.Key] = trie.Value;
+            }
+        }
+
+        return dictionary;
+    }
+
+    public IDictionary<string, object?> GetFlattenedDictionary()
+    {
+        IDictionary<string, object?> dictionary = new Dictionary<string, object?>();
+        var nodes = new Queue<(ITrie<string, object?> Trie, string Key)>(_root.Children.Select(t => (t, t.Key)));
+
+        while (nodes.Count > 0)
+        {
+            var (trie, key) = nodes.Dequeue();
+
+            if (trie.Count > 0)
+            {
+                foreach (var child in trie.Children)
+                {
+                    nodes.Enqueue((child, key + KeySeparator + child.Key));
+                }
+            }
+            else
+            {
+                dictionary[key] = trie.Value;
+            }
+        }
+
+        return dictionary;
+    }
+
+    public void From(IDictionary<object, object> dictionary)
+    {
+        SetValues(dictionary, null);
+    }
+
+    public string GetKey(params string[] keyParts)
+    {
+        return string.Join(KeySeparator, keyParts);
+    }
+
+    private void SetValue(object? value, bool throwIfExisting, params string[] keyParts)
+    {
+        if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keyParts))
+        {
+            trie = CreateTries(out ultimateKey, keyParts);
+        }
+        if (trie.Terminal)
+        {
+            throw new ArgumentException("Subkey already exists", nameof(keyParts));
+        }
+        if (throwIfExisting && trie.Contains(ultimateKey))
+        {
+            throw new ArgumentException("Key already exists", nameof(keyParts));
+        }
+
+        var newTrie = new Trie<string, object?>(ultimateKey, value)
+        {
+            Terminal = true
+        };
+        trie[ultimateKey] = newTrie;
+    }
+
+    private bool TryGetPenultimateTrie(
+        [MaybeNullWhen(false)] out ITrie<string, object?> trie,
+        [MaybeNullWhen(false)] out string ultimateKey,
+        params string[] keyParts)
+    {
+        ITrie<string, object?> currentTrie = _root;
 
         for (var i = 0; i < keyParts.Length - 1; i++)
         {
-            if (!TryGetValueAsDictionary(dict, keyParts[i], out var value))
+            if (!currentTrie.TryGetChild(keyParts[i], out var value))
             {
-                dictionary = default;
+                trie = default;
                 ultimateKey = default;
                 return false;
             }
-            dict = value;
+            currentTrie = value;
         }
 
-        dictionary = dict;
+        trie = currentTrie;
         ultimateKey = keyParts[^1];
         return true;
     }
 
-    private string[] GetKeyParts(string key)
+    private ITrie<string, object?> CreateTries(out string ultimateKey, params string[] keyParts)
     {
-        return key.Split(KeySeparator);
-    }
-
-    private IDictionary<string, object> CreateDictionaries(string key, out string ultimateKey)
-    {
-        var keyParts = GetKeyParts(key);
-        var dictionary = (IDictionary<string, object>)_dictionary;
+        ITrie<string, object?> currentTrie = _root;
 
         for (var i = 0; i < keyParts.Length - 1; i++)
         {
             var keyPart = keyParts[i];
-            if (!TryGetValueAsDictionary(dictionary, keyPart, out var dict))
+            if (!currentTrie.TryGetChild(keyPart, out var trie))
             {
-                if (dictionary.ContainsKey(keyPart))
-                {
-                    throw new ArgumentException("The key value is not a dictionary.", nameof(key));
-                }
-                dict = new Dictionary<string, object>();
-                dictionary[keyPart] = dict;
+                trie = new Trie<string, object?>(keyPart, null);
+                currentTrie[keyPart] = trie;
             }
-            dictionary = dict;
+            else if (trie.Terminal)
+            {
+                throw new ArgumentException("Subkey already exists", nameof(keyParts));
+            }
+            currentTrie = trie;
         }
 
         ultimateKey = keyParts[^1];
-        return dictionary;
-    }
-
-    private static bool TryGetValueAsDictionary(
-        IDictionary<string, object> dictionary,
-        string key,
-        [MaybeNullWhen(false)] out IDictionary<string, object> value)
-    {
-        if (!dictionary.TryGetValue(key, out var objectValue))
-        {
-            value = default;
-            return false;
-        }
-        value = objectValue as IDictionary<string, object>;
-        return value != null;
-    }
-
-    private void SetValues(IDictionary<string, object> dictionary, string? root)
-    {
-        foreach (var (key, value) in dictionary)
-        {
-            var keyStr = root != null ? root + KeySeparator + key : key;
-            if (value is IDictionary<string, object> stringDict)
-            {
-                SetValues(stringDict, keyStr);
-            }
-            else if (value is IDictionary<object, object> objectDict)
-            {
-                SetValues(objectDict, keyStr);
-            }
-            else
-            {
-                this[keyStr] = value;
-            }
-        }
+        return currentTrie;
     }
 
     private void SetValues(IDictionary<object, object> dictionary, string? root)
@@ -197,18 +293,19 @@ public class MetadataObject : IMetadataObject
             }
 
             var keyStr = root != null ? root + KeySeparator + keyToString : keyToString;
-            if (value is IDictionary<string, object> stringDict)
+            if (value is IDictionary<object, object> dict)
             {
-                SetValues(stringDict, keyStr);
-            }
-            else if (value is IDictionary<object, object> objectDict)
-            {
-                SetValues(objectDict, keyStr);
+                SetValues(dict, keyStr);
             }
             else
             {
                 this[keyStr] = value;
             }
         }
+    }
+
+    private string[] GetKeyParts(string key)
+    {
+        return key.Split(KeySeparator);
     }
 }

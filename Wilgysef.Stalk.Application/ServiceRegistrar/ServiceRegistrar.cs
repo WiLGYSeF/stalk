@@ -1,6 +1,5 @@
 ﻿using Autofac;
 using Autofac.Builder;
-using Autofac.Extensions.DependencyInjection;
 using Autofac.Features.Scanning;
 using AutoMapper.Contrib.Autofac.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -41,53 +40,58 @@ public class ServiceRegistrar
 
     public int IdGeneratorId { get; set; } = 1;
 
-    public DbContextOptions<StalkDbContext> DbContextOptions { get; set; }
-
-    public ILogger Logger { get; set; }
-
-    public string ExternalAssembliesPath { get; set; }
-
-    public Func<Type, IOptionSection> GetOptionSection { get; set; }
-
-    public ServiceRegistrar(
-        DbContextOptions<StalkDbContext> options,
-        ILogger logger,
-        string externalAssembliesPath,
-        Func<Type, IOptionSection> getOptionSection)
+    /// <summary>
+    /// Register services.
+    /// </summary>
+    /// <param name="services">Service collection.</param>
+    public void RegisterServices(IServiceCollection services)
     {
-        DbContextOptions = options;
-        Logger = logger;
-        ExternalAssembliesPath = externalAssembliesPath;
-        GetOptionSection = getOptionSection;
+        // Polly registration
+        services.AddHttpClient(Constants.HttpClientName)
+            .AddHttpClientPolicy();
     }
 
     /// <summary>
-    /// Register application dependencies.
+    /// Register DB context.
     /// </summary>
     /// <param name="builder">Container builder.</param>
-    public void RegisterApplication(ContainerBuilder builder, IServiceCollection services)
+    /// <param name="options">DbContext options.</param>
+    public void RegisterDbContext(ContainerBuilder builder, DbContextOptions<StalkDbContext> options)
     {
-        var assemblies = GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter).ToList();
-        var externalAssemblies = ExternalAssembliesPath != null
-            ? AssemblyLoader.LoadAssemblies(ExternalAssembliesPath)
-            : new List<Assembly>();
+        builder.Register(c => options);
+        builder.RegisterType<StalkDbContext>()
+            // WithParameter is broken?
+            //.WithParameter("options", DbContextOptions)
+            .As<IStalkDbContext>()
+            .As<StalkDbContext>()
+            .InstancePerLifetimeScope();
+    }
+
+    /// <summary>
+    /// Register services.
+    /// </summary>
+    /// <param name="builder">Container builder.</param>
+    public void RegisterServices(
+        ContainerBuilder builder,
+        ILogger logger,
+        string? externalAssembliesPath,
+        Func<Type, IOptionSection> getOptionSection)
+    {
+        var internalAssemblies = ToArray(GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter).ToList());
+        var externalAssemblies = ToArray(externalAssembliesPath != null
+            ? AssemblyLoader.LoadAssemblies(externalAssembliesPath)
+            : new List<Assembly>());
 
         var loadedAssemblies = ToArray(
-            assemblies.Count + externalAssemblies.Count,
-            assemblies.Concat(externalAssemblies));
-
-        // Polly registration
-        services.AddHttpClient(Constants.HttpClientExtractorDownloaderName)
-            .AddExtractorDownloaderClientPolicy();
-
-        // TODO: fix
-        //builder.Populate(services);
+            internalAssemblies.Length + externalAssemblies.Length,
+            internalAssemblies.Concat(externalAssemblies));
 
         // HttpClient registration
-        builder.Register(c => c.Resolve<IHttpClientFactory>().CreateClient())
+        builder.Register(c => c.Resolve<IHttpClientFactory>().CreateClient(Constants.HttpClientName))
             .As<HttpClient>();
 
-        builder.RegisterAutoMapper(true, loadedAssemblies);
+        // AutoMapper registration
+        builder.RegisterAutoMapper(true, internalAssemblies);
 
         // IdGen registration
         builder.Register(c => new IdGenerator(new IdGen.IdGenerator(IdGeneratorId, IdGen.IdGeneratorOptions.Default)))
@@ -98,47 +102,34 @@ public class ServiceRegistrar
         builder.Register(c => new StdSchedulerFactory())
             .As<ISchedulerFactory>()
             .SingleInstance();
-        RegisterAssemblyTypes<IJob>(builder, loadedAssemblies)
+        RegisterAssemblyTypes<IJob>(builder, internalAssemblies)
             .AsSelf()
             .InstancePerDependency();
 
-        // WebApi tests add DbContext for testing
-        if (!(services?.Any(s => s.ServiceType == typeof(StalkDbContext)) ?? false))
+        if (logger != null)
         {
-            builder.Register(c => DbContextOptions);
-            builder.RegisterType<StalkDbContext>()
-                // WithParameter is broken?
-                //.WithParameter("options", DbContextOptions)
-                .As<IStalkDbContext>()
-                .As<StalkDbContext>()
-                .InstancePerLifetimeScope();
-        }
-
-        if (Logger != null)
-        {
-            builder.Register(c => Logger)
+            builder.Register(c => logger)
                 .As<ILogger>()
                 .SingleInstance();
         }
 
-        RegisterAssemblyTypes<ITransientDependency>(builder, loadedAssemblies)
+        RegisterAssemblyTypes<ITransientDependency>(builder, internalAssemblies)
             .InstancePerDependency();
-        RegisterAssemblyTypes<IScopedDependency>(builder, loadedAssemblies)
+        RegisterAssemblyTypes<IScopedDependency>(builder, internalAssemblies)
             .InstancePerLifetimeScope();
-        RegisterAssemblyTypes<ISingletonDependency>(builder, loadedAssemblies)
+        RegisterAssemblyTypes<ISingletonDependency>(builder, internalAssemblies)
             .SingleInstance();
 
-        RegisterAssemblyTypes(typeof(ICommandHandler<,>), builder, loadedAssemblies)
+        RegisterAssemblyTypes(typeof(ICommandHandler<,>), builder, internalAssemblies)
             .InstancePerDependency();
-        RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, loadedAssemblies)
+        RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, internalAssemblies)
             .InstancePerDependency();
 
-        var options = loadedAssemblies.SelectMany(a => a.GetTypes())
+        var options = internalAssemblies.SelectMany(a => a.GetTypes())
             .Where(t => t.IsClass && t.GetInterfaces().Contains(typeof(IOptionSection)));
-        var getOptionFunc = GetOptionSection ?? GetOptionSectionDefault;
         foreach (var option in options)
         {
-            builder.Register(c => (object)getOptionFunc(option))
+            builder.Register(c => (object)getOptionSection(option))
                 .As(option)
                 .InstancePerDependency();
         }
@@ -158,11 +149,6 @@ public class ServiceRegistrar
         builder.RegisterType<Startup>()
             .AsSelf()
             .SingleInstance();
-
-        IOptionSection GetOptionSectionDefault(Type type)
-        {
-            return (Activator.CreateInstance(type) as IOptionSection)!;
-        }
     }
 
     private IRegistrationBuilder<object, ScanningActivatorData, DynamicRegistrationStyle> RegisterAssemblyTypes(
@@ -211,6 +197,11 @@ public class ServiceRegistrar
                 }
             }
         }
+    }
+
+    private T[] ToArray<T>(ICollection<T> items)
+    {
+        return ToArray(items.Count, items);
     }
 
     private T[] ToArray<T>(int count, IEnumerable<T> items)

@@ -24,9 +24,6 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                     b.Property<long>("Id")
                         .HasColumnType("bigint");
 
-                    b.Property<bool>("Abandoned")
-                        .HasColumnType("tinyint(1)");
-
                     b.Property<int>("Attempts")
                         .HasColumnType("int");
 
@@ -48,6 +45,9 @@ namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
                         .HasColumnType("datetime(6)");
 
                     b.Property<int>("Priority")
+                        .HasColumnType("int");
+
+                    b.Property<int>("State")
                         .HasColumnType("int");
 
                     b.HasKey("Id");

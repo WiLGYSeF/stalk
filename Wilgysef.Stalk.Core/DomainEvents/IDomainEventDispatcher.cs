@@ -1,8 +1,6 @@
-﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
+﻿namespace Wilgysef.Stalk.Core.DomainEvents;
 
-namespace Wilgysef.Stalk.Core.DomainEvents;
-
-public interface IDomainEventDispatcher : ITransientDependency
+public interface IDomainEventDispatcher
 {
     /// <summary>
     /// Dispatch events.

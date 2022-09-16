@@ -1,10 +1,11 @@
 ﻿using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
 using Wilgysef.Stalk.Core.Models.JobTasks;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkerServices;
 
-public class JobTaskWorkerService : IJobTaskWorkerService
+public class JobTaskWorkerService : IJobTaskWorkerService, ITransientDependency
 {
     private readonly IJobTaskManager _jobTaskManager;
     private readonly IJobTaskWorkerFactory _jobTaskWorkerFactory;

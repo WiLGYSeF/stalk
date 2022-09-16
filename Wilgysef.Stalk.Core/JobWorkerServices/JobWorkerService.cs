@@ -1,10 +1,11 @@
 ﻿using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 
 namespace Wilgysef.Stalk.Core.JobWorkerServices;
 
-public class JobWorkerService : IJobWorkerService
+public class JobWorkerService : IJobWorkerService, ITransientDependency
 {
     public bool CanStartAdditionalWorkers => _jobWorkerCollectionService.Workers.Count < WorkerLimit;
 

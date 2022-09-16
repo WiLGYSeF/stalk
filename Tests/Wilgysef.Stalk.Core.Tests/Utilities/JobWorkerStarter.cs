@@ -8,8 +8,6 @@ namespace Wilgysef.Stalk.Core.Tests.Utilities;
 
 internal class JobWorkerStarter
 {
-    public int TaskWorkerLimit { get; set; } = 4;
-
     public TimeSpan TaskWaitTimeout { get; set; } = TimeSpan.FromMilliseconds(200);
 
     public bool EnsureTaskSuccessesOnDispose { get; set; } = true;
@@ -24,7 +22,6 @@ internal class JobWorkerStarter
     public JobWorkerInstance CreateAndStartWorker(Job job)
     {
         var worker = _jobWorkerFactory.CreateWorker(job);
-        worker.WorkerLimit = TaskWorkerLimit;
         worker.TaskWaitTimeoutMilliseconds = (int)TaskWaitTimeout.TotalMilliseconds;
 
         var cancellationTokenSource = new CancellationTokenSource();

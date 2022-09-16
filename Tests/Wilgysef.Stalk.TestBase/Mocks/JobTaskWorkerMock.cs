@@ -10,24 +10,21 @@ public class JobTaskWorkerMock : JobTaskWorker
     public event EventHandler WorkEvent;
 
     private bool _finishWork = false;
-    private bool _throwException = false;
+    private Exception? _exception = null;
 
-    private readonly IServiceLifetimeScope _lifetimeScope;
-
-    public JobTaskWorkerMock(IServiceLifetimeScope lifetimeScope)
-        : base(lifetimeScope)
-    {
-        _lifetimeScope = lifetimeScope;
-    }
+    public JobTaskWorkerMock(
+        IServiceLifetimeScope lifetimeScope,
+        HttpClient httpClient)
+        : base(lifetimeScope, httpClient) { }
 
     public void Finish()
     {
         _finishWork = true;
     }
 
-    public void Fail()
+    public void Fail(Exception? exception = null)
     {
-        _throwException = true;
+        _exception = exception ?? new Exception("Mock task fail.");
     }
 
     public override async Task WorkAsync(CancellationToken cancellationToken = default)
@@ -39,24 +36,21 @@ public class JobTaskWorkerMock : JobTaskWorker
 
     protected override async Task ExtractAsync(CancellationToken cancellationToken)
     {
-        while (!cancellationToken.IsCancellationRequested && !_finishWork)
-        {
-            if (_throwException)
-            {
-                throw new InvalidOperationException("Mock task failure.");
-            }
-
-            await Task.Delay(DelayInterval, cancellationToken);
-        }
+        await MockWork(cancellationToken);
     }
 
     protected override async Task DownloadAsync(CancellationToken cancellationToken)
     {
+        await MockWork(cancellationToken);
+    }
+
+    private async Task MockWork(CancellationToken cancellationToken)
+    {
         while (!cancellationToken.IsCancellationRequested && !_finishWork)
         {
-            if (_throwException)
+            if (_exception != null)
             {
-                throw new InvalidOperationException("Mock task failure.");
+                throw _exception;
             }
 
             await Task.Delay(DelayInterval, cancellationToken);

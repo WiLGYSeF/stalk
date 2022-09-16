@@ -1,15 +1,16 @@
 ﻿using Microsoft.Extensions.Logging;
-using Wilgysef.Stalk.Core.Downloaders;
+using System.Net;
+using Wilgysef.Stalk.Core.DownloadSelectors;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
+using Wilgysef.Stalk.Core.JobExtractorCacheObjectCollectionServices;
+using Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared;
-using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.IdGenerators;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
-using Wilgysef.Stalk.Core.Shared.StringFormatters;
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
@@ -21,13 +22,17 @@ public class JobTaskWorker : IJobTaskWorker
 
     private JobConfig JobConfig { get; set; }
 
-    private readonly IServiceLifetimeScope _lifetimeScope;
-
     private bool _working = false;
 
-    public JobTaskWorker(IServiceLifetimeScope lifetimeScope)
+    private readonly IServiceLifetimeScope _lifetimeScope;
+    private HttpClient _httpClient;
+
+    public JobTaskWorker(
+        IServiceLifetimeScope lifetimeScope,
+        HttpClient httpClient)
     {
         _lifetimeScope = lifetimeScope;
+        _httpClient = httpClient;
     }
 
     public IJobTaskWorker WithJobTask(JobTask jobTask)
@@ -50,7 +55,7 @@ public class JobTaskWorker : IJobTaskWorker
 
         _working = true;
 
-        Logger?.LogInformation("Job task {JOBTASK_ID} starting.", JobTask.Id);
+        Logger?.LogInformation("Job task {JobTaskId} starting.", JobTask.Id);
 
         using (var scope = _lifetimeScope.BeginLifetimeScope())
         {
@@ -60,6 +65,13 @@ public class JobTaskWorker : IJobTaskWorker
             if (!JobTask.IsActive)
             {
                 await jobTaskManager.SetJobTaskActiveAsync(JobTask, CancellationToken.None);
+            }
+
+            var jobHttpClientCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
+            if (jobHttpClientCollectionService.TryGetHttpClient(JobTask.JobId, out var client))
+            {
+                _httpClient.Dispose();
+                _httpClient = client;
             }
         }
 
@@ -83,15 +95,31 @@ public class JobTaskWorker : IJobTaskWorker
         }
         catch (OperationCanceledException)
         {
+            Logger?.LogInformation("Job task {JobTaskId} worker cancelled.", JobTask.Id);
             throw;
         }
         catch (Exception exception)
         {
-            Logger?.LogError(exception, "Job task {JOBTASK_ID} failed.", JobTask.Id);
+            Logger?.LogError(exception, "Job task {JobTaskId} failed.", JobTask.Id);
 
             var workerException = exception as JobTaskWorkerException;
 
-            // TODO: condtitionally create copy task on fail
+            if (RetryJobTask(JobTask, exception))
+            {
+                Logger?.LogInformation("Job task {JobTaskId} creating retry task.", JobTask.Id);
+
+                using var scope = _lifetimeScope.BeginLifetimeScope();
+                var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
+                var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
+
+                var retryTask = new JobTaskBuilder()
+                    .WithRetryJobTask(JobTask)
+                    .WithId(idGenerator.CreateId())
+                    .WithPriority(JobTask.Priority - 100)
+                    .Create();
+
+                await jobTaskManager.CreateJobTaskAsync(retryTask, CancellationToken.None);
+            }
 
             JobTask.Fail(
                 errorCode: workerException?.Code,
@@ -100,7 +128,7 @@ public class JobTaskWorker : IJobTaskWorker
         }
         finally
         {
-            Logger?.LogInformation("Job task {JOBTASK_ID} stopping.", JobTask.Id);
+            Logger?.LogInformation("Job task {JobTaskId} stopping.", JobTask.Id);
 
             using var scope = _lifetimeScope.BeginLifetimeScope();
             var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
@@ -113,6 +141,7 @@ public class JobTaskWorker : IJobTaskWorker
     public void Dispose()
     {
         _lifetimeScope.Dispose();
+        _httpClient.Dispose();
 
         GC.SuppressFinalize(this);
     }
@@ -133,40 +162,61 @@ public class JobTaskWorker : IJobTaskWorker
                 $"No extractor was able to extract from {jobTaskUri}");
         }
 
-        Logger?.LogInformation("Job task {JOBTASK_ID} using extractor {EXTRACTOR}.", JobTask.Id, extractor.Name);
+        extractor.SetHttpClient(_httpClient);
+
+        var jobExtractorCacheObjectCollectionService = scope.GetRequiredService<IJobExtractorCacheObjectCollectionService>();
+        var cacheCollection = jobExtractorCacheObjectCollectionService.GetCacheCollection(JobTask.JobId);
+        extractor.Cache = cacheCollection.GetCache(extractor);
+
+        Logger?.LogInformation("Job task {JobTaskId} using extractor {Extractor}.", JobTask.Id, extractor.Name);
 
         var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
+        var itemIdSetService = scope.GetRequiredService<IItemIdSetService>();
         var newTasks = new List<JobTask>();
+        IItemIdSet? itemIds = null;
 
-        Logger?.LogInformation("Job task {JOBTASK_ID} extracting from {URI}", JobTask.Id, jobTaskUri);
+        Logger?.LogInformation("Job task {JobTaskId} extracting from {Uri}", JobTask.Id, jobTaskUri);
+
+        if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
+        {
+            itemIds = await itemIdSetService.GetItemIdSetAsync(JobConfig.ItemIdPath);
+        }
 
         await foreach (var result in extractor.ExtractAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
         {
-            Logger?.LogInformation("Job task {JOBTASK_ID} extracted {URI}", JobTask.Id, result.Uri);
+            if (itemIds != null && result.ItemId != null && itemIds.Contains(result.ItemId))
+            {
+                Logger?.LogInformation("Job task {JobTaskId} skipping item {ItemId} from {Uri}", JobTask.Id, JobTask.ItemId, jobTaskUri);
+                continue;
+            }
+
+            Logger?.LogInformation("Job task {JobTaskId} extracted {Uri}", JobTask.Id, result.Uri);
 
             newTasks.Add(new JobTaskBuilder()
-                .WithId(idGenerator.CreateId())
                 .WithExtractResult(JobTask, result)
+                .WithId(idGenerator.CreateId())
                 .Create());
         }
 
-        var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
-        await jobTaskManager.CreateJobTasksAsync(newTasks, CancellationToken.None);
+        if (!JobConfig.StopWithNoNewItemIds || newTasks.Any(t => t.ItemId != null))
+        {
+            var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
+            await jobTaskManager.CreateJobTasksAsync(newTasks, CancellationToken.None);
+        }
+        else if (newTasks.Count > 0)
+        {
+            Logger?.LogInformation("Job task {JobTaskId} skipped {JobTasksCount} since they had no item Ids,", JobTask.Id, newTasks.Count);
+        }
     }
 
     protected virtual async Task DownloadAsync(CancellationToken cancellationToken)
     {
         using var scope = _lifetimeScope.BeginLifetimeScope();
-        var downloaders = scope.GetRequiredService<IEnumerable<IDownloader>>();
+        var downloaderSelector = scope.GetRequiredService<IDownloadSelector>();
         var itemIdSetService = scope.GetRequiredService<IItemIdSetService>();
 
-        var defaultDownloader = downloaders.FirstOrDefault(d => d is IDefaultDownloader)
-            ?? downloaders.Single();
-
         var jobTaskUri = new Uri(JobTask!.Uri);
-        var downloader = scope.GetRequiredService<IEnumerable<IDownloader>>()
-            .FirstOrDefault(d => d is not IDefaultDownloader && d.CanDownload(jobTaskUri))
-            ?? defaultDownloader;
+        var downloader = downloaderSelector.SelectDownloader(jobTaskUri);
 
         if (downloader == null)
         {
@@ -177,28 +227,33 @@ public class JobTaskWorker : IJobTaskWorker
             return;
         }
 
-        Logger?.LogInformation("Job task {JOBTASK_ID} using downloader {DOWNLOADER}.", JobTask.Id, downloader.Name);
+        downloader.SetHttpClient(_httpClient);
+
+        Logger?.LogInformation("Job task {JobTaskId} using downloader {Downloader}.", JobTask.Id, downloader.Name);
 
         IItemIdSet? itemIds = null;
         if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
         {
             itemIds = await itemIdSetService.GetItemIdSetAsync(JobConfig.ItemIdPath);
+            if (JobTask.ItemId != null && itemIds.Contains(JobTask.ItemId))
+            {
+                Logger?.LogInformation("Job task {JobTaskId} skipping item {ItemId} from {Uri}", JobTask.Id, JobTask.ItemId, jobTaskUri);
+                return;
+            }
         }
 
-        var formatter = scope.GetRequiredService<IStringFormatter>();
-
-        Logger?.LogInformation("Job task {JOBTASK_ID} downloading from {URI}", JobTask.Id, jobTaskUri);
+        Logger?.LogInformation("Job task {JobTaskId} downloading from {Uri}", JobTask.Id, jobTaskUri);
 
         await foreach (var result in downloader.DownloadAsync(
             jobTaskUri,
             JobConfig.DownloadFilenameTemplate,
             JobTask.ItemId,
             JobTask.ItemData,
-            JobConfig.MetadataFilenameTemplate,
+            JobConfig.SaveMetadata ? JobConfig.MetadataFilenameTemplate : null,
             JobTask.GetMetadata(),
             cancellationToken))
         {
-            Logger?.LogInformation("Job task {JOBTASK_ID} downloaded {URI}", JobTask.Id, result.Uri);
+            Logger?.LogInformation("Job task {JobTaskId} downloaded {Uri}", JobTask.Id, result.Uri);
 
             itemIds?.Add(result.ItemId);
         }
@@ -207,5 +262,26 @@ public class JobTaskWorker : IJobTaskWorker
         {
             await itemIdSetService.WriteChangesAsync(JobConfig.ItemIdPath!, itemIds);
         }
+    }
+
+    protected virtual bool RetryJobTask(JobTask jobTask, Exception exception)
+    {
+        switch (exception)
+        {
+            case HttpRequestException httpException:
+                return httpException.StatusCode.HasValue && IsStatusCodeRetry(httpException.StatusCode.Value);
+            default:
+                break;
+        }
+
+        return false;
+    }
+
+    protected virtual bool IsStatusCodeRetry(HttpStatusCode statusCode)
+    {
+        return statusCode == HttpStatusCode.RequestTimeout
+            || statusCode == HttpStatusCode.TooManyRequests
+            || ((int)statusCode >= 500 && (int)statusCode < 600
+                && statusCode != HttpStatusCode.HttpVersionNotSupported);
     }
 }

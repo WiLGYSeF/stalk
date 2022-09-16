@@ -1,5 +1,7 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
+using System.Net.Http;
 using System.Threading;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
@@ -8,6 +10,8 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
     public interface IDownloader
     {
         string Name { get; }
+
+        ILogger Logger { get; set; }
 
         bool CanDownload(Uri uri);
 
@@ -19,5 +23,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             string metadataTemplate,
             IMetadataObject metadata,
             CancellationToken cancellationToken = default);
+
+        void SetHttpClient(HttpClient client);
     }
 }

@@ -5,9 +5,9 @@ using System.Security.Cryptography;
 
 namespace Wilgysef.Stalk.Application.HttpClientPolicies;
 
-public static class ExtractorDownloaderClientPolicy
+public static class HttpClientPolicy
 {
-    public static IHttpClientBuilder AddExtractorDownloaderClientPolicy(this IHttpClientBuilder builder)
+    public static IHttpClientBuilder AddHttpClientPolicy(this IHttpClientBuilder builder)
     {
         builder.AddPolicyHandler(GetRetryPolicy());
         return builder;

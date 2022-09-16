@@ -1,8 +1,6 @@
-﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
+﻿namespace Wilgysef.Stalk.Core.FileHandlerLockServices;
 
-namespace Wilgysef.Stalk.Core.FileHandlerLockServices;
-
-public interface IFileHandlerLockService : ITransientDependency
+public interface IFileHandlerLockService
 {
     object GetFileHandlerLock(string path);
 }
