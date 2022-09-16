@@ -27,6 +27,9 @@ public class TwitterExtractor : IExtractor
 
     private const string AuthorizationHeader = "Authorization";
 
+    private const string UserIdCacheKey = "UserId";
+    private const string GuestTokenCacheKey = "GuestToken";
+
     private static readonly Dictionary<string, int> Month3Letters = new()
     {
         { "jan", 1 },
@@ -47,12 +50,10 @@ public class TwitterExtractor : IExtractor
 
     public ILogger? Logger { get; set; }
 
-    public ICacheObject<string, object?> Cache { get; set; }
+    public ICacheObject<string, object?>? Cache { get; set; }
 
     private readonly Regex _uriRegex = new(@"^(?:https?://)?(?:(?:www|mobile)\.)?twitter\.com(?:\:(?:80|443))?/(?<user>[^/]+)(?:/status/(?<tweet>[0-9]+))?", RegexOptions.Compiled);
     private readonly Regex _mediaUrlRegex = new(@"^(?:https://)?pbs\.twimg\.com/media/(?<id>[A-Za-z0-9_]+)\.(?<extension>[A-Za-z0-9]+)");
-
-    private string? _guestToken;
 
     private HttpClient _httpClient;
 
@@ -355,6 +356,11 @@ public class TwitterExtractor : IExtractor
 
     private async Task<string> GetUserIdAsync(string userScreenName, CancellationToken cancellationToken)
     {
+        if (Cache?.TryGetValue(UserIdCacheKey, out var userIdObj) ?? false)
+        {
+            return (string)userIdObj!;
+        }
+
         var variables = JsonSerializer.Serialize(new
         {
             screen_name = userScreenName,
@@ -374,14 +380,15 @@ public class TwitterExtractor : IExtractor
         var jObject = JObject.Parse(data);
 
         var userId = jObject.SelectToken("$.data.user.result.rest_id")!.ToString();
+        Cache?.Set(UserIdCacheKey, userId);
         return userId;
     }
 
     private async Task<string> GetGuestTokenAsync(CancellationToken cancellationToken)
     {
-        if (_guestToken != null)
+        if (Cache?.TryGetValue(GuestTokenCacheKey, out var guestTokenObj) ?? false)
         {
-            return _guestToken;
+            return (string)guestTokenObj!;
         }
 
         using var request = new HttpRequestMessage(HttpMethod.Post, GuestTokenEndpoint);
@@ -393,13 +400,14 @@ public class TwitterExtractor : IExtractor
         var data = await response.Content.ReadAsStringAsync();
         var jObject = JObject.Parse(data);
 
-        _guestToken = jObject["guest_token"]?.ToString();
-        if (_guestToken == null)
+        var guestToken = jObject["guest_token"]?.ToString();
+        if (guestToken == null)
         {
             throw new Exception("Could not get guest token.");
         }
 
-        return _guestToken;
+        Cache?.Set(GuestTokenCacheKey, guestToken);
+        return guestToken;
     }
 
     private async Task<HttpResponseMessage> GetAsync(Uri uri, CancellationToken cancellationToken)
