@@ -52,7 +52,7 @@ public class JobWorker : IJobWorker
     private bool _working = false;
 
     private readonly IServiceLifetimeScope _lifetimeScope;
-    private readonly HttpClient _httpClient;
+    private HttpClient _httpClient;
 
     public JobWorker(
         IServiceLifetimeScope lifetimeScope,
@@ -93,12 +93,20 @@ public class JobWorker : IJobWorker
             }
 
             var jobHttpClientCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
-            jobHttpClientCollectionService.SetHttpClient(Job.Id, _httpClient);
-
-            var userAgentGenerator = scope.GetService<IUserAgentGenerator>();
-            if (userAgentGenerator != null)
+            if (!jobHttpClientCollectionService.TryGetHttpClient(Job.Id, out var client))
             {
-                _httpClient.DefaultRequestHeaders.Add("User-Agent", userAgentGenerator.Generate());
+                jobHttpClientCollectionService.SetHttpClient(Job.Id, _httpClient);
+
+                var userAgentGenerator = scope.GetService<IUserAgentGenerator>();
+                if (userAgentGenerator != null)
+                {
+                    _httpClient.DefaultRequestHeaders.Add("User-Agent", userAgentGenerator.Generate());
+                }
+            }
+            else
+            {
+                _httpClient.Dispose();
+                _httpClient = client;
             }
         }
 
