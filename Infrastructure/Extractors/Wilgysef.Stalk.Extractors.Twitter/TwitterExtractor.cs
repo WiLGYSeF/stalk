@@ -5,6 +5,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using Wilgysef.Stalk.Core.Shared.CacheObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
@@ -45,6 +46,8 @@ public class TwitterExtractor : IExtractor
     public string Name => "Twitter";
 
     public ILogger? Logger { get; set; }
+
+    public ICacheObject<string, object?> Cache { get; set; }
 
     private readonly Regex _uriRegex = new(@"^(?:https?://)?(?:(?:www|mobile)\.)?twitter\.com(?:\:(?:80|443))?/(?<user>[^/]+)(?:/status/(?<tweet>[0-9]+))?", RegexOptions.Compiled);
     private readonly Regex _mediaUrlRegex = new(@"^(?:https://)?pbs\.twimg\.com/media/(?<id>[A-Za-z0-9_]+)\.(?<extension>[A-Za-z0-9]+)");

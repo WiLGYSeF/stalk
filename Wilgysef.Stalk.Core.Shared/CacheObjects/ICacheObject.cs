@@ -1,24 +1,50 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace Wilgysef.Stalk.Core.Shared.CacheObjects
 {
     public interface ICacheObject
     {
-        object this[string key] { get; set; }
+        ICollection<object> Keys { get; }
 
-        void Add(string key, object value, DateTime? expires = null);
+        object this[object key] { get; set; }
 
-        bool TryAdd(string key, object value, DateTime? expires = null);
+        void Add(object key, object value, DateTime? expires = null);
 
-        void Set(string key, object value, DateTime? expires = null);
+        bool TryAdd(object key, object value, DateTime? expires = null);
 
-        bool TryGetValue(string key, out object value);
+        void Set(object key, object value, DateTime? expires = null);
 
-        bool ContainsKey(string key);
+        bool TryGetValue(object key, out object value);
 
-        bool Remove(string key);
+        bool ContainsKey(object key);
 
-        bool Remove(string key, out object value);
+        bool Remove(object key);
+
+        bool Remove(object key, out object value);
+
+        void Clear();
+    }
+
+    public interface ICacheObject<TKey, TValue>
+    {
+        ICollection<TKey> Keys { get; }
+
+        TValue this[TKey key] { get; set; }
+
+        void Add(TKey key, TValue value, DateTime? expires = null);
+
+        bool TryAdd(TKey key, TValue value, DateTime? expires = null);
+
+        void Set(TKey key, TValue value, DateTime? expires = null);
+
+        bool TryGetValue(TKey key, out TValue value);
+
+        bool ContainsKey(TKey key);
+
+        bool Remove(TKey key);
+
+        bool Remove(TKey key, out TValue value);
 
         void Clear();
     }

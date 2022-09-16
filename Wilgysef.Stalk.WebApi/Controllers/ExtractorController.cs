@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Wilgysef.Stalk.Core.Shared.Extractors;
+using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.WebApi.Controllers;
 
