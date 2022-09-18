@@ -146,16 +146,16 @@ public class JobWorker : IJobWorker
         }
         catch (OperationCanceledException)
         {
-            Logger?.LogInformation("Job {JobId} worker cancelled.", Job.Id);
+            Logger?.LogInformation("Job {JobId} worker cancelled.", Job?.Id);
             throw;
         }
         catch (Exception exception)
         {
-            Logger?.LogError(exception, "Job {JobId} threw unexpected exception.", Job.Id);
+            Logger?.LogError(exception, "Job {JobId} threw unexpected exception.", Job?.Id);
         }
         finally
         {
-            Logger?.LogInformation("Job {JobId} stopping.", Job.Id);
+            Logger?.LogInformation("Job {JobId} stopping.", Job?.Id);
 
             using var scope = _lifetimeScope.BeginLifetimeScope();
             var jobManager = scope.GetRequiredService<IJobManager>();

@@ -2,6 +2,8 @@
 
 public class JobConfig
 {
+    public const string GlobalConfigGroupName = "$global";
+
     /// <summary>
     /// Maximum concurrent job tasks.
     /// </summary>
@@ -43,29 +45,60 @@ public class JobConfig
     public bool StopWithNoNewItemIds { get; set; }
 
     /// <summary>
-    /// Log path.
+    /// Logging config.
     /// </summary>
-    public string? LogPath { get; set; }
-
-    /// <summary>
-    /// Log level.
-    /// </summary>
-    public int LogLevel { get; set; }
+    public Logging? Logs { get; set; }
 
     /// <summary>
     /// Maximum task failures before a job is considered failed.
     /// </summary>
     public int? MaxFailures { get; set; }
 
+    /// <summary>
+    /// Delay config.
+    /// </summary>
     public DelayConfig? Delay { get; set; }
+
+    public ICollection<ConfigGroup>? ExtractorConfig { get; set; }
+
+    public ICollection<ConfigGroup>? DownloaderConfig { get; set; }
+
+    public class Logging
+    {
+        /// <summary>
+        /// Log path.
+        /// </summary>
+        public string? Path { get; set; }
+
+        /// <summary>
+        /// Log level.
+        /// </summary>
+        public int Level { get; set; }
+    }
 
     public class DelayConfig
     {
+        /// <summary>
+        /// Delay range for subsequent job tasks.
+        /// </summary>
         public Range? TaskDelay { get; set; }
 
+        /// <summary>
+        /// Delay range for retry job tasks.
+        /// </summary>
         public Range? TaskFailedDelay { get; set; }
 
+        /// <summary>
+        /// Delay range for retry job tasks for too many requests.
+        /// </summary>
         public Range? TooManyRequestsDelay { get; set; }
+    }
+
+    public class ConfigGroup
+    {
+        public string Name { get; set; } = null!;
+
+        public IDictionary<string, object?> Config { get; set; } = null!;
     }
 
     public class Range

@@ -8,6 +8,7 @@ using Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared;
+using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.IdGenerators;
@@ -173,6 +174,7 @@ public class JobTaskWorker : IJobTaskWorker
         var jobExtractorCacheObjectCollectionService = scope.GetRequiredService<IJobExtractorCacheObjectCollectionService>();
         var cacheCollection = jobExtractorCacheObjectCollectionService.GetCacheCollection(JobTask.JobId);
         extractor.Cache = cacheCollection.GetCache(extractor);
+        extractor.Config = GetExtractorConfig(extractor);
 
         Logger?.LogInformation("Job task {JobTaskId} using extractor {Extractor}.", JobTask.Id, extractor.Name);
 
@@ -242,6 +244,7 @@ public class JobTaskWorker : IJobTaskWorker
         }
 
         downloader.SetHttpClient(_httpClient);
+        downloader.Config = GetDownloaderConfig(downloader);
 
         Logger?.LogInformation("Job task {JobTaskId} using downloader {Downloader}.", JobTask.Id, downloader.Name);
 
@@ -320,6 +323,43 @@ public class JobTaskWorker : IJobTaskWorker
         }
 
         return retry;
+    }
+
+    protected virtual IDictionary<string, object?> GetExtractorConfig(IExtractor extractor)
+    {
+        var config = new Dictionary<string, object?>();
+        if (JobConfig.ExtractorConfig == null)
+        {
+            return config;
+        }
+
+        GetConfig(JobConfig.ExtractorConfig.Where(c => c.Name == JobConfig.GlobalConfigGroupName), config);
+        GetConfig(JobConfig.ExtractorConfig.Where(c => c.Name == extractor.Name), config);
+        return config;
+    }
+
+    protected virtual IDictionary<string, object?> GetDownloaderConfig(IDownloader downloader)
+    {
+        var config = new Dictionary<string, object?>();
+        if (JobConfig.DownloaderConfig == null)
+        {
+            return config;
+        }
+
+        GetConfig(JobConfig.DownloaderConfig.Where(c => c.Name == JobConfig.GlobalConfigGroupName), config);
+        GetConfig(JobConfig.DownloaderConfig.Where(c => c.Name == downloader.Name), config);
+        return config;
+    }
+
+    protected virtual void GetConfig(IEnumerable<JobConfig.ConfigGroup> configGroups, IDictionary<string, object?> config)
+    {
+        foreach (var configGroup in configGroups)
+        {
+            foreach (var (key, val) in configGroup.Config)
+            {
+                config[key] = val;
+            }
+        }
     }
 
     protected virtual bool IsStatusCodeRetry(HttpStatusCode statusCode)

@@ -24,6 +24,8 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
         public ILogger? Logger { get; set; }
 
+        public IDictionary<string, object?> Config { get; set; } = new Dictionary<string, object?>();
+
         private readonly IFileService _fileService;
         private readonly IStringFormatter _stringFormatter;
         private readonly IFilenameSlugSelector _filenameSlugSelector;

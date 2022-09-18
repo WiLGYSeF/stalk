@@ -13,6 +13,8 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
         ILogger? Logger { get; set; }
 
+        IDictionary<string, object?> Config { get; set; }
+
         bool CanDownload(Uri uri);
 
         IAsyncEnumerable<DownloadResult> DownloadAsync(
