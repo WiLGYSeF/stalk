@@ -1,4 +1,9 @@
-﻿namespace Wilgysef.Stalk.Core.Models.Jobs;
+﻿using System.Text.Json;
+using Wilgysef.Stalk.Core.Shared.Downloaders;
+using Wilgysef.Stalk.Core.Shared.Extractors;
+using Wilgysef.Stalk.Core.Utilities;
+
+namespace Wilgysef.Stalk.Core.Models.Jobs;
 
 public class JobConfig
 {
@@ -62,6 +67,50 @@ public class JobConfig
     public ICollection<ConfigGroup>? ExtractorConfig { get; set; }
 
     public ICollection<ConfigGroup>? DownloaderConfig { get; set; }
+
+    public IDictionary<string, object?> GetExtractorConfig(IExtractor extractor)
+    {
+        var config = new Dictionary<string, object?>();
+        if (ExtractorConfig == null)
+        {
+            return config;
+        }
+
+        GetConfig(ExtractorConfig.Where(c => c.Name == JobConfig.GlobalConfigGroupName), config);
+        GetConfig(ExtractorConfig.Where(c => c.Name == extractor.Name), config);
+        return config;
+    }
+
+    public IDictionary<string, object?> GetDownloaderConfig(IDownloader downloader)
+    {
+        var config = new Dictionary<string, object?>();
+        if (DownloaderConfig == null)
+        {
+            return config;
+        }
+
+        GetConfig(DownloaderConfig.Where(c => c.Name == JobConfig.GlobalConfigGroupName), config);
+        GetConfig(DownloaderConfig.Where(c => c.Name == downloader.Name), config);
+        return config;
+    }
+
+    public void GetConfig(IEnumerable<JobConfig.ConfigGroup> configGroups, IDictionary<string, object?> config)
+    {
+        foreach (var configGroup in configGroups)
+        {
+            foreach (var (key, val) in configGroup.Config)
+            {
+                if (val is JsonElement element)
+                {
+                    config[key] = JsonUtils.GetJsonElementValue(element, out _);
+                }
+                else
+                {
+                    config[key] = val;
+                }
+            }
+        }
+    }
 
     public class Logging
     {

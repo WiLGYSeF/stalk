@@ -206,7 +206,7 @@ public class WorkAsyncTest : BaseTest
     }
 
     [Fact]
-    public async Task Sets_Config()
+    public async Task Sets_Config_Extractor()
     {
         Job job;
         using (var scope = BeginLifetimeScope())
@@ -255,10 +255,10 @@ public class WorkAsyncTest : BaseTest
 
         job = await this.WaitUntilJobAsync(
             job.Id,
-            job => job.Tasks.Count >= 5,
+            job => job.Tasks.Count > 1,
             TimeSpan.FromSeconds(3));
 
-        job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(5);
+        job.Tasks.Count.ShouldBeGreaterThan(1);
         workerInstance.CancellationTokenSource.Cancel();
 
         var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
@@ -267,6 +267,73 @@ public class WorkAsyncTest : BaseTest
         config["a"].ShouldBe(1);
         config["b"].ShouldBe(2);
     }
+
+    [Fact]
+    public async Task Sets_Config_Downloader()
+    {
+        Job job;
+        using (var scope = BeginLifetimeScope())
+        {
+            job = new JobBuilder()
+                .WithRandomInitializedState(JobState.Inactive)
+                .WithTasks(new JobTaskBuilder()
+                    .WithRandomInitializedState(JobTaskState.Inactive)
+                    .WithType(JobTaskType.Download)
+                    .Create())
+                .WithConfig(new JobConfig
+                {
+                    DownloaderConfig = new[]
+                    {
+                        new JobConfig.ConfigGroup
+                        {
+                            Name = JobConfig.GlobalConfigGroupName,
+                            Config = new Dictionary<string, object?>
+                            {
+                                { "a", 1 },
+                            }
+                        },
+                        new JobConfig.ConfigGroup
+                        {
+                            Name = "test",
+                            Config = new Dictionary<string, object?>
+                            {
+                                { "b", 2 },
+                            }
+                        }
+                    }
+                })
+                .Create();
+            var jobManager = scope.GetRequiredService<IJobManager>();
+            await jobManager.CreateJobAsync(job);
+        }
+        var jobTaskId = job.Tasks.Single().Id;
+
+        _jobWorkerStarter.EnsureTaskSuccessesOnDispose = false;
+        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
+
+        job = await this.WaitUntilJobAsync(
+            job.Id,
+            job => job.State == JobState.Active,
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
+
+        job.State.ShouldBe(JobState.Active);
+
+        job = await this.WaitUntilJobAsync(
+            job.Id,
+            job => job.IsDone,
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
+
+        job.IsDone.ShouldBeTrue();
+
+        var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
+        var downloadMethodInvocations = _downloaderMock.GetInvocations("set_Config");
+        var config = (IDictionary<string, object?>)downloadMethodInvocations.First().Arguments[0];
+        config["a"].ShouldBe(1);
+        config["b"].ShouldBe(2);
+    }
+
 
     private static async IAsyncEnumerable<ExtractResult> ExtractAsync(
         Uri uri,
