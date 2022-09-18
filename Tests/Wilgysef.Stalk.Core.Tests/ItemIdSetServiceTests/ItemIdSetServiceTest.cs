@@ -1,7 +1,7 @@
 ﻿using Moq;
 using Shouldly;
 using System.Text;
-using Wilgysef.Stalk.Core.FileServices;
+using Wilgysef.Stalk.Core.Shared.FileServices;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.TestBase;
 

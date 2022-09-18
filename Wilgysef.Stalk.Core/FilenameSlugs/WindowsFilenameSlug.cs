@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
+using Wilgysef.Stalk.Core.Shared.FilenameSlugs;
 
 namespace Wilgysef.Stalk.Core.FilenameSlugs;
 

@@ -1,4 +1,5 @@
 ﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
+using Wilgysef.Stalk.Core.Shared.FileServices;
 
 namespace Wilgysef.Stalk.Core.FileServices;
 

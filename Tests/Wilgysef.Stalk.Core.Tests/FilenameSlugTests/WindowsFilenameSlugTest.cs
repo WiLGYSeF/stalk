@@ -1,5 +1,5 @@
 ﻿using Shouldly;
-using Wilgysef.Stalk.Core.FilenameSlugs;
+using Wilgysef.Stalk.Core.Shared.FilenameSlugs;
 using Wilgysef.Stalk.TestBase;
 
 namespace Wilgysef.Stalk.Core.Tests.FilenameSlugTests;

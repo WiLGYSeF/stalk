@@ -11,17 +11,17 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
     {
         string Name { get; }
 
-        ILogger Logger { get; set; }
+        ILogger? Logger { get; set; }
 
         bool CanDownload(Uri uri);
 
         IAsyncEnumerable<DownloadResult> DownloadAsync(
             Uri uri,
             string filenameTemplate,
-            string itemId,
-            string itemData,
-            string metadataTemplate,
-            IMetadataObject metadata,
+            string? itemId,
+            string? itemData,
+            string? metadataTemplate,
+            IMetadataObject? metadata,
             CancellationToken cancellationToken = default);
 
         void SetHttpClient(HttpClient client);

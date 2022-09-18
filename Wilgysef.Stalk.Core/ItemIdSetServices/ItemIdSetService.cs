@@ -1,6 +1,6 @@
 ﻿using Wilgysef.Stalk.Core.FileHandlerLockServices;
-using Wilgysef.Stalk.Core.FileServices;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
+using Wilgysef.Stalk.Core.Shared.FileServices;
 
 namespace Wilgysef.Stalk.Core.ItemIdSetServices;
 
