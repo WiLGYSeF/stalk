@@ -242,7 +242,12 @@ public class JobTaskWorker : IJobTaskWorker
         }
         if (!JobConfig.DownloadData)
         {
+            Logger?.LogInformation("Job task {JobTaskId} skipping download", JobTask.Id);
             return;
+        }
+        if (JobConfig.DownloadFilenameTemplate == null)
+        {
+            throw new JobTaskWorkerException("No download filename template given.");
         }
 
         downloader.SetHttpClient(_httpClient);
@@ -274,7 +279,10 @@ public class JobTaskWorker : IJobTaskWorker
         {
             Logger?.LogInformation("Job task {JobTaskId} downloaded {Uri}", JobTask.Id, result.Uri);
 
-            itemIds?.Add(result.ItemId);
+            if (result.ItemId != null)
+            {
+                itemIds?.Add(result.ItemId);
+            }
         }
 
         if (itemIds != null)
