@@ -105,4 +105,15 @@ public class CacheObjectTest
         cache.ContainsKey("a").ShouldBeFalse();
         cache.ContainsKey("b").ShouldBeFalse();
     }
+
+    [Fact]
+    public void Remove_Expired_Values()
+    {
+        var cache = new CacheObject<string, object?>();
+        cache["a"] = 1;
+        cache.Set("b", 2, ExpiredTime);
+
+        cache.RemoveExpired().ShouldBe(1);
+        cache.ContainsKey("a").ShouldBeTrue();
+    }
 }
