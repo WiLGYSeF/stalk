@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Security.Cryptography;
+using System.Text.Json;
 using Wilgysef.Stalk.Core.DownloadSelectors;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.JobExtractorCacheObjectCollectionServices;
@@ -8,10 +9,12 @@ using Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared;
+using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.IdGenerators;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
+using Wilgysef.Stalk.Core.Utilities;
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
@@ -173,6 +176,7 @@ public class JobTaskWorker : IJobTaskWorker
         var jobExtractorCacheObjectCollectionService = scope.GetRequiredService<IJobExtractorCacheObjectCollectionService>();
         var cacheCollection = jobExtractorCacheObjectCollectionService.GetCacheCollection(JobTask.JobId);
         extractor.Cache = cacheCollection.GetCache(extractor);
+        extractor.Config = JobConfig.GetExtractorConfig(extractor);
 
         Logger?.LogInformation("Job task {JobTaskId} using extractor {Extractor}.", JobTask.Id, extractor.Name);
 
@@ -238,10 +242,16 @@ public class JobTaskWorker : IJobTaskWorker
         }
         if (!JobConfig.DownloadData)
         {
+            Logger?.LogInformation("Job task {JobTaskId} skipping download", JobTask.Id);
             return;
+        }
+        if (JobConfig.DownloadFilenameTemplate == null)
+        {
+            throw new JobTaskWorkerException("No download filename template given.");
         }
 
         downloader.SetHttpClient(_httpClient);
+        downloader.Config = JobConfig.GetDownloaderConfig(downloader);
 
         Logger?.LogInformation("Job task {JobTaskId} using downloader {Downloader}.", JobTask.Id, downloader.Name);
 
@@ -269,7 +279,10 @@ public class JobTaskWorker : IJobTaskWorker
         {
             Logger?.LogInformation("Job task {JobTaskId} downloaded {Uri}", JobTask.Id, result.Uri);
 
-            itemIds?.Add(result.ItemId);
+            if (result.ItemId != null)
+            {
+                itemIds?.Add(result.ItemId);
+            }
         }
 
         if (itemIds != null)

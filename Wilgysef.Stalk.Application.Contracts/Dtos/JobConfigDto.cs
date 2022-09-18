@@ -18,13 +18,22 @@ public class JobConfigDto
 
     public bool StopWithNoNewItemIds { get; set; }
 
-    public string? LogPath { get; set; }
-
-    public int? LogLevel { get; set; }
-
     public int? MaxFailures { get; set; }
 
+    public LoggingDto? Logs { get; set; }
+
     public DelayConfigDto? Delay { get; set; }
+
+    public ICollection<ConfigGroupDto>? ExtractorConfig { get; set; }
+
+    public ICollection<ConfigGroupDto>? DownloaderConfig { get; set; }
+
+    public class LoggingDto
+    {
+        public string? Path { get; set; }
+
+        public int Level { get; set; }
+    }
 
     public class DelayConfigDto
     {
@@ -33,6 +42,13 @@ public class JobConfigDto
         public RangeDto? TaskFailedDelay { get; set; }
 
         public RangeDto? TooManyRequestsDelay { get; set; }
+    }
+
+    public class ConfigGroupDto
+    {
+        public string Name { get; set; } = null!;
+
+        public IDictionary<string, object?> Config { get; set; } = null!;
     }
 
     public class RangeDto

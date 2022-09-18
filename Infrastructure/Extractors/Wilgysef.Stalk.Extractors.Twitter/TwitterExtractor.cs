@@ -53,6 +53,8 @@ public class TwitterExtractor : IExtractor
 
     public ICacheObject<string, object?>? Cache { get; set; }
 
+    public IDictionary<string, object?> Config { get; set; } = new Dictionary<string, object?>();
+
     private readonly Regex _uriRegex = new(@"^(?:https?://)?(?:(?:www|mobile)\.)?twitter\.com(?:\:(?:80|443))?/(?<user>[^/]+)(?:/status/(?<tweet>[0-9]+))?", RegexOptions.Compiled);
     private readonly Regex _mediaUrlRegex = new(@"^(?:https://)?pbs\.twimg\.com/media/(?<id>[A-Za-z0-9_]+)\.(?<extension>[A-Za-z0-9]+)");
 
