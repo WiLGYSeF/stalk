@@ -140,7 +140,6 @@ public class GetNextPriorityJobAsyncTest : BaseTest
         next.ShouldBeNull();
     }
 
-
     [Fact]
     public async Task Get_Next_Job_Must_Have_Tasks_Queued()
     {

@@ -23,4 +23,21 @@ public class JobConfigDto
     public int? LogLevel { get; set; }
 
     public int? MaxFailures { get; set; }
+
+    public DelayConfigDto? Delay { get; set; }
+
+    public class DelayConfigDto
+    {
+        public RangeDto? TaskDelay { get; set; }
+
+        public RangeDto? TaskFailedDelay { get; set; }
+
+        public RangeDto? TooManyRequestsDelay { get; set; }
+    }
+
+    public class RangeDto
+    {
+        public int Min { get; set; }
+        public int Max { get; set; }
+    }
 }

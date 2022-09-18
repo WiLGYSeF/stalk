@@ -174,7 +174,7 @@ public class JobTask : Entity
     [NotMapped]
     internal static Expression<Func<JobTask, bool>> IsQueuedExpression =>
         t => t.State == JobTaskState.Inactive
-            || (t.State == JobTaskState.Paused && t.DelayedUntil != null && t.DelayedUntil < DateTime.Now);
+            || (t.State == JobTaskState.Paused && t.DelayedUntil.HasValue && t.DelayedUntil.Value < DateTime.Now);
 
     protected JobTask() { }
 

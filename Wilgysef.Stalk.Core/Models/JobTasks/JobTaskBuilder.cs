@@ -169,6 +169,12 @@ public class JobTaskBuilder
         return this;
     }
 
+    public JobTaskBuilder WithDelayTime(TimeSpan delay)
+    {
+        DelayedUntil = DateTime.Now.Add(delay);
+        return this;
+    }
+
     public JobTaskBuilder WithResult(JobTaskResult? result)
     {
         Result = result ?? JobTaskResult.Create();

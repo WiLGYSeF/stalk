@@ -56,4 +56,21 @@ public class JobConfig
     /// Maximum task failures before a job is considered failed.
     /// </summary>
     public int? MaxFailures { get; set; }
+
+    public DelayConfig? Delay { get; set; }
+
+    public class DelayConfig
+    {
+        public Range? TaskDelay { get; set; }
+
+        public Range? TaskFailedDelay { get; set; }
+
+        public Range? TooManyRequestsDelay { get; set; }
+    }
+
+    public class Range
+    {
+        public int Min { get; set; }
+        public int Max { get; set; }
+    }
 }
