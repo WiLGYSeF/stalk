@@ -62,7 +62,7 @@ public class JobWorker : IJobWorker
         _httpClient = httpClient;
     }
 
-    public IJobWorker WithJob(Job job)
+    public virtual IJobWorker WithJob(Job job)
     {
         if (_working)
         {
@@ -75,43 +75,43 @@ public class JobWorker : IJobWorker
 
     public virtual async Task WorkAsync(CancellationToken cancellationToken = default)
     {
-        if (Job == null)
-        {
-            throw new InvalidOperationException("Job is not set.");
-        }
-
-        _working = true;
-
-        Logger?.LogInformation("Job {JobId} starting.", Job.Id);
-
-        using (var scope = _lifetimeScope.BeginLifetimeScope())
-        {
-            if (!Job.IsActive)
-            {
-                var jobManager = scope.GetRequiredService<IJobManager>();
-                await jobManager.SetJobActiveAsync(Job, cancellationToken);
-            }
-
-            var jobHttpClientCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
-            if (!jobHttpClientCollectionService.TryGetHttpClient(Job.Id, out var client))
-            {
-                jobHttpClientCollectionService.SetHttpClient(Job.Id, _httpClient);
-
-                var userAgentGenerator = scope.GetService<IUserAgentGenerator>();
-                if (userAgentGenerator != null)
-                {
-                    _httpClient.DefaultRequestHeaders.Add("User-Agent", userAgentGenerator.Generate());
-                }
-            }
-            else
-            {
-                _httpClient.Dispose();
-                _httpClient = client;
-            }
-        }
-
         try
         {
+            if (Job == null)
+            {
+                throw new InvalidOperationException("Job is not set.");
+            }
+
+            _working = true;
+
+            Logger?.LogInformation("Job {JobId} starting.", Job.Id);
+
+            using (var scope = _lifetimeScope.BeginLifetimeScope())
+            {
+                if (!Job.IsActive)
+                {
+                    var jobManager = scope.GetRequiredService<IJobManager>();
+                    await jobManager.SetJobActiveAsync(Job, cancellationToken);
+                }
+
+                var jobHttpClientCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
+                if (!jobHttpClientCollectionService.TryGetHttpClient(Job.Id, out var client))
+                {
+                    jobHttpClientCollectionService.SetHttpClient(Job.Id, _httpClient);
+
+                    var userAgentGenerator = scope.GetService<IUserAgentGenerator>();
+                    if (userAgentGenerator != null)
+                    {
+                        _httpClient.DefaultRequestHeaders.Add("User-Agent", userAgentGenerator.Generate());
+                    }
+                }
+                else
+                {
+                    _httpClient.Dispose();
+                    _httpClient = client;
+                }
+            }
+
             while (Job.HasUnfinishedTasks)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -130,12 +130,6 @@ public class JobWorker : IJobWorker
                 if (taskCompletedIndex != -1)
                 {
                     Logger?.LogDebug("Job {JobId} wait for task succeeded.", Job.Id);
-
-                    if (taskArray.Any(t => t.Exception != null))
-                    {
-                        // TODO: do something?
-                    }
-
                     RemoveCompletedTasks(taskArray);
                 }
                 else
@@ -144,10 +138,8 @@ public class JobWorker : IJobWorker
                 }
             }
 
-            // TODO: handle job with all paused tasks
-
             await ReloadJobAsync();
-            if (!Job.HasActiveTasks)
+            if (!Job.HasUnfinishedTasks || !JobTaskFailuresLessThanMaxFailures())
             {
                 Job.Done();
             }
@@ -173,7 +165,7 @@ public class JobWorker : IJobWorker
         }
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         _lifetimeScope.Dispose();
         _httpClient.Dispose();

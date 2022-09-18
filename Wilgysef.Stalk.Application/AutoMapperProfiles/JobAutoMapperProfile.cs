@@ -18,7 +18,11 @@ public class JobAutoMapperProfile : Profile
             .ForMember(dto => dto.Config, opt => opt.MapFrom(j => j.GetConfig()));
 
         CreateMap<JobConfig, JobConfigDto>();
+        CreateMap<JobConfig.DelayConfig, JobConfigDto.DelayConfigDto>();
+        CreateMap<JobConfig.Range, JobConfigDto.RangeDto>();
         CreateMap<JobConfigDto, JobConfig>();
+        CreateMap<JobConfigDto.DelayConfigDto, JobConfig.DelayConfig>();
+        CreateMap<JobConfigDto.RangeDto, JobConfig.Range>();
 
         CreateMap<JobTask, JobTaskDto>()
             .ForMember(dto => dto.State, opt => opt.MapFrom(t => t.State.ToString().ToLower()))

@@ -102,8 +102,6 @@ public class WorkAsyncTest : BaseTest
         var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
         var extractMethodInvocations = _extractorMock.GetInvocations("ExtractAsync");
         extractMethodInvocations.Any(i => (Uri)i.Arguments[0] == new Uri(jobTask.Uri)).ShouldBeTrue();
-
-        job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(3);
     }
 
     [Theory]
@@ -203,23 +201,6 @@ public class WorkAsyncTest : BaseTest
         var extractMethodInvocations = _extractorMock.GetInvocations("set_Cache");
         var cache = (ICacheObject<string, object?>)extractMethodInvocations.First().Arguments[0];
         extractMethodInvocations.All(i => i.Arguments[0] == cache).ShouldBeTrue();
-
-        job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(3);
-    }
-
-    private static async IAsyncEnumerable<DownloadResult> DownloadAsync(
-        Uri uri,
-        string filenameTemplate,
-        string itemId,
-        string itemData,
-        string metadataFilenameTemplate,
-        IMetadataObject metadata,
-        CancellationToken cancellationToken = default)
-    {
-        yield return new DownloadResult(
-            RandomValues.RandomDirPath(3),
-            new Uri(RandomValues.RandomUri()),
-            RandomValues.RandomString(10));
     }
 
     private static async IAsyncEnumerable<ExtractResult> ExtractAsync(
@@ -237,6 +218,21 @@ public class WorkAsyncTest : BaseTest
             new Uri(RandomValues.RandomUri()),
             RandomValues.RandomString(10),
             JobTaskType.Extract);
+    }
+
+    private static async IAsyncEnumerable<DownloadResult> DownloadAsync(
+        Uri uri,
+        string filenameTemplate,
+        string itemId,
+        string itemData,
+        string metadataFilenameTemplate,
+        IMetadataObject metadata,
+        CancellationToken cancellationToken = default)
+    {
+        yield return new DownloadResult(
+            RandomValues.RandomDirPath(3),
+            new Uri(RandomValues.RandomUri()),
+            RandomValues.RandomString(10));
     }
 
     private Task<IItemIdSet> GetItemIdSetAsync(string path)

@@ -251,6 +251,30 @@ public class WorkAsyncTest : BaseTest
     }
 
     [Fact]
+    public async Task Work_Job_Pause_All_Tasks_Paused()
+    {
+        var job = new JobBuilder()
+            .WithRandomInitializedState(JobState.Inactive)
+            .WithRandomTasks(JobTaskState.Paused, 2)
+            .Create();
+        await _jobManager.CreateJobAsync(job);
+
+        _jobWorkerStarter.EnsureTaskSuccessesOnDispose = false;
+        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
+
+        job = await this.WaitUntilJobAsync(
+            job.Id,
+            job => !job.IsActive,
+            TimeSpan.FromSeconds(3));
+        workerInstance.WorkerTask.Exception.ShouldBeNull();
+
+        job.State.ShouldBe(JobState.Inactive);
+
+        var jobWorkerCollectionService = GetRequiredService<IJobWorkerCollectionService>();
+        jobWorkerCollectionService.Workers.ShouldBeEmpty();
+    }
+
+    [Fact]
     public async Task Work_Job_Cancel()
     {
         // TODO: unstable test

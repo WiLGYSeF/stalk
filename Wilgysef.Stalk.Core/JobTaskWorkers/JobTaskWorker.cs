@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Net;
+using System.Security.Cryptography;
 using Wilgysef.Stalk.Core.DownloadSelectors;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.JobExtractorCacheObjectCollectionServices;
@@ -16,6 +17,8 @@ namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
 public class JobTaskWorker : IJobTaskWorker
 {
+    private const int JobTaskPriorityRetryChange = 100;
+
     public JobTask? JobTask { get; protected set; }
 
     public ILogger? Logger { get; set; }
@@ -48,35 +51,35 @@ public class JobTaskWorker : IJobTaskWorker
 
     public virtual async Task WorkAsync(CancellationToken cancellationToken = default)
     {
-        if (JobTask == null)
-        {
-            throw new InvalidOperationException("Job task is not set.");
-        }
-
-        _working = true;
-
-        Logger?.LogInformation("Job task {JobTaskId} starting.", JobTask.Id);
-
-        using (var scope = _lifetimeScope.BeginLifetimeScope())
-        {
-            var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
-            JobTask = await jobTaskManager.GetJobTaskAsync(JobTask.Id, cancellationToken);
-
-            if (!JobTask.IsActive)
-            {
-                await jobTaskManager.SetJobTaskActiveAsync(JobTask, CancellationToken.None);
-            }
-
-            var jobHttpClientCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
-            if (jobHttpClientCollectionService.TryGetHttpClient(JobTask.JobId, out var client))
-            {
-                _httpClient.Dispose();
-                _httpClient = client;
-            }
-        }
-
         try
         {
+            if (JobTask == null)
+            {
+                throw new InvalidOperationException("Job task is not set.");
+            }
+
+            _working = true;
+
+            Logger?.LogInformation("Job task {JobTaskId} starting.", JobTask.Id);
+
+            using (var scope = _lifetimeScope.BeginLifetimeScope())
+            {
+                var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
+                JobTask = await jobTaskManager.GetJobTaskAsync(JobTask.Id, cancellationToken);
+
+                if (!JobTask.IsActive)
+                {
+                    await jobTaskManager.SetJobTaskActiveAsync(JobTask, CancellationToken.None);
+                }
+
+                var jobHttpClientCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
+                if (jobHttpClientCollectionService.TryGetHttpClient(JobTask.JobId, out var client))
+                {
+                    _httpClient.Dispose();
+                    _httpClient = client;
+                }
+            }
+
             JobConfig = JobTask.Job.GetConfig();
 
             switch (JobTask.Type)
@@ -104,21 +107,24 @@ public class JobTaskWorker : IJobTaskWorker
 
             var workerException = exception as JobTaskWorkerException;
 
-            if (RetryJobTask(JobTask, exception))
+            if (RetryJobTask(JobTask, exception, out var tooManyRequests))
             {
                 Logger?.LogInformation("Job task {JobTaskId} creating retry task.", JobTask.Id);
 
-                using var scope = _lifetimeScope.BeginLifetimeScope();
-                var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
-                var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
+                try
+                {
+                    using var scope = _lifetimeScope.BeginLifetimeScope();
+                    var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
+                    var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
 
-                var retryTask = new JobTaskBuilder()
-                    .WithRetryJobTask(JobTask)
-                    .WithId(idGenerator.CreateId())
-                    .WithPriority(JobTask.Priority - 100)
-                    .Create();
+                    var retryTask = CreateRetryJobTask(idGenerator.CreateId(), tooManyRequests);
 
-                await jobTaskManager.CreateJobTaskAsync(retryTask, CancellationToken.None);
+                    await jobTaskManager.CreateJobTaskAsync(retryTask, CancellationToken.None);
+                }
+                catch (Exception retryTaskException)
+                {
+                    Logger?.LogError(retryTaskException, "Job task {JobTaskId} failed to create a retry job task.", JobTask.Id);
+                }
             }
 
             JobTask.Fail(
@@ -192,10 +198,18 @@ public class JobTaskWorker : IJobTaskWorker
 
             Logger?.LogInformation("Job task {JobTaskId} extracted {Uri}", JobTask.Id, result.Uri);
 
-            newTasks.Add(new JobTaskBuilder()
+            var jobTaskBuilder = new JobTaskBuilder()
                 .WithExtractResult(JobTask, result)
-                .WithId(idGenerator.CreateId())
-                .Create());
+                .WithId(idGenerator.CreateId());
+
+            if (JobConfig.Delay?.TaskDelay != null)
+            {
+                jobTaskBuilder.WithDelayTime(TimeSpan.FromSeconds(RandomInt(
+                    JobConfig.Delay.TaskDelay.Min,
+                    JobConfig.Delay.TaskDelay.Max)));
+            }
+
+            newTasks.Add(jobTaskBuilder.Create());
         }
 
         if (!JobConfig.StopWithNoNewItemIds || newTasks.Any(t => t.ItemId != null))
@@ -264,17 +278,48 @@ public class JobTaskWorker : IJobTaskWorker
         }
     }
 
-    protected virtual bool RetryJobTask(JobTask jobTask, Exception exception)
+    protected virtual JobTask CreateRetryJobTask(long jobTaskId, bool tooManyRequests)
     {
+        var jobTaskBuilder = new JobTaskBuilder()
+            .WithRetryJobTask(JobTask)
+            .WithId(jobTaskId)
+            .WithPriority(JobTask.Priority - JobTaskPriorityRetryChange);
+
+        if (tooManyRequests && JobConfig.Delay?.TooManyRequestsDelay != null)
+        {
+            jobTaskBuilder.WithDelayTime(TimeSpan.FromSeconds(RandomInt(
+                JobConfig.Delay.TooManyRequestsDelay.Min,
+                JobConfig.Delay.TooManyRequestsDelay.Max)));
+        }
+        else if (JobConfig.Delay?.TaskFailedDelay != null)
+        {
+            jobTaskBuilder.WithDelayTime(TimeSpan.FromSeconds(RandomInt(
+                JobConfig.Delay.TaskFailedDelay.Min,
+                JobConfig.Delay.TaskFailedDelay.Max)));
+        }
+
+        return jobTaskBuilder.Create();
+    }
+
+    protected virtual bool RetryJobTask(JobTask jobTask, Exception exception, out bool tooManyRequests)
+    {
+        bool retry = false;
+        tooManyRequests = false;
+
         switch (exception)
         {
             case HttpRequestException httpException:
-                return httpException.StatusCode.HasValue && IsStatusCodeRetry(httpException.StatusCode.Value);
+                if (httpException.StatusCode.HasValue && IsStatusCodeRetry(httpException.StatusCode.Value))
+                {
+                    retry = true;
+                    tooManyRequests = httpException.StatusCode.Value == HttpStatusCode.TooManyRequests;
+                }
+                break;
             default:
                 break;
         }
 
-        return false;
+        return retry;
     }
 
     protected virtual bool IsStatusCodeRetry(HttpStatusCode statusCode)
@@ -283,5 +328,12 @@ public class JobTaskWorker : IJobTaskWorker
             || statusCode == HttpStatusCode.TooManyRequests
             || ((int)statusCode >= 500 && (int)statusCode < 600
                 && statusCode != HttpStatusCode.HttpVersionNotSupported);
+    }
+
+    protected virtual int RandomInt(int min, int max)
+    {
+        return min != max && min < max
+            ? RandomNumberGenerator.GetInt32(min, max)
+            : min;
     }
 }
