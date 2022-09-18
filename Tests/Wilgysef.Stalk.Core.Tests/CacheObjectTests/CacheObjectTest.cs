@@ -1,14 +1,10 @@
 ﻿using Shouldly;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Wilgysef.Stalk.Core.CacheObjects;
+using Wilgysef.Stalk.TestBase;
 
 namespace Wilgysef.Stalk.Core.Tests.CacheObjectTests;
 
-public class CacheObjectTest
+public class CacheObjectTest : BaseTest
 {
     private DateTime ExpiredTime => DateTime.Now.AddSeconds(-5);
 

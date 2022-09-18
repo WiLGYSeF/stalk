@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Security.Cryptography;
+using System.Text.Json;
 using Wilgysef.Stalk.Core.DownloadSelectors;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.JobExtractorCacheObjectCollectionServices;
@@ -13,6 +14,7 @@ using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.IdGenerators;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
+using Wilgysef.Stalk.Core.Utilities;
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
@@ -357,7 +359,14 @@ public class JobTaskWorker : IJobTaskWorker
         {
             foreach (var (key, val) in configGroup.Config)
             {
-                config[key] = val;
+                if (val is JsonElement element)
+                {
+                    config[key] = JsonUtils.GetJsonElementValue(element, out _);
+                }
+                else
+                {
+                    config[key] = val;
+                }
             }
         }
     }
