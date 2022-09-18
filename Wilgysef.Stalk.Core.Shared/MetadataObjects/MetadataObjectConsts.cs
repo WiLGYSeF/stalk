@@ -1,54 +1,27 @@
 ﻿namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
 {
-    public class MetadataObjectConsts
+    public static class MetadataObjectConsts
     {
-        public string FileFilenameTemplateKey => JoinKeyParts("file", "filenameTemplate");
-
-        public string FileHashKey => JoinKeyParts("file", "hash");
-
-        public string FileHashAlgorithmKey => JoinKeyParts("file", "hashAlgorithm");
-
-        public string FileSizeKey => JoinKeyParts("file", "size");
-
-        public string MetadataFilenameTemplateKey => JoinKeyParts("metadataFilenameTemplate");
-
-        public string OriginItemIdKey => JoinKeyParts("origin", "itemId");
-
-        public string OriginUriKey => JoinKeyParts("origin", "uri");
-
-        public string RetrievedKey => JoinKeyParts("retrieved");
-
-        private char _keySeparator = '.';
-
-        public char KeySeparator
+        public static class File
         {
-            get => _keySeparator;
-            set
-            {
-                _keySeparator = value;
-                _keySeparatorString = null;
-            }
+            public static readonly string[] FilenameTemplateKeys = new[] { "file", "filename_template" };
+
+            public static readonly string[] HashKeys = new[] { "file", "hash" };
+
+            public static readonly string[] HashAlgorithmKeys = new[] { "file", "hash_algorithm" };
+
+            public static readonly string[] SizeKeys = new[] { "file", "size" };
         }
 
-        private string? _keySeparatorString = null;
+        public static readonly string[] MetadataFilenameTemplateKeys = new[] { "metadata_filename_template" };
 
-        private string KeySeparatorString
+        public static class Origin
         {
-            get
-            {
-                _keySeparatorString ??= KeySeparator.ToString();
-                return _keySeparatorString;
-            }
+            public static readonly string[] ItemIdKeys = new[] { "origin", "item_id" };
+
+            public static readonly string[] UriKeys = new[] { "origin", "uri" };
         }
 
-        public MetadataObjectConsts(char keySeparator)
-        {
-            KeySeparator = keySeparator;
-        }
-
-        private string JoinKeyParts(params string[] parts)
-        {
-            return string.Join(KeySeparatorString, parts);
-        }
+        public static readonly string[] RetrievedKeys = new[] { "retrieved" };
     }
 }

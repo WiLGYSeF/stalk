@@ -74,23 +74,22 @@ public class DefaultDownloaderTest : BaseTest
         metadataWritten.From(deserializer.Deserialize<IDictionary<object, object>>(
                 Encoding.UTF8.GetString((_fileService.Files[metadataFilename] as MemoryStream)!.ToArray())));
 
-        var metadataConsts = new MetadataObjectConsts(metadataWritten.KeySeparator);
         var hashName = "SHA256";
-        metadataWritten.GetValue(metadataConsts.FileFilenameTemplateKey).ShouldBe(filename);
-        metadataWritten.GetValue(metadataConsts.MetadataFilenameTemplateKey).ShouldBe(metadataFilename);
-        metadataWritten.GetValue(metadataConsts.OriginItemIdKey).ShouldBe(itemId);
-        metadataWritten.GetValue(metadataConsts.OriginUriKey).ShouldBe(uri.ToString());
-        (DateTime.Now - DateTime.Parse((string)metadataWritten.GetValue(metadataConsts.RetrievedKey)))
+        metadataWritten.GetValueByParts(MetadataObjectConsts.File.FilenameTemplateKeys).ShouldBe(filename);
+        metadataWritten.GetValueByParts(MetadataObjectConsts.MetadataFilenameTemplateKeys).ShouldBe(metadataFilename);
+        metadataWritten.GetValueByParts(MetadataObjectConsts.Origin.ItemIdKeys).ShouldBe(itemId);
+        metadataWritten.GetValueByParts(MetadataObjectConsts.Origin.UriKeys).ShouldBe(uri.ToString());
+        (DateTime.Now - DateTime.Parse((string)metadataWritten.GetValueByParts(MetadataObjectConsts.RetrievedKeys)!))
             .Duration().TotalMinutes.ShouldBeLessThan(1);
-        metadataWritten.GetValue(metadataConsts.FileSizeKey).ShouldBe(TestDownloadData.Length.ToString());
-        metadataWritten.GetValue(metadataConsts.FileHashKey)
+        metadataWritten.GetValueByParts(MetadataObjectConsts.File.SizeKeys).ShouldBe(TestDownloadData.Length.ToString());
+        metadataWritten.GetValueByParts(MetadataObjectConsts.File.HashKeys)
             .ShouldBe(Convert.ToHexString(HashAlgorithm.Create(hashName)!.ComputeHash(TestDownloadData)).ToLower());
-        metadataWritten.GetValue(metadataConsts.FileHashAlgorithmKey).ShouldBe(hashName);
+        metadataWritten.GetValueByParts(MetadataObjectConsts.File.HashAlgorithmKeys).ShouldBe(hashName);
     }
 
     [Fact]
     public void Can_Always_Download()
     {
-        _downloader.CanDownload(null).ShouldBeTrue();
+        _downloader.CanDownload(null!).ShouldBeTrue();
     }
 }

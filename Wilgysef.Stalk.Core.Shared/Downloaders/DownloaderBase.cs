@@ -64,18 +64,17 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
                 metadata,
                 cancellationToken);
 
-            var metadataConsts = new MetadataObjectConsts(metadata.KeySeparator);
-            metadata.TryAddValue(metadataConsts.FileFilenameTemplateKey, filenameTemplate);
-            metadata.TryAddValue(metadataConsts.MetadataFilenameTemplateKey, metadataFilenameTemplate);
-            metadata.TryAddValue(metadataConsts.OriginItemIdKey, itemId);
-            metadata.TryAddValue(metadataConsts.OriginUriKey, uri.ToString());
-            metadata.TryAddValue(metadataConsts.RetrievedKey, DateTime.Now);
+            metadata.TryAddValueByParts(filenameTemplate, MetadataObjectConsts.File.FilenameTemplateKeys);
+            metadata.TryAddValueByParts(metadataFilenameTemplate, MetadataObjectConsts.MetadataFilenameTemplateKeys);
+            metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdKeys);
+            metadata.TryAddValueByParts(uri.ToString(), MetadataObjectConsts.Origin.UriKeys);
+            metadata.TryAddValueByParts(DateTime.Now, MetadataObjectConsts.RetrievedKeys);
 
-            metadata.TryAddValue(metadataConsts.FileSizeKey, downloadFileResult.FileSize);
+            metadata.TryAddValueByParts(downloadFileResult.FileSize, MetadataObjectConsts.File.SizeKeys);
             if (downloadFileResult.Hash != null)
             {
-                metadata.TryAddValue(metadataConsts.FileHashKey, downloadFileResult.Hash);
-                metadata.TryAddValue(metadataConsts.FileHashAlgorithmKey, downloadFileResult.HashName);
+                metadata.TryAddValueByParts(downloadFileResult.Hash, MetadataObjectConsts.File.HashKeys);
+                metadata.TryAddValueByParts(downloadFileResult.HashName, MetadataObjectConsts.File.HashAlgorithmKeys);
             }
 
             var metadataFilename = await SaveMetadataAsync(
