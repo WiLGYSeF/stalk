@@ -62,7 +62,7 @@ public class JobWorker : IJobWorker
         _httpClient = httpClient;
     }
 
-    public IJobWorker WithJob(Job job)
+    public virtual IJobWorker WithJob(Job job)
     {
         if (_working)
         {
@@ -165,7 +165,7 @@ public class JobWorker : IJobWorker
         }
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         _lifetimeScope.Dispose();
         _httpClient.Dispose();

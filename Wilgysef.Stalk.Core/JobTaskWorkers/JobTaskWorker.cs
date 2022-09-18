@@ -117,25 +117,7 @@ public class JobTaskWorker : IJobTaskWorker
                     var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
                     var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
 
-                    var jobTaskBuilder = new JobTaskBuilder()
-                        .WithRetryJobTask(JobTask)
-                        .WithId(idGenerator.CreateId())
-                        .WithPriority(JobTask.Priority - JobTaskPriorityRetryChange);
-
-                    if (tooManyRequests && JobConfig.Delay?.TooManyRequestsDelay != null)
-                    {
-                        jobTaskBuilder.WithDelayTime(TimeSpan.FromSeconds(RandomInt(
-                            JobConfig.Delay.TooManyRequestsDelay.Min,
-                            JobConfig.Delay.TooManyRequestsDelay.Max)));
-                    }
-                    else if (JobConfig.Delay?.TaskFailedDelay != null)
-                    {
-                        jobTaskBuilder.WithDelayTime(TimeSpan.FromSeconds(RandomInt(
-                            JobConfig.Delay.TaskFailedDelay.Min,
-                            JobConfig.Delay.TaskFailedDelay.Max)));
-                    }
-
-                    var retryTask = jobTaskBuilder.Create();
+                    var retryTask = CreateRetryJobTask(idGenerator.CreateId(), tooManyRequests);
 
                     await jobTaskManager.CreateJobTaskAsync(retryTask, CancellationToken.None);
                 }
@@ -294,6 +276,29 @@ public class JobTaskWorker : IJobTaskWorker
         {
             await itemIdSetService.WriteChangesAsync(JobConfig.ItemIdPath!, itemIds);
         }
+    }
+
+    protected virtual JobTask CreateRetryJobTask(long jobTaskId, bool tooManyRequests)
+    {
+        var jobTaskBuilder = new JobTaskBuilder()
+            .WithRetryJobTask(JobTask)
+            .WithId(jobTaskId)
+            .WithPriority(JobTask.Priority - JobTaskPriorityRetryChange);
+
+        if (tooManyRequests && JobConfig.Delay?.TooManyRequestsDelay != null)
+        {
+            jobTaskBuilder.WithDelayTime(TimeSpan.FromSeconds(RandomInt(
+                JobConfig.Delay.TooManyRequestsDelay.Min,
+                JobConfig.Delay.TooManyRequestsDelay.Max)));
+        }
+        else if (JobConfig.Delay?.TaskFailedDelay != null)
+        {
+            jobTaskBuilder.WithDelayTime(TimeSpan.FromSeconds(RandomInt(
+                JobConfig.Delay.TaskFailedDelay.Min,
+                JobConfig.Delay.TaskFailedDelay.Max)));
+        }
+
+        return jobTaskBuilder.Create();
     }
 
     protected virtual bool RetryJobTask(JobTask jobTask, Exception exception, out bool tooManyRequests)
