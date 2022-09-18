@@ -2,11 +2,11 @@
 
 public class JobDto
 {
-    public string Id { get; set; }
+    public string Id { get; set; } = null!;
 
     public string? Name { get; set; }
 
-    public string State { get; set; }
+    public string State { get; set; } = null!;
 
     public int Priority { get; set; }
 
@@ -16,7 +16,7 @@ public class JobDto
 
     public DateTime? DelayedUntil { get; set; }
 
-    public JobConfigDto Config { get; set; }
+    public JobConfigDto Config { get; set; } = null!;
 
-    public ICollection<JobTaskDto> Tasks { get; set; }
+    public ICollection<JobTaskDto> Tasks { get; set; } = null!;
 }

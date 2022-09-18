@@ -2,15 +2,15 @@
 
 public class JobTaskDto
 {
-    public string Id { get; set; }
+    public string Id { get; set; } = null!;
 
     public string? Name { get; set; }
 
-    public string State { get; set; }
+    public string State { get; set; } = null!;
 
     public int Priority { get; set; }
 
-    public string Uri { get; set; }
+    public string Uri { get; set; } = null!;
 
     public string? ItemId { get; set; }
 
@@ -18,7 +18,7 @@ public class JobTaskDto
 
     public string? MetadataJson { get; set; }
 
-    public string Type { get; set; }
+    public string Type { get; set; } = null!;
 
     public DateTime? Started { get; set; }
 
@@ -26,7 +26,7 @@ public class JobTaskDto
 
     public DateTime? DelayedUntil { get; set; }
 
-    public JobTaskResultDto Result { get; set; }
+    public JobTaskResultDto Result { get; set; } = null!;
 
     public JobTaskDto? ParentTask { get; set; }
 }

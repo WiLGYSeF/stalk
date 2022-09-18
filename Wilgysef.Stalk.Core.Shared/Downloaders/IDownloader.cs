@@ -21,7 +21,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             string? itemId,
             string? itemData,
             string? metadataTemplate,
-            IMetadataObject? metadata,
+            IMetadataObject metadata,
             CancellationToken cancellationToken = default);
 
         void SetHttpClient(HttpClient client);

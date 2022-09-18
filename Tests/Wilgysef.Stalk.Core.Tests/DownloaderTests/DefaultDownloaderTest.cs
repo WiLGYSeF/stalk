@@ -15,7 +15,7 @@ namespace Wilgysef.Stalk.Core.Tests.DownloaderTests;
 
 public class DefaultDownloaderTest : BaseTest
 {
-    private static byte[] TestDownloadData = Encoding.UTF8.GetBytes("test");
+    private static readonly byte[] TestDownloadData = Encoding.UTF8.GetBytes("test");
 
     private readonly HttpRequestMessageLog _requestLog;
     private readonly MockFileService _fileService;

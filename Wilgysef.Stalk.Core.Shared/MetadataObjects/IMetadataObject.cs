@@ -20,7 +20,7 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// </summary>
         /// <param name="key">Key.</param>
         /// <returns>Value</returns>
-        object this[string key] { get; set; }
+        object? this[string key] { get; set; }
 
         /// <summary>
         /// Adds value.
@@ -28,7 +28,7 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// <param name="key">Key.</param>
         /// <param name="value">Value.</param>
         /// <exception cref="ArgumentException">Subkey already exists.</exception>
-        void Add(string key, object value);
+        void Add(string key, object? value);
 
         /// <summary>
         /// Adds value.
@@ -36,14 +36,14 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// <param name="value">Value.</param>
         /// <param name="keyParts">Key parts.</param>
         /// <exception cref="ArgumentException">Subkey already exists.</exception>
-        void AddByParts(object value, params string[] keyParts);
+        void AddByParts(object? value, params string[] keyParts);
 
         /// <summary>
         /// Sets value.
         /// </summary>
         /// <param name="value">Value.</param>
         /// <param name="keyParts">Key parts.</param>
-        void SetByParts(object value, params string[] keyParts);
+        void SetByParts(object? value, params string[] keyParts);
 
         /// <summary>
         /// Adds a new value if it does not exist.
@@ -51,7 +51,7 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// <param name="key">Key.</param>
         /// <param name="value">Value.</param>
         /// <returns><see langword="true"/> if the value was added, <see langword="false"/> otherwise.</returns>
-        bool TryAddValue(string key, object value);
+        bool TryAddValue(string key, object? value);
 
         /// <summary>
         /// Adds a new value if it does not exist.
@@ -59,21 +59,21 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// <param name="value">Value.</param>
         /// <param name="keyParts">Key parts.</param>
         /// <returns><see langword="true"/> if the value was added, <see langword="false"/> otherwise.</returns>
-        bool TryAddValueByParts(object value, params string[] keyParts);
+        bool TryAddValueByParts(object? value, params string[] keyParts);
 
         /// <summary>
         /// Gets value.
         /// </summary>
         /// <param name="key">Key.</param>
         /// <returns>Value.</returns>
-        object GetValue(string key);
+        object? GetValue(string key);
 
         /// <summary>
         /// Gets value.
         /// </summary>
         /// <param name="keyParts">Key parts.</param>
         /// <returns>Value.</returns>
-        object GetValueByParts(params string[] keyParts);
+        object? GetValueByParts(params string[] keyParts);
 
         /// <summary>
         /// Gets value.
@@ -81,7 +81,7 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// <param name="key">Key.</param>
         /// <param name="value">Value.</param>
         /// <returns><see langword="true"/> if the value exists, <see langword="false"/> otherwise.</returns>
-        bool TryGetValue(string key, out object value);
+        bool TryGetValue(string key, out object? value);
 
         /// <summary>
         /// Gets value.
@@ -89,7 +89,7 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// <param name="value">Value.</param>
         /// <param name="keyParts">Key parts.</param>
         /// <returns><see langword="true"/> if the value exists, <see langword="false"/> otherwise.</returns>
-        bool TryGetValueByParts(out object value, params string[] keyParts);
+        bool TryGetValueByParts(out object? value, params string[] keyParts);
 
         /// <summary>
         /// Checks if key exists.
@@ -134,18 +134,18 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// Gets an <see cref="IDictionary{TKey, TValue}"/> that contains the nested keys and values.
         /// </summary>
         /// <returns>Keys and values.</returns>
-        IDictionary<string, object> GetDictionary();
+        IDictionary<string, object?> GetDictionary();
 
         /// Gets an <see cref="IDictionary{TKey, TValue}"/> that contains the nested keys and values, flattened to a single layer.
         /// </summary>
         /// <returns>Keys and values.</returns>
-        IDictionary<string, object> GetFlattenedDictionary();
+        IDictionary<string, object?> GetFlattenedDictionary();
 
         /// <summary>
         /// Sets keys and values from the keys and values of an <see cref="IDictionary{TKey, TValue}"/>.
         /// </summary>
         /// <param name="dictionary">Dictionary.</param>
-        void From(IDictionary<object, object> dictionary);
+        void From(IDictionary<object, object?> dictionary);
 
         /// <summary>
         /// Gets the key from key parts.

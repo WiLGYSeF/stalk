@@ -6,17 +6,17 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
 {
     public class ExtractResult
     {
-        public string Name { get; }
+        public string? Name { get; }
 
         public int Priority { get; }
 
         public Uri Uri { get; }
 
-        public string ItemId { get; }
+        public string? ItemId { get; }
 
-        public string ItemData { get; }
+        public string? ItemData { get; }
 
-        public IMetadataObject Metadata { get; }
+        public IMetadataObject? Metadata { get; }
 
         public JobTaskType Type { get; }
 
@@ -24,10 +24,10 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
             Uri uri,
             string itemId,
             JobTaskType type,
-            string name = null,
+            string? name = null,
             int priority = 0,
-            string itemData = null,
-            IMetadataObject metadata = null)
+            string? itemData = null,
+            IMetadataObject? metadata = null)
         {
             Name = name;
             Priority = priority;

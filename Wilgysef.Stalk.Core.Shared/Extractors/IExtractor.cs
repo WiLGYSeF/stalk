@@ -12,16 +12,16 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
     {
         string Name { get; }
 
-        ILogger Logger { get; set; }
+        ILogger? Logger { get; set; }
 
-        ICacheObject<string, object> Cache { get; set; }
+        ICacheObject<string, object?> Cache { get; set; }
 
         bool CanExtract(Uri uri);
 
         IAsyncEnumerable<ExtractResult> ExtractAsync(
             Uri uri,
-            string itemData,
-            IMetadataObject metadata,
+            string? itemData,
+            IMetadataObject? metadata,
             CancellationToken cancellationToken = default);
 
         void SetHttpClient(HttpClient client);

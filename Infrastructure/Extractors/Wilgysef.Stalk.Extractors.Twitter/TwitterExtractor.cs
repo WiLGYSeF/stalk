@@ -2,6 +2,7 @@
 using Newtonsoft.Json.Linq;
 using System.Dynamic;
 using System.Net.Http.Headers;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -67,17 +68,19 @@ public class TwitterExtractor : IExtractor
         return _uriRegex.IsMatch(uri.AbsoluteUri);
     }
 
-    public IAsyncEnumerable<ExtractResult> ExtractAsync(Uri uri, string itemData, IMetadataObject metadata, CancellationToken cancellationToken = default)
+    // TODO: should this be async?
+    public IAsyncEnumerable<ExtractResult> ExtractAsync(
+       Uri uri,
+       string? itemData,
+       IMetadataObject metadata,
+       CancellationToken cancellationToken = default)
     {
-        switch (GetExtractType(uri))
+        return GetExtractType(uri) switch
         {
-            case ExtractType.User:
-                return ExtractUserAsync(uri, itemData, metadata, cancellationToken);
-            case ExtractType.Tweet:
-                return ExtractTweetAsync(uri, itemData, metadata, cancellationToken);
-            default:
-                throw new ArgumentException("Cannot extract URI.", nameof(uri));
-        }
+            ExtractType.User => ExtractUserAsync(uri, itemData, metadata, cancellationToken),
+            ExtractType.Tweet => ExtractTweetAsync(uri, itemData, metadata, cancellationToken),
+            _ => throw new ArgumentException("Cannot extract URI.", nameof(uri)),
+        };
     }
 
     public void SetHttpClient(HttpClient client)
@@ -86,7 +89,11 @@ public class TwitterExtractor : IExtractor
         _httpClient = client;
     }
 
-    private async IAsyncEnumerable<ExtractResult> ExtractUserAsync(Uri uri, string itemData, IMetadataObject metadata, CancellationToken cancellationToken = default)
+    private async IAsyncEnumerable<ExtractResult> ExtractUserAsync(
+        Uri uri,
+        string? itemData,
+        IMetadataObject metadata,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var match = _uriRegex.Match(uri.AbsoluteUri);
         var userScreenName = match.Groups["user"].Value;
@@ -127,7 +134,11 @@ public class TwitterExtractor : IExtractor
         }
     }
 
-    private async IAsyncEnumerable<ExtractResult> ExtractTweetAsync(Uri uri, string itemData, IMetadataObject metadata, CancellationToken cancellationToken)
+    private async IAsyncEnumerable<ExtractResult> ExtractTweetAsync(
+        Uri uri,
+        string? itemData,
+        IMetadataObject metadata,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var match = _uriRegex.Match(uri.AbsoluteUri);
         var tweetId = match.Groups["tweet"].Value;
@@ -376,7 +387,7 @@ public class TwitterExtractor : IExtractor
         var uri = new Uri($"{UserByScreenNameEndpoint}?variables={variables}&features={features}");
         var response = await GetAsync(uri, cancellationToken);
 
-        var data = await response.Content.ReadAsStringAsync();
+        var data = await response.Content.ReadAsStringAsync(cancellationToken);
         var jObject = JObject.Parse(data);
 
         var userId = jObject.SelectToken("$.data.user.result.rest_id")!.ToString();
@@ -397,7 +408,7 @@ public class TwitterExtractor : IExtractor
         var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        var data = await response.Content.ReadAsStringAsync();
+        var data = await response.Content.ReadAsStringAsync(cancellationToken);
         var jObject = JObject.Parse(data);
 
         var guestToken = jObject["guest_token"]?.ToString();
@@ -564,7 +575,7 @@ public class TwitterExtractor : IExtractor
         }
     }
 
-    private int? Month3LetterToInt(string month)
+    private static int? Month3LetterToInt(string month)
     {
         return Month3Letters.TryGetValue(month.ToLower(), out var value) ? value : null;
     }

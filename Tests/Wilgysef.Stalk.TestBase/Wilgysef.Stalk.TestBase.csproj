@@ -30,10 +30,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Infrastructure\Wilgysef.Stalk.EntityFrameworkCore\Wilgysef.Stalk.EntityFrameworkCore.csproj" />
     <ProjectReference Include="..\..\Wilgysef.Stalk.Application\Wilgysef.Stalk.Application.csproj" />
-    <ProjectReference Include="..\..\Wilgysef.Stalk.Core.Shared\Wilgysef.Stalk.Core.Shared.csproj" />
-    <ProjectReference Include="..\..\Wilgysef.Stalk.Core\Wilgysef.Stalk.Core.csproj" />
   </ItemGroup>
 
 </Project>

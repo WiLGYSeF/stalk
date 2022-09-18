@@ -4,6 +4,6 @@
     {
         public string Label => "Extractors";
 
-        public string Path { get; set; }
+        public string Path { get; set; } = null!;
     }
 }

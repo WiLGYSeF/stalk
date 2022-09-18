@@ -9,21 +9,21 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
         public Uri Uri { get; }
 
-        public string ItemId { get; }
+        public string? ItemId { get; }
 
-        public string ItemData { get; }
+        public string? ItemData { get; }
 
-        public string MetadataPath { get; }
+        public string? MetadataPath { get; }
 
-        public IMetadataObject Metadata { get; }
+        public IMetadataObject? Metadata { get; }
 
         public DownloadResult(
             string path,
             Uri uri,
-            string itemId,
-            string itemData = null,
-            string metadataPath = null,
-            IMetadataObject metadata = null)
+            string? itemId,
+            string? itemData = null,
+            string? metadataPath = null,
+            IMetadataObject? metadata = null)
         {
             Path = path;
             Uri = uri;

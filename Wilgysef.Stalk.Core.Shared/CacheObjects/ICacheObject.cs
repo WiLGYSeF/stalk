@@ -7,21 +7,21 @@ namespace Wilgysef.Stalk.Core.Shared.CacheObjects
     {
         ICollection<object> Keys { get; }
 
-        object this[object key] { get; set; }
+        object? this[object key] { get; set; }
 
-        void Add(object key, object value, DateTime? expires = null);
+        void Add(object key, object? value, DateTime? expires = null);
 
-        bool TryAdd(object key, object value, DateTime? expires = null);
+        bool TryAdd(object key, object? value, DateTime? expires = null);
 
-        void Set(object key, object value, DateTime? expires = null);
+        void Set(object key, object? value, DateTime? expires = null);
 
-        bool TryGetValue(object key, out object value);
+        bool TryGetValue(object key, out object? value);
 
         bool ContainsKey(object key);
 
         bool Remove(object key);
 
-        bool Remove(object key, out object value);
+        bool Remove(object key, out object? value);
 
         void Clear();
 

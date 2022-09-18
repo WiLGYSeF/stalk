@@ -4,17 +4,17 @@
     {
         public string Filename { get; set; }
 
-        public long FileSize { get; set; }
+        public long? FileSize { get; set; }
 
-        public string Hash { get; set; }
+        public string? Hash { get; set; }
 
-        public string HashName { get; set; }
+        public string? HashName { get; set; }
 
         public DownloadFileResult(
             string filename,
-            long fileSize,
-            string hash,
-            string hashName)
+            long? fileSize,
+            string? hash,
+            string? hashName)
         {
             Filename = filename;
             FileSize = fileSize;

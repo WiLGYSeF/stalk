@@ -30,16 +30,13 @@
             }
         }
 
-        private string _keySeparatorString = null;
+        private string? _keySeparatorString = null;
 
         private string KeySeparatorString
         {
             get
             {
-                if (_keySeparatorString == null)
-                {
-                    _keySeparatorString = KeySeparator.ToString();
-                }
+                _keySeparatorString ??= KeySeparator.ToString();
                 return _keySeparatorString;
             }
         }

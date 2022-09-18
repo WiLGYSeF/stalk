@@ -55,7 +55,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             string? itemId,
             string? itemData,
             string? metadataFilenameTemplate,
-            IMetadataObject? metadata,
+            IMetadataObject metadata,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var downloadFileResult = await SaveFileAsync(
@@ -100,7 +100,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         protected virtual async Task<DownloadFileResult> SaveFileAsync(
             Uri uri,
             string filenameTemplate,
-            IMetadataObject? metadata,
+            IMetadataObject metadata,
             CancellationToken cancellationToken = default)
         {
             var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
@@ -142,10 +142,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             CancellationToken cancellationToken = default)
         {
             long fileSize = 0;
-            if (buffer == null)
-            {
-                buffer = new byte[DownloadBufferSize];
-            }
+            buffer ??= new byte[DownloadBufferSize];
 
             while (true)
             {
@@ -183,7 +180,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
         protected virtual Task<string?> SaveMetadataAsync(
             string? metadataFilenameTemplate,
-            IDictionary<string, object>? metadata,
+            IDictionary<string, object> metadata,
             CancellationToken cancellationToken = default)
         {
             if (metadataFilenameTemplate == null)
