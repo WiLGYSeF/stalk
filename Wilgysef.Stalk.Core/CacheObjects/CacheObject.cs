@@ -78,6 +78,20 @@ public class CacheObject<TKey, TValue> : ICacheObject<TKey, TValue> where TKey :
         _cache.Clear();
     }
 
+    public int RemoveExpired()
+    {
+        int removed = 0;
+        foreach (var (key, cacheValue) in _cache)
+        {
+            if (IsCacheValueExpired(cacheValue))
+            {
+                Remove(key);
+                removed++;
+            }
+        }
+        return removed;
+    }
+
     private TValue? Get(TKey key)
     {
         if (!TryGetValue(key, out var value))

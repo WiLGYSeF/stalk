@@ -24,6 +24,8 @@ namespace Wilgysef.Stalk.Core.Shared.CacheObjects
         bool Remove(object key, out object value);
 
         void Clear();
+
+        int RemoveExpired();
     }
 
     public interface ICacheObject<TKey, TValue>
@@ -47,5 +49,7 @@ namespace Wilgysef.Stalk.Core.Shared.CacheObjects
         bool Remove(TKey key, out TValue value);
 
         void Clear();
+
+        int RemoveExpired();
     }
 }
