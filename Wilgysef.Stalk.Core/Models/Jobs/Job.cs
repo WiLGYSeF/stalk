@@ -478,5 +478,7 @@ public class Job : Entity
         ChangeState((failedTaskCount > config.MaxFailures || failedTaskCount == Tasks.Count(t => t.IsDone))
             ? JobState.Failed
             : JobState.Completed);
+
+        DomainEvents.AddOrReplace(new JobDoneEvent(Id));
     }
 }

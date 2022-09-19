@@ -16,4 +16,9 @@ public class JobExtractorCacheObjectCollectionService : IJobExtractorCacheObject
         }
         return cacheCollection;
     }
+
+    public bool RemoveCacheCollection(long jobId)
+    {
+        return _cacheCollections.Remove(jobId, out _);
+    }
 }

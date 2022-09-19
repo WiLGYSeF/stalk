@@ -3,4 +3,6 @@
 public interface IJobExtractorCacheObjectCollectionService
 {
     IExtractorCacheObjectCollection GetCacheCollection(long jobId);
+
+    bool RemoveCacheCollection(long jobId);
 }
