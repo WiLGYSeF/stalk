@@ -548,7 +548,7 @@ public class TwitterExtractor : IExtractor
         return result.HasValue ? result.Value : datetime;
     }
 
-    private DateTime? ParseDateTime(string datetime)
+    private static DateTime? ParseDateTime(string datetime)
     {
         try
         {

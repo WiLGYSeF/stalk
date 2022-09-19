@@ -15,14 +15,14 @@ namespace Wilgysef.Stalk.Core.Shared.ServiceLocators
         /// </summary>
         /// <typeparam name="T">Service type.</typeparam>
         /// <returns>Service, or <see langword="null"/> if service is not registered.</returns>
-        T GetService<T>() where T : class;
+        T? GetService<T>() where T : class;
 
         /// <summary>
         /// Gets service.
         /// </summary>
         /// <param name="type">Service type.</param>
         /// <returns>Service, or <see langword="null"/> if service is not registered.</returns>
-        object GetService(Type type);
+        object? GetService(Type type);
 
         /// <summary>
         /// Gets service. Throws if service is not registered.

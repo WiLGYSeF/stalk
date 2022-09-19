@@ -7,45 +7,44 @@ namespace Wilgysef.Stalk.Core.StringFormatters;
 
 public class StringFormatter : IStringFormatter, ITransientDependency
 {
-    private static Regex _formatRegex = new(@"(?<=(?:^|[^$])(?:\$\$)*)(\${(?<format>(?:\\}|[^}])+)})", RegexOptions.Compiled);
+    private static readonly Regex FormatRegex = new(@"(?<=(?:^|[^$])(?:\$\$)*)(\${(?<format>(?:\\}|[^}])+)})", RegexOptions.Compiled);
 
-    private static Regex _formatInternalRegex = new(@"((?<char>^|[,|:])(?<value>(?:""(?<literal>(?:\\""|[^""])*)""|\\,|\\\||\\:|[^,|:])+))", RegexOptions.Compiled);
+    private static readonly Regex FormatInternalRegex = new(@"((?<char>^|[,|:])(?<value>(?:""(?<literal>(?:\\""|[^""])*)""|\\,|\\\||\\:|[^,|:])+))", RegexOptions.Compiled);
 
-    private const string _formatRegexFormatGroup = "format";
+    private const string FormatRegexFormatGroup = "format";
 
-    private const string _formatInternalRegexCharGroup = "char";
-    private const string _formatInternalRegexValueGroup = "value";
-    private const string _formatInternalRegexLiteralGroup = "literal";
+    private const string FormatInternalRegexCharGroup = "char";
+    private const string FormatInternalRegexValueGroup = "value";
+    private const string FormatInternalRegexLiteralGroup = "literal";
 
-    private const char _formatInitChar = '$';
-    private const char _formatBeginChar = '{';
-    private const char _formatEndChar = '}';
+    private const string FormatInitString = "$";
+    private const string FormatInitDoubleString = "$$";
 
-    private const char _formatAlignmentChar = ',';
-    private const char _formatFormatterChar = ':';
-    private const char _formatDefaultChar = '|';
+    private const char FormatAlignmentChar = ',';
+    private const char FormatFormatterChar = ':';
+    private const char FormatDefaultChar = '|';
 
-    public string Format(string value, IDictionary<string, object> formatValues)
+    public string Format(string value, IDictionary<string, object?> formatValues)
     {
         var builder = new StringBuilder();
-        MatchCollection matches = _formatRegex.Matches(value);
+        MatchCollection matches = FormatRegex.Matches(value);
 
         var lastIndex = 0;
         foreach (Match match in matches.Cast<Match>())
         {
-            builder.Append(value[lastIndex..match.Index].Replace("$$", "$"));
+            builder.Append(value[lastIndex..match.Index].Replace(FormatInitDoubleString, FormatInitString));
             lastIndex = match.Index + match.Length;
 
             builder.Append(FormatInternal(match, formatValues));
         }
-        builder.Append(value[lastIndex..].Replace("$$", "$"));
+        builder.Append(value[lastIndex..].Replace(FormatInitDoubleString, FormatInitString));
 
         return builder.ToString();
     }
 
-    private string FormatInternal(Match match, IDictionary<string, object> formatValues)
+    private string FormatInternal(Match match, IDictionary<string, object?> formatValues)
     {
-        MatchCollection matches = _formatInternalRegex.Matches(match.Groups[_formatRegexFormatGroup].Value);
+        MatchCollection matches = FormatInternalRegex.Matches(match.Groups[FormatRegexFormatGroup].Value);
         string? key = null;
         string? formatter = null;
         string? alignment = null;
@@ -53,32 +52,32 @@ public class StringFormatter : IStringFormatter, ITransientDependency
 
         foreach (Match m in matches.Cast<Match>())
         {
-            var charValue = m.Groups[_formatInternalRegexCharGroup].Value;
+            var charValue = m.Groups[FormatInternalRegexCharGroup].Value;
             if (charValue.Length == 0)
             {
-                key ??= m.Groups[_formatInternalRegexValueGroup].Value;
+                key ??= m.Groups[FormatInternalRegexValueGroup].Value;
                 continue;
             }
 
             switch (charValue[0])
             {
-                case _formatAlignmentChar:
-                    alignment = m.Groups[_formatInternalRegexValueGroup].Value;
+                case FormatAlignmentChar:
+                    alignment = m.Groups[FormatInternalRegexValueGroup].Value;
                     break;
-                case _formatFormatterChar:
-                    formatter = m.Groups[_formatInternalRegexValueGroup].Value;
+                case FormatFormatterChar:
+                    formatter = m.Groups[FormatInternalRegexValueGroup].Value;
                     break;
-                case _formatDefaultChar:
+                case FormatDefaultChar:
                     if (defaultValue == null)
                     {
-                        if (m.Groups[_formatInternalRegexLiteralGroup].Success)
+                        if (m.Groups[FormatInternalRegexLiteralGroup].Success)
                         {
-                            defaultValue = m.Groups[_formatInternalRegexLiteralGroup].Value
+                            defaultValue = m.Groups[FormatInternalRegexLiteralGroup].Value
                                 .Replace("\\\"", "\"");
                         }
                         else
                         {
-                            formatValues.TryGetValue(m.Groups[_formatInternalRegexValueGroup].Value, out defaultValue);
+                            formatValues.TryGetValue(m.Groups[FormatInternalRegexValueGroup].Value, out defaultValue);
                         }
                     }
                     break;
@@ -102,16 +101,16 @@ public class StringFormatter : IStringFormatter, ITransientDependency
         return valueStr;
     }
 
-    private string FormatObject(object value, string? format)
+    private string FormatObject(object? value, string? format)
     {
         if (format == null)
         {
-            return value.ToString() ?? "";
+            return value?.ToString() ?? "";
         }
 
         // TODO: formatters
 
-        return value.ToString() ?? "";
+        return value?.ToString() ?? "";
     }
 
     private string AlignString(string value, int alignment)

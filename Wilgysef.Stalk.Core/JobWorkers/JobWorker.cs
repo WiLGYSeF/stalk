@@ -62,6 +62,7 @@ public class JobWorker : IJobWorker
         _httpClient = httpClient;
     }
 
+    // TODO: use constructor
     public virtual IJobWorker WithJob(Job job)
     {
         if (_working)
@@ -157,11 +158,14 @@ public class JobWorker : IJobWorker
         {
             Logger?.LogInformation("Job {JobId} stopping.", Job?.Id);
 
-            using var scope = _lifetimeScope.BeginLifetimeScope();
-            var jobManager = scope.GetRequiredService<IJobManager>();
+            if (Job != null)
+            {
+                using var scope = _lifetimeScope.BeginLifetimeScope();
+                var jobManager = scope.GetRequiredService<IJobManager>();
 
-            Job.Deactivate();
-            await jobManager.UpdateJobAsync(Job, CancellationToken.None);
+                Job.Deactivate();
+                await jobManager.UpdateJobAsync(Job, CancellationToken.None);
+            }
         }
     }
 
@@ -214,7 +218,7 @@ public class JobWorker : IJobWorker
             if (task.IsCompleted)
             {
                 _tasks.Remove(task, out var jobTaskId);
-                Logger?.LogDebug("Job {JobId} removed completed task for {JobTaskId}.", Job.Id, jobTaskId);
+                Logger?.LogDebug("Job {JobId} removed completed task for {JobTaskId}.", Job!.Id, jobTaskId);
             }
         }
     }

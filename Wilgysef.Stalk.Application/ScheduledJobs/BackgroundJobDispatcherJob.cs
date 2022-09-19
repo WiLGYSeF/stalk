@@ -5,7 +5,7 @@ namespace Wilgysef.Stalk.Application.ScheduledJobs;
 
 public class BackgroundJobDispatcherJob : IJob
 {
-    private IBackgroundJobDispatcher _backgroundJobDispatcher;
+    private readonly IBackgroundJobDispatcher _backgroundJobDispatcher;
 
     public BackgroundJobDispatcherJob(
         IBackgroundJobDispatcher backgroundJobDispatcher)

@@ -48,7 +48,7 @@ public class FormatTest
     [InlineData("${notexist,4|num}", " 123")]
     public void Format_Strings(string format, string expected)
     {
-        var replace = new Dictionary<string, object>
+        var replace = new Dictionary<string, object?>
         {
             { "test", "abc" },
             { "num", 123 },

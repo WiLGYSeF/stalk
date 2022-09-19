@@ -26,7 +26,7 @@ public class JobTaskWorker : IJobTaskWorker
 
     public ILogger? Logger { get; set; }
 
-    private JobConfig JobConfig { get; set; }
+    private JobConfig? JobConfig { get; set; }
 
     private bool _working = false;
 
@@ -41,6 +41,7 @@ public class JobTaskWorker : IJobTaskWorker
         _httpClient = httpClient;
     }
 
+    // TODO: use constructor
     public virtual IJobTaskWorker WithJobTask(JobTask jobTask)
     {
         if (_working)
@@ -101,49 +102,55 @@ public class JobTaskWorker : IJobTaskWorker
         }
         catch (OperationCanceledException)
         {
-            Logger?.LogInformation("Job task {JobTaskId} worker cancelled.", JobTask.Id);
+            Logger?.LogInformation("Job task {JobTaskId} worker cancelled.", JobTask?.Id);
             throw;
         }
         catch (Exception exception)
         {
-            Logger?.LogError(exception, "Job task {JobTaskId} failed.", JobTask.Id);
+            Logger?.LogError(exception, "Job task {JobTaskId} failed.", JobTask?.Id);
 
-            var workerException = exception as JobTaskWorkerException;
-
-            if (RetryJobTask(JobTask, exception, out var tooManyRequests))
+            if (JobTask != null)
             {
-                Logger?.LogInformation("Job task {JobTaskId} creating retry task.", JobTask.Id);
+                var workerException = exception as JobTaskWorkerException;
 
-                try
+                if (RetryJobTask(JobTask, exception, out var tooManyRequests))
                 {
-                    using var scope = _lifetimeScope.BeginLifetimeScope();
-                    var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
-                    var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
+                    Logger?.LogInformation("Job task {JobTaskId} creating retry task.", JobTask.Id);
 
-                    var retryTask = CreateRetryJobTask(idGenerator.CreateId(), tooManyRequests);
+                    try
+                    {
+                        using var scope = _lifetimeScope.BeginLifetimeScope();
+                        var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
+                        var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
 
-                    await jobTaskManager.CreateJobTaskAsync(retryTask, CancellationToken.None);
+                        var retryTask = CreateRetryJobTask(idGenerator.CreateId(), tooManyRequests);
+
+                        await jobTaskManager.CreateJobTaskAsync(retryTask, CancellationToken.None);
+                    }
+                    catch (Exception retryTaskException)
+                    {
+                        Logger?.LogError(retryTaskException, "Job task {JobTaskId} failed to create a retry job task.", JobTask.Id);
+                    }
                 }
-                catch (Exception retryTaskException)
-                {
-                    Logger?.LogError(retryTaskException, "Job task {JobTaskId} failed to create a retry job task.", JobTask.Id);
-                }
+
+                JobTask.Fail(
+                    errorCode: workerException?.Code,
+                    errorMessage: exception.Message,
+                    errorDetail: workerException?.Details ?? exception.ToString());
             }
-
-            JobTask.Fail(
-                errorCode: workerException?.Code,
-                errorMessage: exception.Message,
-                errorDetail: workerException?.Details ?? exception.ToString());
         }
         finally
         {
-            Logger?.LogInformation("Job task {JobTaskId} stopping.", JobTask.Id);
+            Logger?.LogInformation("Job task {JobTaskId} stopping.", JobTask?.Id);
 
-            using var scope = _lifetimeScope.BeginLifetimeScope();
-            var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
+            if (JobTask != null)
+            {
+                using var scope = _lifetimeScope.BeginLifetimeScope();
+                var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
 
-            JobTask.Deactivate();
-            await jobTaskManager.UpdateJobTaskAsync(JobTask, CancellationToken.None);
+                JobTask.Deactivate();
+                await jobTaskManager.UpdateJobTaskAsync(JobTask, CancellationToken.None);
+            }
         }
     }
 
@@ -176,7 +183,7 @@ public class JobTaskWorker : IJobTaskWorker
         var jobExtractorCacheObjectCollectionService = scope.GetRequiredService<IJobExtractorCacheObjectCollectionService>();
         var cacheCollection = jobExtractorCacheObjectCollectionService.GetCacheCollection(JobTask.JobId);
         extractor.Cache = cacheCollection.GetCache(extractor);
-        extractor.Config = JobConfig.GetExtractorConfig(extractor);
+        extractor.Config = JobConfig!.GetExtractorConfig(extractor);
 
         Logger?.LogInformation("Job task {JobTaskId} using extractor {Extractor}.", JobTask.Id, extractor.Name);
 
@@ -240,7 +247,7 @@ public class JobTaskWorker : IJobTaskWorker
         {
             throw new InvalidOperationException("No downloader found.");
         }
-        if (!JobConfig.DownloadData)
+        if (!JobConfig!.DownloadData)
         {
             Logger?.LogInformation("Job task {JobTaskId} skipping download", JobTask.Id);
             return;
@@ -294,17 +301,17 @@ public class JobTaskWorker : IJobTaskWorker
     protected virtual JobTask CreateRetryJobTask(long jobTaskId, bool tooManyRequests)
     {
         var jobTaskBuilder = new JobTaskBuilder()
-            .WithRetryJobTask(JobTask)
+            .WithRetryJobTask(JobTask!)
             .WithId(jobTaskId)
-            .WithPriority(JobTask.Priority - JobTaskPriorityRetryChange);
+            .WithPriority(JobTask!.Priority - JobTaskPriorityRetryChange);
 
-        if (tooManyRequests && JobConfig.Delay?.TooManyRequestsDelay != null)
+        if (tooManyRequests && JobConfig?.Delay?.TooManyRequestsDelay != null)
         {
             jobTaskBuilder.WithDelayTime(TimeSpan.FromSeconds(RandomInt(
                 JobConfig.Delay.TooManyRequestsDelay.Min,
                 JobConfig.Delay.TooManyRequestsDelay.Max)));
         }
-        else if (JobConfig.Delay?.TaskFailedDelay != null)
+        else if (JobConfig?.Delay?.TaskFailedDelay != null)
         {
             jobTaskBuilder.WithDelayTime(TimeSpan.FromSeconds(RandomInt(
                 JobConfig.Delay.TaskFailedDelay.Min,

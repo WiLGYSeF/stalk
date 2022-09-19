@@ -45,7 +45,7 @@ public class BackgroundJobManagerTest : BaseTest
 
         var jobs = await _backgroundJobManager.GetJobsAsync();
         var job = jobs.Single(j => j.GetJobArgsType() == typeof(TestJobArgs));
-        var args = job.DeserializeArgs() as TestJobArgs;
+        var args = (TestJobArgs)job.DeserializeArgs();
 
         args.Name.ShouldBe("b");
         args.Value.ShouldBe(2);

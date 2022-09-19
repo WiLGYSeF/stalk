@@ -6,7 +6,7 @@ public class CreateJobTaskDto
 
     public int Priority { get; set; }
 
-    public string Uri { get; set; }
+    public string Uri { get; set; } = null!;
 
     public DateTime? DelayedUntil { get; set; }
 }

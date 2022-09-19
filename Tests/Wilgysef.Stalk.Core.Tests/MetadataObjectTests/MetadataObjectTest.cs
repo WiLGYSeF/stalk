@@ -122,11 +122,11 @@ public class MetadataObjectTest
         metadata.TryGetValue("aaa.asdf", out value).ShouldBeTrue();
         value.ShouldBe(2);
 
-        metadata.TryGetValue("aaa", out value).ShouldBeTrue();
+        metadata.TryGetValue("aaa", out _).ShouldBeTrue();
 
-        metadata.TryGetValue("asdf", out value).ShouldBeFalse();
-        metadata.TryGetValue("eee.abc", out value).ShouldBeFalse();
-        metadata.TryGetValue("aaa.abc", out value).ShouldBeFalse();
+        metadata.TryGetValue("asdf", out _).ShouldBeFalse();
+        metadata.TryGetValue("eee.abc", out _).ShouldBeFalse();
+        metadata.TryGetValue("aaa.abc", out _).ShouldBeFalse();
     }
 
     [Fact]
@@ -246,19 +246,19 @@ public class MetadataObjectTest
     [Fact]
     public void From_Dictionary()
     {
-        var dict = new Dictionary<object, object>
+        var dict = new Dictionary<object, object?>
         {
             { "abc", 1 },
             {
                 "aaa",
-                new Dictionary<object, object>
+                new Dictionary<object, object?>
                 {
                     { "asdf.test", 2 },
                     { "aaa", 4 },
                     { 123, 99 },
                     {
                         "nest",
-                        new Dictionary<object, object>
+                        new Dictionary<object, object?>
                         {
                             { "value", 5 },
                         }
@@ -278,7 +278,7 @@ public class MetadataObjectTest
         metadata.GetValue("test.key").ShouldBe(3);
     }
 
-    private object? GetNestedValue(IDictionary<string, object> dictionary, params string[] keys)
+    private object? GetNestedValue(IDictionary<string, object?> dictionary, params string[] keys)
     {
         object? dict = dictionary;
         foreach (var key in keys)

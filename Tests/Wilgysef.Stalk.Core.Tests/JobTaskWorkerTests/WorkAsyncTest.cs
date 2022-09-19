@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Shouldly;
+using System.Runtime.CompilerServices;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.Models.Jobs;
@@ -119,7 +120,11 @@ public class WorkAsyncTest : BaseTest
                 .WithTasks(new JobTaskBuilder()
                     .WithRandomInitializedState(JobTaskState.Inactive)
                     .WithType(JobTaskType.Download)
-                    .Create());
+                    .Create())
+                .WithConfig(new JobConfig
+                {
+                    DownloadFilenameTemplate = "a",
+                });
 
             if (testItemIds)
             {
@@ -282,6 +287,7 @@ public class WorkAsyncTest : BaseTest
                     .Create())
                 .WithConfig(new JobConfig
                 {
+                    DownloadFilenameTemplate = "a",
                     DownloaderConfig = new[]
                     {
                         new JobConfig.ConfigGroup
@@ -335,11 +341,13 @@ public class WorkAsyncTest : BaseTest
     }
 
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     private static async IAsyncEnumerable<ExtractResult> ExtractAsync(
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         Uri uri,
         string itemData,
         IMetadataObject metadata,
-        CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         yield return new ExtractResult(
             new Uri(RandomValues.RandomUri()),
@@ -352,14 +360,16 @@ public class WorkAsyncTest : BaseTest
             JobTaskType.Extract);
     }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     private static async IAsyncEnumerable<DownloadResult> DownloadAsync(
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         Uri uri,
         string filenameTemplate,
         string itemId,
         string itemData,
         string metadataFilenameTemplate,
         IMetadataObject metadata,
-        CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         yield return new DownloadResult(
             RandomValues.RandomDirPath(3),

@@ -204,7 +204,7 @@ public class MetadataObject : IMetadataObject
         return dictionary;
     }
 
-    public void From(IDictionary<object, object> dictionary)
+    public void From(IDictionary<object, object?> dictionary)
     {
         SetValues(dictionary, null);
     }
@@ -282,7 +282,7 @@ public class MetadataObject : IMetadataObject
         return currentTrie;
     }
 
-    private void SetValues(IDictionary<object, object> dictionary, string? root)
+    private void SetValues(IDictionary<object, object?> dictionary, string? root)
     {
         foreach (var (key, value) in dictionary)
         {
@@ -293,7 +293,7 @@ public class MetadataObject : IMetadataObject
             }
 
             var keyStr = root != null ? root + KeySeparator + keyToString : keyToString;
-            if (value is IDictionary<object, object> dict)
+            if (value is IDictionary<object, object?> dict)
             {
                 SetValues(dict, keyStr);
             }

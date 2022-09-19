@@ -95,7 +95,7 @@ public class TaskDelayTooManyRequestsTest : BaseTest
         var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
         var retryTask = job.Tasks.First(t => t.Id != jobTaskId);
         retryTask.Uri.ShouldBe(jobTask.Uri);
-        (retryTask.DelayedUntil.Value - DateTime.Now).TotalSeconds.ShouldBeInRange(90, 100);
+        (retryTask.DelayedUntil!.Value - DateTime.Now).TotalSeconds.ShouldBeInRange(90, 100);
     }
 
     [Fact]
@@ -130,26 +130,24 @@ public class TaskDelayTooManyRequestsTest : BaseTest
         retryTask.DelayedUntil.ShouldBeNull();
     }
 
-    private static async IAsyncEnumerable<ExtractResult> ExtractAsync(
+    private static IAsyncEnumerable<ExtractResult> ExtractAsync(
         Uri uri,
-        string itemData,
+        string? itemData,
         IMetadataObject metadata,
         CancellationToken cancellationToken = default)
     {
         throw new HttpRequestException("Mock download exception.", null, HttpStatusCode.TooManyRequests);
-        yield break;
     }
 
-    private static async IAsyncEnumerable<DownloadResult> DownloadAsync(
+    private static IAsyncEnumerable<DownloadResult> DownloadAsync(
         Uri uri,
         string filenameTemplate,
-        string itemId,
+        string? itemId,
         string itemData,
-        string metadataFilenameTemplate,
+        string? metadataFilenameTemplate,
         IMetadataObject metadata,
         CancellationToken cancellationToken = default)
     {
         throw new HttpRequestException("Mock download exception.", null, HttpStatusCode.TooManyRequests);
-        yield break;
     }
 }

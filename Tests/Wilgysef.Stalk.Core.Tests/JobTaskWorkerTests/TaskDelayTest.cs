@@ -95,7 +95,7 @@ public class TaskDelayTest : BaseTest
         var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
         var retryTask = job.Tasks.First(t => t.Id != jobTaskId);
         retryTask.Uri.ShouldBe(jobTask.Uri);
-        (retryTask.DelayedUntil.Value - DateTime.Now).TotalSeconds.ShouldBeInRange(90, 100);
+        (retryTask.DelayedUntil!.Value - DateTime.Now).TotalSeconds.ShouldBeInRange(90, 100);
     }
 
     [Fact]
@@ -130,17 +130,16 @@ public class TaskDelayTest : BaseTest
         retryTask.DelayedUntil.ShouldBeNull();
     }
 
-    private static async IAsyncEnumerable<ExtractResult> ExtractAsync(
+    private static IAsyncEnumerable<ExtractResult> ExtractAsync(
         Uri uri,
         string itemData,
         IMetadataObject metadata,
         CancellationToken cancellationToken = default)
     {
         throw new HttpRequestException("Mock download exception.", null, HttpStatusCode.InternalServerError);
-        yield break;
     }
 
-    private static async IAsyncEnumerable<DownloadResult> DownloadAsync(
+    private static IAsyncEnumerable<DownloadResult> DownloadAsync(
         Uri uri,
         string filenameTemplate,
         string itemId,
@@ -150,6 +149,5 @@ public class TaskDelayTest : BaseTest
         CancellationToken cancellationToken = default)
     {
         throw new HttpRequestException("Mock download exception.", null, HttpStatusCode.InternalServerError);
-        yield break;
     }
 }

@@ -7,7 +7,7 @@ namespace Wilgysef.Stalk.TestBase.Mocks;
 
 public class JobTaskWorkerFactoryMock : IJobTaskWorkerFactory
 {
-    public event EventHandler<WorkEventArgs> WorkEvent;
+    public event EventHandler<WorkEventArgs>? WorkEvent;
 
     private readonly List<IJobTaskWorker> _jobTaskWorkers = new();
 

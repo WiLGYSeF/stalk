@@ -35,7 +35,7 @@ public class WorkAsyncTest : BaseTest
             c.Resolve<IServiceLocator>(),
             c.Resolve<HttpClient>()));
 
-        _jobTaskWorkerFactory = GetRequiredService<IJobTaskWorkerFactory>() as JobTaskWorkerFactoryMock;
+        _jobTaskWorkerFactory = (JobTaskWorkerFactoryMock)GetRequiredService<IJobTaskWorkerFactory>();
 
         _jobManager = GetRequiredService<IJobManager>();
         _jobWorkerFactory = GetRequiredService<IJobWorkerFactory>();

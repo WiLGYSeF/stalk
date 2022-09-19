@@ -7,7 +7,7 @@ public class JobTaskWorkerMock : JobTaskWorker
 {
     public static int DelayInterval { get; } = 10;
 
-    public event EventHandler WorkEvent;
+    public event EventHandler? WorkEvent;
 
     private bool _finishWork = false;
     private Exception? _exception = null;

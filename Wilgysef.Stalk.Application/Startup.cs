@@ -12,6 +12,9 @@ namespace Wilgysef.Stalk.Application;
 
 public class Startup
 {
+    public TimeSpan BackgroundJobInterval { get; set; } = TimeSpan.FromSeconds(10);
+    public TimeSpan EnqueuePrioritizedJobsInterval { get; set; } = TimeSpan.FromMinutes(2);
+
     private readonly IRootLifetimeScopeService _rootLifetimeScope;
     private readonly IJobManager _jobManager;
     private readonly IBackgroundJobManager _backgroundJobManager;
@@ -71,15 +74,23 @@ public class Startup
 
     private async Task StartScheduledJobs()
     {
+        await StartScheduledJob<BackgroundJobDispatcherJob>(
+            TriggerBuilder.Create()
+                .WithSimpleSchedule(b => b.WithIntervalInSeconds((int)BackgroundJobInterval.TotalSeconds).RepeatForever())
+                .Build());
+
+        await StartScheduledJob<EnqueueWorkPrioritizedJobsJob>(
+            TriggerBuilder.Create()
+                .WithSimpleSchedule(b => b.WithIntervalInSeconds((int)EnqueuePrioritizedJobsInterval.TotalSeconds).RepeatForever())
+                .Build());
+    }
+
+    private async Task StartScheduledJob<T>(ITrigger trigger) where T : IJob
+    {
         var scheduler = await _schedulerFactory.GetScheduler();
         scheduler.JobFactory = _scheduleJobFactory;
 
-        await scheduler.ScheduleJob(
-            Quartz.JobBuilder.Create<BackgroundJobDispatcherJob>().Build(),
-            TriggerBuilder.Create()
-                .WithSimpleSchedule(b => b.WithIntervalInSeconds(10).RepeatForever())
-                .Build());
-
+        await scheduler.ScheduleJob(Quartz.JobBuilder.Create<T>().Build(), trigger);
         await scheduler.Start(_schedulerTokenSource.Token);
     }
 }
