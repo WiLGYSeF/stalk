@@ -2,9 +2,9 @@
 using System.Net;
 using System.Security.Cryptography;
 using Wilgysef.Stalk.Core.DownloadSelectors;
+using Wilgysef.Stalk.Core.ExtractorCacheObjectCollectionServices;
+using Wilgysef.Stalk.Core.ExtractorHttpClientFactories;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
-using Wilgysef.Stalk.Core.JobExtractorCacheObjectCollectionServices;
-using Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared;
@@ -26,15 +26,12 @@ public class JobTaskWorker : IJobTaskWorker
     private JobConfig? JobConfig { get; set; }
 
     private readonly IServiceLifetimeScope _lifetimeScope;
-    private HttpClient _httpClient;
 
     public JobTaskWorker(
         IServiceLifetimeScope lifetimeScope,
-        HttpClient httpClient,
         JobTask jobTask)
     {
         _lifetimeScope = lifetimeScope;
-        _httpClient = httpClient;
         JobTask = jobTask;
     }
 
@@ -52,13 +49,6 @@ public class JobTaskWorker : IJobTaskWorker
                 if (!JobTask.IsActive)
                 {
                     await jobTaskManager.SetJobTaskActiveAsync(JobTask, CancellationToken.None);
-                }
-
-                var jobHttpClientCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
-                if (jobHttpClientCollectionService.TryGetHttpClient(JobTask.JobId, out var client))
-                {
-                    _httpClient.Dispose();
-                    _httpClient = client;
                 }
             }
 
@@ -135,7 +125,6 @@ public class JobTaskWorker : IJobTaskWorker
     public virtual void Dispose()
     {
         _lifetimeScope.Dispose();
-        _httpClient.Dispose();
 
         GC.SuppressFinalize(this);
     }
@@ -156,12 +145,15 @@ public class JobTaskWorker : IJobTaskWorker
                 $"No extractor was able to extract from {jobTaskUri}");
         }
 
-        extractor.SetHttpClient(_httpClient);
+        var extractorConfig = JobConfig!.GetExtractorConfig(extractor);
+
+        var extractorHttpClientCollectionService = scope.GetRequiredService<IExtractorHttpClientCollectionService>();
+        extractor.SetHttpClient(extractorHttpClientCollectionService.GetHttpClient(JobTask.JobId, extractor, extractorConfig));
 
         var jobExtractorCacheObjectCollectionService = scope.GetRequiredService<IJobExtractorCacheObjectCollectionService>();
         var cacheCollection = jobExtractorCacheObjectCollectionService.GetCacheCollection(JobTask.JobId);
         extractor.Cache = cacheCollection.GetCache(extractor);
-        extractor.Config = JobConfig!.GetExtractorConfig(extractor);
+        extractor.Config = extractorConfig;
 
         Logger?.LogInformation("Job task {JobTaskId} using extractor {Extractor}.", JobTask.Id, extractor.Name);
 
@@ -235,7 +227,8 @@ public class JobTaskWorker : IJobTaskWorker
             throw new JobTaskWorkerException("No download filename template given.");
         }
 
-        downloader.SetHttpClient(_httpClient);
+        // TODO: HttpClient?
+        //downloader.SetHttpClient(_httpClient);
         downloader.Config = JobConfig.GetDownloaderConfig(downloader);
 
         Logger?.LogInformation("Job task {JobTaskId} using downloader {Downloader}.", JobTask.Id, downloader.Name);

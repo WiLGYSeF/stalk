@@ -11,21 +11,17 @@ public class JobTaskWorkerFactory : IJobTaskWorkerFactory, ITransientDependency
     public ILogger? Logger { get; set; }
 
     private readonly IServiceLocator _serviceLocator;
-    private readonly HttpClient _httpClient;
 
     public JobTaskWorkerFactory(
-        IServiceLocator serviceLocator,
-        HttpClient httpClient)
+        IServiceLocator serviceLocator)
     {
         _serviceLocator = serviceLocator;
-        _httpClient = httpClient;
     }
 
     public IJobTaskWorker CreateWorker(JobTask jobTask)
     {
         return new JobTaskWorker(
             _serviceLocator.BeginLifetimeScopeFromRoot(),
-            _httpClient,
             jobTask)
         {
             Logger = Logger,

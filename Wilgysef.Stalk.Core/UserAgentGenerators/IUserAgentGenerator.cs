@@ -6,5 +6,5 @@ public interface IUserAgentGenerator
     /// Generates user agent.
     /// </summary>
     /// <returns>User agent.</returns>
-    string Generate();
+    string Create();
 }

@@ -1,4 +1,4 @@
-﻿namespace Wilgysef.Stalk.Core.JobExtractorCacheObjectCollectionServices;
+﻿namespace Wilgysef.Stalk.Core.ExtractorCacheObjectCollectionServices;
 
 public interface IJobExtractorCacheObjectCollectionService
 {

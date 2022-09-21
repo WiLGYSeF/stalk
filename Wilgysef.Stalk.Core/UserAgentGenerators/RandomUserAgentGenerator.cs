@@ -1,8 +1,9 @@
 ﻿using System.Security.Cryptography;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.UserAgentGenerators;
 
-public class RandomUserAgentGenerator : IUserAgentGenerator
+public class RandomUserAgentGenerator : IUserAgentGenerator, ITransientDependency
 {
     private static readonly object[][] SystemInformations = new[]
     {
@@ -44,7 +45,7 @@ public class RandomUserAgentGenerator : IUserAgentGenerator
         },
     };
 
-    public string Generate()
+    public string Create()
     {
         var systemInformation = string.Join("", SystemInformations[RandomNumberGenerator.GetInt32(0, SystemInformations.Length)]);
         var platform = string.Join("", Platforms[RandomNumberGenerator.GetInt32(0, Platforms.Length)]);

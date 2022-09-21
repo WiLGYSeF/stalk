@@ -3,11 +3,11 @@ using Wilgysef.Stalk.Core.CacheObjects;
 using Wilgysef.Stalk.Core.Shared.CacheObjects;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 
-namespace Wilgysef.Stalk.Core.JobExtractorCacheObjectCollectionServices;
+namespace Wilgysef.Stalk.Core.ExtractorCacheObjectCollectionServices;
 
 public class ExtractorCacheObjectCollection : IExtractorCacheObjectCollection
 {
-    private ConcurrentDictionary<Type, ICacheObject<string, object?>> _caches = new();
+    private readonly ConcurrentDictionary<Type, ICacheObject<string, object?>> _caches = new();
 
     public ICacheObject<string, object?> GetCache(IExtractor extractor)
     {
