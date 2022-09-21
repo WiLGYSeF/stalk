@@ -23,13 +23,12 @@ public class JobTaskWorkerFactory : IJobTaskWorkerFactory, ITransientDependency
 
     public IJobTaskWorker CreateWorker(JobTask jobTask)
     {
-        var taskWorker = new JobTaskWorker(
+        return new JobTaskWorker(
             _serviceLocator.BeginLifetimeScopeFromRoot(),
-            _httpClient)
+            _httpClient,
+            jobTask)
         {
             Logger = Logger,
         };
-        taskWorker.WithJobTask(jobTask);
-        return taskWorker;
     }
 }

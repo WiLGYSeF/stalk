@@ -1,8 +1,4 @@
-﻿using Wilgysef.Stalk.Core.BackgroundJobs;
-using Wilgysef.Stalk.Core.Models.Jobs;
-using Wilgysef.Stalk.Core.Models.JobTasks;
-
-namespace Wilgysef.Stalk.Core.Models;
+﻿namespace Wilgysef.Stalk.Core.Models;
 
 public interface IUnitOfWork
 {

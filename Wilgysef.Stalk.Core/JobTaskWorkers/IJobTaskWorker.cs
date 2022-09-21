@@ -4,9 +4,7 @@ namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
 public interface IJobTaskWorker : IDisposable
 {
-    public JobTask? JobTask { get; }
-
-    IJobTaskWorker WithJobTask(JobTask jobTask);
+    JobTask JobTask { get; }
 
     Task WorkAsync(CancellationToken cancellationToken = default);
 }

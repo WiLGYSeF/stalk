@@ -10,15 +10,15 @@ namespace Wilgysef.Stalk.Core.JobWorkers;
 
 public class JobWorker : IJobWorker
 {
-    private Job? _job;
+    private Job _job = null!;
 
-    public Job? Job
+    public Job Job
     {
         get => _job;
         private set
         {
             _job = value;
-            _jobConfig = _job?.GetConfig();
+            _jobConfig = _job.GetConfig();
 
             WorkerLimit = _jobConfig?.MaxTaskWorkerCount > 0
                 ? _jobConfig?.MaxTaskWorkerCount ?? 4
@@ -26,7 +26,7 @@ public class JobWorker : IJobWorker
         }
     }
 
-    private JobConfig? _jobConfig = null;
+    private JobConfig _jobConfig = null!;
 
     private int _workerLimit = 4;
 
@@ -53,8 +53,6 @@ public class JobWorker : IJobWorker
 
     private readonly Dictionary<Task, long> _tasks = new();
 
-    private bool _working = false;
-
     private DateTime? _lastTimeWithNoTasks;
 
     private readonly IServiceLifetimeScope _lifetimeScope;
@@ -62,35 +60,18 @@ public class JobWorker : IJobWorker
 
     public JobWorker(
         IServiceLifetimeScope lifetimeScope,
-        HttpClient httpClient)
+        HttpClient httpClient,
+        Job job)
     {
         _lifetimeScope = lifetimeScope;
         _httpClient = httpClient;
-    }
-
-    // TODO: use constructor
-    public virtual IJobWorker WithJob(Job job)
-    {
-        if (_working)
-        {
-            throw new InvalidOperationException("Cannot set job when worker is already working");
-        }
-
         Job = job;
-        return this;
     }
 
     public virtual async Task WorkAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            if (Job == null)
-            {
-                throw new InvalidOperationException("Job is not set.");
-            }
-
-            _working = true;
-
             Logger?.LogInformation("Job {JobId} starting.", Job.Id);
 
             using (var scope = _lifetimeScope.BeginLifetimeScope())
@@ -241,7 +222,7 @@ public class JobWorker : IJobWorker
     /// Checks if the time period of no tasks exceeds the <see cref="NoTaskTimeout"/> threshold.
     /// </summary>
     /// <returns>
-    /// <see langword="true"/> if there are no tasks and the timeout exceeded,
+    /// <see langword="true"/> if there are no tasks and the timeout exceeded or if all job tasks are done or if maximum job task failures have been reached,
     /// <see langword="false"/> if there are no tasks and the timeout did not exceed,
     /// or <see langword="null"/> if there are running tasks.</returns>
     private bool? CheckTimeout()
@@ -249,6 +230,10 @@ public class JobWorker : IJobWorker
         if (_tasks.Count != 0)
         {
             return null;
+        }
+        if (Job.Tasks.All(t => t.IsDone) || !JobTaskFailuresLessThanMaxFailures())
+        {
+            return true;
         }
 
         if (!_lastTimeWithNoTasks.HasValue)

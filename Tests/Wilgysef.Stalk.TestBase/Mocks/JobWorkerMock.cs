@@ -6,7 +6,7 @@ namespace Wilgysef.Stalk.TestBase.Mocks;
 
 public class JobWorkerMock : IJobWorker
 {
-    public Job Job { get; private set; } = null!;
+    public Job Job { get; }
 
     public int WorkerLimit { get; set; } = 4;
 
@@ -15,15 +15,11 @@ public class JobWorkerMock : IJobWorker
     private readonly IServiceLifetimeScope _lifetimeScope;
 
     public JobWorkerMock(
-        IServiceLifetimeScope lifetimeScope)
+        IServiceLifetimeScope lifetimeScope,
+        Job job)
     {
         _lifetimeScope = lifetimeScope;
-    }
-
-    public IJobWorker WithJob(Job job)
-    {
         Job = job;
-        return this;
     }
 
     public async Task WorkAsync(CancellationToken cancellationToken = default)

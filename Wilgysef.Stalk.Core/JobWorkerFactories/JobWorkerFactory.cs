@@ -25,10 +25,10 @@ public class JobWorkerFactory : IJobWorkerFactory, ITransientDependency
     {
         return new JobWorker(
             _serviceLocator.BeginLifetimeScopeFromRoot(),
-            _httpClient)
+            _httpClient,
+            job)
         {
             Logger = Logger,
-        }
-            .WithJob(job);
+        };
     }
 }

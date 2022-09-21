@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Security.Cryptography;
-using System.Text.Json;
 using Wilgysef.Stalk.Core.DownloadSelectors;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.JobExtractorCacheObjectCollectionServices;
@@ -9,12 +8,10 @@ using Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared;
-using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.IdGenerators;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
-using Wilgysef.Stalk.Core.Utilities;
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
@@ -22,48 +19,29 @@ public class JobTaskWorker : IJobTaskWorker
 {
     private const int JobTaskPriorityRetryChange = 100;
 
-    public JobTask? JobTask { get; protected set; }
+    public JobTask JobTask { get; protected set; }
 
     public ILogger? Logger { get; set; }
 
     private JobConfig? JobConfig { get; set; }
-
-    private bool _working = false;
 
     private readonly IServiceLifetimeScope _lifetimeScope;
     private HttpClient _httpClient;
 
     public JobTaskWorker(
         IServiceLifetimeScope lifetimeScope,
-        HttpClient httpClient)
+        HttpClient httpClient,
+        JobTask jobTask)
     {
         _lifetimeScope = lifetimeScope;
         _httpClient = httpClient;
-    }
-
-    // TODO: use constructor
-    public virtual IJobTaskWorker WithJobTask(JobTask jobTask)
-    {
-        if (_working)
-        {
-            throw new InvalidOperationException("Cannot set job when worker is already working");
-        }
-
         JobTask = jobTask;
-        return this;
     }
 
     public virtual async Task WorkAsync(CancellationToken cancellationToken = default)
     {
         try
         {
-            if (JobTask == null)
-            {
-                throw new InvalidOperationException("Job task is not set.");
-            }
-
-            _working = true;
-
             Logger?.LogInformation("Job task {JobTaskId} starting.", JobTask.Id);
 
             using (var scope = _lifetimeScope.BeginLifetimeScope())

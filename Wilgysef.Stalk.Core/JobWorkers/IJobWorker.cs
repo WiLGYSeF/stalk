@@ -4,13 +4,11 @@ namespace Wilgysef.Stalk.Core.JobWorkers;
 
 public interface IJobWorker : IDisposable
 {
-    Job? Job { get; }
+    Job Job { get; }
 
     int WorkerLimit { get; set; }
 
     TimeSpan TaskWaitTimeout { get; set; }
-
-    IJobWorker WithJob(Job job);
 
     Task WorkAsync(CancellationToken cancellationToken = default);
 }

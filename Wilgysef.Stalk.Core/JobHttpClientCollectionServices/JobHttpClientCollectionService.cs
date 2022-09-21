@@ -1,7 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
-using Wilgysef.Stalk.Core.ItemIdSetServices;
-using Wilgysef.Stalk.Core.Models.Jobs;
 
 namespace Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
 

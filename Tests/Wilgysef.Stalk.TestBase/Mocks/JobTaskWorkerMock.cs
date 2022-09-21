@@ -1,4 +1,5 @@
 ﻿using Wilgysef.Stalk.Core.JobTaskWorkers;
+using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.TestBase.Mocks;
@@ -14,8 +15,9 @@ public class JobTaskWorkerMock : JobTaskWorker
 
     public JobTaskWorkerMock(
         IServiceLifetimeScope lifetimeScope,
-        HttpClient httpClient)
-        : base(lifetimeScope, httpClient) { }
+        HttpClient httpClient,
+        JobTask jobTask)
+        : base(lifetimeScope, httpClient, jobTask) { }
 
     public void Finish()
     {
