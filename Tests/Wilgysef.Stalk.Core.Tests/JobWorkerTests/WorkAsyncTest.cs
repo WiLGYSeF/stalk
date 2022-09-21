@@ -116,7 +116,7 @@ public class WorkAsyncTest : BaseTest
         var nextJobTask = job.Tasks.Single(t => t.State == JobTaskState.Inactive);
         _jobTaskWorkerFactory.FinishJobTaskWorker(jobTask);
 
-        await Task.Delay(workerInstance.Worker.TaskWaitTimeoutMilliseconds * 2);
+        await Task.Delay(workerInstance.Worker.TaskWaitTimeout * 2);
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job = await this.ReloadJobAsync(job.Id);

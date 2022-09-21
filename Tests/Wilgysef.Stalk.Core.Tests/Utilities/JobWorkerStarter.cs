@@ -22,7 +22,7 @@ internal class JobWorkerStarter
     public JobWorkerInstance CreateAndStartWorker(Job job)
     {
         var worker = _jobWorkerFactory.CreateWorker(job);
-        worker.TaskWaitTimeoutMilliseconds = (int)TaskWaitTimeout.TotalMilliseconds;
+        worker.TaskWaitTimeout = TaskWaitTimeout;
 
         var cancellationTokenSource = new CancellationTokenSource();
         var task = Task.Run(async () => await worker.WorkAsync(cancellationTokenSource.Token));

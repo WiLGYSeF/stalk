@@ -8,7 +8,7 @@ public interface IJobWorker : IDisposable
 
     int WorkerLimit { get; set; }
 
-    int TaskWaitTimeoutMilliseconds { get; set; }
+    TimeSpan TaskWaitTimeout { get; set; }
 
     IJobWorker WithJob(Job job);
 

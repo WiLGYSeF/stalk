@@ -43,13 +43,19 @@ public class JobWorker : IJobWorker
         }
     }
 
-    public int TaskWaitTimeoutMilliseconds { get; set; } = 10 * 1000;
+    public TimeSpan TaskWaitTimeout { get; set; } = TimeSpan.FromSeconds(30);
+
+    public TimeSpan NoTaskTimeout { get; set; } = TimeSpan.FromMinutes(1);
 
     public ILogger? Logger { get; set; }
+
+    private TimeSpan NoTaskDelay { get; set; } = TimeSpan.FromSeconds(15);
 
     private readonly Dictionary<Task, long> _tasks = new();
 
     private bool _working = false;
+
+    private DateTime? _lastTimeWithNoTasks;
 
     private readonly IServiceLifetimeScope _lifetimeScope;
     private HttpClient _httpClient;
@@ -118,15 +124,23 @@ public class JobWorker : IJobWorker
                 cancellationToken.ThrowIfCancellationRequested();
 
                 await CreateJobTaskWorkers(cancellationToken);
-                if (_tasks.Count == 0)
+
+                var timeoutCheck = CheckTimeout();
+                if (timeoutCheck.HasValue)
                 {
-                    break;
+                    if (timeoutCheck.Value)
+                    {
+                        break;
+                    }
+
+                    await Task.Delay(NoTaskDelay, cancellationToken);
+                    continue;
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
 
                 var taskArray = _tasks.Keys.ToArray();
-                var taskCompletedIndex = Task.WaitAny(taskArray, TaskWaitTimeoutMilliseconds, cancellationToken);
+                var taskCompletedIndex = Task.WaitAny(taskArray, (int)TaskWaitTimeout.TotalMilliseconds, cancellationToken);
 
                 if (taskCompletedIndex != -1)
                 {
@@ -221,6 +235,28 @@ public class JobWorker : IJobWorker
                 Logger?.LogDebug("Job {JobId} removed completed task for {JobTaskId}.", Job!.Id, jobTaskId);
             }
         }
+    }
+
+    /// <summary>
+    /// Checks if the time period of no tasks exceeds the <see cref="NoTaskTimeout"/> threshold.
+    /// </summary>
+    /// <returns>
+    /// <see langword="true"/> if there are no tasks and the timeout exceeded,
+    /// <see langword="false"/> if there are no tasks and the timeout did not exceed,
+    /// or <see langword="null"/> if there are running tasks.</returns>
+    private bool? CheckTimeout()
+    {
+        if (_tasks.Count != 0)
+        {
+            return null;
+        }
+
+        if (!_lastTimeWithNoTasks.HasValue)
+        {
+            _lastTimeWithNoTasks = DateTime.Now;
+        }
+
+        return (DateTime.Now - _lastTimeWithNoTasks.Value) >= NoTaskTimeout;
     }
 
     private bool JobTaskFailuresLessThanMaxFailures()

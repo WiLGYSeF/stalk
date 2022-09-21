@@ -10,7 +10,7 @@ public class JobWorkerMock : IJobWorker
 
     public int WorkerLimit { get; set; } = 4;
 
-    public int TaskWaitTimeoutMilliseconds { get; set; } = 500;
+    public TimeSpan TaskWaitTimeout { get; set; } = TimeSpan.FromMilliseconds(500);
 
     private readonly IServiceLifetimeScope _lifetimeScope;
 
