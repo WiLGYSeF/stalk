@@ -1,11 +1,12 @@
 ﻿using System.Collections.Concurrent;
 using Wilgysef.Stalk.Core.CacheObjects;
 using Wilgysef.Stalk.Core.Shared.CacheObjects;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 
 namespace Wilgysef.Stalk.Core.ExtractorCacheObjectCollectionServices;
 
-public class ExtractorCacheObjectCollection : IExtractorCacheObjectCollection
+public class ExtractorCacheObjectCollectionService : IExtractorCacheObjectCollectionService, IScopedDependency
 {
     private readonly ConcurrentDictionary<Type, ICacheObject<string, object?>> _caches = new();
 

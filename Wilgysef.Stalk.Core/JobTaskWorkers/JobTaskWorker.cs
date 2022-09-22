@@ -122,13 +122,6 @@ public class JobTaskWorker : IJobTaskWorker
         }
     }
 
-    public virtual void Dispose()
-    {
-        _lifetimeScope.Dispose();
-
-        GC.SuppressFinalize(this);
-    }
-
     protected virtual async Task ExtractAsync(CancellationToken cancellationToken)
     {
         using var scope = _lifetimeScope.BeginLifetimeScope();
@@ -147,12 +140,11 @@ public class JobTaskWorker : IJobTaskWorker
 
         var extractorConfig = JobConfig!.GetExtractorConfig(extractor);
 
-        var extractorHttpClientCollectionService = scope.GetRequiredService<IExtractorHttpClientCollectionService>();
-        extractor.SetHttpClient(extractorHttpClientCollectionService.GetHttpClient(JobTask.JobId, extractor, extractorConfig));
+        var extractorHttpClientService = _lifetimeScope.GetRequiredService<IExtractorHttpClientService>();
+        extractor.SetHttpClient(extractorHttpClientService.GetHttpClient(extractor, extractorConfig));
 
-        var jobExtractorCacheObjectCollectionService = scope.GetRequiredService<IJobExtractorCacheObjectCollectionService>();
-        var cacheCollection = jobExtractorCacheObjectCollectionService.GetCacheCollection(JobTask.JobId);
-        extractor.Cache = cacheCollection.GetCache(extractor);
+        var extractorCacheObjectCollectionService = _lifetimeScope.GetRequiredService<IExtractorCacheObjectCollectionService>();
+        extractor.Cache = extractorCacheObjectCollectionService.GetCache(extractor);
         extractor.Config = extractorConfig;
 
         Logger?.LogInformation("Job task {JobTaskId} using extractor {Extractor}.", JobTask.Id, extractor.Name);
