@@ -32,26 +32,16 @@ public class WorkAsyncTest : BaseTest
         _extractorMock.Setup(m => m.Name).Returns("test");
         _extractorMock.Setup(m => m.CanExtract(It.IsAny<Uri>()))
             .Returns(true);
-        _extractorMock.Setup(m => m.ExtractAsync(
-            It.IsAny<Uri>(),
-            It.IsAny<string>(),
-            It.IsAny<IMetadataObject>(),
-            It.IsAny<CancellationToken>()))
+        _extractorMock.SetupAnyArgs<IExtractor, IAsyncEnumerable<ExtractResult>>(nameof(IExtractor.ExtractAsync))
             .Returns(ExtractAsync);
 
         _downloaderMock = new Mock<IDownloader>();
         _downloaderMock.Setup(m => m.Name).Returns("test");
         _downloaderMock.Setup(m => m.CanDownload(It.IsAny<Uri>()))
             .Returns(true);
-        _downloaderMock.Setup(m => m.DownloadAsync(
-            It.IsAny<Uri>(),
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<IMetadataObject>(),
-            It.IsAny<CancellationToken>()))
-                .Returns(DownloadAsync);
+
+        _downloaderMock.SetupAnyArgs<IDownloader, IAsyncEnumerable<DownloadResult>>(nameof(IDownloader.DownloadAsync))
+            .Returns(DownloadAsync);
 
         _itemIdSetService = new Mock<IItemIdSetService>();
         _itemIdSetService.Setup(m => m.GetItemIdSetAsync(It.IsAny<string>()))
@@ -80,7 +70,7 @@ public class WorkAsyncTest : BaseTest
         job = await CreateRunAndCancelJob(job, 1);
 
         var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
-        var extractMethodInvocations = _extractorMock.GetInvocations("ExtractAsync");
+        var extractMethodInvocations = _extractorMock.GetInvocations(nameof(IExtractor.ExtractAsync));
         extractMethodInvocations.Any(i => (Uri)i.Arguments[0] == new Uri(jobTask.Uri)).ShouldBeTrue();
     }
 
@@ -109,15 +99,15 @@ public class WorkAsyncTest : BaseTest
         var job = await CreateRunAndCompleteJob(builder.Create());
 
         var jobTask = job.Tasks.Single();
-        var downloadMethodInvocation = _downloaderMock.GetInvocation("DownloadAsync");
+        var downloadMethodInvocation = _downloaderMock.GetInvocation(nameof(IDownloader.DownloadAsync));
         downloadMethodInvocation.Arguments[0].ShouldBe(new Uri(jobTask.Uri));
 
         if (testItemIds)
         {
-            var getItemIdSetMethodInvocation = _itemIdSetService.GetInvocation("GetItemIdSetAsync");
+            var getItemIdSetMethodInvocation = _itemIdSetService.GetInvocation(nameof(IItemIdSetService.GetItemIdSetAsync));
             getItemIdSetMethodInvocation.Arguments[0].ShouldBe(job.GetConfig().ItemIdPath);
 
-            var writeChangesMethodInvocation = _itemIdSetService.GetInvocation("WriteChangesAsync");
+            var writeChangesMethodInvocation = _itemIdSetService.GetInvocation(nameof(IItemIdSetService.WriteChangesAsync));
             writeChangesMethodInvocation.Arguments[0].ShouldBe(job.GetConfig().ItemIdPath);
             (writeChangesMethodInvocation.Arguments[1] as IItemIdSet)!.Count.ShouldBe(1);
         }
@@ -152,6 +142,8 @@ public class WorkAsyncTest : BaseTest
     [Fact]
     public async Task Reuses_JobScope_HttpClient()
     {
+        // TODO: this may be unstable
+
         await CreateRunAndCancelJob(
             new JobBuilder()
                 .WithRandomInitializedState(JobState.Inactive)
@@ -159,7 +151,7 @@ public class WorkAsyncTest : BaseTest
                 .Create(),
             4);
 
-        var extractMethodInvocations = _extractorMock.GetInvocations("SetHttpClient");
+        var extractMethodInvocations = _extractorMock.GetInvocations(nameof(IExtractor.SetHttpClient));
         var client = (HttpClient)extractMethodInvocations.First().Arguments[0];
         extractMethodInvocations.All(i => i.Arguments[0] == client).ShouldBeTrue();
 
@@ -170,7 +162,7 @@ public class WorkAsyncTest : BaseTest
                 .Create(),
             4);
 
-        var otherExtractMethodInvocations = _extractorMock.GetInvocations("SetHttpClient")
+        var otherExtractMethodInvocations = _extractorMock.GetInvocations(nameof(IExtractor.SetHttpClient))
             .Skip(extractMethodInvocations.Count);
         otherExtractMethodInvocations.First().Arguments[0].ShouldNotBe(client);
     }
@@ -294,6 +286,8 @@ public class WorkAsyncTest : BaseTest
 
     private async Task<Job> CreateRunAndCancelJob(Job job, int minimumTasksAdded)
     {
+        // TODO: this may be unstable
+
         var initialTaskCount = job.Tasks.Count;
         (job, var workerInstance) = await CreateAndRunJob(job);
 
