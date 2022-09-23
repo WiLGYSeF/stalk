@@ -9,6 +9,11 @@ public class JobConfig
 {
     public const string GlobalConfigGroupName = "$global";
 
+    public static class ExtractorConfigKeys
+    {
+        public const string UserAgent = "userAgent";
+    }
+
     /// <summary>
     /// Maximum concurrent job tasks.
     /// </summary>
@@ -68,7 +73,7 @@ public class JobConfig
 
     public ICollection<ConfigGroup>? DownloaderConfig { get; set; }
 
-    public IDictionary<string, object?> GetExtractorConfig(IExtractor extractor)
+    public Dictionary<string, object?> GetExtractorConfig(IExtractor extractor)
     {
         var config = new Dictionary<string, object?>();
         if (ExtractorConfig == null)
@@ -76,12 +81,12 @@ public class JobConfig
             return config;
         }
 
-        GetConfig(ExtractorConfig.Where(c => c.Name == JobConfig.GlobalConfigGroupName), config);
+        GetConfig(ExtractorConfig.Where(c => c.Name == GlobalConfigGroupName), config);
         GetConfig(ExtractorConfig.Where(c => c.Name == extractor.Name), config);
         return config;
     }
 
-    public IDictionary<string, object?> GetDownloaderConfig(IDownloader downloader)
+    public Dictionary<string, object?> GetDownloaderConfig(IDownloader downloader)
     {
         var config = new Dictionary<string, object?>();
         if (DownloaderConfig == null)
@@ -89,12 +94,12 @@ public class JobConfig
             return config;
         }
 
-        GetConfig(DownloaderConfig.Where(c => c.Name == JobConfig.GlobalConfigGroupName), config);
+        GetConfig(DownloaderConfig.Where(c => c.Name == GlobalConfigGroupName), config);
         GetConfig(DownloaderConfig.Where(c => c.Name == downloader.Name), config);
         return config;
     }
 
-    public void GetConfig(IEnumerable<JobConfig.ConfigGroup> configGroups, IDictionary<string, object?> config)
+    public void GetConfig(IEnumerable<ConfigGroup> configGroups, IDictionary<string, object?> config)
     {
         foreach (var configGroup in configGroups)
         {

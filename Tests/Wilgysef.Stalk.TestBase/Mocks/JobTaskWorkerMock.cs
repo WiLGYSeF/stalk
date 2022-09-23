@@ -15,9 +15,8 @@ public class JobTaskWorkerMock : JobTaskWorker
 
     public JobTaskWorkerMock(
         IServiceLifetimeScope lifetimeScope,
-        HttpClient httpClient,
         JobTask jobTask)
-        : base(lifetimeScope, httpClient, jobTask) { }
+        : base(lifetimeScope, jobTask) { }
 
     public void Finish()
     {

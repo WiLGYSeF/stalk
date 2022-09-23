@@ -1,11 +1,11 @@
 ﻿using System.Collections.Concurrent;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 
-namespace Wilgysef.Stalk.Core.JobExtractorCacheObjectCollectionServices;
+namespace Wilgysef.Stalk.Core.ExtractorCacheObjectCollectionServices;
 
 public class JobExtractorCacheObjectCollectionService : IJobExtractorCacheObjectCollectionService, ISingletonDependency
 {
-    private ConcurrentDictionary<long, IExtractorCacheObjectCollection> _cacheCollections = new();
+    private readonly ConcurrentDictionary<long, IExtractorCacheObjectCollection> _cacheCollections = new();
 
     public IExtractorCacheObjectCollection GetCacheCollection(long jobId)
     {

@@ -1,8 +1,8 @@
 ﻿using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.Core.BackgroundJobs.Args;
 using Wilgysef.Stalk.Core.DomainEvents.Events;
-using Wilgysef.Stalk.Core.JobExtractorCacheObjectCollectionServices;
-using Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
+using Wilgysef.Stalk.Core.ExtractorCacheObjectCollectionServices;
+using Wilgysef.Stalk.Core.ExtractorHttpClientFactories;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.IdGenerators;
@@ -18,18 +18,18 @@ public class JobEventHandler :
 {
     private readonly IBackgroundJobManager _backgroundJobManager;
     private readonly IJobExtractorCacheObjectCollectionService _jobExtractorCacheObjectCollectionService;
-    private readonly IJobHttpClientCollectionService _jobHttpClientCollectionService;
+    private readonly IExtractorHttpClientCollectionService _extractorHttpClientCollectionService;
     private readonly IIdGenerator<long> _idGenerator;
 
     public JobEventHandler(
         IBackgroundJobManager backgroundJobManager,
         IJobExtractorCacheObjectCollectionService jobExtractorCacheObjectCollectionService,
-        IJobHttpClientCollectionService jobHttpClientCollectionService,
+        IExtractorHttpClientCollectionService extractorHttpClientCollectionService,
         IIdGenerator<long> idGenerator)
     {
         _backgroundJobManager = backgroundJobManager;
         _jobExtractorCacheObjectCollectionService = jobExtractorCacheObjectCollectionService;
-        _jobHttpClientCollectionService = jobHttpClientCollectionService;
+        _extractorHttpClientCollectionService = extractorHttpClientCollectionService;
         _idGenerator = idGenerator;
     }
 
@@ -54,7 +54,7 @@ public class JobEventHandler :
     public async Task HandleEventAsync(JobDoneEvent eventData, CancellationToken cancellationToken = default)
     {
         _jobExtractorCacheObjectCollectionService.RemoveCacheCollection(eventData.JobId);
-        _jobHttpClientCollectionService.RemoveHttpClient(eventData.JobId);
+        _extractorHttpClientCollectionService.RemoveHttpClients(eventData.JobId);
     }
 
     private async Task WorkPrioritizedJobsAsync(CancellationToken cancellationToken)

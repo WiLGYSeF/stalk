@@ -1,10 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
-using Wilgysef.Stalk.Core.JobHttpClientCollectionServices;
 using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
-using Wilgysef.Stalk.Core.UserAgentGenerators;
 
 namespace Wilgysef.Stalk.Core.JobWorkers;
 
@@ -56,15 +54,12 @@ public class JobWorker : IJobWorker
     private DateTime? _lastTimeWithNoTasks;
 
     private readonly IServiceLifetimeScope _lifetimeScope;
-    private HttpClient _httpClient;
 
     public JobWorker(
         IServiceLifetimeScope lifetimeScope,
-        HttpClient httpClient,
         Job job)
     {
         _lifetimeScope = lifetimeScope;
-        _httpClient = httpClient;
         Job = job;
     }
 
@@ -80,23 +75,6 @@ public class JobWorker : IJobWorker
                 {
                     var jobManager = scope.GetRequiredService<IJobManager>();
                     await jobManager.SetJobActiveAsync(Job, cancellationToken);
-                }
-
-                var jobHttpClientCollectionService = scope.GetRequiredService<IJobHttpClientCollectionService>();
-                if (!jobHttpClientCollectionService.TryGetHttpClient(Job.Id, out var client))
-                {
-                    jobHttpClientCollectionService.SetHttpClient(Job.Id, _httpClient);
-
-                    var userAgentGenerator = scope.GetService<IUserAgentGenerator>();
-                    if (userAgentGenerator != null)
-                    {
-                        _httpClient.DefaultRequestHeaders.Add("User-Agent", userAgentGenerator.Generate());
-                    }
-                }
-                else
-                {
-                    _httpClient.Dispose();
-                    _httpClient = client;
                 }
             }
 
@@ -167,7 +145,6 @@ public class JobWorker : IJobWorker
     public virtual void Dispose()
     {
         _lifetimeScope.Dispose();
-        _httpClient.Dispose();
 
         GC.SuppressFinalize(this);
     }

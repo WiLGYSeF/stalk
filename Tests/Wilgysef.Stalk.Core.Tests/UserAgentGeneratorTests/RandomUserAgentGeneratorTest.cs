@@ -11,9 +11,9 @@ public class RandomUserAgentGeneratorTest
         var generator = new RandomUserAgentGenerator();
         var userAgents = new List<string>
         {
-            generator.Generate(),
-            generator.Generate(),
-            generator.Generate(),
+            generator.Create(),
+            generator.Create(),
+            generator.Create(),
         };
 
         foreach (var userAgent in userAgents)

@@ -32,8 +32,7 @@ public class WorkAsyncTest : BaseTest
                Content = new StreamContent(new MemoryStream())
            });
         ReplaceSingletonServiceDelegate<IJobTaskWorkerFactory>(c => new JobTaskWorkerFactoryMock(
-            c.Resolve<IServiceLocator>(),
-            c.Resolve<HttpClient>()));
+            c.Resolve<IServiceLocator>()));
 
         _jobTaskWorkerFactory = (JobTaskWorkerFactoryMock)GetRequiredService<IJobTaskWorkerFactory>();
 
