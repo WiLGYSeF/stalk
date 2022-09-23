@@ -158,7 +158,7 @@ public class JobTaskWorker : IJobTaskWorker
 
         if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
         {
-            itemIds = await itemIdSetService.GetItemIdSetAsync(JobConfig.ItemIdPath);
+            itemIds = await itemIdSetService.GetItemIdSetAsync(JobConfig.ItemIdPath, JobTask.JobId);
         }
 
         await foreach (var result in extractor.ExtractAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
@@ -228,7 +228,7 @@ public class JobTaskWorker : IJobTaskWorker
         IItemIdSet? itemIds = null;
         if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
         {
-            itemIds = await itemIdSetService.GetItemIdSetAsync(JobConfig.ItemIdPath);
+            itemIds = await itemIdSetService.GetItemIdSetAsync(JobConfig.ItemIdPath, JobTask.JobId);
             if (JobTask.ItemId != null && itemIds.Contains(JobTask.ItemId))
             {
                 Logger?.LogInformation("Job task {JobTaskId} skipping item {ItemId} from {Uri}", JobTask.Id, JobTask.ItemId, jobTaskUri);

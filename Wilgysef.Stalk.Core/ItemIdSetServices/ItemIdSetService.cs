@@ -20,9 +20,10 @@ public class ItemIdSetService : IItemIdSetService, ITransientDependency
         _fileService = fileService;
     }
 
-    public async Task<IItemIdSet> GetItemIdSetAsync(string path)
+    public async Task<IItemIdSet> GetItemIdSetAsync(string path, long jobId)
     {
-        if (!_itemSetCollectionService.TryGetItemIdSet(path, out var itemIds))
+        var itemIds = _itemSetCollectionService.GetItemIdSet(path, jobId);
+        if (itemIds == null)
         {
             itemIds = new ItemIdSet();
             try
@@ -30,8 +31,7 @@ public class ItemIdSetService : IItemIdSetService, ITransientDependency
                 using var stream = _fileService.Open(path, FileMode.Open);
                 using var reader = new StreamReader(stream);
 
-                string? line;
-                while ((line = await reader.ReadLineAsync()) != null)
+                for (string? line; (line = await reader.ReadLineAsync()) != null; )
                 {
                     if (line.Trim().Length > 0)
                     {
@@ -42,10 +42,20 @@ public class ItemIdSetService : IItemIdSetService, ITransientDependency
             catch (DirectoryNotFoundException) { }
             catch (FileNotFoundException) { }
 
-            _itemSetCollectionService.AddItemIdSet(path, itemIds);
+            _itemSetCollectionService.AddItemIdSet(path, jobId, itemIds);
         }
 
         return itemIds;
+    }
+
+    public Task<bool> RemoveItemIdSetAsync(long jobId)
+    {
+        return Task.FromResult(_itemSetCollectionService.RemoveItemIdSet(jobId));
+    }
+
+    public Task<bool> RemoveItemIdSetAsync(string path, long jobId)
+    {
+        return Task.FromResult(_itemSetCollectionService.RemoveItemIdSet(path, jobId));
     }
 
     public Task<int> WriteChangesAsync(string path, IItemIdSet itemIds)

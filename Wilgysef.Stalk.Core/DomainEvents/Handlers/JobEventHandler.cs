@@ -1,6 +1,7 @@
 ﻿using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.Core.BackgroundJobs.Args;
 using Wilgysef.Stalk.Core.DomainEvents.Events;
+using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.JobScopeServices;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Enums;
@@ -17,15 +18,18 @@ public class JobEventHandler :
 {
     private readonly IBackgroundJobManager _backgroundJobManager;
     private readonly IJobScopeService _jobScopeService;
+    private readonly IItemIdSetService _itemIdSetService;
     private readonly IIdGenerator<long> _idGenerator;
 
     public JobEventHandler(
         IBackgroundJobManager backgroundJobManager,
         IJobScopeService jobScopeService,
+        IItemIdSetService itemIdSetService,
         IIdGenerator<long> idGenerator)
     {
         _backgroundJobManager = backgroundJobManager;
         _jobScopeService = jobScopeService;
+        _itemIdSetService = itemIdSetService;
         _idGenerator = idGenerator;
     }
 
@@ -50,6 +54,7 @@ public class JobEventHandler :
     public async Task HandleEventAsync(JobDoneEvent eventData, CancellationToken cancellationToken = default)
     {
         _jobScopeService.RemoveJobScope(eventData.JobId);
+        await _itemIdSetService.RemoveItemIdSetAsync(eventData.JobId);
     }
 
     private async Task WorkPrioritizedJobsAsync(CancellationToken cancellationToken)
