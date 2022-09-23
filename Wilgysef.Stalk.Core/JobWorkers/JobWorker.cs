@@ -142,13 +142,6 @@ public class JobWorker : IJobWorker
         }
     }
 
-    public virtual void Dispose()
-    {
-        _lifetimeScope.Dispose();
-
-        GC.SuppressFinalize(this);
-    }
-
     private async Task CreateJobTaskWorkers(CancellationToken cancellationToken)
     {
         if (_tasks.Count >= WorkerLimit)

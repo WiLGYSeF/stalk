@@ -2,7 +2,7 @@
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
-public interface IJobTaskWorker : IDisposable
+public interface IJobTaskWorker
 {
     JobTask JobTask { get; }
 

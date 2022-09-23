@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
+using Wilgysef.Stalk.Core.JobScopeServices;
 using Wilgysef.Stalk.Core.JobTaskWorkers;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
-using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkerFactories;
 
@@ -10,18 +10,18 @@ public class JobTaskWorkerFactory : IJobTaskWorkerFactory, ITransientDependency
 {
     public ILogger? Logger { get; set; }
 
-    private readonly IServiceLocator _serviceLocator;
+    private readonly IJobScopeService _jobScopeService;
 
     public JobTaskWorkerFactory(
-        IServiceLocator serviceLocator)
+        IJobScopeService jobScopeService)
     {
-        _serviceLocator = serviceLocator;
+        _jobScopeService = jobScopeService;
     }
 
     public IJobTaskWorker CreateWorker(JobTask jobTask)
     {
         return new JobTaskWorker(
-            _serviceLocator.BeginLifetimeScopeFromRoot(),
+            _jobScopeService.GetJobScope(jobTask.JobId),
             jobTask)
         {
             Logger = Logger,

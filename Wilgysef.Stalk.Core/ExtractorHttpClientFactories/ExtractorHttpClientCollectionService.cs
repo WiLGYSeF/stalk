@@ -1,32 +1,24 @@
-﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
+﻿using System.Collections.Concurrent;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 
 namespace Wilgysef.Stalk.Core.ExtractorHttpClientFactories;
 
-public class ExtractorHttpClientCollectionService : IExtractorHttpClientCollectionService, ITransientDependency
+public class ExtractorHttpClientCollectionService : IExtractorHttpClientCollectionService, IScopedDependency
 {
-    private readonly IExtractorHttpClientFactory _extractorHttpClientFactory;
-    private readonly IExtractorHttpClientCollectionServiceInternal _extractorHttpClientCollectionServiceInternal;
+    private readonly ConcurrentDictionary<Type, HttpClient> _clients = new();
 
-    public ExtractorHttpClientCollectionService(
+    public HttpClient GetHttpClient(
+        IExtractor extractor,
         IExtractorHttpClientFactory extractorHttpClientFactory,
-        IExtractorHttpClientCollectionServiceInternal extractorHttpClientCollectionServiceInternal)
+        IDictionary<string, object?> extractorConfig)
     {
-        _extractorHttpClientFactory = extractorHttpClientFactory;
-        _extractorHttpClientCollectionServiceInternal = extractorHttpClientCollectionServiceInternal;
-    }
-
-    public HttpClient GetHttpClient(long jobId, IExtractor extractor, IDictionary<string, object?> extractorConfig)
-    {
-        return _extractorHttpClientCollectionServiceInternal.GetHttpClient(
-            jobId,
-            extractor,
-            _extractorHttpClientFactory,
-            extractorConfig);
-    }
-
-    public bool RemoveHttpClients(long jobId)
-    {
-        return _extractorHttpClientCollectionServiceInternal.RemoveHttpClients(jobId);
+        var type = extractor.GetType();
+        if (!_clients.TryGetValue(type, out var client))
+        {
+            client = extractorHttpClientFactory.CreateClient(extractorConfig);
+            _clients[type] = client;
+        }
+        return client;
     }
 }

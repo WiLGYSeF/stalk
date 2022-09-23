@@ -32,26 +32,16 @@ public class WorkAsyncTest : BaseTest
         _extractorMock.Setup(m => m.Name).Returns("test");
         _extractorMock.Setup(m => m.CanExtract(It.IsAny<Uri>()))
             .Returns(true);
-        _extractorMock.Setup(m => m.ExtractAsync(
-            It.IsAny<Uri>(),
-            It.IsAny<string>(),
-            It.IsAny<IMetadataObject>(),
-            It.IsAny<CancellationToken>()))
+        _extractorMock.SetupAnyArgs<IExtractor, IAsyncEnumerable<ExtractResult>>(nameof(IExtractor.ExtractAsync))
             .Returns(ExtractAsync);
 
         _downloaderMock = new Mock<IDownloader>();
         _downloaderMock.Setup(m => m.Name).Returns("test");
         _downloaderMock.Setup(m => m.CanDownload(It.IsAny<Uri>()))
             .Returns(true);
-        _downloaderMock.Setup(m => m.DownloadAsync(
-            It.IsAny<Uri>(),
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<IMetadataObject>(),
-            It.IsAny<CancellationToken>()))
-                .Returns(DownloadAsync);
+
+        _downloaderMock.SetupAnyArgs<IDownloader, IAsyncEnumerable<DownloadResult>>(nameof(IDownloader.DownloadAsync))
+            .Returns(DownloadAsync);
 
         _itemIdSetService = new Mock<IItemIdSetService>();
         _itemIdSetService.Setup(m => m.GetItemIdSetAsync(It.IsAny<string>()))
@@ -71,39 +61,16 @@ public class WorkAsyncTest : BaseTest
     [Fact]
     public async Task Work_Extract()
     {
-        Job job;
-        using (var scope = BeginLifetimeScope())
-        {
-            job = new JobBuilder()
-                .WithRandomInitializedState(JobState.Inactive)
-                .WithRandomTasks(JobTaskState.Inactive, 1)
-                .Create();
-            var jobManager = scope.GetRequiredService<IJobManager>();
-            await jobManager.CreateJobAsync(job);
-        }
+        var job = new JobBuilder()
+            .WithRandomInitializedState(JobState.Inactive)
+            .WithRandomTasks(JobTaskState.Inactive, 1)
+            .Create();
         var jobTaskId = job.Tasks.Single().Id;
 
-        _jobWorkerStarter.EnsureTaskSuccessesOnDispose = false;
-        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
-
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.State == JobState.Active,
-            TimeSpan.FromSeconds(3));
-        workerInstance.WorkerTask.Exception.ShouldBeNull();
-
-        job.State.ShouldBe(JobState.Active);
-
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.Tasks.Count >= 3,
-            TimeSpan.FromSeconds(3));
-
-        job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(3);
-        workerInstance.CancellationTokenSource.Cancel();
+        job = await CreateRunAndCancelJob(job, 1);
 
         var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
-        var extractMethodInvocations = _extractorMock.GetInvocations("ExtractAsync");
+        var extractMethodInvocations = _extractorMock.GetInvocations(nameof(IExtractor.ExtractAsync));
         extractMethodInvocations.Any(i => (Uri)i.Arguments[0] == new Uri(jobTask.Uri)).ShouldBeTrue();
     }
 
@@ -112,111 +79,99 @@ public class WorkAsyncTest : BaseTest
     [InlineData(true)]
     public async Task Work_Download(bool testItemIds)
     {
-        Job job;
-        using (var scope = BeginLifetimeScope())
-        {
-            var builder = new JobBuilder()
-                .WithRandomInitializedState(JobState.Inactive)
-                .WithTasks(new JobTaskBuilder()
-                    .WithRandomInitializedState(JobTaskState.Inactive)
-                    .WithType(JobTaskType.Download)
-                    .Create())
-                .WithConfig(new JobConfig
-                {
-                    DownloadFilenameTemplate = "a",
-                });
-
-            if (testItemIds)
+        var builder = new JobBuilder()
+            .WithRandomInitializedState(JobState.Inactive)
+            .WithTasks(new JobTaskBuilder()
+                .WithRandomInitializedState(JobTaskState.Inactive)
+                .WithType(JobTaskType.Download)
+                .Create())
+            .WithConfig(new JobConfig
             {
-                builder.Config.SaveItemIds = true;
-                builder.Config.ItemIdPath = "test";
-            }
+                DownloadFilenameTemplate = "a",
+            });
 
-            job = builder.Create();
-            var jobManager = scope.GetRequiredService<IJobManager>();
-            await jobManager.CreateJobAsync(job);
+        if (testItemIds)
+        {
+            builder.Config.SaveItemIds = true;
+            builder.Config.ItemIdPath = "test";
         }
 
-        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
-
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.State == JobState.Active,
-            TimeSpan.FromSeconds(3));
-        workerInstance.WorkerTask.Exception.ShouldBeNull();
-
-        job.State.ShouldBe(JobState.Active);
-
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.IsDone,
-            TimeSpan.FromSeconds(3));
-        workerInstance.WorkerTask.Exception.ShouldBeNull();
-
-        job.IsDone.ShouldBeTrue();
+        var job = await CreateRunAndCompleteJob(builder.Create());
 
         var jobTask = job.Tasks.Single();
-        var downloadMethodInvocation = _downloaderMock.GetInvocation("DownloadAsync");
+        var downloadMethodInvocation = _downloaderMock.GetInvocation(nameof(IDownloader.DownloadAsync));
         downloadMethodInvocation.Arguments[0].ShouldBe(new Uri(jobTask.Uri));
 
         if (testItemIds)
         {
-            var getItemIdSetMethodInvocation = _itemIdSetService.GetInvocation("GetItemIdSetAsync");
+            var getItemIdSetMethodInvocation = _itemIdSetService.GetInvocation(nameof(IItemIdSetService.GetItemIdSetAsync));
             getItemIdSetMethodInvocation.Arguments[0].ShouldBe(job.GetConfig().ItemIdPath);
 
-            var writeChangesMethodInvocation = _itemIdSetService.GetInvocation("WriteChangesAsync");
+            var writeChangesMethodInvocation = _itemIdSetService.GetInvocation(nameof(IItemIdSetService.WriteChangesAsync));
             writeChangesMethodInvocation.Arguments[0].ShouldBe(job.GetConfig().ItemIdPath);
             (writeChangesMethodInvocation.Arguments[1] as IItemIdSet)!.Count.ShouldBe(1);
         }
     }
 
     [Fact]
-    public async Task Reuses_Cache()
+    public async Task Reuses_JobScope_Cache()
     {
-        Job job;
-        using (var scope = BeginLifetimeScope())
-        {
-            job = new JobBuilder()
+        await CreateRunAndCancelJob(
+            new JobBuilder()
                 .WithRandomInitializedState(JobState.Inactive)
                 .WithRandomTasks(JobTaskState.Inactive, 1)
-                .Create();
-            var jobManager = scope.GetRequiredService<IJobManager>();
-            await jobManager.CreateJobAsync(job);
-        }
-        var jobTaskId = job.Tasks.Single().Id;
+                .Create(),
+            4);
 
-        _jobWorkerStarter.EnsureTaskSuccessesOnDispose = false;
-        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
-
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.State == JobState.Active,
-            TimeSpan.FromSeconds(3));
-        workerInstance.WorkerTask.Exception.ShouldBeNull();
-
-        job.State.ShouldBe(JobState.Active);
-
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.Tasks.Count >= 5,
-            TimeSpan.FromSeconds(3));
-
-        job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(5);
-        workerInstance.CancellationTokenSource.Cancel();
-
-        var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
         var extractMethodInvocations = _extractorMock.GetInvocations("set_Cache");
         var cache = (ICacheObject<string, object?>)extractMethodInvocations.First().Arguments[0];
         extractMethodInvocations.All(i => i.Arguments[0] == cache).ShouldBeTrue();
+
+        await CreateRunAndCancelJob(
+            new JobBuilder()
+                .WithRandomInitializedState(JobState.Inactive)
+                .WithRandomTasks(JobTaskState.Inactive, 1)
+                .Create(),
+            4);
+
+        var otherExtractMethodInvocations = _extractorMock.GetInvocations("set_Cache")
+            .Skip(extractMethodInvocations.Count);
+        otherExtractMethodInvocations.First().Arguments[0].ShouldNotBe(cache);
+    }
+
+    [Fact]
+    public async Task Reuses_JobScope_HttpClient()
+    {
+        // TODO: this may be unstable
+
+        await CreateRunAndCancelJob(
+            new JobBuilder()
+                .WithRandomInitializedState(JobState.Inactive)
+                .WithRandomTasks(JobTaskState.Inactive, 1)
+                .Create(),
+            4);
+
+        var extractMethodInvocations = _extractorMock.GetInvocations(nameof(IExtractor.SetHttpClient));
+        var client = (HttpClient)extractMethodInvocations.First().Arguments[0];
+        extractMethodInvocations.All(i => i.Arguments[0] == client).ShouldBeTrue();
+
+        await CreateRunAndCancelJob(
+            new JobBuilder()
+                .WithRandomInitializedState(JobState.Inactive)
+                .WithRandomTasks(JobTaskState.Inactive, 1)
+                .Create(),
+            4);
+
+        var otherExtractMethodInvocations = _extractorMock.GetInvocations(nameof(IExtractor.SetHttpClient))
+            .Skip(extractMethodInvocations.Count);
+        otherExtractMethodInvocations.First().Arguments[0].ShouldNotBe(client);
     }
 
     [Fact]
     public async Task Sets_Config_Extractor()
     {
-        Job job;
-        using (var scope = BeginLifetimeScope())
-        {
-            job = new JobBuilder()
+        await CreateRunAndCancelJob(
+            new JobBuilder()
                 .WithRandomInitializedState(JobState.Inactive)
                 .WithRandomTasks(JobTaskState.Inactive, 1)
                 .WithConfig(new JobConfig
@@ -241,32 +196,9 @@ public class WorkAsyncTest : BaseTest
                         }
                     }
                 })
-                .Create();
-            var jobManager = scope.GetRequiredService<IJobManager>();
-            await jobManager.CreateJobAsync(job);
-        }
-        var jobTaskId = job.Tasks.Single().Id;
+                .Create(),
+            1);
 
-        _jobWorkerStarter.EnsureTaskSuccessesOnDispose = false;
-        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
-
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.State == JobState.Active,
-            TimeSpan.FromSeconds(3));
-        workerInstance.WorkerTask.Exception.ShouldBeNull();
-
-        job.State.ShouldBe(JobState.Active);
-
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.Tasks.Count > 1,
-            TimeSpan.FromSeconds(3));
-
-        job.Tasks.Count.ShouldBeGreaterThan(1);
-        workerInstance.CancellationTokenSource.Cancel();
-
-        var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
         var extractMethodInvocations = _extractorMock.GetInvocations("set_Config");
         var config = (IDictionary<string, object?>)extractMethodInvocations.First().Arguments[0];
         config["a"].ShouldBe(1);
@@ -276,10 +208,8 @@ public class WorkAsyncTest : BaseTest
     [Fact]
     public async Task Sets_Config_Downloader()
     {
-        Job job;
-        using (var scope = BeginLifetimeScope())
-        {
-            job = new JobBuilder()
+        await CreateRunAndCompleteJob(
+            new JobBuilder()
                 .WithRandomInitializedState(JobState.Inactive)
                 .WithTasks(new JobTaskBuilder()
                     .WithRandomInitializedState(JobTaskState.Inactive)
@@ -308,14 +238,24 @@ public class WorkAsyncTest : BaseTest
                         }
                     }
                 })
-                .Create();
+                .Create());
+
+        var downloadMethodInvocations = _downloaderMock.GetInvocations("set_Config");
+        var config = (IDictionary<string, object?>)downloadMethodInvocations.First().Arguments[0];
+        config["a"].ShouldBe(1);
+        config["b"].ShouldBe(2);
+    }
+
+    private async Task<(Job Job, JobWorkerStarter.JobWorkerInstance WorkerInstance)> CreateAndRunJob(Job job)
+    {
+        using (var scope = BeginLifetimeScope())
+        {
             var jobManager = scope.GetRequiredService<IJobManager>();
             await jobManager.CreateJobAsync(job);
         }
-        var jobTaskId = job.Tasks.Single().Id;
 
         _jobWorkerStarter.EnsureTaskSuccessesOnDispose = false;
-        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
+        var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
         job = await this.WaitUntilJobAsync(
             job.Id,
@@ -325,21 +265,50 @@ public class WorkAsyncTest : BaseTest
 
         job.State.ShouldBe(JobState.Active);
 
+        return (job, workerInstance);
+    }
+
+    private async Task<Job> CreateRunAndCompleteJob(Job job)
+    {
+        var initialTaskCount = job.Tasks.Count;
+        (job, var workerInstance) = await CreateAndRunJob(job);
+
         job = await this.WaitUntilJobAsync(
             job.Id,
             job => job.IsDone,
             TimeSpan.FromSeconds(3));
-        workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.IsDone.ShouldBeTrue();
+        workerInstance.Dispose();
 
-        var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
-        var downloadMethodInvocations = _downloaderMock.GetInvocations("set_Config");
-        var config = (IDictionary<string, object?>)downloadMethodInvocations.First().Arguments[0];
-        config["a"].ShouldBe(1);
-        config["b"].ShouldBe(2);
+        return job;
     }
 
+    private async Task<Job> CreateRunAndCancelJob(Job job, int minimumTasksAdded)
+    {
+        // TODO: this may be unstable
+
+        var initialTaskCount = job.Tasks.Count;
+        (job, var workerInstance) = await CreateAndRunJob(job);
+
+        job = await this.WaitUntilJobAsync(
+            job.Id,
+            job => job.Tasks.Count >= initialTaskCount + minimumTasksAdded,
+            TimeSpan.FromSeconds(3));
+
+        job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(initialTaskCount + minimumTasksAdded);
+        workerInstance.CancellationTokenSource.Cancel();
+
+        job = await this.WaitUntilJobAsync(
+            job.Id,
+            job => !job.IsActive,
+            TimeSpan.FromSeconds(3));
+
+        job.IsActive.ShouldBeFalse();
+        workerInstance.Dispose();
+
+        return job;
+    }
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     private static async IAsyncEnumerable<ExtractResult> ExtractAsync(

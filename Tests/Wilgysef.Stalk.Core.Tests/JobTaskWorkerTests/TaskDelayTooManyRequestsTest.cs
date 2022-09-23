@@ -27,25 +27,14 @@ public class TaskDelayTooManyRequestsTest : BaseTest
         _extractorMock = new Mock<IExtractor>();
         _extractorMock.Setup(m => m.CanExtract(It.IsAny<Uri>()))
             .Returns(true);
-        _extractorMock.Setup(m => m.ExtractAsync(
-            It.IsAny<Uri>(),
-            It.IsAny<string>(),
-            It.IsAny<IMetadataObject>(),
-            It.IsAny<CancellationToken>()))
+        _extractorMock.SetupAnyArgs<IExtractor, IAsyncEnumerable<ExtractResult>>(nameof(IExtractor.ExtractAsync))
             .Returns(ExtractAsync);
 
         _downloaderMock = new Mock<IDownloader>();
         _downloaderMock.Setup(m => m.CanDownload(It.IsAny<Uri>()))
             .Returns(true);
-        _downloaderMock.Setup(m => m.DownloadAsync(
-            It.IsAny<Uri>(),
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<IMetadataObject>(),
-            It.IsAny<CancellationToken>()))
-                .Returns(DownloadAsync);
+        _downloaderMock.SetupAnyArgs<IDownloader, IAsyncEnumerable<DownloadResult>>(nameof(IDownloader.DownloadAsync))
+            .Returns(DownloadAsync);
 
         ReplaceServiceInstance(_extractorMock.Object);
         ReplaceServiceInstance(_downloaderMock.Object);

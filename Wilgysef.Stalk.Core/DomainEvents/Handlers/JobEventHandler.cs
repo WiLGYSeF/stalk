@@ -1,8 +1,7 @@
 ﻿using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.Core.BackgroundJobs.Args;
 using Wilgysef.Stalk.Core.DomainEvents.Events;
-using Wilgysef.Stalk.Core.ExtractorCacheObjectCollectionServices;
-using Wilgysef.Stalk.Core.ExtractorHttpClientFactories;
+using Wilgysef.Stalk.Core.JobScopeServices;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.IdGenerators;
@@ -17,19 +16,16 @@ public class JobEventHandler :
     ITransientDependency
 {
     private readonly IBackgroundJobManager _backgroundJobManager;
-    private readonly IJobExtractorCacheObjectCollectionService _jobExtractorCacheObjectCollectionService;
-    private readonly IExtractorHttpClientCollectionService _extractorHttpClientCollectionService;
+    private readonly IJobScopeService _jobScopeService;
     private readonly IIdGenerator<long> _idGenerator;
 
     public JobEventHandler(
         IBackgroundJobManager backgroundJobManager,
-        IJobExtractorCacheObjectCollectionService jobExtractorCacheObjectCollectionService,
-        IExtractorHttpClientCollectionService extractorHttpClientCollectionService,
+        IJobScopeService jobScopeService,
         IIdGenerator<long> idGenerator)
     {
         _backgroundJobManager = backgroundJobManager;
-        _jobExtractorCacheObjectCollectionService = jobExtractorCacheObjectCollectionService;
-        _extractorHttpClientCollectionService = extractorHttpClientCollectionService;
+        _jobScopeService = jobScopeService;
         _idGenerator = idGenerator;
     }
 
@@ -53,8 +49,7 @@ public class JobEventHandler :
 
     public async Task HandleEventAsync(JobDoneEvent eventData, CancellationToken cancellationToken = default)
     {
-        _jobExtractorCacheObjectCollectionService.RemoveCacheCollection(eventData.JobId);
-        _extractorHttpClientCollectionService.RemoveHttpClients(eventData.JobId);
+        _jobScopeService.RemoveJobScope(eventData.JobId);
     }
 
     private async Task WorkPrioritizedJobsAsync(CancellationToken cancellationToken)
