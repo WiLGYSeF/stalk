@@ -25,7 +25,7 @@ public class ItemIdSetServiceTest : BaseTest
     {
         Setup(false);
 
-        var itemIds = await _itemIdSetService.GetItemIdSetAsync("abc");
+        var itemIds = await _itemIdSetService.GetItemIdSetAsync("abc", 0);
         itemIds.Count.ShouldBe(0);
     }
 
@@ -34,11 +34,11 @@ public class ItemIdSetServiceTest : BaseTest
     {
         Setup(false);
 
-        var itemIds = await _itemIdSetService.GetItemIdSetAsync("abc");
+        var itemIds = await _itemIdSetService.GetItemIdSetAsync("abc", 0);
         itemIds.Add("test1");
         itemIds.Add("test2");
 
-        var itemIds2 = await _itemIdSetService.GetItemIdSetAsync("abc");
+        var itemIds2 = await _itemIdSetService.GetItemIdSetAsync("abc", 0);
         itemIds2.ShouldBe(itemIds);
     }
 
@@ -47,7 +47,7 @@ public class ItemIdSetServiceTest : BaseTest
     {
         Setup(true);
 
-        var itemIds = await _itemIdSetService.GetItemIdSetAsync("abc");
+        var itemIds = await _itemIdSetService.GetItemIdSetAsync("abc", 0);
 
         itemIds.Count.ShouldBe(TestData.Length);
         foreach (var id in TestData)
@@ -69,7 +69,7 @@ public class ItemIdSetServiceTest : BaseTest
         };
 
         var path = "abc";
-        var itemIds = await _itemIdSetService.GetItemIdSetAsync(path);
+        var itemIds = await _itemIdSetService.GetItemIdSetAsync(path, 0);
 
         foreach (var id in newIds)
         {

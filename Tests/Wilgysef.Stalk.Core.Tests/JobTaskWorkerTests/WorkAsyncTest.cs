@@ -44,7 +44,7 @@ public class WorkAsyncTest : BaseTest
             .Returns(DownloadAsync);
 
         _itemIdSetService = new Mock<IItemIdSetService>();
-        _itemIdSetService.Setup(m => m.GetItemIdSetAsync(It.IsAny<string>()))
+        _itemIdSetService.Setup(m => m.GetItemIdSetAsync(It.IsAny<string>(), It.IsAny<long>()))
             .Returns(GetItemIdSetAsync);
         _itemIdSetService.Setup(m => m.WriteChangesAsync(It.IsAny<string>(), It.IsAny<IItemIdSet>()))
             .Returns(WriteChangesAsync);
@@ -116,6 +116,8 @@ public class WorkAsyncTest : BaseTest
     [Fact]
     public async Task Reuses_JobScope_Cache()
     {
+        // TODO: unstable test
+
         await CreateRunAndCancelJob(
             new JobBuilder()
                 .WithRandomInitializedState(JobState.Inactive)
@@ -142,7 +144,7 @@ public class WorkAsyncTest : BaseTest
     [Fact]
     public async Task Reuses_JobScope_HttpClient()
     {
-        // TODO: this may be unstable
+        // TODO: unstable test
 
         await CreateRunAndCancelJob(
             new JobBuilder()
@@ -346,7 +348,7 @@ public class WorkAsyncTest : BaseTest
             RandomValues.RandomString(10));
     }
 
-    private Task<IItemIdSet> GetItemIdSetAsync(string path)
+    private Task<IItemIdSet> GetItemIdSetAsync(string path, long jobId)
     {
         return Task.FromResult((IItemIdSet)new ItemIdSet());
     }

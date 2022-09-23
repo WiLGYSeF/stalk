@@ -1,30 +1,92 @@
-﻿using System.Collections.Concurrent;
-using System.Diagnostics.CodeAnalysis;
-using Wilgysef.Stalk.Core.Shared.Dependencies;
+﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.ItemIdSetServices;
 
 public class ItemIdSetCollectionService : IItemSetCollectionService, ISingletonDependency
 {
-    private readonly ConcurrentDictionary<string, IItemIdSet> _itemIdSets = new();
+    private readonly Dictionary<string, ItemIdSetEntry> _itemIdSets = new();
+    private readonly object _lock = new();
 
-    public void AddItemIdSet(string path, IItemIdSet itemIds)
+    public void AddItemIdSet(string path, long jobId, IItemIdSet itemIds)
     {
-        _itemIdSets[path] = itemIds;
+        lock (_lock)
+        {
+            if (!_itemIdSets.TryGetValue(path, out var entry))
+            {
+                entry = new ItemIdSetEntry(itemIds);
+                _itemIdSets[path] = entry;
+            }
+
+            entry.JobIds.Add(jobId);
+        }
     }
 
-    public IItemIdSet GetItemIdSet(string path)
+    public IItemIdSet? GetItemIdSet(string path, long jobId)
     {
-        return _itemIdSets[path];
+        lock (_lock)
+        {
+            if (!_itemIdSets.TryGetValue(path, out var entry))
+            {
+                return null;
+            }
+
+            entry.JobIds.Add(jobId);
+            return entry.ItemIds;
+        }
     }
 
-    public bool TryGetItemIdSet(string path, [MaybeNullWhen(false)] out IItemIdSet itemIds)
+    public bool RemoveItemIdSet(long jobId)
     {
-        return _itemIdSets.TryGetValue(path, out itemIds);
+        lock (_lock)
+        {
+            var removePaths = new List<string>();
+            var success = false;
+
+            foreach (var (path, entry) in _itemIdSets)
+            {
+                success |= entry.JobIds.Remove(jobId);
+                if (entry.JobIds.Count == 0)
+                {
+                    removePaths.Add(path);
+                }
+            }
+
+            foreach (var path in removePaths)
+            {
+                _itemIdSets.Remove(path, out _);
+            }
+            return success;
+        }
     }
 
-    public bool RemoveItemIdSet(string path)
+    public bool RemoveItemIdSet(string path, long jobId)
     {
-        return _itemIdSets.Remove(path, out _);
+        lock (_lock)
+        {
+            if (!_itemIdSets.TryGetValue(path, out var entry))
+            {
+                return false;
+            }
+
+            entry.JobIds.Remove(jobId);
+            if (entry.JobIds.Count == 0)
+            {
+                _itemIdSets.Remove(path, out _);
+            }
+            return true;
+        }
+    }
+
+    private class ItemIdSetEntry
+    {
+        public IItemIdSet ItemIds { get; }
+
+        public HashSet<long> JobIds { get; }
+
+        public ItemIdSetEntry(IItemIdSet itemIds)
+        {
+            ItemIds = itemIds;
+            JobIds = new();
+        }
     }
 }
