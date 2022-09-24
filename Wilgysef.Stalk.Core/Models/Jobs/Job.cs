@@ -63,43 +63,50 @@ public class Job : Entity
     /// Indicates if the job is active.
     /// </summary>
     [NotMapped]
-    public bool IsActive => IsActiveExpression.Compile()(this);
+    public bool IsActive => _isActive(this);
+    private readonly Func<Job, bool> _isActive = IsActiveExpression.Compile();
 
     /// <summary>
     /// Indicates if the job state is transitioning to a different state.
     /// </summary>
     [NotMapped]
-    public bool IsTransitioning => IsTransitioningExpression.Compile()(this);
+    public bool IsTransitioning => _isTransitioning(this);
+    private readonly Func<Job, bool> _isTransitioning = IsTransitioningExpression.Compile();
 
     /// <summary>
     /// Indicates if the job is finished (not cancelled).
     /// </summary>
     [NotMapped]
-    public bool IsFinished => IsFinishedExpression.Compile()(this);
+    public bool IsFinished => _isFinished(this);
+    private readonly Func<Job, bool> _isFinished = IsFinishedExpression.Compile();
 
     /// <summary>
     /// Indicates if the job is done.
     /// </summary>
     [NotMapped]
-    public bool IsDone => IsDoneExpression.Compile()(this);
+    public bool IsDone => _isDone(this);
+    private readonly Func<Job, bool> _isDone = IsDoneExpression.Compile();
 
     /// <summary>
     /// Indicates if the job is queued.
     /// </summary>
     [NotMapped]
-    public bool IsQueued => IsQueuedExpression.Compile()(this);
+    public bool IsQueued => _isQueued(this);
+    private readonly Func<Job, bool> _isQueued = IsQueuedExpression.Compile();
 
     /// <summary>
     /// Indicates if the job has unfinished tasks.
     /// </summary>
     [NotMapped]
-    public bool HasUnfinishedTasks => Tasks.Any(t => !t.IsDone);
+    public bool HasUnfinishedTasks => HasUnfinishedTasksExpression.Compile()(this);
+    private readonly Func<Job, bool> _hasUnfinishedTasks = HasUnfinishedTasksExpression.Compile();
 
     /// <summary>
     /// Indicates if the job has active tasks.
     /// </summary>
     [NotMapped]
-    public bool HasActiveTasks => Tasks.Any(t => t.IsActive);
+    public bool HasActiveTasks => _hasActiveTasks(this);
+    private readonly Func<Job, bool> _hasActiveTasks = HasActiveTasksExpression.Compile();
 
     /// <summary>
     /// Job active expression.
@@ -147,9 +154,22 @@ public class Job : Entity
     /// Job unfinished tasks expression.
     /// </summary>
     [NotMapped]
-    internal static Expression<Func<Job, bool>> HasUnfinishedTasksExpression =>
-        j => j.Tasks.AsQueryable().Any(
-            Expression.Lambda<Func<JobTask, bool>>(Expression.Negate(JobTask.IsDoneExpression)));
+    internal static Expression<Func<Job, bool>> HasUnfinishedTasksExpression
+    {
+        get
+        {
+            var expr = JobTask.IsDoneExpression;
+            return j => j.Tasks.AsQueryable().Any(
+                Expression.Lambda<Func<JobTask, bool>>(Expression.Not(expr.Body), expr.Parameters));
+        }
+    }
+
+    /// <summary>
+    /// Job active tasks expression.
+    /// </summary>
+    [NotMapped]
+    internal static Expression<Func<Job, bool>> HasActiveTasksExpression =>
+        j => j.Tasks.AsQueryable().Any(JobTask.IsActiveExpression);
 
     protected Job() { }
 
