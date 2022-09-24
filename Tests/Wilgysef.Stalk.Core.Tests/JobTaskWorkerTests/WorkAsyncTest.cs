@@ -1,5 +1,7 @@
 ﻿using Moq;
 using Shouldly;
+using System.Linq.Expressions;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.JobWorkerFactories;
@@ -13,6 +15,7 @@ using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.Core.Tests.Extensions;
 using Wilgysef.Stalk.Core.Tests.Utilities;
 using Wilgysef.Stalk.TestBase;
+using MockExtensions = Wilgysef.Stalk.TestBase.MockExtensions;
 
 namespace Wilgysef.Stalk.Core.Tests.JobTaskWorkerTests;
 
@@ -25,6 +28,8 @@ public class WorkAsyncTest : BaseTest
     private readonly IJobWorkerFactory _jobWorkerFactory;
 
     private readonly JobWorkerStarter _jobWorkerStarter;
+
+    private Func<string, long, Task<IItemIdSet>> _itemIdSetFactory = (path, jobId) => Task.FromResult<IItemIdSet>(new ItemIdSet());
 
     public WorkAsyncTest()
     {
@@ -72,6 +77,36 @@ public class WorkAsyncTest : BaseTest
         var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
         var extractMethodInvocations = _extractorMock.GetInvocations(nameof(IExtractor.ExtractAsync));
         extractMethodInvocations.Any(i => (Uri)i.Arguments[0] == new Uri(jobTask.Uri)).ShouldBeTrue();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Extract_Skip_Items(bool initialTaskHasItemId)
+    {
+        _itemIdSetFactory = (path, jobId) =>
+        {
+            var itemIds = MockExtensions.Decorate<ItemIdSet, IItemIdSet>(new ItemIdSet());
+            itemIds.Setup(m => m.Contains(It.IsAny<string>())).Returns(true);
+            return Task.FromResult(itemIds.Object);
+        };
+
+        var job = new JobBuilder()
+            .WithRandomInitializedState(JobState.Inactive)
+            .WithTasks(new JobTaskBuilder()
+                .WithRandomInitializedState(JobTaskState.Inactive)
+                .WithItemId(initialTaskHasItemId ? RandomValues.RandomString(10) : null)
+                .Create())
+            .WithConfig(new JobConfig
+            {
+                ItemIdPath = "a",
+                SaveItemIds = true,
+            })
+            .Create();
+        var jobTaskId = job.Tasks.Single().Id;
+
+        job = await CreateRunAndCompleteJob(job);
+        job.Tasks.Count.ShouldBe(1);
     }
 
     [Theory]
@@ -348,9 +383,9 @@ public class WorkAsyncTest : BaseTest
             RandomValues.RandomString(10));
     }
 
-    private Task<IItemIdSet> GetItemIdSetAsync(string path, long jobId)
+    private async Task<IItemIdSet> GetItemIdSetAsync(string path, long jobId)
     {
-        return Task.FromResult((IItemIdSet)new ItemIdSet());
+        return await _itemIdSetFactory(path, jobId);
     }
 
     private Task<int> WriteChangesAsync(string path, IItemIdSet itemIds)

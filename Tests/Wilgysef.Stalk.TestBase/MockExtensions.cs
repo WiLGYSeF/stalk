@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Moq.Language.Flow;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -8,6 +9,32 @@ namespace Wilgysef.Stalk.TestBase;
 public static class MockExtensions
 {
     private static readonly MethodInfo ItIsAnyMethod = typeof(It).GetMethod(nameof(It.IsAny))!;
+
+    public static Mock<TMock> Decorate<T, TMock>(T implementation)
+        where T : TMock
+        where TMock : class
+    {
+        var mock = new Mock<TMock>();
+        var mockType = typeof(TMock);
+        var implementationMethods = typeof(T).GetMethods();
+
+        foreach (var method in mockType.GetMethods())
+        {
+            var implementationMethod = GetMatchingMethod(method, implementationMethods);
+            var setup = mock.Setup((dynamic)SetupExpression(mockType, method));
+
+            var returnOrCallbackMethod = ((Type)setup.GetType()).GetMethod(
+                method.ReturnType != typeof(void) ? "Returns" : "Callback",
+                new[] { typeof(Delegate) });
+
+            var lambda = CreateExpressionLambda(implementation, implementationMethod).Compile();
+            returnOrCallbackMethod!.Invoke(setup, new[] { lambda });
+        }
+
+        return mock;
+    }
+
+    #region SetupAnyArgs
 
     public static ISetup<T> SetupAnyArgs<T>(this Mock<T> mock, MethodInfo methodInfo) where T : class
     {
@@ -39,6 +66,10 @@ public static class MockExtensions
         return SetupAnyArgs<T, TResult>(mock, typeof(T).GetMethod(methodName, types)!);
     }
 
+    #endregion
+
+    #region GetInvocations
+
     public static IInvocation GetInvocation<T>(this Mock<T> mock, MethodInfo methodInfo) where T : class
     {
         return mock.Invocations.Single(i => i.Method == methodInfo);
@@ -59,25 +90,57 @@ public static class MockExtensions
         return GetInvocations(mock, typeof(T).GetMethod(methodName)!);
     }
 
-    private static Expression<Action<T>> SetupExpression<T>(MethodInfo methodInfo)
+    #endregion
+
+    private static Expression<Action<T>> SetupExpression<T>(MethodInfo method)
     {
         var param = Expression.Parameter(typeof(T));
         return Expression.Lambda<Action<T>>(
-            Expression.Call(param, methodInfo, GetItIsAnyMethodCallExpressions(methodInfo)),
+            Expression.Call(param, method, GetItIsAnyMethodCallExpressions(method)),
             param);
     }
 
-    private static Expression<Func<T, TResult>> SetupExpression<T, TResult>(MethodInfo methodInfo)
+    private static Expression<Func<T, TResult>> SetupExpression<T, TResult>(MethodInfo method)
     {
         var param = Expression.Parameter(typeof(T));
         return Expression.Lambda<Func<T, TResult>>(
-            Expression.Call(param, methodInfo, GetItIsAnyMethodCallExpressions(methodInfo)),
+            Expression.Call(param, method, GetItIsAnyMethodCallExpressions(method)),
             param);
     }
 
-    private static MethodCallExpression[] GetItIsAnyMethodCallExpressions(MethodInfo methodInfo)
+    private static LambdaExpression SetupExpression(Type type, MethodInfo method)
     {
-        var parameters = methodInfo.GetParameters();
+        var param = Expression.Parameter(type);
+        return Expression.Lambda(
+            Expression.Call(param, method, GetItIsAnyMethodCallExpressions(method)),
+            param);
+    }
+
+    private static LambdaExpression SetupExpression(Type type, MethodInfo method, out Type lambdaType)
+    {
+        lambdaType = method.ReturnType != typeof(void)
+            ? typeof(Expression<>).MakeGenericType(typeof(Func<,>).MakeGenericType(type, method.ReturnType))
+            : typeof(Expression<>).MakeGenericType(typeof(Action<>).MakeGenericType(type));
+        return SetupExpression(type, method);
+    }
+
+    private static LambdaExpression CreateExpressionLambda<T>(T implementation, MethodInfo method)
+    {
+        var parameters = method.GetParameters();
+        var parameterExpressions = new ParameterExpression[parameters.Length];
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            parameterExpressions[i] = Expression.Parameter(parameters[i].ParameterType);
+        }
+
+        return Expression.Lambda(
+            Expression.Call(Expression.Constant(implementation), method, parameterExpressions),
+            parameterExpressions);
+    }
+
+    private static MethodCallExpression[] GetItIsAnyMethodCallExpressions(MethodInfo method)
+    {
+        var parameters = method.GetParameters();
         var arguments = new MethodCallExpression[parameters.Length];
 
         for (var i = 0; i < parameters.Length; i++)
@@ -86,5 +149,27 @@ public static class MockExtensions
         }
 
         return arguments;
+    }
+
+    private static MethodInfo GetMatchingMethod(MethodInfo method, MethodInfo[] methodList)
+    {
+        var genericArgumentsCount = method.GetGenericArguments().Length;
+        var parameters = method.GetParameters();
+        return methodList.Single(m => m.Name == method.Name
+            && m.GetGenericArguments().Length == genericArgumentsCount
+            && m.GetParameters().SequenceEqual(parameters, new ParameterInfoComparer()));
+    }
+
+    private class ParameterInfoComparer : IEqualityComparer<ParameterInfo>
+    {
+        public bool Equals(ParameterInfo? x, ParameterInfo? y)
+        {
+            return x?.ParameterType == y?.ParameterType;
+        }
+
+        public int GetHashCode([DisallowNull] ParameterInfo obj)
+        {
+            return obj.GetHashCode();
+        }
     }
 }
