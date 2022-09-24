@@ -98,7 +98,7 @@ public class Job : Entity
     /// Indicates if the job has unfinished tasks.
     /// </summary>
     [NotMapped]
-    public bool HasUnfinishedTasks => HasUnfinishedTasksExpression.Compile()(this);
+    public bool HasUnfinishedTasks => _hasUnfinishedTasks(this);
     private readonly Func<Job, bool> _hasUnfinishedTasks = HasUnfinishedTasksExpression.Compile();
 
     /// <summary>

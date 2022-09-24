@@ -43,7 +43,15 @@ public class JobWorkerService : IJobWorkerService, ITransientDependency
 
         _jobWorkerCollectionService.AddJobWorker(worker, task, cancellationTokenSource);
 
-        await _jobManager.SetJobActiveAsync(job);
+        try
+        {
+            await _jobManager.SetJobActiveAsync(job);
+        }
+        catch (Exception exception)
+        {
+            _jobWorkerCollectionService.RemoveJobWorker(worker);
+            throw;
+        }
 
         return true;
 

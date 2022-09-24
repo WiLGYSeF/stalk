@@ -6,12 +6,12 @@ namespace Wilgysef.Stalk.Core.ItemIdSetServices;
 
 public class ItemIdSetService : IItemIdSetService, ITransientDependency
 {
-    private readonly IItemSetCollectionService _itemSetCollectionService;
+    private readonly IItemIdSetCollectionService _itemSetCollectionService;
     private readonly IFileHandlerLockService _fileHandlerLockService;
     private readonly IFileService _fileService;
 
     public ItemIdSetService(
-        IItemSetCollectionService itemSetCollectionService,
+        IItemIdSetCollectionService itemSetCollectionService,
         IFileHandlerLockService fileHandlerLockService,
         IFileService fileService)
     {
@@ -33,7 +33,8 @@ public class ItemIdSetService : IItemIdSetService, ITransientDependency
 
                 for (string? line; (line = await reader.ReadLineAsync()) != null; )
                 {
-                    if (line.Trim().Length > 0)
+                    line = line.Trim();
+                    if (line.Length > 0)
                     {
                         itemIds.AddNoPending(line);
                     }

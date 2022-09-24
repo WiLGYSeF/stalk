@@ -39,8 +39,7 @@ public class JobTaskWorkerCollectionService : IJobTaskWorkerCollectionService, I
 
     public IEnumerable<JobTask> GetActiveJobTasks()
     {
-        return (IEnumerable<JobTask>)Workers
-            .Select(w => w.JobTask);
+        return Workers.Select(w => w.JobTask);
     }
 
     private class JobTaskWorkerValues

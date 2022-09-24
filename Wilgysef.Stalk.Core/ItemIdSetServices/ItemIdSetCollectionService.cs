@@ -2,7 +2,7 @@
 
 namespace Wilgysef.Stalk.Core.ItemIdSetServices;
 
-public class ItemIdSetCollectionService : IItemSetCollectionService, ISingletonDependency
+public class ItemIdSetCollectionService : IItemIdSetCollectionService, ISingletonDependency
 {
     private readonly Dictionary<string, ItemIdSetEntry> _itemIdSets = new();
     private readonly object _lock = new();

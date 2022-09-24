@@ -1,8 +1,8 @@
 ﻿using Moq;
 using Shouldly;
 using System.Text;
-using Wilgysef.Stalk.Core.Shared.FileServices;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
+using Wilgysef.Stalk.Core.Shared.FileServices;
 using Wilgysef.Stalk.TestBase;
 
 namespace Wilgysef.Stalk.Core.Tests.ItemIdSetServiceTests;
@@ -86,6 +86,54 @@ public class ItemIdSetServiceTest : BaseTest
 
         contents.ShouldBe(
             string.Join(Environment.NewLine, TestData.Concat(newIds)) + Environment.NewLine);
+    }
+
+    [Fact]
+    public void Remove_When_NoReferences()
+    {
+        var itemIdSetCollectionService = GetRequiredService<IItemIdSetCollectionService>();
+
+        var path = "abc";
+        itemIdSetCollectionService.AddItemIdSet(path, 0, new ItemIdSet());
+        itemIdSetCollectionService.AddItemIdSet(path, 1, new ItemIdSet());
+
+        itemIdSetCollectionService.GetItemIdSet(path, 1)
+            .ShouldBe(itemIdSetCollectionService.GetItemIdSet(path, 0));
+
+        itemIdSetCollectionService.RemoveItemIdSet(path, 1);
+        itemIdSetCollectionService.GetItemIdSet(path, 0).ShouldNotBeNull();
+        itemIdSetCollectionService.RemoveItemIdSet(path, 0);
+        itemIdSetCollectionService.GetItemIdSet(path, 0).ShouldBeNull();
+    }
+
+    [Fact]
+    public void Remove_ItemIdSet()
+    {
+        var itemIdSetCollectionService = GetRequiredService<IItemIdSetCollectionService>();
+
+        var path = "abc";
+        itemIdSetCollectionService.AddItemIdSet(path, 0, new ItemIdSet());
+
+        itemIdSetCollectionService.RemoveItemIdSet(path, 0).ShouldBeTrue();
+        itemIdSetCollectionService.RemoveItemIdSet(path, 0).ShouldBeFalse();
+
+        itemIdSetCollectionService.GetItemIdSet(path, 0).ShouldBeNull();
+    }
+
+    [Fact]
+    public void Remove_ItemIdSet_JobId()
+    {
+        var itemIdSetCollectionService = GetRequiredService<IItemIdSetCollectionService>();
+
+        var path1 = "abc";
+        var path2 = "def";
+        itemIdSetCollectionService.AddItemIdSet(path1, 0, new ItemIdSet());
+        itemIdSetCollectionService.AddItemIdSet(path2, 0, new ItemIdSet());
+
+        itemIdSetCollectionService.RemoveItemIdSet(0).ShouldBeTrue();
+        itemIdSetCollectionService.RemoveItemIdSet(0).ShouldBeFalse();
+
+        itemIdSetCollectionService.GetItemIdSet(path1, 0).ShouldBeNull();
     }
 
     private void Setup(bool fileExists)

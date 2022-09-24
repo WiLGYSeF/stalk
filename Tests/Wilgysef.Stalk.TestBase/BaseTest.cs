@@ -1,4 +1,5 @@
 using Autofac;
+using Autofac.Builder;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -179,14 +180,7 @@ public abstract class BaseTest
             var registration = builder.RegisterType(implementation)
                 .As(service)
                 .PropertiesAutowired();
-
-            _ = type switch
-            {
-                ServiceRegistrationType.Transient => registration.InstancePerDependency(),
-                ServiceRegistrationType.Scoped => registration.InstancePerLifetimeScope(),
-                ServiceRegistrationType.Singleton => registration.SingleInstance(),
-                _ => throw new NotImplementedException(),
-            };
+            RegisterByType(registration, type);
         }
 
         foreach (var (implementation, service) in _replaceServiceInstances)
@@ -202,7 +196,13 @@ public abstract class BaseTest
             var registration = builder.Register(@delegate)
                 .As(service)
                 .PropertiesAutowired();
+            RegisterByType(registration, type);
+        }
 
+        return builder;
+
+        static void RegisterByType<TLimit, TActivatorData, TRegistrationStyle>(IRegistrationBuilder<TLimit, TActivatorData, TRegistrationStyle> registration, ServiceRegistrationType type)
+        {
             _ = type switch
             {
                 ServiceRegistrationType.Transient => registration.InstancePerDependency(),
@@ -211,8 +211,6 @@ public abstract class BaseTest
                 _ => throw new NotImplementedException(),
             };
         }
-
-        return builder;
     }
 
     private enum ServiceRegistrationType

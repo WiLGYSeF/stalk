@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Net;
 using System.Security.Cryptography;
 using Wilgysef.Stalk.Core.DownloadSelectors;
@@ -81,25 +82,7 @@ public class JobTaskWorker : IJobTaskWorker
             {
                 var workerException = exception as JobTaskWorkerException;
 
-                if (RetryJobTask(JobTask, exception, out var tooManyRequests))
-                {
-                    Logger?.LogInformation("Job task {JobTaskId} creating retry task.", JobTask.Id);
-
-                    try
-                    {
-                        using var scope = _lifetimeScope.BeginLifetimeScope();
-                        var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
-                        var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
-
-                        var retryTask = CreateRetryJobTask(idGenerator.CreateId(), tooManyRequests);
-
-                        await jobTaskManager.CreateJobTaskAsync(retryTask, CancellationToken.None);
-                    }
-                    catch (Exception retryTaskException)
-                    {
-                        Logger?.LogError(retryTaskException, "Job task {JobTaskId} failed to create a retry job task.", JobTask.Id);
-                    }
-                }
+                await CheckAndRetryJobAsync(exception);
 
                 JobTask.Fail(
                     errorCode: workerException?.Code,
@@ -159,6 +142,11 @@ public class JobTaskWorker : IJobTaskWorker
         if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
         {
             itemIds = await itemIdSetService.GetItemIdSetAsync(JobConfig.ItemIdPath, JobTask.JobId);
+            if (JobTask.ItemId != null && itemIds.Contains(JobTask.ItemId))
+            {
+                Logger?.LogInformation("Job task {JobTaskId} skipping item {ItemId} from {Uri}", JobTask.Id, JobTask.ItemId, jobTaskUri);
+                return;
+            }
         }
 
         await foreach (var result in extractor.ExtractAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
@@ -261,6 +249,33 @@ public class JobTaskWorker : IJobTaskWorker
         }
     }
 
+    protected virtual async Task<JobTask?> CheckAndRetryJobAsync(Exception exception)
+    {
+        if (!ShouldRetryJobTask(JobTask, exception, out var tooManyRequests))
+        {
+            return null;
+        }
+
+        Logger?.LogInformation("Job task {JobTaskId} creating retry task.", JobTask.Id);
+
+        try
+        {
+            using var scope = _lifetimeScope.BeginLifetimeScope();
+            var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
+            var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
+
+            var retryTask = CreateRetryJobTask(idGenerator.CreateId(), tooManyRequests);
+
+            await jobTaskManager.CreateJobTaskAsync(retryTask, CancellationToken.None);
+            return retryTask;
+        }
+        catch (Exception retryTaskException)
+        {
+            Logger?.LogError(retryTaskException, "Job task {JobTaskId} failed to create a retry job task.", JobTask.Id);
+            return null;
+        }
+    }
+
     protected virtual JobTask CreateRetryJobTask(long jobTaskId, bool tooManyRequests)
     {
         var jobTaskBuilder = new JobTaskBuilder()
@@ -284,7 +299,7 @@ public class JobTaskWorker : IJobTaskWorker
         return jobTaskBuilder.Create();
     }
 
-    protected virtual bool RetryJobTask(JobTask jobTask, Exception exception, out bool tooManyRequests)
+    protected virtual bool ShouldRetryJobTask(JobTask jobTask, Exception exception, out bool tooManyRequests)
     {
         bool retry = false;
         tooManyRequests = false;

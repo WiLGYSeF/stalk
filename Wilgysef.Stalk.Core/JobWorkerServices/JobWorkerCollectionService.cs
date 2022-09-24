@@ -39,8 +39,7 @@ public class JobWorkerCollectionService : IJobWorkerCollectionService, ISingleto
 
     public IEnumerable<Job> GetActiveJobs()
     {
-        return (IEnumerable<Job>)Workers
-            .Select(w => w.Job);
+        return Workers.Select(w => w.Job);
     }
 
     private class JobWorkerValues
