@@ -1,16 +1,15 @@
-﻿using Moq;
-using Shouldly;
+﻿using Shouldly;
 using System.Text;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
-using Wilgysef.Stalk.Core.Shared.FileServices;
 using Wilgysef.Stalk.TestBase;
+using Wilgysef.Stalk.TestBase.Mocks;
 
 namespace Wilgysef.Stalk.Core.Tests.ItemIdSetServiceTests;
 
 public class ItemIdSetServiceTest : BaseTest
 {
-    private Mock<IFileService> _fileService = null!;
-    private IItemIdSetService _itemIdSetService = null!;
+    private readonly MockFileService _fileService;
+    private readonly IItemIdSetService _itemIdSetService;
 
     private readonly string[] TestData = new[]
     {
@@ -20,11 +19,15 @@ public class ItemIdSetServiceTest : BaseTest
         "testid4",
     };
 
+    public ItemIdSetServiceTest()
+    {
+        _itemIdSetService = GetRequiredService<IItemIdSetService>();
+        _fileService = MockFileService!;
+    }
+
     [Fact]
     public async Task Get_ItemIdSet_New()
     {
-        Setup(false);
-
         var itemIds = await _itemIdSetService.GetItemIdSetAsync("abc", 0);
         itemIds.Count.ShouldBe(0);
     }
@@ -32,8 +35,6 @@ public class ItemIdSetServiceTest : BaseTest
     [Fact]
     public async Task Get_ItemIdSet_Existing()
     {
-        Setup(false);
-
         var itemIds = await _itemIdSetService.GetItemIdSetAsync("abc", 0);
         itemIds.Add("test1");
         itemIds.Add("test2");
@@ -45,7 +46,7 @@ public class ItemIdSetServiceTest : BaseTest
     [Fact]
     public async Task Get_ItemIdSet_From_Disk()
     {
-        Setup(true);
+        _fileService.SetFileStream("abc", GetTestDataAsStream());
 
         var itemIds = await _itemIdSetService.GetItemIdSetAsync("abc", 0);
 
@@ -60,7 +61,7 @@ public class ItemIdSetServiceTest : BaseTest
     public async Task Write_Changes()
     {
         using var stream = GetTestDataAsStream();
-        Setup(true, stream);
+        _fileService.SetFileStream("abc", stream);
 
         var newIds = new[]
         {
@@ -134,31 +135,6 @@ public class ItemIdSetServiceTest : BaseTest
         itemIdSetCollectionService.RemoveItemIdSet(0).ShouldBeFalse();
 
         itemIdSetCollectionService.GetItemIdSet(path1, 0).ShouldBeNull();
-    }
-
-    private void Setup(bool fileExists)
-    {
-        Setup(fileExists, GetTestDataAsStream());
-    }
-
-    private void Setup(bool fileExists, Stream stream)
-    {
-        _fileService = new Mock<IFileService>();
-        _fileService.Setup(m => m.Open(It.IsAny<string>(), It.IsAny<FileMode>()))
-            .Returns(GetStream);
-
-        ReplaceServiceInstance(_fileService.Object);
-
-        _itemIdSetService = GetRequiredService<IItemIdSetService>();
-
-        Stream GetStream(string path, FileMode fileMode)
-        {
-            if (!fileExists)
-            {
-                throw new FileNotFoundException();
-            }
-            return stream;
-        }
     }
 
     private Stream GetTestDataAsStream()

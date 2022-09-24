@@ -9,45 +9,32 @@ public class MockFileService : IFileService
 
     private readonly Dictionary<string, Stream> _fileStreams = new();
 
-    private readonly List<(Regex Regex, Stream Stream)> _regexStreams = new();
+    private readonly Dictionary<Regex, Stream> _regexStreams = new();
+
+    // TODO: Append read NotSupportedException
 
     public Stream Open(string path, FileMode fileMode)
     {
-        if (_fileStreams.TryGetValue(path, out var existingStream))
-        {
-            return existingStream;
-        }
-
-        Stream? result = null;
-        foreach (var (regex, stream) in _regexStreams)
-        {
-            if (regex.IsMatch(path))
-            {
-                result = new MemoryStream();
-                stream.CopyTo(result);
-                break;
-            }
-        }
+        var result = GetStream(path);
 
         if (result != null)
         {
-            if (fileMode == FileMode.CreateNew)
+            switch (fileMode)
             {
-                throw new IOException();
-            }
-
-            if (fileMode == FileMode.Create)
-            {
-                result = new MemoryStream();
-            }
-            else if (fileMode == FileMode.Append)
-            {
-                result.Position = result.Length;
+                case FileMode.CreateNew:
+                    throw new IOException();
+                case FileMode.Create:
+                case FileMode.Truncate:
+                    result = new MemoryStream();
+                    break;
+                case FileMode.Append:
+                    result.Position = result.Length;
+                    break;
             }
         }
         else if (fileMode == FileMode.Open || fileMode == FileMode.Truncate)
         {
-            throw new IOException();
+            throw new FileNotFoundException();
         }
 
         result ??= new MemoryStream();
@@ -56,8 +43,33 @@ public class MockFileService : IFileService
         return result;
     }
 
-    public void AddFileStream(Regex regex, Stream stream)
+    public void SetFileStream(string path, Stream stream)
     {
-        _regexStreams.Add((regex, stream));
+        _fileStreams[path] = stream;
+    }
+
+    public void SetFileStream(Regex regex, Stream stream)
+    {
+        _regexStreams[regex] = stream;
+    }
+
+    private Stream? GetStream(string path)
+    {
+        if (_fileStreams.TryGetValue(path, out var existingStream))
+        {
+            return existingStream;
+        }
+
+        foreach (var (regex, stream) in _regexStreams)
+        {
+            if (regex.IsMatch(path))
+            {
+                var result = new MemoryStream();
+                stream.CopyTo(result);
+                return result;
+            }
+        }
+
+        return null;
     }
 }

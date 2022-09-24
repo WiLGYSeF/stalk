@@ -25,15 +25,16 @@ public class DefaultDownloaderTest : BaseTest
     {
         RegisterDownloaders = true;
 
-        _requestLog = ReplaceHttpClient(
-            (request, cancellationToken) => new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StreamContent(new MemoryStream(TestDownloadData))
-            });
-        _fileService = ReplaceFileService();
+        _requestLog = new HttpRequestMessageLog();
+        ReplaceServiceDelegate(c => new HttpClient(new MockHttpMessageHandler((request, cancellationToken) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StreamContent(new MemoryStream(TestDownloadData))
+        }), _requestLog)));
 
         var downloaders = GetRequiredService<IEnumerable<IDownloader>>();
         _downloader = (downloaders.Single(d => d is DefaultDownloader) as DefaultDownloader)!;
+
+        _fileService = MockFileService!;
     }
 
     [Fact]

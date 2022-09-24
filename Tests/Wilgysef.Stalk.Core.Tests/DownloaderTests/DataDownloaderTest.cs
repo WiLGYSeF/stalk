@@ -17,10 +17,10 @@ public class DataDownloaderTest : BaseTest
     {
         RegisterDownloaders = true;
 
-        _fileService = ReplaceFileService();
-
         var downloaders = GetRequiredService<IEnumerable<IDownloader>>();
         _downloader = (downloaders.Single(d => d is DataDownloader) as DataDownloader)!;
+
+        _fileService = MockFileService!;
     }
 
     [Fact]

@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
+using System;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
 using Wilgysef.Stalk.Core.Shared.FileServices;
 using Wilgysef.Stalk.Core.Shared.Options;
@@ -19,6 +20,14 @@ public abstract class BaseTest
     public bool RegisterExtractors { get; set; } = false;
 
     public bool RegisterDownloaders { get; set; } = false;
+
+    public bool DoMockFileService { get; set; } = true;
+
+    public bool DoMockHttpClient { get; set; } = true;
+
+    public MockFileService? MockFileService { get; private set; }
+
+    public HttpRequestMessageLog? HttpRequestMessageLog { get; private set; }
 
     private IServiceProvider? _serviceProvider;
     private IServiceProvider ServiceProvider
@@ -175,6 +184,18 @@ public abstract class BaseTest
             null,
             t => (Activator.CreateInstance(t) as IOptionSection)!);
 
+        if (DoMockFileService)
+        {
+            MockFileService = ReplaceFileService();
+        }
+        if (DoMockHttpClient)
+        {
+            HttpRequestMessageLog = ReplaceHttpClient((request, cancellationToken) =>
+            {
+                throw new NotImplementedException();
+            });
+        }
+
         foreach (var (implementation, service, type) in _replaceServices)
         {
             var registration = builder.RegisterType(implementation)
@@ -224,25 +245,22 @@ public abstract class BaseTest
 
     #region Mocks
 
-    public HttpRequestMessageLog ReplaceHttpClient(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> callback)
-    {
-        var requestLog = new HttpRequestMessageLog();
-        ReplaceServiceDelegate(c => new HttpClient(new MockHttpMessageHandler(callback, requestLog)));
-        return requestLog;
-    }
-
-    public HttpRequestMessageLog ReplaceHttpClient(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> callback)
-    {
-        var requestLog = new HttpRequestMessageLog();
-        ReplaceServiceDelegate(c => new HttpClient(new MockHttpMessageHandler(callback, requestLog)));
-        return requestLog;
-    }
-
-    public MockFileService ReplaceFileService()
+    private MockFileService ReplaceFileService()
     {
         var fileService = new MockFileService();
-        ReplaceServiceInstance<IFileService>(fileService);
+        _replaceServiceInstances.Insert(0, (fileService, typeof(IFileService)));
         return fileService;
+    }
+
+    private HttpRequestMessageLog ReplaceHttpClient(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> callback)
+    {
+        var requestLog = new HttpRequestMessageLog();
+        _replaceServiceDelegates.Insert(
+            0,
+            (c => new HttpClient(new MockHttpMessageHandler(callback, requestLog)),
+                typeof(HttpClient),
+                ServiceRegistrationType.Transient));
+        return requestLog;
     }
 
     #endregion
