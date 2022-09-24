@@ -105,14 +105,9 @@ public class JobConfig
         {
             foreach (var (key, val) in configGroup.Config)
             {
-                if (val is JsonElement element)
-                {
-                    config[key] = JsonUtils.GetJsonElementValue(element, out _);
-                }
-                else
-                {
-                    config[key] = val;
-                }
+                config[key] = val is JsonElement element
+                    ? JsonUtils.GetJsonElementValue(element, out _)
+                    : val;
             }
         }
     }

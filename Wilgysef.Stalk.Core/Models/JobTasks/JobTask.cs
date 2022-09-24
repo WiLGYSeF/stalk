@@ -293,7 +293,6 @@ public class JobTask : Entity
     /// Changes the job task metadata.
     /// </summary>
     /// <param name="metadata">Job task metadata.</param>
-    // TODO: change to class?
     public void ChangeMetadata(IMetadataObject? metadata)
     {
         if (IsDone)

@@ -9,11 +9,6 @@ public static class JsonUtils
         return TryDeserialize<T>(json, options, out _);
     }
 
-    public static T? TryDeserialize<T>(string json, out JsonException? jsonException)
-    {
-        return TryDeserialize<T>(json, null, out jsonException);
-    }
-
     public static T? TryDeserialize<T>(string json, JsonSerializerOptions? options, out JsonException? jsonException)
     {
         try
