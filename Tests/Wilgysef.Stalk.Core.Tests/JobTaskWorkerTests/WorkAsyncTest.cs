@@ -1,7 +1,5 @@
 ﻿using Moq;
 using Shouldly;
-using System.Linq.Expressions;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.JobWorkerFactories;
@@ -79,6 +77,31 @@ public class WorkAsyncTest : BaseTest
         extractMethodInvocations.Any(i => (Uri)i.Arguments[0] == new Uri(jobTask.Uri)).ShouldBeTrue();
     }
 
+    [Fact]
+    public async Task Extract_Stop_No_New_ItemIds()
+    {
+        _itemIdSetFactory = (path, jobId) =>
+        {
+            var itemIds = MockExtensions.Decorate<ItemIdSet, IItemIdSet>(new ItemIdSet());
+            itemIds.Setup(m => m.Contains(It.IsAny<string>())).Returns(true);
+            return Task.FromResult(itemIds.Object);
+        };
+
+        var job = new JobBuilder()
+            .WithRandomInitializedState(JobState.Inactive)
+            .WithRandomTasks(JobTaskState.Inactive, 1)
+            .WithConfig(new JobConfig
+            {
+                ItemIdPath = "a",
+                SaveItemIds = true,
+                StopWithNoNewItemIds = true,
+            })
+            .Create();
+
+        job = await CreateRunAndCompleteJob(job);
+        job.Tasks.Count.ShouldBe(1);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
@@ -103,7 +126,6 @@ public class WorkAsyncTest : BaseTest
                 SaveItemIds = true,
             })
             .Create();
-        var jobTaskId = job.Tasks.Single().Id;
 
         job = await CreateRunAndCompleteJob(job);
         job.Tasks.Count.ShouldBe(1);
@@ -146,6 +168,58 @@ public class WorkAsyncTest : BaseTest
             writeChangesMethodInvocation.Arguments[0].ShouldBe(job.GetConfig().ItemIdPath);
             (writeChangesMethodInvocation.Arguments[1] as IItemIdSet)!.Count.ShouldBe(1);
         }
+    }
+
+    [Fact]
+    public async Task Download_Skip_Items()
+    {
+        _itemIdSetFactory = (path, jobId) =>
+        {
+            var itemIds = MockExtensions.Decorate<ItemIdSet, IItemIdSet>(new ItemIdSet());
+            itemIds.Setup(m => m.Contains(It.IsAny<string>())).Returns(true);
+            return Task.FromResult(itemIds.Object);
+        };
+
+        var job = new JobBuilder()
+            .WithRandomInitializedState(JobState.Inactive)
+            .WithTasks(new JobTaskBuilder()
+                .WithRandomInitializedState(JobTaskState.Inactive)
+                .WithType(JobTaskType.Download)
+                .WithItemId(RandomValues.RandomString(10))
+                .Create())
+            .WithConfig(new JobConfig
+            {
+                DownloadFilenameTemplate = "a",
+                SaveItemIds = true,
+                ItemIdPath = "test",
+            }).Create();
+        job = await CreateRunAndCompleteJob(job);
+
+        var jobTask = job.Tasks.Single();
+        var downloadMethodInvocations = _downloaderMock.GetInvocations(nameof(IDownloader.DownloadAsync));
+        downloadMethodInvocations.ShouldBeEmpty();
+    }
+
+    [Fact]
+    public async Task Download_Skip()
+    {
+        var job = new JobBuilder()
+            .WithRandomInitializedState(JobState.Inactive)
+            .WithTasks(new JobTaskBuilder()
+                .WithRandomInitializedState(JobTaskState.Inactive)
+                .WithType(JobTaskType.Download)
+                .WithItemId(RandomValues.RandomString(10))
+                .Create())
+            .WithConfig(new JobConfig
+            {
+                DownloadFilenameTemplate = "a",
+                DownloadData = false,
+            }).Create();
+        job = await CreateRunAndCompleteJob(job);
+
+        var jobTask = job.Tasks.Single();
+        var downloadMethodInvocations = _downloaderMock.GetInvocations(nameof(IDownloader.DownloadAsync));
+        downloadMethodInvocations.ShouldBeEmpty();
     }
 
     [Fact]

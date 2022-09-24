@@ -15,6 +15,9 @@ namespace Wilgysef.Stalk.Core.Tests.JobTaskWorkerTests;
 
 public class TaskDelayTest : BaseTest
 {
+    private bool ThrowExtractException { get; set; } = false;
+    private bool ThrowDownloadException { get; set; } = false;
+
     private readonly Mock<IExtractor> _extractorMock;
     private readonly Mock<IDownloader> _downloaderMock;
 
@@ -45,8 +48,10 @@ public class TaskDelayTest : BaseTest
     }
 
     [Fact]
-    public async Task Retry_Task()
+    public async Task Retry_JobTask()
     {
+        ThrowExtractException = true;
+
         Job job;
         using (var scope = BeginLifetimeScope())
         {
@@ -88,8 +93,10 @@ public class TaskDelayTest : BaseTest
     }
 
     [Fact]
-    public async Task Retry_Task_NoDelay()
+    public async Task Retry_JobTask_NoDelay()
     {
+        ThrowExtractException = true;
+
         Job job;
         using (var scope = BeginLifetimeScope())
         {
@@ -119,16 +126,68 @@ public class TaskDelayTest : BaseTest
         retryTask.DelayedUntil.ShouldBeNull();
     }
 
-    private static IAsyncEnumerable<ExtractResult> ExtractAsync(
+    [Fact]
+    public async Task Delay_JobTask()
+    {
+        ThrowExtractException = false;
+
+        Job job;
+        using (var scope = BeginLifetimeScope())
+        {
+            job = new JobBuilder()
+                .WithRandomInitializedState(JobState.Inactive)
+                .WithRandomTasks(JobTaskState.Inactive, 1)
+                .WithConfig(new JobConfig
+                {
+                    Delay = new JobConfig.DelayConfig
+                    {
+                        TaskDelay = new JobConfig.Range
+                        {
+                            Min = 100,
+                            Max = 100
+                        }
+                    }
+                })
+                .Create();
+            var jobManager = scope.GetRequiredService<IJobManager>();
+            await jobManager.CreateJobAsync(job);
+        }
+        var jobTaskId = job.Tasks.Single().Id;
+
+        using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
+
+        job = await this.WaitUntilJobAsync(
+            job.Id,
+            job => job.Tasks.Count >= 2,
+            TimeSpan.FromSeconds(3));
+
+        job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(2);
+        workerInstance.CancellationTokenSource.Cancel();
+
+        var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
+        var retryTask = job.Tasks.First(t => t.Id != jobTaskId);
+        (retryTask.DelayedUntil!.Value - DateTime.Now).TotalSeconds.ShouldBeInRange(90, 100);
+    }
+
+    private async IAsyncEnumerable<ExtractResult> ExtractAsync(
         Uri uri,
         string itemData,
         IMetadataObject metadata,
         CancellationToken cancellationToken = default)
     {
-        throw new HttpRequestException("Mock download exception.", null, HttpStatusCode.InternalServerError);
+        if (ThrowExtractException)
+        {
+            throw new HttpRequestException("Mock download exception.", null, HttpStatusCode.InternalServerError);
+        }
+        yield return new ExtractResult(
+            new Uri(RandomValues.RandomUri()),
+            RandomValues.RandomString(10),
+            JobTaskType.Download);
     }
 
-    private static IAsyncEnumerable<DownloadResult> DownloadAsync(
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+    private async IAsyncEnumerable<DownloadResult> DownloadAsync(
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         Uri uri,
         string filenameTemplate,
         string itemId,
@@ -137,6 +196,13 @@ public class TaskDelayTest : BaseTest
         IMetadataObject metadata,
         CancellationToken cancellationToken = default)
     {
-        throw new HttpRequestException("Mock download exception.", null, HttpStatusCode.InternalServerError);
+        if (ThrowDownloadException)
+        {
+            throw new HttpRequestException("Mock download exception.", null, HttpStatusCode.InternalServerError);
+        }
+        yield return new DownloadResult(
+            RandomValues.RandomFilePath(2),
+            new Uri(RandomValues.RandomUri()),
+            null);
     }
 }
