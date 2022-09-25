@@ -28,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\..\Tests\Wilgysef.Stalk.TestBase.Utilities\Wilgysef.Stalk.TestBase.Utilities.csproj" />
     <ProjectReference Include="..\..\..\..\Wilgysef.Stalk.Core\Wilgysef.Stalk.Core.csproj" />
     <ProjectReference Include="..\..\Wilgysef.Stalk.Extractors.Twitter\Wilgysef.Stalk.Extractors.Twitter.csproj" />
     <ProjectReference Include="..\Wilgysef.Stalk.Extractors.TestBase\Wilgysef.Stalk.Extractors.TestBase.csproj" />

@@ -11,7 +11,6 @@ using System.Reflection;
 using Wilgysef.Stalk.Application.AssemblyLoaders;
 using Wilgysef.Stalk.Application.HttpClientPolicies;
 using Wilgysef.Stalk.Application.IdGenerators;
-using Wilgysef.Stalk.Core;
 using Wilgysef.Stalk.Core.Shared;
 using Wilgysef.Stalk.Core.Shared.Cqrs;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
@@ -25,15 +24,6 @@ namespace Wilgysef.Stalk.Application.ServiceRegistrar;
 
 public class ServiceRegistrar
 {
-    // used for project reference so the assembly is loaded when registering dependency injection
-    // is there a better way to do this?
-    private static readonly Type[] DependsOn = new[]
-    {
-        typeof(ApplicationModule),
-        typeof(CoreModule),
-        typeof(EntityFrameworkCoreModule),
-    };
-
     public bool RegisterExtractors { get; set; } = true;
 
     public bool RegisterDownloaders { get; set; } = true;
@@ -77,7 +67,7 @@ public class ServiceRegistrar
         string? externalAssembliesPath,
         Func<Type, IOptionSection> getOptionSection)
     {
-        var internalAssemblies = ToArray(GetAssemblies(Assembly.GetExecutingAssembly(), EligibleAssemblyFilter).ToList());
+        var internalAssemblies = ToArray(GetAssemblies(Assembly.GetCallingAssembly(), EligibleAssemblyFilter).ToList());
         var externalAssemblies = ToArray(externalAssembliesPath != null
             ? AssemblyLoader.LoadAssemblies(externalAssembliesPath)
             : new List<Assembly>());

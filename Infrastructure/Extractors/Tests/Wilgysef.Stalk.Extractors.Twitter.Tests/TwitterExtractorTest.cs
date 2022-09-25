@@ -8,6 +8,8 @@ using System.Web;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Extractors.TestBase;
+using Wilgysef.Stalk.TestBase.Utilities;
+using Wilgysef.Stalk.TestBase.Utilities.Mocks;
 
 namespace Wilgysef.Stalk.Extractors.Twitter.Tests;
 
@@ -27,33 +29,31 @@ public class TwitterExtractorTest : BaseTest
     {
         var messageHandler = new MockHttpMessageHandler();
         messageHandler
-            .AddEndpoint(UserByScreenNameRegex, (request, cancellationToken) =>
+            .AddEndpoint(UserByScreenNameRegex, request =>
             {
                 var json = GetUriQueryVariables(request.RequestUri!);
                 var userScreenName = json["screen_name"];
-                return GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.UserByScreenName.{userScreenName}.json");
+                return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.UserByScreenName.{userScreenName}.json");
             })
-            .AddEndpoint(UserTweetsRegex, (request, cancellationToken) =>
+            .AddEndpoint(UserTweetsRegex, request =>
             {
                 var json = GetUriQueryVariables(request.RequestUri!);
                 var userId = json["userId"];
                 var cursor = json["cursor"];
 
-                if (cursor == null)
-                {
-                    return GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.UserTweets.{userId}.json");
-                }
-                return GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.UserTweets.{userId}.{cursor}.json");
+                return cursor == null
+                    ? HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.UserTweets.{userId}.json")
+                    : HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.UserTweets.{userId}.{cursor}.json");
             })
-            .AddEndpoint(TweetDetailRegex, (request, cancellationToken) =>
+            .AddEndpoint(TweetDetailRegex, request =>
             {
                 var json = GetUriQueryVariables(request.RequestUri!);
                 var tweetId = json["focalTweetId"];
-                return GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.TweetDetail.{tweetId}.json");
+                return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.TweetDetail.{tweetId}.json");
             })
-            .AddEndpoint(new Uri(GuestTokenEndpoint), (request, cancellationTOken) =>
+            .AddEndpoint(GuestTokenEndpoint, request =>
             {
-                return GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Activate.json");
+                return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Activate.json");
             });
 
         _twitterExtractor = new TwitterExtractor(new HttpClient(messageHandler));
@@ -232,23 +232,9 @@ public class TwitterExtractorTest : BaseTest
         result.Type.ShouldBe(JobTaskType.Download);
     }
 
-    private static Task<HttpResponseMessage> GetResponseMessageFromManifestResource(string name, HttpStatusCode statusCode = HttpStatusCode.OK)
-    {
-        var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(name);
-        if (stream == null)
-        {
-            throw new ArgumentException($"Assembly manifest resouce was not found for {name}", nameof(name));
-        }
-
-        return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StreamContent(stream),
-        });
-    }
-
     private static JsonNode GetUriQueryVariables(Uri uri)
     {
-        var query = HttpUtility.ParseQueryString(uri.Query);
+        var query = uri.GetQueryParameters();
         return JsonSerializer.Deserialize<JsonNode>(query["variables"]!)!;
     }
 }

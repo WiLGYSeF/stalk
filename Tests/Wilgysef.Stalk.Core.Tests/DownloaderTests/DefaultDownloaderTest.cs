@@ -8,6 +8,7 @@ using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.TestBase;
 using Wilgysef.Stalk.TestBase.Mocks;
+using Wilgysef.Stalk.TestBase.Utilities.Mocks;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -17,7 +18,7 @@ public class DefaultDownloaderTest : BaseTest
 {
     private static readonly byte[] TestDownloadData = Encoding.UTF8.GetBytes("test");
 
-    private readonly HttpRequestMessageLog _requestLog;
+    private readonly MockHttpMessageHandler _httpMessageHandler;
     private readonly MockFileService _fileService;
     private readonly DefaultDownloader _downloader;
 
@@ -25,16 +26,19 @@ public class DefaultDownloaderTest : BaseTest
     {
         RegisterDownloaders = true;
 
-        _requestLog = new HttpRequestMessageLog();
-        ReplaceService(c => new HttpClient(new MockHttpMessageHandler((request, cancellationToken) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-        {
-            Content = new StreamContent(new MemoryStream(TestDownloadData))
-        }), _requestLog)));
-
         var downloaders = GetRequiredService<IEnumerable<IDownloader>>();
         _downloader = (downloaders.Single(d => d is DefaultDownloader) as DefaultDownloader)!;
 
         _fileService = MockFileService!;
+        _httpMessageHandler = MockHttpMessageHandler!;
+
+        _httpMessageHandler.DefaultEndpointAction = (request, cancellationToken) =>
+        {
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StreamContent(new MemoryStream(TestDownloadData))
+            });
+        };
     }
 
     [Fact]
@@ -62,8 +66,8 @@ public class DefaultDownloaderTest : BaseTest
             result.MetadataPath.ShouldBe(metadataFilename);
         }
 
-        _requestLog.RequestEntries.Count.ShouldBe(1);
-        _requestLog.RequestEntries.Single().Request.RequestUri.ShouldBe(uri);
+        _httpMessageHandler.Requests.Count.ShouldBe(1);
+        _httpMessageHandler.Requests.Single().Request.RequestUri.ShouldBe(uri);
 
         _fileService.Files.Keys.Count().ShouldBe(2);
         (_fileService.Files[filename] as MemoryStream)!.ToArray().ShouldBe(TestDownloadData);
@@ -114,8 +118,8 @@ public class DefaultDownloaderTest : BaseTest
             result.MetadataPath.ShouldBe(metadataFilename);
         }
 
-        _requestLog.RequestEntries.Count.ShouldBe(1);
-        _requestLog.RequestEntries.Single().Request.RequestUri.ShouldBe(uri);
+        _httpMessageHandler.Requests.Count.ShouldBe(1);
+        _httpMessageHandler.Requests.Single().Request.RequestUri.ShouldBe(uri);
 
         _fileService.Files.Keys.Count().ShouldBe(2);
         (_fileService.Files[filename] as MemoryStream)!.ToArray().ShouldBe(TestDownloadData);

@@ -12,6 +12,7 @@ using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.EntityFrameworkCore;
 using Wilgysef.Stalk.TestBase.Mocks;
+using Wilgysef.Stalk.TestBase.Utilities.Mocks;
 
 namespace Wilgysef.Stalk.TestBase;
 
@@ -27,7 +28,7 @@ public abstract class BaseTest
 
     public MockFileService? MockFileService { get; private set; }
 
-    public HttpRequestMessageLog? HttpRequestMessageLog { get; private set; }
+    public MockHttpMessageHandler? MockHttpMessageHandler { get; private set; }
 
     private IServiceProvider? _serviceProvider;
     private IServiceProvider ServiceProvider
@@ -190,10 +191,7 @@ public abstract class BaseTest
         }
         if (DoMockHttpClient)
         {
-            HttpRequestMessageLog = ReplaceHttpClient((request, cancellationToken) =>
-            {
-                throw new NotImplementedException();
-            });
+            MockHttpMessageHandler = ReplaceHttpClient();
         }
 
         foreach (var (implementation, service, type) in _replaceServices)
@@ -252,15 +250,13 @@ public abstract class BaseTest
         return fileService;
     }
 
-    private HttpRequestMessageLog ReplaceHttpClient(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> callback)
+    private MockHttpMessageHandler ReplaceHttpClient()
     {
-        var requestLog = new HttpRequestMessageLog();
+        var messageHandler = new MockHttpMessageHandler();
         _replaceServiceDelegates.Insert(
             0,
-            (c => new HttpClient(new MockHttpMessageHandler(callback, requestLog)),
-                typeof(HttpClient),
-                ServiceRegistrationType.Transient));
-        return requestLog;
+            (c => new HttpClient(messageHandler), typeof(HttpClient), ServiceRegistrationType.Transient));
+        return messageHandler;
     }
 
     #endregion
