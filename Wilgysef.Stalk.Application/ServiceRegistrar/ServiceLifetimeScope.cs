@@ -40,5 +40,7 @@ public class ServiceLifetimeScope : IServiceLifetimeScope
     public void Dispose()
     {
         _lifetimeScope.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 }
