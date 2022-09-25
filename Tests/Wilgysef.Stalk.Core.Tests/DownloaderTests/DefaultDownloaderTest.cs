@@ -26,7 +26,7 @@ public class DefaultDownloaderTest : BaseTest
         RegisterDownloaders = true;
 
         _requestLog = new HttpRequestMessageLog();
-        ReplaceServiceDelegate(c => new HttpClient(new MockHttpMessageHandler((request, cancellationToken) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+        ReplaceService(c => new HttpClient(new MockHttpMessageHandler((request, cancellationToken) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StreamContent(new MemoryStream(TestDownloadData))
         }), _requestLog)));

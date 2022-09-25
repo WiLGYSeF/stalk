@@ -47,7 +47,7 @@ public class JobWorkerService : IJobWorkerService, ITransientDependency
         {
             await _jobManager.SetJobActiveAsync(job);
         }
-        catch (Exception exception)
+        catch
         {
             _jobWorkerCollectionService.RemoveJobWorker(worker);
             throw;

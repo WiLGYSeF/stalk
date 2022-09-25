@@ -27,12 +27,12 @@ public class WorkAsyncTest : BaseTest
     public WorkAsyncTest()
     {
         var requestLog = new HttpRequestMessageLog();
-        ReplaceServiceDelegate(c => new HttpClient(new MockHttpMessageHandler((request, cancellationToken) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+        ReplaceService(c => new HttpClient(new MockHttpMessageHandler((request, cancellationToken) => Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new StreamContent(new MemoryStream())
         }), requestLog)));
 
-        ReplaceSingletonServiceDelegate<IJobTaskWorkerFactory>(c => new JobTaskWorkerFactoryMock(
+        ReplaceSingletonService<IJobTaskWorkerFactory>(c => new JobTaskWorkerFactoryMock(
             c.Resolve<IServiceLocator>()));
 
         _jobTaskWorkerFactory = (JobTaskWorkerFactoryMock)GetRequiredService<IJobTaskWorkerFactory>();

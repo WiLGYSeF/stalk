@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Shouldly;
 using System.Net;
+using System.Runtime.CompilerServices;
 using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
@@ -169,11 +170,13 @@ public class TaskDelayTest : BaseTest
         (retryTask.DelayedUntil!.Value - DateTime.Now).TotalSeconds.ShouldBeInRange(90, 100);
     }
 
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
     private async IAsyncEnumerable<ExtractResult> ExtractAsync(
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         Uri uri,
         string itemData,
         IMetadataObject metadata,
-        CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (ThrowExtractException)
         {
@@ -194,7 +197,7 @@ public class TaskDelayTest : BaseTest
         string itemData,
         string metadataFilenameTemplate,
         IMetadataObject metadata,
-        CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (ThrowDownloadException)
         {

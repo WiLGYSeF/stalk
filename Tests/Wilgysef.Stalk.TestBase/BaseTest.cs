@@ -130,24 +130,24 @@ public abstract class BaseTest
         _serviceProvider = null;
     }
 
-    public void ReplaceServiceDelegate<T>(Func<IComponentContext, T> @delegate) where T : class
+    public void ReplaceService<T>(Func<IComponentContext, T> @delegate) where T : class
     {
-        ReplaceTransientServiceDelegate(@delegate);
+        ReplaceTransientService(@delegate);
     }
 
-    public void ReplaceTransientServiceDelegate<T>(Func<IComponentContext, T> @delegate) where T : class
+    public void ReplaceTransientService<T>(Func<IComponentContext, T> @delegate) where T : class
     {
         _replaceServiceDelegates.Add((@delegate, typeof(T), ServiceRegistrationType.Transient));
         _serviceProvider = null;
     }
 
-    public void ReplaceScopedServiceDelegate<T>(Func<IComponentContext, T> @delegate) where T : class
+    public void ReplaceScopedService<T>(Func<IComponentContext, T> @delegate) where T : class
     {
         _replaceServiceDelegates.Add((@delegate, typeof(T), ServiceRegistrationType.Scoped));
         _serviceProvider = null;
     }
 
-    public void ReplaceSingletonServiceDelegate<T>(Func<IComponentContext, T> @delegate) where T : class
+    public void ReplaceSingletonService<T>(Func<IComponentContext, T> @delegate) where T : class
     {
         _replaceServiceDelegates.Add((@delegate, typeof(T), ServiceRegistrationType.Singleton));
         _serviceProvider = null;
