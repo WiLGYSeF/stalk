@@ -89,7 +89,7 @@ internal class CreateJobBuilder
             {
                 Name = RandomValues.RandomString(6),
                 Priority = RandomValues.RandomInt(-100, 100),
-                Uri = RandomValues.RandomUri(),
+                Uri = RandomValues.RandomUri().AbsoluteUri,
                 DelayedUntil = null,
             });
         }

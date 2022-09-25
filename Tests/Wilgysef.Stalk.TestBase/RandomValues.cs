@@ -115,21 +115,24 @@ public static class RandomValues
         return path + separator + RandomString(RandomInt(10, 20)) + "." + RandomString(3);
     }
 
-    public static string RandomUri(
-        string? schema = null,
-        string? domain = null,
-        string? path = null)
+    public static Uri RandomUri(
+        string? scheme = "https",
+        string? host = null,
+        int port = 443,
+        string? path = null,
+        string? query = null,
+        string? fragment = null)
     {
-        schema ??= "https://";
-        domain ??= RandomString(8) + ".com";
-        path ??= RandomString(16);
-
-        if (!path.StartsWith('/'))
+        var builder = new UriBuilder(
+            scheme,
+            host ?? (RandomString(8) + ".com"),
+            port,
+            path ?? RandomString(16))
         {
-            path = '/' + path;
-        }
-
-        return schema + domain + path;
+            Query = query,
+            Fragment = fragment
+        };
+        return builder.Uri;
     }
 
     public enum DateTimePrecision

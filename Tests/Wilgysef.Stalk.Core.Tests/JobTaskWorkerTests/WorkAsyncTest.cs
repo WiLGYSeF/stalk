@@ -430,12 +430,12 @@ public class WorkAsyncTest : BaseTest
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         yield return new ExtractResult(
-            new Uri(RandomValues.RandomUri()),
+            RandomValues.RandomUri(),
             RandomValues.RandomString(10),
             JobTaskType.Extract);
 
         yield return new ExtractResult(
-            new Uri(RandomValues.RandomUri()),
+            RandomValues.RandomUri(),
             RandomValues.RandomString(10),
             JobTaskType.Extract);
     }
@@ -453,7 +453,7 @@ public class WorkAsyncTest : BaseTest
     {
         yield return new DownloadResult(
             RandomValues.RandomDirPath(3),
-            new Uri(RandomValues.RandomUri()),
+            RandomValues.RandomUri(),
             RandomValues.RandomString(10));
     }
 

@@ -40,7 +40,7 @@ public class DefaultDownloaderTest : BaseTest
     [Fact]
     public async Task Download_File_Save_Metadata()
     {
-        var uri = new Uri(RandomValues.RandomUri());
+        var uri = RandomValues.RandomUri();
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
         var itemData = RandomValues.RandomString(10);
@@ -91,7 +91,7 @@ public class DefaultDownloaderTest : BaseTest
     [Fact]
     public async Task Download_File_Save_Metadata_No_Hash()
     {
-        var uri = new Uri(RandomValues.RandomUri());
+        var uri = RandomValues.RandomUri();
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
         var itemData = RandomValues.RandomString(10);

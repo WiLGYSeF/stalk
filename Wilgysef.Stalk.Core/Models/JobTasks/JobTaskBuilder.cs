@@ -121,6 +121,12 @@ public class JobTaskBuilder
         return this;
     }
 
+    public JobTaskBuilder WithUri(Uri uri)
+    {
+        Uri = uri.AbsoluteUri;
+        return this;
+    }
+
     public JobTaskBuilder WithUri(string uri)
     {
         Uri = uri;
