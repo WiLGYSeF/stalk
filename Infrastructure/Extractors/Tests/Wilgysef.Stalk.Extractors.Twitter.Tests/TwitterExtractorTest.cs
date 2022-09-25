@@ -8,8 +8,8 @@ using System.Web;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Extractors.TestBase;
-using Wilgysef.Stalk.TestBase.Utilities;
-using Wilgysef.Stalk.TestBase.Utilities.Mocks;
+using Wilgysef.Stalk.TestBase.Shared;
+using Wilgysef.Stalk.TestBase.Shared.Mocks;
 
 namespace Wilgysef.Stalk.Extractors.Twitter.Tests;
 

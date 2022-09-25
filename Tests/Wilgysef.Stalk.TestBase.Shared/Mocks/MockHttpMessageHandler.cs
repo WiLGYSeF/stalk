@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Wilgysef.Stalk.TestBase.Utilities.Mocks
+namespace Wilgysef.Stalk.TestBase.Shared.Mocks
 {
     using AsyncEndpointAction = Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>;
     using EndpointAction = Func<HttpRequestMessage, HttpResponseMessage>;

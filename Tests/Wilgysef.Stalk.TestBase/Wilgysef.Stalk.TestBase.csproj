@@ -31,7 +31,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\Wilgysef.Stalk.Application\Wilgysef.Stalk.Application.csproj" />
-    <ProjectReference Include="..\Wilgysef.Stalk.TestBase.Utilities\Wilgysef.Stalk.TestBase.Utilities.csproj" />
+    <ProjectReference Include="..\Wilgysef.Stalk.TestBase.Shared\Wilgysef.Stalk.TestBase.Shared.csproj" />
   </ItemGroup>
 
 </Project>

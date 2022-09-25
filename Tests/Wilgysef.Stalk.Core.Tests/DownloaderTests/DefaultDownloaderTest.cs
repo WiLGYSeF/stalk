@@ -8,7 +8,7 @@ using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.TestBase;
 using Wilgysef.Stalk.TestBase.Mocks;
-using Wilgysef.Stalk.TestBase.Utilities.Mocks;
+using Wilgysef.Stalk.TestBase.Shared.Mocks;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 

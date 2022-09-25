@@ -2,7 +2,7 @@
 using System.Net.Http;
 using System.Reflection;
 
-namespace Wilgysef.Stalk.TestBase.Utilities
+namespace Wilgysef.Stalk.TestBase.Shared
 {
     public static class HttpUtilities
     {

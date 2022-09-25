@@ -12,7 +12,7 @@ using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.EntityFrameworkCore;
 using Wilgysef.Stalk.TestBase.Mocks;
-using Wilgysef.Stalk.TestBase.Utilities.Mocks;
+using Wilgysef.Stalk.TestBase.Shared.Mocks;
 
 namespace Wilgysef.Stalk.TestBase;
 
