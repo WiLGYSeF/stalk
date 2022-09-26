@@ -5,9 +5,9 @@ using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
-using Wilgysef.Stalk.Core.Tests.Extensions;
 using Wilgysef.Stalk.Core.Tests.Utilities;
 using Wilgysef.Stalk.TestBase;
+using Wilgysef.Stalk.TestBase.Extensions;
 
 namespace Wilgysef.Stalk.Core.Tests.JobTaskWorkerTests;
 
@@ -48,18 +48,12 @@ public class NoExtractorTest : BaseTest
         _jobWorkerStarter.EnsureTaskSuccessesOnDispose = false;
         using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.State == JobState.Active,
-            TimeSpan.FromSeconds(3));
+        job = await this.WaitUntilJobAsync(job.Id, job => job.State == JobState.Active);
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.State.ShouldBe(JobState.Active);
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.IsDone,
-            TimeSpan.FromSeconds(3));
+        job = await this.WaitUntilJobAsync(job.Id, job => job.IsDone);
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.IsDone.ShouldBeTrue();

@@ -7,9 +7,9 @@ using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
-using Wilgysef.Stalk.Core.Tests.Extensions;
 using Wilgysef.Stalk.Core.Tests.Utilities;
 using Wilgysef.Stalk.TestBase;
+using Wilgysef.Stalk.TestBase.Extensions;
 using Wilgysef.Stalk.TestBase.Mocks;
 
 namespace Wilgysef.Stalk.Core.Tests.JobWorkerTests;
@@ -56,10 +56,7 @@ public class WorkAsyncTest : BaseTest
 
         using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.State == JobState.Active,
-            TimeSpan.FromSeconds(3));
+        job = await this.WaitUntilJobAsync(job.Id, job => job.State == JobState.Active);
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.State.ShouldBe(JobState.Active);
@@ -83,8 +80,7 @@ public class WorkAsyncTest : BaseTest
 
         job = await this.WaitUntilJobAsync(
             job.Id,
-            job => job.Tasks.Count(t => t.State == JobTaskState.Active) >= workerInstance.Worker.WorkerLimit,
-            TimeSpan.FromSeconds(3));
+            job => job.Tasks.Count(t => t.State == JobTaskState.Active) >= workerInstance.Worker.WorkerLimit);
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBe(workerInstance.Worker.WorkerLimit);
@@ -141,10 +137,7 @@ public class WorkAsyncTest : BaseTest
 
         using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.Tasks.Any(t => t.State == JobTaskState.Active),
-            TimeSpan.FromSeconds(3));
+        job = await this.WaitUntilJobAsync(job.Id, job => job.Tasks.Any(t => t.State == JobTaskState.Active));
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBeGreaterThanOrEqualTo(1);
@@ -152,10 +145,7 @@ public class WorkAsyncTest : BaseTest
         var jobTask = job.Tasks.Single(t => t.State == JobTaskState.Active);
         _jobTaskWorkerFactory.FinishJobTaskWorker(jobTask);
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.State == JobState.Completed,
-            TimeSpan.FromSeconds(3));
+        job = await this.WaitUntilJobAsync(job.Id, job => job.State == JobState.Completed);
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.State.ShouldBe(JobState.Completed);
@@ -180,10 +170,7 @@ public class WorkAsyncTest : BaseTest
         _jobWorkerStarter.EnsureTaskSuccessesOnDispose = false;
         using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 2,
-            TimeSpan.FromSeconds(3));
+        job = await this.WaitUntilJobAsync(job.Id, job => job.Tasks.Count(t => t.State == JobTaskState.Active) >= 2);
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         foreach (var jobTask in job.Tasks)
@@ -191,10 +178,7 @@ public class WorkAsyncTest : BaseTest
             _jobTaskWorkerFactory.FailJobTaskWorker(jobTask);
         }
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.IsDone,
-            TimeSpan.FromSeconds(3));
+        job = await this.WaitUntilJobAsync(job.Id, job => job.IsDone);
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.State.ShouldBe(JobState.Failed);
@@ -219,10 +203,7 @@ public class WorkAsyncTest : BaseTest
         _jobWorkerStarter.EnsureTaskSuccessesOnDispose = false;
         using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.Tasks.Any(t => t.State == JobTaskState.Active),
-            TimeSpan.FromSeconds(3));
+        job = await this.WaitUntilJobAsync(job.Id, job => job.Tasks.Any(t => t.State == JobTaskState.Active));
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBeGreaterThanOrEqualTo(1);
@@ -232,17 +213,13 @@ public class WorkAsyncTest : BaseTest
 
         job = await this.WaitUntilJobAsync(
             job.Id,
-            job => job.Tasks.Count >= 2 && job.Tasks.Any(t => t.Id != jobTask.Id && t.State == JobTaskState.Active),
-            TimeSpan.FromSeconds(3));
+            job => job.Tasks.Count >= 2 && job.Tasks.Any(t => t.Id != jobTask.Id && t.State == JobTaskState.Active));
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         jobTask = job.Tasks.Single(t => t.Id != jobTask.Id);
         _jobTaskWorkerFactory.FailJobTaskWorker(jobTask, new HttpRequestException(null, null, HttpStatusCode.InternalServerError));
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.State == JobState.Failed,
-            TimeSpan.FromSeconds(3));
+        job = await this.WaitUntilJobAsync(job.Id, job => job.State == JobState.Failed);
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.State.ShouldBe(JobState.Failed);
@@ -264,10 +241,7 @@ public class WorkAsyncTest : BaseTest
         _jobWorkerStarter.EnsureTaskSuccessesOnDispose = false;
         using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => !job.IsActive,
-            TimeSpan.FromSeconds(3));
+        job = await this.WaitUntilJobAsync(job.Id, job => !job.IsActive);
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.State.ShouldBe(JobState.Inactive);
@@ -289,20 +263,14 @@ public class WorkAsyncTest : BaseTest
 
         using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.Tasks.Any(t => t.State == JobTaskState.Active),
-            TimeSpan.FromSeconds(3));
+        job = await this.WaitUntilJobAsync(job.Id, job => job.Tasks.Any(t => t.State == JobTaskState.Active));
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBe(1);
 
         workerInstance.CancellationTokenSource.Cancel();
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.State != JobState.Active,
-            TimeSpan.FromSeconds(3));
+        job = await this.WaitUntilJobAsync(job.Id, job => job.State != JobState.Active);
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         // TODO: remove
