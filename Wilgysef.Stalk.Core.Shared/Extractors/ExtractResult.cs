@@ -1,4 +1,5 @@
 ﻿using System;
+using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
@@ -20,6 +21,8 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
 
         public JobTaskType Type { get; }
 
+        public DownloadRequestData? DownloadRequestData { get; }
+
         public ExtractResult(
             Uri uri,
             string itemId,
@@ -27,7 +30,8 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
             string? name = null,
             int priority = 0,
             string? itemData = null,
-            IMetadataObject? metadata = null)
+            IMetadataObject? metadata = null,
+            DownloadRequestData? downloadRequestData = null)
         {
             Name = name;
             Priority = priority;
@@ -36,6 +40,7 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
             ItemData = itemData;
             Metadata = metadata;
             Type = type;
+            DownloadRequestData = downloadRequestData;
         }
     }
 }

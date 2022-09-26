@@ -1,4 +1,5 @@
 ﻿using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
@@ -185,9 +186,18 @@ public class JobTaskBuilder
         return this;
     }
 
-    public JobTaskBuilder WithResult(JobTaskDownloadRequestData downloadRequestData)
+    public JobTaskBuilder WithDownloadRequestData(JobTaskDownloadRequestData? downloadRequestData)
     {
         DownloadRequestData = downloadRequestData ?? JobTaskDownloadRequestData.Create();
+        return this;
+    }
+
+    public JobTaskBuilder WithDownloadRequestData(DownloadRequestData downloadRequestData)
+    {
+        DownloadRequestData = JobTaskDownloadRequestData.Create(
+            downloadRequestData.Method?.Method,
+            downloadRequestData.Headers,
+            downloadRequestData.Data);
         return this;
     }
 

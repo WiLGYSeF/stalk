@@ -162,6 +162,11 @@ public class JobTaskWorker : IJobTaskWorker
                 .WithExtractResult(JobTask, result)
                 .WithId(idGenerator.CreateId());
 
+            if (result.DownloadRequestData != null)
+            {
+                jobTaskBuilder.WithDownloadRequestData(result.DownloadRequestData);
+            }
+
             if (JobConfig.Delay?.TaskDelay != null)
             {
                 jobTaskBuilder.WithDelayTime(TimeSpan.FromSeconds(RandomInt(
