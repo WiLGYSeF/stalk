@@ -27,7 +27,10 @@ public class DataDownloader : DownloaderBase
         return uri.Scheme == "data";
     }
 
-    protected override Task<Stream> GetFileStreamAsync(Uri uri, CancellationToken cancellationToken = default)
+    protected override Task<Stream> GetFileStreamAsync(
+        Uri uri,
+        DownloadRequestData? requestData = null,
+        CancellationToken cancellationToken = default)
     {
         var absoluteUri = uri.AbsoluteUri;
         var base64Index = absoluteUri.IndexOf("base64,");

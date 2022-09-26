@@ -66,12 +66,14 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             string? itemData,
             string? metadataFilenameTemplate,
             IMetadataObject metadata,
+            DownloadRequestData? requestData = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var downloadFileResult = await SaveFileAsync(
                 uri,
                 filenameTemplate,
                 metadata,
+                requestData,
                 cancellationToken);
 
             metadata.TryAddValueByParts(filenameTemplate, MetadataObjectConsts.File.FilenameTemplateKeys);
@@ -118,13 +120,14 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             Uri uri,
             string filenameTemplate,
             IMetadataObject metadata,
+            DownloadRequestData? requestData = null,
             CancellationToken cancellationToken = default)
         {
             var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
             var filename = filenameSlug.SlugifyPath(
                 _stringFormatter.Format(filenameTemplate, metadata.GetFlattenedDictionary()));
 
-            using var stream = await GetFileStreamAsync(uri, cancellationToken);
+            using var stream = await GetFileStreamAsync(uri, requestData, cancellationToken);
             using var fileStream = _fileService.Open(filename, FileMode.CreateNew);
 
             return await SaveStreamAsync(
@@ -145,9 +148,12 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// <returns>Stream with download contents.</returns>
         protected virtual async Task<Stream> GetFileStreamAsync(
             Uri uri,
+            DownloadRequestData? requestData = null,
             CancellationToken cancellationToken = default)
         {
-            var response = await _httpClient.GetAsync(uri, cancellationToken);
+            var response = requestData != null
+                ? await _httpClient.SendAsync(requestData.CreateRequest(uri), cancellationToken)
+                : await _httpClient.GetAsync(uri, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadAsStreamAsync();

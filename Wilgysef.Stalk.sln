@@ -49,7 +49,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.Stalk.Extractors.T
 		{76B06527-625F-4D9B-89A1-4CA9ED7A3F4E} = {76B06527-625F-4D9B-89A1-4CA9ED7A3F4E}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wilgysef.Stalk.TestBase.Shared", "Tests\Wilgysef.Stalk.TestBase.Shared\Wilgysef.Stalk.TestBase.Shared.csproj", "{76B06527-625F-4D9B-89A1-4CA9ED7A3F4E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.Stalk.TestBase.Shared", "Tests\Wilgysef.Stalk.TestBase.Shared\Wilgysef.Stalk.TestBase.Shared.csproj", "{76B06527-625F-4D9B-89A1-4CA9ED7A3F4E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

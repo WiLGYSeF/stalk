@@ -7,7 +7,7 @@ namespace Wilgysef.Stalk.Application.ScheduledJobs;
 
 internal class CustomJobFactory : IJobFactory, ISingletonDependency
 {
-    private IServiceLifetimeScope _scope;
+    private readonly IServiceLifetimeScope _scope;
 
     public CustomJobFactory(
         IServiceLocator serviceLocator)

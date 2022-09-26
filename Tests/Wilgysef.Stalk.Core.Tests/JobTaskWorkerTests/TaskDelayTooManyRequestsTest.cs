@@ -135,6 +135,7 @@ public class TaskDelayTooManyRequestsTest : BaseTest
         string itemData,
         string? metadataFilenameTemplate,
         IMetadataObject metadata,
+        DownloadRequestData? requestData = null,
         CancellationToken cancellationToken = default)
     {
         throw new HttpRequestException("Mock download exception.", null, HttpStatusCode.TooManyRequests);

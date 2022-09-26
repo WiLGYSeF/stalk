@@ -140,6 +140,50 @@ public class DefaultDownloaderTest : BaseTest
         metadataWritten.GetValueByParts(MetadataObjectConsts.File.SizeKeys).ShouldBe(TestDownloadData.Length.ToString());
     }
 
+
+    [Fact]
+    public async Task Download_File_DownloadRequestData()
+    {
+        var uri = RandomValues.RandomUri();
+        var filename = "testfile";
+        var itemId = RandomValues.RandomString(10);
+        var itemData = RandomValues.RandomString(10);
+        var metadataFilename = "testmeta";
+        var metadata = new MetadataObject('.');
+
+        var testData = "test data";
+        var cookie = "test cookie";
+
+        await foreach (var result in _downloader.DownloadAsync(
+            uri,
+            filename,
+            itemId,
+            itemData,
+            metadataFilename,
+            metadata,
+            new DownloadRequestData(
+                HttpMethod.Post,
+                new List<KeyValuePair<string, string>>
+                {
+                    new KeyValuePair<string, string>("Set-Cookie", cookie)
+                },
+                Encoding.UTF8.GetBytes(testData))))
+        {
+            result.Path.ShouldBe(filename);
+            result.Uri.ShouldBe(uri);
+            result.ItemId.ShouldBe(itemId);
+            result.ItemData.ShouldBe(itemData);
+            result.MetadataPath.ShouldBe(metadataFilename);
+        }
+
+        _httpMessageHandler.Requests.Count.ShouldBe(1);
+        var request = _httpMessageHandler.Requests.Single().Request;
+        request.RequestUri.ShouldBe(uri);
+        request.Method.ShouldBe(HttpMethod.Post);
+        request.Headers.GetValues("Set-Cookie").Single().ShouldBe(cookie);
+        (await request.Content!.ReadAsStringAsync()).ShouldBe(testData);
+    }
+
     [Fact]
     public void Can_Always_Download()
     {
