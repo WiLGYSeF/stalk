@@ -31,6 +31,8 @@ public class JobTaskBuilder
 
     public DateTime? DelayedUntil { get; set; }
 
+    public JobTaskDownloadRequestData DownloadRequestData { get; set; } = JobTaskDownloadRequestData.Create();
+
     public JobTaskResult Result { get; set; } = JobTaskResult.Create();
 
     public long JobId { get; set; }
@@ -62,6 +64,7 @@ public class JobTaskBuilder
         Started = task.Started;
         Finished = task.Finished;
         DelayedUntil = task.DelayedUntil;
+        DownloadRequestData = task.DownloadRequestData;
         Result = task.Result;
         JobId = task.JobId;
         Job = task.Job;
@@ -79,7 +82,7 @@ public class JobTaskBuilder
 
         return JobTask.Create(
             Id,
-            Job!,
+            Job,
             JobId,
             Name,
             State,
@@ -92,6 +95,7 @@ public class JobTaskBuilder
             Started,
             Finished,
             DelayedUntil,
+            DownloadRequestData,
             Result,
             ParentTaskId,
             ParentTask);
@@ -178,6 +182,12 @@ public class JobTaskBuilder
     public JobTaskBuilder WithDelayTime(TimeSpan delay)
     {
         DelayedUntil = DateTime.Now.Add(delay);
+        return this;
+    }
+
+    public JobTaskBuilder WithResult(JobTaskDownloadRequestData downloadRequestData)
+    {
+        DownloadRequestData = downloadRequestData ?? JobTaskDownloadRequestData.Create();
         return this;
     }
 

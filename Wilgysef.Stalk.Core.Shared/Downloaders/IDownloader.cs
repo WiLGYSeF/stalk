@@ -40,6 +40,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// <param name="itemData">Item data.</param>
         /// <param name="metadataTemplate">Metadata filename template to save metadata files.</param>
         /// <param name="metadata">Metadata object.</param>
+        /// <param name="requestData">Download request data.</param>
         /// <param name="cancellationToken"></param>
         /// <returns>Download results.</returns>
         IAsyncEnumerable<DownloadResult> DownloadAsync(
@@ -49,6 +50,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             string? itemData,
             string? metadataTemplate,
             IMetadataObject metadata,
+            DownloadRequestData? requestData = null,
             CancellationToken cancellationToken = default);
 
         /// <summary>

@@ -78,6 +78,11 @@ public class JobTask : Entity
     public virtual DateTime? DelayedUntil { get; protected set; }
 
     /// <summary>
+    /// Download request data.
+    /// </summary>
+    public virtual JobTaskDownloadRequestData DownloadRequestData { get; protected set; } = null!;
+
+    /// <summary>
     /// Job task result.
     /// </summary>
     public virtual JobTaskResult Result { get; protected set; } = null!;
@@ -230,6 +235,7 @@ public class JobTask : Entity
         DateTime? started,
         DateTime? finished,
         DateTime? delayedUntil,
+        JobTaskDownloadRequestData? downloadRequestData,
         JobTaskResult? result,
         long? parentTaskId,
         JobTask? parentTask)
@@ -253,6 +259,7 @@ public class JobTask : Entity
             Type = type,
             Started = started,
             DelayedUntil = delayedUntil,
+            DownloadRequestData = downloadRequestData ?? JobTaskDownloadRequestData.Create(),
             Result = result ?? JobTaskResult.Create(),
             ParentTaskId = parentTaskId,
             ParentTask = parentTask,

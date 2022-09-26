@@ -449,6 +449,7 @@ public class WorkAsyncTest : BaseTest
         string itemData,
         string metadataFilenameTemplate,
         IMetadataObject metadata,
+        DownloadRequestData? requestData = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         yield return new DownloadResult(

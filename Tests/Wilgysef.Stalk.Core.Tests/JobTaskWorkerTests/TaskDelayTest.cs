@@ -197,6 +197,7 @@ public class TaskDelayTest : BaseTest
         string itemData,
         string metadataFilenameTemplate,
         IMetadataObject metadata,
+        DownloadRequestData? requestData = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         if (ThrowDownloadException)

@@ -4,7 +4,7 @@ namespace Wilgysef.Stalk.Application.IdGenerators;
 
 public class IdGenerator : IIdGenerator<long>
 {
-    private IdGen.IdGenerator _idGenerator;
+    private readonly IdGen.IdGenerator _idGenerator;
 
     public IdGenerator(IdGen.IdGenerator idGenerator)
     {

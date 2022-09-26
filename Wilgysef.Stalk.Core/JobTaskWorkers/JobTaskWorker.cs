@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
 using System.Net;
 using System.Security.Cryptography;
 using Wilgysef.Stalk.Core.DownloadSelectors;
@@ -233,7 +232,8 @@ public class JobTaskWorker : IJobTaskWorker
             JobTask.ItemData,
             JobConfig.SaveMetadata ? JobConfig.MetadataFilenameTemplate : null,
             JobTask.GetMetadata(),
-            cancellationToken))
+            requestData: JobTask.DownloadRequestData,
+            cancellationToken: cancellationToken))
         {
             Logger?.LogInformation("Job task {JobTaskId} downloaded {Uri}", JobTask.Id, result.Uri);
 
