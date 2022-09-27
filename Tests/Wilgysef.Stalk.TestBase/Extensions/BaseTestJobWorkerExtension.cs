@@ -1,15 +1,16 @@
 ﻿using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
-using Wilgysef.Stalk.TestBase;
 
-namespace Wilgysef.Stalk.Core.Tests.Extensions;
+namespace Wilgysef.Stalk.TestBase.Extensions;
 
-internal static class BaseTestJobWorkerExtension
+public static class BaseTestJobWorkerExtension
 {
+    private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(3);
+
     public static async Task<Job> WaitUntilJobAsync(this BaseTest baseTest,
         long jobId,
         Func<Job, bool> condition,
-        TimeSpan timeout,
+        TimeSpan? timeout = null,
         TimeSpan? interval = null)
     {
         Job job = null!;
@@ -17,14 +18,14 @@ internal static class BaseTestJobWorkerExtension
         {
             job = await ReloadJobAsync(baseTest, jobId);
             return condition(job);
-        }, timeout, interval ?? TimeSpan.Zero);
+        }, timeout ?? DefaultTimeout, interval ?? TimeSpan.Zero);
         return job;
     }
 
     public static async Task<Job> WaitUntilJobAsync(this BaseTest baseTest,
         long jobId,
         Func<Job, Task<bool>> condition,
-        TimeSpan timeout,
+        TimeSpan? timeout = null,
         TimeSpan? interval = null)
     {
         Job job = null!;
@@ -32,7 +33,7 @@ internal static class BaseTestJobWorkerExtension
         {
             job = await ReloadJobAsync(baseTest, jobId);
             return await condition(job);
-        }, timeout, interval ?? TimeSpan.Zero);
+        }, timeout ?? DefaultTimeout, interval ?? TimeSpan.Zero);
         return job;
     }
 

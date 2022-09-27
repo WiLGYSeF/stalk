@@ -55,9 +55,8 @@ public class JobCommandHandler : Command,
     {
         var job = await _jobManager.GetJobAsync(command.Id);
 
-        // TODO: do not await
         await _jobStateManager.StopJobAsync(job);
-
+        job = await _jobManager.GetJobAsync(job.Id);
         return Mapper.Map<JobDto>(job);
     }
 
@@ -65,10 +64,10 @@ public class JobCommandHandler : Command,
     {
         var job = await _jobManager.GetJobAsync(command.Id);
 
-        // TODO: do not await
         await _jobStateManager.StopJobAsync(job);
-        await _jobManager.DeleteJobAsync(job);
+        job = await _jobManager.GetJobAsync(job.Id);
 
+        await _jobManager.DeleteJobAsync(job);
         return Mapper.Map<JobDto>(job);
     }
 
@@ -76,9 +75,8 @@ public class JobCommandHandler : Command,
     {
         var job = await _jobManager.GetJobAsync(command.Id);
 
-        // TODO: do not await
         await _jobStateManager.PauseJobAsync(job);
-
+        job = await _jobManager.GetJobAsync(job.Id);
         return Mapper.Map<JobDto>(job);
     }
 
@@ -87,7 +85,7 @@ public class JobCommandHandler : Command,
         var job = await _jobManager.GetJobAsync(command.Id);
 
         await _jobStateManager.UnpauseJobAsync(job);
-
+        job = await _jobManager.GetJobAsync(job.Id);
         return Mapper.Map<JobDto>(job);
     }
 }

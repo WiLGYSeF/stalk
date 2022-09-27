@@ -10,9 +10,9 @@ using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
-using Wilgysef.Stalk.Core.Tests.Extensions;
 using Wilgysef.Stalk.Core.Tests.Utilities;
 using Wilgysef.Stalk.TestBase;
+using Wilgysef.Stalk.TestBase.Extensions;
 using MockExtensions = Wilgysef.Stalk.TestBase.MockExtensions;
 
 namespace Wilgysef.Stalk.Core.Tests.JobTaskWorkerTests;
@@ -368,10 +368,7 @@ public class WorkAsyncTest : BaseTest
         _jobWorkerStarter.EnsureTaskSuccessesOnDispose = false;
         var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.State == JobState.Active,
-            TimeSpan.FromSeconds(3));
+        job = await this.WaitUntilJobAsync(job.Id, job => job.State == JobState.Active);
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.State.ShouldBe(JobState.Active);
@@ -384,10 +381,7 @@ public class WorkAsyncTest : BaseTest
         var initialTaskCount = job.Tasks.Count;
         (job, var workerInstance) = await CreateAndRunJob(job);
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.IsDone,
-            TimeSpan.FromSeconds(3));
+        job = await this.WaitUntilJobAsync(job.Id, job => job.IsDone);
 
         job.IsDone.ShouldBeTrue();
         workerInstance.Dispose();
@@ -410,10 +404,7 @@ public class WorkAsyncTest : BaseTest
         job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(initialTaskCount + minimumTasksAdded);
         workerInstance.CancellationTokenSource.Cancel();
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => !job.IsActive,
-            TimeSpan.FromSeconds(3));
+        job = await this.WaitUntilJobAsync(job.Id, job => !job.IsActive);
 
         job.IsActive.ShouldBeFalse();
         workerInstance.Dispose();
