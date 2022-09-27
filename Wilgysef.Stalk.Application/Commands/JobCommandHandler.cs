@@ -9,6 +9,7 @@ namespace Wilgysef.Stalk.Application.Commands;
 
 public class JobCommandHandler : Command,
     ICommandHandler<CreateJob, JobDto>,
+    ICommandHandler<UpdateJob, JobDto>,
     ICommandHandler<StopJob, JobDto>,
     ICommandHandler<DeleteJob, JobDto>,
     ICommandHandler<PauseJob, JobDto>,
@@ -47,7 +48,23 @@ public class JobCommandHandler : Command,
         }
 
         var job = await _jobManager.CreateJobAsync(builder.Create());
+        return Mapper.Map<JobDto>(job);
+    }
 
+    public async Task<JobDto> HandleCommandAsync(UpdateJob command)
+    {
+        var job = await _jobManager.GetJobAsync(command.Id);
+
+        if (command.Name != null)
+        {
+            job.ChangeName(command.Name);
+        }
+        if (command.Priority.HasValue)
+        {
+            job.ChangePriority(command.Priority.Value);
+        }
+
+        job = await _jobManager.UpdateJobAsync(job);
         return Mapper.Map<JobDto>(job);
     }
 

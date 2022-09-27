@@ -16,7 +16,7 @@ public class JobConfigDto
 
     public bool? SaveItemIds { get; set; }
 
-    public bool StopWithNoNewItemIds { get; set; }
+    public bool? StopWithNoNewItemIds { get; set; }
 
     public int? MaxFailures { get; set; }
 

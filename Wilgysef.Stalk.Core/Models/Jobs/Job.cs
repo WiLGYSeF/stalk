@@ -247,6 +247,15 @@ public class Job : Entity
     }
 
     /// <summary>
+    /// Changes job name.
+    /// </summary>
+    /// <param name="name">Name.</param>
+    public void ChangeName(string? name)
+    {
+        Name = name;
+    }
+
+    /// <summary>
     /// Changes job priority.
     /// </summary>
     /// <param name="priority">Job priority.</param>

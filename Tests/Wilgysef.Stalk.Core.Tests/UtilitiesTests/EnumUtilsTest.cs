@@ -12,6 +12,7 @@ public class EnumUtilsTest
     [InlineData("MONDAY", false, null)]
     [InlineData("Friday", false, Weekday.Friday)]
     [InlineData("test", false, null)]
+    [InlineData("1", false, Weekday.Monday)]
     [InlineData("10", false, null)]
     public void Parse_Enum(string value, bool ignoreCase, Weekday? expected)
     {
@@ -40,6 +41,9 @@ public class EnumUtilsTest
     [InlineData("Friday", false, true, null)]
     [InlineData("test", false, false, null)]
     [InlineData("test", false, true, null)]
+    [InlineData("1", false, false, Weekday.Monday)]
+    [InlineData("1", false, true, null)]
+    [InlineData("10", false, false, null)]
     public void Parse_EnumMemberValue(string value, bool ignoreCase, bool enumMemberValueRequired, Weekday? expected)
     {
         var success = EnumUtils.TryParseEnumMemberValue<Weekday>(
