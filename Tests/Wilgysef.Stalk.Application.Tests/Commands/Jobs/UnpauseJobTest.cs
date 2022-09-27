@@ -14,44 +14,45 @@ using Wilgysef.Stalk.TestBase.Mocks;
 
 namespace Wilgysef.Stalk.Application.Tests.Commands.Jobs;
 
-public class StopJobTest : BaseTest
+public class UnpauseJobTest : BaseTest
 {
     private readonly ICommandHandler<CreateJob, JobDto> _createJobCommandHandler;
-    private readonly ICommandHandler<StopJob, JobDto> _stopJobCommandHandler;
+    private readonly ICommandHandler<UnpauseJob, JobDto> _unpauseJobCommandHandler;
 
     private readonly JobStarter _jobStarter;
     private readonly IMapper _mapper;
 
-    public StopJobTest()
+    public UnpauseJobTest()
     {
         ReplaceSingletonService<IJobTaskWorkerFactory>(c => new JobTaskWorkerFactoryMock(
             c.Resolve<IServiceLocator>()));
 
         _createJobCommandHandler = GetRequiredService<ICommandHandler<CreateJob, JobDto>>();
-        _stopJobCommandHandler = GetRequiredService<ICommandHandler<StopJob, JobDto>>();
+        _unpauseJobCommandHandler = GetRequiredService<ICommandHandler<UnpauseJob, JobDto>>();
 
         _jobStarter = new JobStarter(BeginLifetimeScope());
         _mapper = GetRequiredService<IMapper>();
     }
 
     [Fact]
-    public async Task Stop_Job()
+    public async Task Unpause_Job()
     {
-        // TODO: unstable test
-
-        var createCommand = new CreateJobBuilder(_mapper).WithRandom().Create();
+        var createCommand = new CreateJobBuilder(_mapper)
+            .WithRandom()
+            .WithDelayedUntil(DateTime.Now.AddDays(1))
+            .Create();
 
         var jobDto = await _createJobCommandHandler.HandleCommandAsync(createCommand);
         var jobId = long.Parse(jobDto.Id);
 
         await _jobStarter.WorkPrioritizedJobsAsync();
 
-        var job = await this.WaitUntilJobAsync(jobId, job => job.IsActive);
-        job.State.ShouldBe(JobState.Active);
+        var job = await this.WaitUntilJobAsync(jobId, job => job.State == JobState.Paused);
+        job.State.ShouldBe(JobState.Paused);
 
-        await _stopJobCommandHandler.HandleCommandAsync(new StopJob(jobId));
+        await _unpauseJobCommandHandler.HandleCommandAsync(new UnpauseJob(jobId));
 
-        job = await this.WaitUntilJobAsync(jobId, job => job.IsDone);
-        job.State.ShouldBe(JobState.Cancelled);
+        job = await this.WaitUntilJobAsync(jobId, job => job.State == JobState.Inactive);
+        job.State.ShouldBe(JobState.Inactive);
     }
 }

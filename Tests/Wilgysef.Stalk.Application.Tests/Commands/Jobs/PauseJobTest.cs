@@ -14,31 +14,29 @@ using Wilgysef.Stalk.TestBase.Mocks;
 
 namespace Wilgysef.Stalk.Application.Tests.Commands.Jobs;
 
-public class StopJobTest : BaseTest
+public class PauseJobTest : BaseTest
 {
     private readonly ICommandHandler<CreateJob, JobDto> _createJobCommandHandler;
-    private readonly ICommandHandler<StopJob, JobDto> _stopJobCommandHandler;
+    private readonly ICommandHandler<PauseJob, JobDto> _pauseJobCommandHandler;
 
     private readonly JobStarter _jobStarter;
     private readonly IMapper _mapper;
 
-    public StopJobTest()
+    public PauseJobTest()
     {
         ReplaceSingletonService<IJobTaskWorkerFactory>(c => new JobTaskWorkerFactoryMock(
             c.Resolve<IServiceLocator>()));
 
         _createJobCommandHandler = GetRequiredService<ICommandHandler<CreateJob, JobDto>>();
-        _stopJobCommandHandler = GetRequiredService<ICommandHandler<StopJob, JobDto>>();
+        _pauseJobCommandHandler = GetRequiredService<ICommandHandler<PauseJob, JobDto>>();
 
         _jobStarter = new JobStarter(BeginLifetimeScope());
         _mapper = GetRequiredService<IMapper>();
     }
 
     [Fact]
-    public async Task Stop_Job()
+    public async Task Pause_Job()
     {
-        // TODO: unstable test
-
         var createCommand = new CreateJobBuilder(_mapper).WithRandom().Create();
 
         var jobDto = await _createJobCommandHandler.HandleCommandAsync(createCommand);
@@ -49,9 +47,9 @@ public class StopJobTest : BaseTest
         var job = await this.WaitUntilJobAsync(jobId, job => job.IsActive);
         job.State.ShouldBe(JobState.Active);
 
-        await _stopJobCommandHandler.HandleCommandAsync(new StopJob(jobId));
+        await _pauseJobCommandHandler.HandleCommandAsync(new PauseJob(jobId));
 
-        job = await this.WaitUntilJobAsync(jobId, job => job.IsDone);
-        job.State.ShouldBe(JobState.Cancelled);
+        job = await this.WaitUntilJobAsync(jobId, job => !job.IsActive);
+        job.State.ShouldBe(JobState.Paused);
     }
 }
