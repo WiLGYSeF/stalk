@@ -54,40 +54,40 @@ public class JobTaskCommandHandler : Command,
     {
         var task = await _jobTaskManager.GetJobTaskAsync(command.Id);
 
-        // TODO: do not await
         await _jobTaskStateManager.StopJobTaskAsync(task);
 
-        return Mapper.Map<JobDto>(task.Job);
+        var job = await _jobManager.GetJobByTaskIdAsync(command.Id);
+        return Mapper.Map<JobDto>(job);
     }
 
     public async Task<JobDto> HandleCommandAsync(DeleteJobTask command)
     {
         var task = await _jobTaskManager.GetJobTaskAsync(command.Id);
 
-        // TODO: do not await
         await _jobTaskStateManager.StopJobTaskAsync(task);
-        await _jobTaskManager.DeleteJobTaskAsync(task);
+        var job = await _jobManager.GetJobByTaskIdAsync(command.Id);
 
-        return Mapper.Map<JobDto>(task.Job);
+        await _jobTaskManager.DeleteJobTaskAsync(task);
+        return Mapper.Map<JobDto>(job);
     }
 
     public async Task<JobDto> HandleCommandAsync(PauseJobTask command)
     {
         var task = await _jobTaskManager.GetJobTaskAsync(command.Id);
 
-        // TODO: do not await
         await _jobTaskStateManager.PauseJobTaskAsync(task);
 
-        return Mapper.Map<JobDto>(task.Job);
+        var job = await _jobManager.GetJobByTaskIdAsync(command.Id);
+        return Mapper.Map<JobDto>(job);
     }
 
     public async Task<JobDto> HandleCommandAsync(UnpauseJobTask command)
     {
         var task = await _jobTaskManager.GetJobTaskAsync(command.Id);
 
-        // TODO: do not await
         await _jobTaskStateManager.UnpauseJobTaskAsync(task);
 
-        return Mapper.Map<JobDto>(task.Job);
+        var job = await _jobManager.GetJobByTaskIdAsync(command.Id);
+        return Mapper.Map<JobDto>(job);
     }
 }
