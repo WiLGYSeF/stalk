@@ -32,16 +32,35 @@ public class JobAutoMapperProfile : Profile
 
     private void MapJobConfig()
     {
-        CreateMap<JobConfig, JobConfigDto>();
+        CreateMap<JobConfig, JobConfigDto>()
+            .ForMember(d => d.ExtractorConfig, opt => opt.MapFrom(c => c.ExtractorConfig.ToList()))
+            .ForMember(d => d.DownloaderConfig, opt => opt.MapFrom(c => c.DownloaderConfig.ToList()));
         CreateMap<JobConfig.Logging, JobConfigDto.LoggingDto>();
         CreateMap<JobConfig.DelayConfig, JobConfigDto.DelayConfigDto>();
-        CreateMap<JobConfig.ConfigGroup, JobConfigDto.ConfigGroupDto>();
+        CreateMap<JobConfigGroup, JobConfigDto.ConfigGroupDto>();
         CreateMap<JobConfig.Range, JobConfigDto.RangeDto>();
 
-        CreateMap<JobConfigDto, JobConfig>();
+        CreateMap<JobConfigDto, JobConfig>()
+            .ForMember(c => c.ExtractorConfig, opt => opt
+                .MapFrom(d => new JobConfigGroupCollection(d.ExtractorConfig != null
+                    ? d.ExtractorConfig.Select(CreateJobConfigGroup)
+                    : null)))
+            .ForMember(c => c.DownloaderConfig, opt => opt
+                .MapFrom(d => new JobConfigGroupCollection(d.DownloaderConfig != null
+                    ? d.DownloaderConfig.Select(CreateJobConfigGroup)
+                    : null)));
         CreateMap<JobConfigDto.LoggingDto, JobConfig.Logging>();
         CreateMap<JobConfigDto.DelayConfigDto, JobConfig.DelayConfig>();
-        CreateMap<JobConfigDto.ConfigGroupDto, JobConfig.ConfigGroup>();
+        CreateMap<JobConfigDto.ConfigGroupDto, JobConfigGroup>();
         CreateMap<JobConfigDto.RangeDto, JobConfig.Range>();
+    }
+
+    private static JobConfigGroup CreateJobConfigGroup(JobConfigDto.ConfigGroupDto group)
+    {
+        return new JobConfigGroup
+        {
+            Name = group.Name,
+            Config = group.Config,
+        };
     }
 }

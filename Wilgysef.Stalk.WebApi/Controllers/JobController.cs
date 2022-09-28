@@ -12,6 +12,7 @@ namespace Wilgysef.Stalk.WebApi.Controllers;
 public class JobController : ControllerBase
 {
     private readonly ICommandHandler<CreateJob, JobDto> _createJobCommandHandler;
+    private readonly ICommandHandler<UpdateJob, JobDto> _updateJobCommandHandler;
     private readonly ICommandHandler<StopJob, JobDto> _stopJobCommandHandler;
     private readonly ICommandHandler<DeleteJob, JobDto> _deleteJobCommandHandler;
     private readonly ICommandHandler<PauseJob, JobDto> _pauseJobCommandHandler;
@@ -28,6 +29,7 @@ public class JobController : ControllerBase
 
     public JobController(
         ICommandHandler<CreateJob, JobDto> createJobCommandHandler,
+        ICommandHandler<UpdateJob, JobDto> updateJobCommandHandler,
         ICommandHandler<StopJob, JobDto> stopJobCommandHandler,
         ICommandHandler<DeleteJob, JobDto> deleteJobCommandHandler,
         ICommandHandler<PauseJob, JobDto> pauseJobCommandHandler,
@@ -43,6 +45,7 @@ public class JobController : ControllerBase
         ICommandHandler<UnpauseJobTask, JobDto> unpauseJobTaskCommandHandler)
     {
         _createJobCommandHandler = createJobCommandHandler;
+        _updateJobCommandHandler = updateJobCommandHandler;
         _stopJobCommandHandler = stopJobCommandHandler;
         _deleteJobCommandHandler = deleteJobCommandHandler;
         _pauseJobCommandHandler = pauseJobCommandHandler;
@@ -64,6 +67,12 @@ public class JobController : ControllerBase
     public async Task<JobDto> CreateJobAsync(CreateJob command)
     {
         return await _createJobCommandHandler.HandleCommandAsync(command);
+    }
+
+    [HttpPatch]
+    public async Task<JobDto> UpdateJobAsync(UpdateJob command)
+    {
+        return await _updateJobCommandHandler.HandleCommandAsync(command);
     }
 
     [HttpPost("{id}/stop")]

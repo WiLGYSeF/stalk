@@ -57,11 +57,7 @@ public class TaskDelayTooManyRequestsTest : BaseTest
                 {
                     Delay = new JobConfig.DelayConfig
                     {
-                        TooManyRequestsDelay = new JobConfig.Range
-                        {
-                            Min = 100,
-                            Max = 100
-                        }
+                        TooManyRequestsDelay = new JobConfig.Range(100, 100)
                     }
                 })
                 .Create();

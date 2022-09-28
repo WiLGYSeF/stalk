@@ -46,10 +46,13 @@ app.MapControllers();
 
 using (var scope = app.Services.CreateScope())
 {
+    logger?.LogInformation("Initializing application...");
+
     var appStartup = scope.ServiceProvider.GetRequiredService<Startup>();
     await appStartup.StartAsync(app.Services.GetAutofacRoot());
 }
 
+logger?.LogInformation("Starting application...");
 app.Run();
 
 void ConfigureConfiguration()

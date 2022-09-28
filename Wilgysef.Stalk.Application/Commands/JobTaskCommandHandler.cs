@@ -46,7 +46,6 @@ public class JobTaskCommandHandler : Command,
         job.AddTask(builder.Create());
 
         await _jobManager.UpdateJobAsync(job);
-
         return Mapper.Map<JobDto>(job);
     }
 

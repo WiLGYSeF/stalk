@@ -16,7 +16,7 @@ public class JobConfigDto
 
     public bool? SaveItemIds { get; set; }
 
-    public bool StopWithNoNewItemIds { get; set; }
+    public bool? StopWithNoNewItemIds { get; set; }
 
     public int? MaxFailures { get; set; }
 
@@ -32,7 +32,7 @@ public class JobConfigDto
     {
         public string? Path { get; set; }
 
-        public int Level { get; set; }
+        public int? Level { get; set; }
     }
 
     public class DelayConfigDto
