@@ -287,9 +287,9 @@ public class WorkAsyncTest : BaseTest
                 .WithRandomTasks(JobTaskState.Inactive, 1)
                 .WithConfig(new JobConfig
                 {
-                    ExtractorConfig = new[]
+                    ExtractorConfig = new JobConfigGroupCollection(new[]
                     {
-                        new JobConfig.ConfigGroup
+                        new JobConfigGroup
                         {
                             Name = JobConfig.GlobalConfigGroupName,
                             Config = new Dictionary<string, object?>
@@ -297,7 +297,7 @@ public class WorkAsyncTest : BaseTest
                                 { "a", 1 },
                             }
                         },
-                        new JobConfig.ConfigGroup
+                        new JobConfigGroup
                         {
                             Name = "test",
                             Config = new Dictionary<string, object?>
@@ -305,7 +305,7 @@ public class WorkAsyncTest : BaseTest
                                 { "b", 2 },
                             }
                         }
-                    }
+                    })
                 })
                 .Create(),
             1);
@@ -329,9 +329,9 @@ public class WorkAsyncTest : BaseTest
                 .WithConfig(new JobConfig
                 {
                     DownloadFilenameTemplate = "a",
-                    DownloaderConfig = new[]
+                    DownloaderConfig = new JobConfigGroupCollection(new[]
                     {
-                        new JobConfig.ConfigGroup
+                        new JobConfigGroup
                         {
                             Name = JobConfig.GlobalConfigGroupName,
                             Config = new Dictionary<string, object?>
@@ -339,7 +339,7 @@ public class WorkAsyncTest : BaseTest
                                 { "a", 1 },
                             }
                         },
-                        new JobConfig.ConfigGroup
+                        new JobConfigGroup
                         {
                             Name = "test",
                             Config = new Dictionary<string, object?>
@@ -347,7 +347,7 @@ public class WorkAsyncTest : BaseTest
                                 { "b", 2 },
                             }
                         }
-                    }
+                    })
                 })
                 .Create());
 

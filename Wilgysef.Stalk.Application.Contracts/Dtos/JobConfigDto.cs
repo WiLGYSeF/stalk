@@ -32,7 +32,7 @@ public class JobConfigDto
     {
         public string? Path { get; set; }
 
-        public int Level { get; set; }
+        public int? Level { get; set; }
     }
 
     public class DelayConfigDto

@@ -55,51 +55,57 @@ public class JobConfig
     public bool StopWithNoNewItemIds { get; set; }
 
     /// <summary>
-    /// Logging config.
-    /// </summary>
-    public Logging? Logs { get; set; }
-
-    /// <summary>
     /// Maximum task failures before a job is considered failed.
     /// </summary>
     public int? MaxFailures { get; set; }
 
     /// <summary>
+    /// Logging config.
+    /// </summary>
+    public Logging? Logs { get; set; }
+
+    /// <summary>
     /// Delay config.
     /// </summary>
-    public DelayConfig? Delay { get; set; }
+    public DelayConfig Delay { get; set; } = new();
 
-    public ICollection<ConfigGroup>? ExtractorConfig { get; set; }
+    /// <summary>
+    /// Extractor configs.
+    /// </summary>
+    public JobConfigGroupCollection ExtractorConfig { get; set; } = new();
 
-    public ICollection<ConfigGroup>? DownloaderConfig { get; set; }
+    /// <summary>
+    /// Downloader configs.
+    /// </summary>
+    public JobConfigGroupCollection DownloaderConfig { get; set; } = new();
 
+    /// <summary>
+    /// Gets the extractor configurations.
+    /// </summary>
+    /// <param name="extractor">Extractor.</param>
+    /// <returns>Extractor configuration from global config groups and config groups with the same name as <see cref="IExtractor.Name"/>.</returns>
     public Dictionary<string, object?> GetExtractorConfig(IExtractor extractor)
     {
         var config = new Dictionary<string, object?>();
-        if (ExtractorConfig == null)
-        {
-            return config;
-        }
-
         GetConfig(ExtractorConfig.Where(c => c.Name == GlobalConfigGroupName), config);
         GetConfig(ExtractorConfig.Where(c => c.Name == extractor.Name), config);
         return config;
     }
 
+    /// <summary>
+    /// Gets the downloader configurations.
+    /// </summary>
+    /// <param name="downloader">Downloader.</param>
+    /// <returns>Downloader configuration from global config groups and config groups with the same name as <see cref="IDownloader.Name"/>.</returns>
     public Dictionary<string, object?> GetDownloaderConfig(IDownloader downloader)
     {
         var config = new Dictionary<string, object?>();
-        if (DownloaderConfig == null)
-        {
-            return config;
-        }
-
         GetConfig(DownloaderConfig.Where(c => c.Name == GlobalConfigGroupName), config);
         GetConfig(DownloaderConfig.Where(c => c.Name == downloader.Name), config);
         return config;
     }
 
-    public void GetConfig(IEnumerable<ConfigGroup> configGroups, IDictionary<string, object?> config)
+    public static void GetConfig(IEnumerable<JobConfigGroup> configGroups, IDictionary<string, object?> config)
     {
         foreach (var configGroup in configGroups)
         {
@@ -143,16 +149,15 @@ public class JobConfig
         public Range? TooManyRequestsDelay { get; set; }
     }
 
-    public class ConfigGroup
-    {
-        public string Name { get; set; } = null!;
-
-        public IDictionary<string, object?> Config { get; set; } = null!;
-    }
-
     public class Range
     {
         public int Min { get; set; }
         public int Max { get; set; }
+
+        public Range(int min, int max)
+        {
+            Min = min;
+            Max = max;
+        }
     }
 }

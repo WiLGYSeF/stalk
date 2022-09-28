@@ -23,7 +23,7 @@ public class JobTaskWorker : IJobTaskWorker
 
     public ILogger? Logger { get; set; }
 
-    private JobConfig? JobConfig { get; set; }
+    private JobConfig JobConfig { get; set; }
 
     private readonly IServiceLifetimeScope _lifetimeScope;
 
@@ -33,6 +33,7 @@ public class JobTaskWorker : IJobTaskWorker
     {
         _lifetimeScope = lifetimeScope;
         JobTask = jobTask;
+        JobConfig = JobTask.Job.GetConfig();
     }
 
     public virtual async Task WorkAsync(CancellationToken cancellationToken = default)
@@ -120,7 +121,7 @@ public class JobTaskWorker : IJobTaskWorker
                 $"No extractor was able to extract from {jobTaskUri}");
         }
 
-        var extractorConfig = JobConfig!.GetExtractorConfig(extractor);
+        var extractorConfig = JobConfig.GetExtractorConfig(extractor);
 
         var extractorHttpClientService = _lifetimeScope.GetRequiredService<IExtractorHttpClientService>();
         extractor.SetHttpClient(extractorHttpClientService.GetHttpClient(extractor, extractorConfig));
@@ -167,7 +168,7 @@ public class JobTaskWorker : IJobTaskWorker
                 jobTaskBuilder.WithDownloadRequestData(result.DownloadRequestData);
             }
 
-            if (JobConfig.Delay?.TaskDelay != null)
+            if (JobConfig.Delay.TaskDelay != null)
             {
                 jobTaskBuilder.WithDelayTime(TimeSpan.FromSeconds(RandomInt(
                     JobConfig.Delay.TaskDelay.Min,
@@ -288,13 +289,13 @@ public class JobTaskWorker : IJobTaskWorker
             .WithId(jobTaskId)
             .WithPriority(JobTask!.Priority - JobTaskPriorityRetryChange);
 
-        if (tooManyRequests && JobConfig?.Delay?.TooManyRequestsDelay != null)
+        if (tooManyRequests && JobConfig!.Delay.TooManyRequestsDelay != null)
         {
             jobTaskBuilder.WithDelayTime(TimeSpan.FromSeconds(RandomInt(
                 JobConfig.Delay.TooManyRequestsDelay.Min,
                 JobConfig.Delay.TooManyRequestsDelay.Max)));
         }
-        else if (JobConfig?.Delay?.TaskFailedDelay != null)
+        else if (JobConfig.Delay?.TaskFailedDelay != null)
         {
             jobTaskBuilder.WithDelayTime(TimeSpan.FromSeconds(RandomInt(
                 JobConfig.Delay.TaskFailedDelay.Min,

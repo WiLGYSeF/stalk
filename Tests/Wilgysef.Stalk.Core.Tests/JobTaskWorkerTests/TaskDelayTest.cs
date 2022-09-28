@@ -63,11 +63,7 @@ public class TaskDelayTest : BaseTest
                 {
                     Delay = new JobConfig.DelayConfig
                     {
-                        TaskFailedDelay = new JobConfig.Range
-                        {
-                            Min = 100,
-                            Max = 100
-                        }
+                        TaskFailedDelay = new JobConfig.Range(100, 100)
                     }
                 })
                 .Create();
@@ -136,11 +132,7 @@ public class TaskDelayTest : BaseTest
                 {
                     Delay = new JobConfig.DelayConfig
                     {
-                        TaskDelay = new JobConfig.Range
-                        {
-                            Min = 100,
-                            Max = 100
-                        }
+                        TaskDelay = new JobConfig.Range(100, 100)
                     }
                 })
                 .Create();

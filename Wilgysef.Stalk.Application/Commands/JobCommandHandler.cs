@@ -63,6 +63,10 @@ public class JobCommandHandler : Command,
         {
             job.ChangePriority(command.Priority.Value);
         }
+        if (command.Config != null)
+        {
+            UpdateConfig(job, command.Config);
+        }
 
         job = await _jobManager.UpdateJobAsync(job);
         return Mapper.Map<JobDto>(job);
@@ -104,5 +108,69 @@ public class JobCommandHandler : Command,
         await _jobStateManager.UnpauseJobAsync(job);
         job = await _jobManager.GetJobAsync(job.Id);
         return Mapper.Map<JobDto>(job);
+    }
+
+    private void UpdateConfig(Job job, JobConfigDto config)
+    {
+        var jobConfig = job.GetConfig();
+
+        SetIfNotNull(v => jobConfig.MaxTaskWorkerCount = v!.Value, () => config.MaxTaskWorkerCount);
+        SetIfNotNull(v => jobConfig.DownloadFilenameTemplate = v, () => config.DownloadFilenameTemplate);
+        SetIfNotNull(v => jobConfig.DownloadData = v!.Value, () => config.DownloadData);
+        SetIfNotNull(v => jobConfig.MetadataFilenameTemplate = v, () => config.MetadataFilenameTemplate);
+        SetIfNotNull(v => jobConfig.SaveMetadata = v!.Value, () => config.SaveMetadata);
+        SetIfNotNull(v => jobConfig.ItemIdPath = v, () => config.ItemIdPath);
+        SetIfNotNull(v => jobConfig.SaveItemIds = v!.Value, () => config.SaveItemIds);
+        SetIfNotNull(v => jobConfig.StopWithNoNewItemIds = v!.Value, () => config.StopWithNoNewItemIds);
+        SetIfNotNull(v => jobConfig.MaxFailures = v, () => config.MaxFailures);
+
+        if (config.Logs != null)
+        {
+            jobConfig.Logs ??= new();
+            SetIfNotNull(v => jobConfig.Logs!.Path = v, () => config.Logs.Path);
+            SetIfNotNull(v => jobConfig.Logs!.Level = v!.Value, () => config.Logs.Level);
+        }
+
+        if (config.Delay != null)
+        {
+            if (config.Delay.TaskDelay != null)
+            {
+                jobConfig.Delay.TaskDelay = new(config.Delay.TaskDelay.Min, config.Delay.TaskDelay.Max);
+            }
+            if (config.Delay.TaskFailedDelay != null)
+            {
+                jobConfig.Delay.TaskFailedDelay = new(config.Delay.TaskFailedDelay.Min, config.Delay.TaskFailedDelay.Max);
+            }
+            if (config.Delay.TooManyRequestsDelay != null)
+            {
+                jobConfig.Delay.TooManyRequestsDelay = new(config.Delay.TooManyRequestsDelay.Min, config.Delay.TooManyRequestsDelay.Max);
+            }
+        }
+
+        if (config.ExtractorConfig != null)
+        {
+            foreach (var group in config.ExtractorConfig)
+            {
+                jobConfig.ExtractorConfig.Add(Mapper.Map<JobConfigGroup>(group));
+            }
+        }
+        if (config.DownloaderConfig != null)
+        {
+            foreach (var group in config.DownloaderConfig)
+            {
+                jobConfig.DownloaderConfig.Add(Mapper.Map<JobConfigGroup>(group));
+            }
+        }
+
+        job.ChangeConfig(jobConfig);
+    }
+
+    private void SetIfNotNull<T>(Action<T> action, Func<T> valueFunc)
+    {
+        var value = valueFunc();
+        if (value != null)
+        {
+            action(value);
+        }
     }
 }
