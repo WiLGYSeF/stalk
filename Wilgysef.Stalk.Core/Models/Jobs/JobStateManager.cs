@@ -42,6 +42,14 @@ public class JobStateManager : IJobStateManager, ITransientDependency
         }
 
         job.ChangeState(JobState.Cancelled);
+        foreach (var jobTask in job.Tasks)
+        {
+            if (!jobTask.IsDone)
+            {
+                jobTask.ChangeState(JobTaskState.Cancelled);
+            }
+        }
+
         await _jobManager.UpdateJobAsync(job);
     }
 
@@ -88,6 +96,14 @@ public class JobStateManager : IJobStateManager, ITransientDependency
         if (changeState)
         {
             job.ChangeState(JobState.Paused);
+            foreach (var jobTask in job.Tasks)
+            {
+                if (jobTask.IsActive)
+                {
+                    jobTask.ChangeState(JobTaskState.Inactive);
+                }
+            }
+
             await _jobManager.UpdateJobAsync(job);
         }
     }

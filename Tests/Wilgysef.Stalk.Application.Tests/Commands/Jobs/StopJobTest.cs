@@ -17,7 +17,6 @@ namespace Wilgysef.Stalk.Application.Tests.Commands.Jobs;
 public class StopJobTest : BaseTest
 {
     private readonly ICommandHandler<CreateJob, JobDto> _createJobCommandHandler;
-    private readonly ICommandHandler<StopJob, JobDto> _stopJobCommandHandler;
 
     private readonly JobStarter _jobStarter;
     private readonly IMapper _mapper;
@@ -28,7 +27,6 @@ public class StopJobTest : BaseTest
             c.Resolve<IServiceLocator>()));
 
         _createJobCommandHandler = GetRequiredService<ICommandHandler<CreateJob, JobDto>>();
-        _stopJobCommandHandler = GetRequiredService<ICommandHandler<StopJob, JobDto>>();
 
         _jobStarter = new JobStarter(BeginLifetimeScope());
         _mapper = GetRequiredService<IMapper>();
@@ -49,9 +47,14 @@ public class StopJobTest : BaseTest
         var job = await this.WaitUntilJobAsync(jobId, job => job.IsActive);
         job.State.ShouldBe(JobState.Active);
 
-        await _stopJobCommandHandler.HandleCommandAsync(new StopJob(jobId));
+        using (var scope = BeginLifetimeScope())
+        {
+            var stopJobCommandHandler = GetRequiredService<ICommandHandler<StopJob, JobDto>>();
+            await stopJobCommandHandler.HandleCommandAsync(new StopJob(jobId));
+        }
 
         job = await this.WaitUntilJobAsync(jobId, job => job.IsDone);
         job.State.ShouldBe(JobState.Cancelled);
+        job.Tasks.All(t => t.IsDone).ShouldBeTrue();
     }
 }

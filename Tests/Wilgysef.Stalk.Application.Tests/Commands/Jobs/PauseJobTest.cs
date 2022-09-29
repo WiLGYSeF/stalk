@@ -17,7 +17,6 @@ namespace Wilgysef.Stalk.Application.Tests.Commands.Jobs;
 public class PauseJobTest : BaseTest
 {
     private readonly ICommandHandler<CreateJob, JobDto> _createJobCommandHandler;
-    private readonly ICommandHandler<PauseJob, JobDto> _pauseJobCommandHandler;
 
     private readonly JobStarter _jobStarter;
     private readonly IMapper _mapper;
@@ -28,7 +27,6 @@ public class PauseJobTest : BaseTest
             c.Resolve<IServiceLocator>()));
 
         _createJobCommandHandler = GetRequiredService<ICommandHandler<CreateJob, JobDto>>();
-        _pauseJobCommandHandler = GetRequiredService<ICommandHandler<PauseJob, JobDto>>();
 
         _jobStarter = new JobStarter(BeginLifetimeScope());
         _mapper = GetRequiredService<IMapper>();
@@ -46,12 +44,17 @@ public class PauseJobTest : BaseTest
 
         await _jobStarter.WorkPrioritizedJobsAsync();
 
-        var job = await this.WaitUntilJobAsync(jobId, job => job.IsActive);
+        var job = await this.WaitUntilJobAsync(jobId, job => job.Tasks.Any(t => t.IsActive));
         job.State.ShouldBe(JobState.Active);
 
-        await _pauseJobCommandHandler.HandleCommandAsync(new PauseJob(jobId));
+        using (var scope = BeginLifetimeScope())
+        {
+            var pauseJobCommandHandler = scope.GetRequiredService<ICommandHandler<PauseJob, JobDto>>();
+            await pauseJobCommandHandler.HandleCommandAsync(new PauseJob(jobId));
+        }
 
         job = await this.WaitUntilJobAsync(jobId, job => !job.IsActive);
         job.State.ShouldBe(JobState.Paused);
+        job.Tasks.All(t => !t.IsActive).ShouldBeTrue();
     }
 }

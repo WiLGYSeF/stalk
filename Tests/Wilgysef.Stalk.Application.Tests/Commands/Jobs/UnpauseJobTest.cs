@@ -17,7 +17,6 @@ namespace Wilgysef.Stalk.Application.Tests.Commands.Jobs;
 public class UnpauseJobTest : BaseTest
 {
     private readonly ICommandHandler<CreateJob, JobDto> _createJobCommandHandler;
-    private readonly ICommandHandler<UnpauseJob, JobDto> _unpauseJobCommandHandler;
 
     private readonly JobStarter _jobStarter;
     private readonly IMapper _mapper;
@@ -28,7 +27,6 @@ public class UnpauseJobTest : BaseTest
             c.Resolve<IServiceLocator>()));
 
         _createJobCommandHandler = GetRequiredService<ICommandHandler<CreateJob, JobDto>>();
-        _unpauseJobCommandHandler = GetRequiredService<ICommandHandler<UnpauseJob, JobDto>>();
 
         _jobStarter = new JobStarter(BeginLifetimeScope());
         _mapper = GetRequiredService<IMapper>();
@@ -50,7 +48,11 @@ public class UnpauseJobTest : BaseTest
         var job = await this.WaitUntilJobAsync(jobId, job => job.State == JobState.Paused);
         job.State.ShouldBe(JobState.Paused);
 
-        await _unpauseJobCommandHandler.HandleCommandAsync(new UnpauseJob(jobId));
+        using (var scope = BeginLifetimeScope())
+        {
+            var unpauseJobCommandHandler = GetRequiredService<ICommandHandler<UnpauseJob, JobDto>>();
+            await unpauseJobCommandHandler.HandleCommandAsync(new UnpauseJob(jobId));
+        }
 
         job = await this.WaitUntilJobAsync(jobId, job => job.State == JobState.Inactive);
         job.State.ShouldBe(JobState.Inactive);

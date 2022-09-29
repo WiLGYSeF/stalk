@@ -17,7 +17,6 @@ namespace Wilgysef.Stalk.Application.Tests.Commands.JobTasks;
 public class DeleteJobTaskTest : BaseTest
 {
     private readonly ICommandHandler<CreateJob, JobDto> _createJobCommandHandler;
-    private readonly ICommandHandler<DeleteJobTask, JobDto> _deleteJobTaskCommandHandler;
 
     private readonly JobStarter _jobStarter;
     private readonly IMapper _mapper;
@@ -28,7 +27,6 @@ public class DeleteJobTaskTest : BaseTest
             c.Resolve<IServiceLocator>()));
 
         _createJobCommandHandler = GetRequiredService<ICommandHandler<CreateJob, JobDto>>();
-        _deleteJobTaskCommandHandler = GetRequiredService<ICommandHandler<DeleteJobTask, JobDto>>();
 
         _jobStarter = new JobStarter(BeginLifetimeScope());
         _mapper = GetRequiredService<IMapper>();
@@ -47,7 +45,11 @@ public class DeleteJobTaskTest : BaseTest
         var job = await this.WaitUntilJobAsync(jobId, job => job.Tasks.Any(t => t.IsActive));
         var jobTaskId = job.Tasks.First(t => t.IsActive).Id;
 
-        await _deleteJobTaskCommandHandler.HandleCommandAsync(new DeleteJobTask(jobTaskId));
+        using (var scope = BeginLifetimeScope())
+        {
+            var deleteJobTaskCommandHandler = scope.GetRequiredService<ICommandHandler<DeleteJobTask, JobDto>>();
+            await deleteJobTaskCommandHandler.HandleCommandAsync(new DeleteJobTask(jobTaskId));
+        }
 
         job = await this.WaitUntilJobAsync(jobId, job => !job.Tasks.Any(t => t.Id == jobTaskId));
         job.Tasks.SingleOrDefault(t => t.Id == jobTaskId).ShouldBeNull();

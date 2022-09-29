@@ -18,7 +18,6 @@ namespace Wilgysef.Stalk.Application.Tests.Commands.JobTasks;
 public class StopJobTaskTest : BaseTest
 {
     private readonly ICommandHandler<CreateJob, JobDto> _createJobCommandHandler;
-    private readonly ICommandHandler<StopJobTask, JobDto> _stopJobTaskCommandHandler;
 
     private readonly JobStarter _jobStarter;
     private readonly IMapper _mapper;
@@ -29,7 +28,6 @@ public class StopJobTaskTest : BaseTest
             c.Resolve<IServiceLocator>()));
 
         _createJobCommandHandler = GetRequiredService<ICommandHandler<CreateJob, JobDto>>();
-        _stopJobTaskCommandHandler = GetRequiredService<ICommandHandler<StopJobTask, JobDto>>();
 
         _jobStarter = new JobStarter(BeginLifetimeScope());
         _mapper = GetRequiredService<IMapper>();
@@ -48,7 +46,11 @@ public class StopJobTaskTest : BaseTest
         var job = await this.WaitUntilJobAsync(jobId, job => job.Tasks.Any(t => t.IsActive));
         var jobTaskId = job.Tasks.First(t => t.IsActive).Id;
 
-        await _stopJobTaskCommandHandler.HandleCommandAsync(new StopJobTask(jobTaskId));
+        using (var scope = BeginLifetimeScope())
+        {
+            var stopJobTaskCommandHandler = GetRequiredService<ICommandHandler<StopJobTask, JobDto>>();
+            await stopJobTaskCommandHandler.HandleCommandAsync(new StopJobTask(jobTaskId));
+        }
 
         job = await this.WaitUntilJobAsync(jobId, job => !job.Tasks.Single(t => t.Id == jobTaskId).IsActive);
         job.Tasks.Single(t => t.Id == jobTaskId).State.ShouldBe(JobTaskState.Cancelled);

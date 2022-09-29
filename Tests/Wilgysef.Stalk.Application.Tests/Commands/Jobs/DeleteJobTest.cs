@@ -19,7 +19,6 @@ namespace Wilgysef.Stalk.Application.Tests.Commands.Jobs;
 public class DeleteJobTest : BaseTest
 {
     private readonly ICommandHandler<CreateJob, JobDto> _createJobCommandHandler;
-    private readonly ICommandHandler<DeleteJob, JobDto> _deleteJobCommandHandler;
     private readonly IJobManager _jobManager;
 
     private readonly JobStarter _jobStarter;
@@ -31,7 +30,6 @@ public class DeleteJobTest : BaseTest
             c.Resolve<IServiceLocator>()));
 
         _createJobCommandHandler = GetRequiredService<ICommandHandler<CreateJob, JobDto>>();
-        _deleteJobCommandHandler = GetRequiredService<ICommandHandler<DeleteJob, JobDto>>();
         _jobManager = GetRequiredService<IJobManager>();
 
         _jobStarter = new JobStarter(BeginLifetimeScope());
@@ -51,7 +49,11 @@ public class DeleteJobTest : BaseTest
         var job = await this.WaitUntilJobAsync(jobId, job => job.IsActive);
         job.State.ShouldBe(JobState.Active);
 
-        await _deleteJobCommandHandler.HandleCommandAsync(new DeleteJob(jobId));
+        using (var scope = BeginLifetimeScope())
+        {
+            var deleteJobCommandHandler = GetRequiredService<ICommandHandler<DeleteJob, JobDto>>();
+            await deleteJobCommandHandler.HandleCommandAsync(new DeleteJob(jobId));
+        }
 
         try
         {
