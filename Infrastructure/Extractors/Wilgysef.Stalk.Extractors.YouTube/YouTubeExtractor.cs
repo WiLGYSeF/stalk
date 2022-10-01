@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 using Wilgysef.Stalk.Core.Shared.CacheObjects;
@@ -22,7 +23,9 @@ public class YouTubeExtractor : IExtractor
 
     public IDictionary<string, object?> Config { get; set; } = new Dictionary<string, object?>();
 
-    private const string UriPrefixRegex = @"^(?:https?://)?(?:(?:www\.|m\.)?youtube.com|youtu\.be)";
+    private const string YouTubeClientVersion = "2.20220929.09.00";
+
+    private const string UriPrefixRegex = @"^(?:https?://)?(?:(?:www\.|m\.)?youtube\.com|youtu\.be)";
     private static readonly Regex ChannelRegex = new(UriPrefixRegex + @"/(?<segment>c(?:hannel)?)/(?<channel>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
     private static readonly Regex VideosRegex = new(UriPrefixRegex + @"/c(?:hannel)?/(?<channel>[A-Za-z0-9_-]+)/videos", RegexOptions.Compiled);
     private static readonly Regex PlaylistRegex = new(UriPrefixRegex + @"/playlist\?", RegexOptions.Compiled);
@@ -130,16 +133,13 @@ public class YouTubeExtractor : IExtractor
                 }
             }
 
-            var continuationToken = json.SelectToken("$..continuationCommand.token");
+            var continuationToken = json.SelectToken("$..continuationCommand.token")?.ToString();
             if (continuationToken == null)
             {
                 break;
             }
 
-            json = await GetPlaylistJsonAsync(
-                playlistId,
-                continuationToken.ToString(),
-                cancellationToken);
+            json = await GetPlaylistJsonAsync(playlistId, continuationToken, cancellationToken);
         }
     }
 
@@ -170,25 +170,140 @@ public class YouTubeExtractor : IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        // TODO
-        throw new NotImplementedException();
-        await Task.Delay(0);
-        yield break;
+        var json = await GetCommunityJsonAsync(uri, cancellationToken);
+        var channelId = json.SelectToken("$..channelId")?.ToString()
+            ?? json.SelectToken("$..authorEndpoint.browseEndpoint.browseId")!.ToString();
+
+        var isSingle = uri.Query.Length > 0 && HttpUtility.ParseQueryString(uri.Query)["lb"] != null;
+
+        while (true)
+        {
+            var communityPosts = json.SelectTokens("$..backstagePostRenderer");
+            cancellationToken.ThrowIfCancellationRequested();
+
+            foreach (var communityPost in communityPosts)
+            {
+                foreach (var result in ExtractCommunity(communityPost, metadata.Copy()))
+                {
+                    yield return result;
+                }
+            }
+
+            if (isSingle)
+            {
+                break;
+            }
+
+            var continuationToken = json.SelectToken("$..continuationCommand.token")?.ToString();
+            if (continuationToken == null)
+            {
+                break;
+            }
+
+            json = await GetCommunityJsonAsync(channelId, continuationToken, cancellationToken);
+        }
     }
 
     private IEnumerable<ExtractResult> ExtractVideo(JToken video, IMetadataObject metadata)
     {
         var videoId = video["videoId"]!.ToString();
-        var userId = video.SelectToken("$.shortBylineText.runs[*].navigationEndpoint.browseEndpoint.browseId");
+        var channelId = video.SelectToken("$.shortBylineText.runs[*].navigationEndpoint.browseEndpoint.browseId");
 
         yield return new ExtractResult(
             new Uri($"https://www.youtube.com/watch?v={videoId}"),
-            $"{userId}#video#{videoId}",
+            $"{channelId}#video#{videoId}",
             JobTaskType.Download,
             metadata: metadata);
     }
 
+    private IEnumerable<ExtractResult> ExtractCommunity(JToken post, IMetadataObject metadata)
+    {
+        var postId = post["postId"]!.ToString();
+        var channelId = post.SelectToken("$..authorEndpoint.browseEndpoint.browseId");
+
+        var contextTextRuns = post["contentText"]?["runs"];
+
+        var publishedTime = post.SelectToken("$.publishedTimeText.runs[*].text");
+        if (publishedTime != null)
+        {
+            metadata["published"] = publishedTime.ToString() + $" from {DateTimeOffset.Now}";
+        }
+
+        metadata["votes"] = post["voteCount"]?["simpleText"]?.ToString();
+
+        var commentsCount = post.SelectToken("$..replyButton.buttonRenderer.text.simpleText");
+        if (commentsCount != null)
+        {
+            metadata["comments_count"] = commentsCount.ToString();
+        }
+
+        if (contextTextRuns != null)
+        {
+            var textBuilder = new StringBuilder();
+            foreach (var content in contextTextRuns)
+            {
+                if (content["text"] != null)
+                {
+                    textBuilder.Append(content["text"]!.ToString());
+                }
+            }
+
+            yield return new ExtractResult(
+                    Encoding.UTF8.GetBytes(textBuilder.ToString()),
+                    $"{channelId}#community#{postId}",
+                    JobTaskType.Download,
+                    metadata: metadata);
+        }
+
+        var images = post.SelectToken("$..backstageImageRenderer.image.thumbnails");
+        if (images != null)
+        {
+            var imageUrl = images.LastOrDefault()?["url"]?.ToString();
+            if (imageUrl != null)
+            {
+                imageUrl = GetCommunityImageUrlFromThumbnail(imageUrl);
+                yield return new ExtractResult(
+                    new Uri(imageUrl),
+                    $"{channelId}#community#{postId}-image",
+                    JobTaskType.Download,
+                    metadata: metadata);
+            }
+        }
+    }
+
     private async Task<JObject> GetPlaylistJsonAsync(Uri uri, CancellationToken cancellationToken)
+    {
+        return await GetYtInitialData(uri, cancellationToken);
+    }
+
+    private async Task<JObject> GetCommunityJsonAsync(Uri uri, CancellationToken cancellationToken)
+    {
+        return await GetYtInitialData(uri, cancellationToken);
+    }
+
+    private async Task<JObject> GetPlaylistJsonAsync(
+        string playlistId,
+        string continuationToken,
+        CancellationToken cancellationToken)
+    {
+        return await GetBrowseJsonAsync(
+            $"https://www.youtube.com/playlist?list={playlistId}",
+            continuationToken,
+            cancellationToken);
+    }
+
+    private async Task<JObject> GetCommunityJsonAsync(
+        string channelId,
+        string continuationToken,
+        CancellationToken cancellationToken)
+    {
+        return await GetBrowseJsonAsync(
+            $"https://www.youtube.com/channel/{channelId}/community",
+            continuationToken,
+            cancellationToken);
+    }
+
+    private async Task<JObject> GetYtInitialData(Uri uri, CancellationToken cancellationToken)
     {
         var response = await _httpClient.GetAsync(uri, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -207,8 +322,8 @@ public class YouTubeExtractor : IExtractor
             ?? throw new ArgumentException("Could not get initial playlist data.", nameof(uri));
     }
 
-    private async Task<JObject> GetPlaylistJsonAsync(
-        string playlistId,
+    private async Task<JObject> GetBrowseJsonAsync(
+        string originalUrl,
         string continuationToken,
         CancellationToken cancellationToken)
     {
@@ -225,18 +340,18 @@ public class YouTubeExtractor : IExtractor
                 {
                     clientFormFactor = "UNKNOWN_FORM_FACTOR",
                     clientName = "WEB",
-                    clientVersion = "2.20220929.09.00",
+                    clientVersion = YouTubeClientVersion,
                     deviceMake = "",
                     deviceModel = "",
                     gl = "US",
                     hl = "en",
                     mainAppWebInfo = new
                     {
-                        graftUrl = $"https://www.youtube.com/playlist?list={playlistId}",
+                        graftUrl = originalUrl,
                         isWebNativeShareAvailable = false,
                         webDisplayMode = "WEB_DISPLAY_MODE_BROWSER"
                     },
-                    originalUrl = $"https://www.youtube.com/playlist?list={playlistId}",
+                    originalUrl = originalUrl,
                     platform = "DESKTOP",
                     userInterfaceTheme = "USER_INTERFACE_THEME_DARK",
                 },
@@ -274,6 +389,18 @@ public class YouTubeExtractor : IExtractor
 
         var metaChannelId = doc.DocumentNode.SelectSingleNode("//meta[@itemprop=\"channelId\"]");
         return metaChannelId.Attributes["content"].Value;
+    }
+
+    private string GetCommunityImageUrlFromThumbnail(string url)
+    {
+        var imageRegex = new Regex(@"^https://yt3\.ggpht\.com/(?<image>[A-Za-z0-9_-]+)=s(?<size>[0-9]+)", RegexOptions.Compiled);
+        var match = imageRegex.Match(url);
+        if (!match.Success)
+        {
+            return url;
+        }
+
+        return $"https://yt3.ggpht.com/{match.Groups["image"].Value}=s{match.Groups["size"].Value}-nd-v1";
     }
 
     private static string? GetVideoId(Uri uri)

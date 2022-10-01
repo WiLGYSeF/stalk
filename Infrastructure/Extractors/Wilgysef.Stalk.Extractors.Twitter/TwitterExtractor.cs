@@ -212,7 +212,7 @@ public class TwitterExtractor : IExtractor
         if (fullText.Length > 0)
         {
             yield return new ExtractResult(
-                new Uri($"data:text/plain;base64,{Convert.ToBase64String(Encoding.UTF8.GetBytes(fullText))}"),
+                Encoding.UTF8.GetBytes(fullText),
                 $"{userId}#{tweetId}",
                 JobTaskType.Download,
                 metadata: metadata);

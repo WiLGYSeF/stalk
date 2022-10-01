@@ -1,4 +1,5 @@
 using Shouldly;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -16,11 +17,9 @@ public class YouTubeExtractorTest : BaseTest
 {
     private static readonly string MockedDataResourcePrefix = $"{typeof(YouTubeExtractorTest).Namespace}.MockedData";
 
-    private const string UriPrefixRegex = @"^(?:https?://)?(?:(?:www\.|m\.)?youtube.com|youtu\.be)";
-    private static readonly Regex ChannelRegex = new(UriPrefixRegex + @"/(?<segment>c(?:hannel)?)/(?<channel>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
-    private static readonly Regex VideosRegex = new(UriPrefixRegex + @"/c(?:hannel)?/(?<channel>[A-Za-z0-9_-]+)/videos", RegexOptions.Compiled);
+    private const string UriPrefixRegex = @"^(?:https?://)?(?:(?:www\.|m\.)?youtube\.com|youtu\.be)";
     private static readonly Regex PlaylistRegex = new(UriPrefixRegex + @"/playlist\?", RegexOptions.Compiled);
-    private static readonly Regex PlaylistNextRegex = new(@"^https://www.youtube.com/youtubei/v1/browse\?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8", RegexOptions.Compiled);
+    private static readonly Regex BrowseRegex = new(@"^https://www.youtube.com/youtubei/v1/browse\?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8", RegexOptions.Compiled);
     private static readonly Regex VideoRegex = new(UriPrefixRegex + @"/watch\?", RegexOptions.Compiled);
     private static readonly Regex CommunityRegex = new(UriPrefixRegex + @"/c(?:hannel)?/(?<channel>[A-Za-z0-9_-]+)/community", RegexOptions.Compiled);
 
@@ -30,30 +29,96 @@ public class YouTubeExtractorTest : BaseTest
     {
         var messageHandler = new MockHttpMessageHandler();
         messageHandler
-            .AddEndpoint(VideoRegex, request =>
-            {
-                var query = request.RequestUri!.GetQueryParameters();
-                var videoId = query["v"];
-                return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Video.{videoId}.html");
-            })
             .AddEndpoint(PlaylistRegex, request =>
             {
                 var query = request.RequestUri!.GetQueryParameters();
                 var playlistId = query["list"];
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Playlist.{playlistId}.html");
             })
-            .AddEndpoint(PlaylistNextRegex, async (request, cancellationToken) =>
+            .AddEndpoint(VideoRegex, request =>
+            {
+                var query = request.RequestUri!.GetQueryParameters();
+                var videoId = query["v"];
+                return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Video.{videoId}.html");
+            })
+            .AddEndpoint(CommunityRegex, request =>
+            {
+                var match = CommunityRegex.Match(request.RequestUri!.AbsoluteUri);
+                var channelId = match.Groups["channel"].Value;
+
+                if (request.RequestUri.Query.Length > 0)
+                {
+                    var query = request.RequestUri.GetQueryParameters();
+                    var postId = query["lb"];
+                    return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Community.{channelId}.{postId}.html");
+                }
+
+                return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Community.{channelId}.html");
+            })
+            .AddEndpoint(BrowseRegex, async (request, cancellationToken) =>
             {
                 var json = JsonSerializer.Deserialize<JsonNode>(await request.Content!.ReadAsStringAsync(cancellationToken));
-                var playlistUri = new Uri(json["context"]["client"]["originalUrl"].ToString());
-                var query = playlistUri.GetQueryParameters();
-                var playlistId = query["list"];
-                var continuationToken = json["continuation"].ToString();
-                var continuationHash = MD5.HashData(Encoding.UTF8.GetBytes(continuationToken)).ToHexString();
-                return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Playlist.{playlistId}.{continuationHash}.json");
+                var originalUrl = new Uri(json["context"]["client"]["originalUrl"].ToString());
+
+                if (originalUrl.AbsolutePath.Contains("playlist"))
+                {
+                    var query = originalUrl.GetQueryParameters();
+                    var playlistId = query["list"];
+                    var continuationToken = json["continuation"].ToString();
+                    var continuationHash = MD5.HashData(Encoding.UTF8.GetBytes(continuationToken)).ToHexString();
+                    return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Playlist.{playlistId}.{continuationHash}.json");
+                }
+                else if (originalUrl.AbsolutePath.Contains("community"))
+                {
+                    var match = CommunityRegex.Match(originalUrl.AbsoluteUri);
+                    var channelId = match.Groups["channel"].Value;
+                    var continuationToken = json["continuation"].ToString();
+                    var continuationHash = MD5.HashData(Encoding.UTF8.GetBytes(continuationToken)).ToHexString();
+                    return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Community.{channelId}.{continuationHash}.json");
+                }
+                else
+                {
+                    return new HttpResponseMessage(HttpStatusCode.NotFound);
+                }
             });
 
         _youTubeExtractor = new YouTubeExtractor(new HttpClient(messageHandler));
+    }
+
+    [Fact]
+    public async Task Get_Channel()
+    {
+        var results = await _youTubeExtractor.ExtractAsync(
+            new Uri("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g"),
+            null,
+            new MetadataObject('.')).ToListAsync();
+
+        results.Count.ShouldBe(136);
+        results.Select(r => r.Uri.AbsoluteUri).ToHashSet().Count.ShouldBe(results.Count);
+    }
+
+    [Fact]
+    public async Task Get_Videos()
+    {
+        var results = await _youTubeExtractor.ExtractAsync(
+            new Uri("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/videos"),
+            null,
+            new MetadataObject('.')).ToListAsync();
+
+        results.Count.ShouldBe(130);
+        results.Select(r => r.Uri.AbsoluteUri).ToHashSet().Count.ShouldBe(results.Count);
+    }
+
+    [Fact]
+    public async Task Get_Playlist()
+    {
+        var results = await _youTubeExtractor.ExtractAsync(
+            new Uri("https://www.youtube.com/playlist?list=UUdYR5Oyz8Q4g0ZmB4PkTD7g"),
+            null,
+            new MetadataObject('.')).ToListAsync();
+
+        results.Count.ShouldBe(130);
+        results.Select(r => r.Uri.AbsoluteUri).ToHashSet().Count.ShouldBe(results.Count);
     }
 
     [Fact]
@@ -72,14 +137,36 @@ public class YouTubeExtractorTest : BaseTest
     }
 
     [Fact]
-    public async Task Get_Videos()
+    public async Task Get_Community()
     {
         var results = await _youTubeExtractor.ExtractAsync(
-            new Uri("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/videos"),
+            new Uri("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community"),
             null,
             new MetadataObject('.')).ToListAsync();
 
-        results.Count.ShouldBe(130);
+        results.Count.ShouldBe(6);
         results.Select(r => r.Uri.AbsoluteUri).ToHashSet().Count.ShouldBe(results.Count);
+    }
+
+    [Fact]
+    public async Task Get_Community_Single()
+    {
+        var results = await _youTubeExtractor.ExtractAsync(
+            new Uri("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community?lb=UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP"),
+            null,
+            new MetadataObject('.')).ToListAsync();
+
+        results.Count.ShouldBe(2);
+        var textResult = results.Single(r => r.ItemId == "UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
+        textResult.Uri.AbsoluteUri.ShouldBe("data:;base64,44K544Kx44K444Ol44O844Or44KS5b6p5rS744GV44Gb44G+44GX44Gf77yB4pypLirLmg0K44GT44KM44KS57aa44GR44Gm44GE44GP44Gu44GM55uu5qiZ44Gt44CC44CCDQrjgYLjgIHjgZ3jgYbjgYTjgYjjgbBUd2l0Y2jjgpLlp4vjgoHjgZ/jgojvvZ7vvIHvvIENCuOBn+OBvuOBq+aBr+aKnOOBjeOBq+S9v+OBhuS6iOWumuOBoOOBi+OCieaah+OBquS6uuOBr+imi+OBq+adpeOBpuOBre+9nuKZoQrjgrnjgrHjgrjjg6Xjg7zjg6vjga/ml6XmnKzmmYLplpPjgaDjgojvvZ4KCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQoKSSBoYXZlIG15IHNjaGVkdWxlIGJhY2sh4pypLirLmg0KTXkgZ29hbCBpcyB0byBrZWVwIHRoaXMgZ29pbmcuDQpPaCwgYnkgdGhlIHdheSwgSSd2ZSBzdGFydGVkIFR3aXRjaC4NCiBJJ20gZ29pbmcgdG8gdXNlIGl0IHRvIHJlbGF4IG9uY2UgaW4gYSB3aGlsZSwgc28gaWYgeW91J3JlIGZyZWUsIGNvbWUgY2hlY2sgaXQgb3V0fuKZoQoK4oC7VGhpcyBzY2hlZHVsZSBpcyBpbiBKYXBhbiB0aW1lIQoKCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQoKCg0KVXRv4oCZ772TIFR3aXRjaCAgaHR0cHM6Ly93d3cudHdpdGNoLnR2L3V0b19fXwoKCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQ==");
+        textResult.Metadata!["published"]!.ToString()!.StartsWith("10 months ago from ").ShouldBeTrue();
+        textResult.Metadata["votes"].ShouldBe("4.3K");
+        textResult.Type.ShouldBe(JobTaskType.Download);
+
+        var imageResult = results.Single(r => r.ItemId == "UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP-image");
+        imageResult.Uri.AbsoluteUri.ShouldBe("https://yt3.ggpht.com/BRWDFVKhADpFgyxc1iZgYop1k3QJGR67yoYoFulEYm35Jrvb7A2gLjpodlKVhmGtlBuUvx0VkQLD1Q=s1920-nd-v1");
+        imageResult.Metadata!["published"]!.ToString()!.StartsWith("10 months ago from ").ShouldBeTrue();
+        imageResult.Metadata["votes"].ShouldBe("4.3K");
+        imageResult.Type.ShouldBe(JobTaskType.Download);
     }
 }

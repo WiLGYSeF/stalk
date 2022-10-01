@@ -42,5 +42,24 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
             Type = type;
             DownloadRequestData = downloadRequestData;
         }
+
+        public ExtractResult(
+            byte[] data,
+            string itemId,
+            JobTaskType type,
+            string? name = null,
+            int priority = 0,
+            string? itemData = null,
+            IMetadataObject? metadata = null,
+            DownloadRequestData? downloadRequestData = null)
+            : this(
+                  new Uri("data:;base64," + Convert.ToBase64String(data)),
+                  itemId,
+                  type,
+                  name,
+                  priority,
+                  itemData,
+                  metadata,
+                  downloadRequestData) { }
     }
 }
