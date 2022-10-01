@@ -1,5 +1,6 @@
 ﻿using HtmlAgilityPack;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
@@ -62,9 +63,9 @@ public class YouTubeExtractor : IExtractor
         return GetExtractType(uri) switch
         {
             ExtractType.Channel => ExtractChannelAsync(uri, metadata, cancellationToken),
-            ExtractType.Videos => ExtractVideosAsync(uri, metadata, cancellationToken),
-            ExtractType.Playlist => ExtractPlaylistAsync(uri, metadata, cancellationToken),
-            ExtractType.Video => ExtractVideoAsync(uri, metadata, null, cancellationToken),
+            ExtractType.Videos => ExtractVideosAsync(uri, cancellationToken),
+            ExtractType.Playlist => ExtractPlaylistAsync(uri, cancellationToken),
+            ExtractType.Video => ExtractVideoAsync(uri, metadata, cancellationToken),
             ExtractType.Community => ExtractCommunityAsync(uri, metadata, cancellationToken),
             _ => throw new ArgumentException("Cannot extract URI.", nameof(uri)),
         };
@@ -78,13 +79,12 @@ public class YouTubeExtractor : IExtractor
     private async IAsyncEnumerable<ExtractResult> ExtractChannelAsync(
         Uri uri,
         IMetadataObject metadata,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var channelNameOrId = GetChannel(uri, out var shortChannel);
 
         await foreach (var result in ExtractVideosAsync(
             GetVideosUri(channelNameOrId, shortChannel),
-            metadata,
             cancellationToken))
         {
             yield return result;
@@ -101,8 +101,7 @@ public class YouTubeExtractor : IExtractor
 
     private async IAsyncEnumerable<ExtractResult> ExtractVideosAsync(
         Uri uri,
-        IMetadataObject metadata,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var channelNameOrId = GetChannel(uri, out var shortChannel);
         var channelId = shortChannel
@@ -111,7 +110,6 @@ public class YouTubeExtractor : IExtractor
 
         await foreach (var result in ExtractPlaylistAsync(
             GetVideosPlaylistUri(channelId),
-            metadata,
             cancellationToken))
         {
             yield return result;
@@ -120,8 +118,7 @@ public class YouTubeExtractor : IExtractor
 
     private async IAsyncEnumerable<ExtractResult> ExtractPlaylistAsync(
         Uri uri,
-        IMetadataObject metadata,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var json = await GetPlaylistJsonAsync(uri, cancellationToken);
         var playlistId = json.SelectToken("$..playlistVideoListRenderer.playlistId")!.ToString();
@@ -133,10 +130,13 @@ public class YouTubeExtractor : IExtractor
 
             foreach (var playlistItem in playlistItems)
             {
-                foreach (var result in ExtractVideo(playlistItem, metadata.Copy()))
-                {
-                    yield return result;
-                }
+                var videoId = playlistItem["videoId"]!.ToString();
+                var channelId = playlistItem.SelectToken("$.shortBylineText..browseId")!.ToString();
+
+                yield return new ExtractResult(
+                    new Uri($"https://www.youtube.com/watch?v={videoId}"),
+                    $"{channelId}#video#{videoId}",
+                    JobTaskType.Extract);
             }
 
             var continuationToken = json.SelectToken("$..continuationCommand.token")?.ToString();
@@ -152,17 +152,47 @@ public class YouTubeExtractor : IExtractor
     private async IAsyncEnumerable<ExtractResult> ExtractVideoAsync(
         Uri uri,
         IMetadataObject metadata,
-        string? channelNameOrId = null,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var channelId = channelNameOrId ?? await GetChannelNameAsync(uri, cancellationToken);
-        if (string.IsNullOrEmpty(channelId))
-        {
-            throw new ArgumentException("Could not get channel Id from URI.", nameof(uri));
-        }
+        var doc = await GetHtmlDocument(uri, cancellationToken);
+        var initialData = GetYtInitialData(doc);
+        var playerResponse = GetYtInitialPlayerResponse(doc);
 
-        var videoId = GetVideoId(uri)
-            ?? throw new ArgumentException("Could not get video Id from URI.", nameof(uri));
+        var channelId = initialData.SelectToken("$..videoOwnerRenderer.title.runs[0]..browseId")?.ToString();
+        var channelName = initialData.SelectToken("$..videoOwnerRenderer.title.runs[0].text")?.ToString();
+        var videoId = initialData.SelectTokens("$..topLevelButtons..watchEndpoint.videoId").First().ToString();
+        var title = ConcatRuns(initialData.SelectToken("$..videoPrimaryInfoRenderer.title.runs"));
+        var date = GetDateTime(initialData.SelectToken("$..dateText.simpleText")?.ToString());
+        var description = ConcatRuns(initialData.SelectToken("$..description.runs"));
+        var viewCount = initialData.SelectToken("$..viewCount.simpleText")!.ToString();
+        var commentCount = initialData.SelectTokens("$..engagementPanels[*].engagementPanelSectionListRenderer")
+            .FirstOrDefault(t => t["panelIdentifier"]?.ToString() == "comment-item-section")
+            ?.SelectToken("$..contextualInfo.runs[*].text")
+            ?.ToString();
+
+        var videoActionsTopLevelButtonLabels = initialData.SelectTokens("$..videoActions..topLevelButtons[*]..label");
+        var likeCount = videoActionsTopLevelButtonLabels.FirstOrDefault(t => t.ToString().EndsWith(" likes"))?.ToString();
+
+        var videoDuration = GetApproximateDuration(playerResponse);
+
+        var published = date?.ToString("yyyyMMdd");
+
+        metadata.SetByParts(channelId, MetadataChannelIdKeys);
+        metadata.SetByParts(channelName, MetadataChannelNameKeys);
+        metadata.SetByParts(videoId, "video", "id");
+        metadata.SetByParts(title, "video", "title");
+        metadata["published"] = published;
+        metadata.SetByParts(TimeSpanToString(videoDuration), "video", "duration");
+        metadata.SetByParts(videoDuration?.TotalSeconds, "video", "duration_seconds");
+        metadata.SetByParts(description, "video", "description");
+        metadata.SetByParts(viewCount, "video", "view_count");
+        metadata.SetByParts(likeCount, "video", "like_count");
+        metadata.SetByParts(commentCount, "video", "comment_count");
+
+        if (published != null)
+        {
+            metadata.SetByParts($"{channelId}#video#{published}_{videoId}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+        }
 
         yield return new ExtractResult(
             uri,
@@ -174,7 +204,7 @@ public class YouTubeExtractor : IExtractor
     private async IAsyncEnumerable<ExtractResult> ExtractCommunityAsync(
         Uri uri,
         IMetadataObject metadata,
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var json = await GetCommunityJsonAsync(uri, cancellationToken);
         var channelId = json.SelectToken("$..channelId")?.ToString()
@@ -215,10 +245,24 @@ public class YouTubeExtractor : IExtractor
         }
     }
 
-    private IEnumerable<ExtractResult> ExtractVideo(JToken video, IMetadataObject metadata)
+    private IEnumerable<ExtractResult> ExtractVideoFromPlaylist(JToken video, IMetadataObject metadata)
     {
         var videoId = video["videoId"]!.ToString();
         var channelId = video.SelectToken("$..shortBylineText..browseId")!.ToString();
+        var channelName = video.SelectToken("$..shortBylineText..runs[0].text")!.ToString();
+
+        var title = ConcatRuns(video.SelectToken("$.title.runs"));
+        var lengthSeconds = video["lengthSeconds"]?.Value<int>();
+        var lengthText = video.SelectToken("$.lengthText.simpleText")?.ToString();
+
+        metadata.SetByParts(channelId, MetadataChannelIdKeys);
+        metadata.SetByParts(channelName, MetadataChannelNameKeys);
+        metadata.SetByParts(videoId, "video", "id");
+        metadata.SetByParts(lengthText, "video", "length");
+        metadata.SetByParts(lengthSeconds, "video", "length_seconds");
+        metadata.SetByParts(title, "video", "title");
+
+        // handle thumbnail, subtitles, etc. in download?
 
         yield return new ExtractResult(
             new Uri($"https://www.youtube.com/watch?v={videoId}"),
@@ -283,20 +327,13 @@ public class YouTubeExtractor : IExtractor
             metadata.SetByParts($"{channelId}#community#{relativeDateTime}_{postId}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
         }
 
-        var textBuilder = new StringBuilder();
-        foreach (var content in contextTextRuns)
-        {
-            if (content["text"] != null)
-            {
-                textBuilder.Append(content["text"]!.ToString());
-            }
-        }
+        var text = ConcatRuns(contextTextRuns);
 
         metadata.SetByParts("txt", MetadataObjectConsts.File.ExtensionKeys);
         metadata.SetByParts($"https://www.youtube.com/channel/{channelId}/community?lb={postId}", MetadataObjectConsts.Origin.UriKeys);
 
         return new ExtractResult(
-            Encoding.UTF8.GetBytes(textBuilder.ToString()),
+            Encoding.UTF8.GetBytes(text),
             $"{channelId}#community#{postId}",
             JobTaskType.Download,
             metadata: metadata);
@@ -415,14 +452,23 @@ public class YouTubeExtractor : IExtractor
             cancellationToken);
     }
 
-    private async Task<JObject> GetYtInitialData(Uri uri, CancellationToken cancellationToken)
+    private async Task<HtmlDocument> GetHtmlDocument(Uri uri, CancellationToken cancellationToken)
     {
         var response = await _httpClient.GetAsync(uri, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var doc = new HtmlDocument();
         doc.Load(response.Content.ReadAsStream(cancellationToken));
+        return doc;
+    }
 
+    private async Task<JObject> GetYtInitialData(Uri uri, CancellationToken cancellationToken)
+    {
+        return GetYtInitialData(await GetHtmlDocument(uri, cancellationToken));
+    }
+
+    private JObject GetYtInitialData(HtmlDocument doc)
+    {
         var scripts = doc.DocumentNode.SelectNodes("//script");
 
         var prefix = "var ytInitialData = ";
@@ -431,7 +477,30 @@ public class YouTubeExtractor : IExtractor
         var json = trimmedHtml.Substring(prefix.Length, trimmedHtml.Length - prefix.Length - 1);
 
         return JObject.Parse(json)
-            ?? throw new ArgumentException("Could not get initial playlist data.", nameof(uri));
+            ?? throw new ArgumentException("Could not get initial playlist data.", nameof(doc));
+    }
+
+    private async Task<JObject> GetYtInitialPlayerResponse(Uri uri, CancellationToken cancellationToken)
+    {
+        return GetYtInitialPlayerResponse(await GetHtmlDocument(uri, cancellationToken));
+    }
+
+    private JObject GetYtInitialPlayerResponse(HtmlDocument doc)
+    {
+        var scripts = doc.DocumentNode.SelectNodes("//script");
+
+        var prefix = "var ytInitialPlayerResponse = ";
+        var initialData = scripts.Single(n => n.InnerHtml.TrimStart().StartsWith(prefix));
+        var trimmedHtml = initialData.InnerHtml.Trim();
+        var jsonWithJavascript = trimmedHtml[prefix.Length..];
+
+        var reader = new JsonTextReader(new StringReader(jsonWithJavascript))
+        {
+            SupportMultipleContent = true
+        };
+        reader.Read();
+
+        return JObject.Load(reader);
     }
 
     private async Task<JObject> GetBrowseJsonAsync(
@@ -601,6 +670,67 @@ public class YouTubeExtractor : IExtractor
         return null;
     }
 
+    private string? ConcatRuns(JToken? runs)
+    {
+        if (runs == null)
+        {
+            return null;
+        }
+
+        var textBuilder = new StringBuilder();
+        foreach (var content in runs)
+        {
+            if (content["text"] != null)
+            {
+                textBuilder.Append(content["text"]!.ToString());
+            }
+        }
+        return textBuilder.ToString();
+    }
+
+    private TimeSpan? GetApproximateDuration(JToken playerResponse)
+    {
+        var approxDuration = playerResponse.SelectTokens("$..approxDurationMs")
+            .Select(t => t.ToString())
+            .GroupBy(d => d)
+            .OrderByDescending(g => g.Count())
+            .FirstOrDefault()
+            ?.Key;
+
+        return long.TryParse(approxDuration, out var result)
+            ? TimeSpan.FromMilliseconds(result)
+            : null;
+    }
+
+    private static DateTime? GetDateTime(string? dateTime)
+    {
+        if (dateTime == null)
+        {
+            return null;
+        }
+
+        var streamedLiveOn = "Streamed live on ";
+        if (dateTime.StartsWith(streamedLiveOn))
+        {
+            dateTime = dateTime[streamedLiveOn.Length..];
+        }
+
+        var success = DateTime.TryParse(dateTime, out var result);
+        if (success)
+        {
+            return result;
+        }
+
+        var streamed = "Streamed ";
+        if (dateTime.StartsWith(streamed))
+        {
+            dateTime = dateTime[streamed.Length..];
+        }
+
+        var relative = GetRelativeDateTime(dateTime);
+        return relative != null ? DateTime.Parse(relative) : null;
+    }
+
     private static string? GetRelativeDateTime(string relative, DateTime? dateTime = null)
     {
         var split = relative.Split(" ");
@@ -647,6 +777,15 @@ public class YouTubeExtractor : IExtractor
         }
 
         return relativeTime.ToString("yyyyMMdd");
+    }
+
+    private string? TimeSpanToString(TimeSpan? timeSpan)
+    {
+        return timeSpan.HasValue
+            ? timeSpan.Value.Hours > 0
+                ? timeSpan.Value.ToString(@"hh\:mm\:ss")
+                : timeSpan.Value.ToString(@"mm\:ss")
+            : null;
     }
 
     private enum ExtractType

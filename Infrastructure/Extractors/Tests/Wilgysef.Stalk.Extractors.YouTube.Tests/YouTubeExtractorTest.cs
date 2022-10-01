@@ -107,6 +107,7 @@ public class YouTubeExtractorTest : BaseTest
 
         results.Count.ShouldBe(136);
         results.Select(r => r.Uri.AbsoluteUri).ToHashSet().Count.ShouldBe(results.Count);
+        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(results.Count);
     }
 
     [Fact]
@@ -119,6 +120,7 @@ public class YouTubeExtractorTest : BaseTest
 
         results.Count.ShouldBe(130);
         results.Select(r => r.Uri.AbsoluteUri).ToHashSet().Count.ShouldBe(results.Count);
+        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(results.Count);
     }
 
     [Fact]
@@ -131,6 +133,8 @@ public class YouTubeExtractorTest : BaseTest
 
         results.Count.ShouldBe(130);
         results.Select(r => r.Uri.AbsoluteUri).ToHashSet().Count.ShouldBe(results.Count);
+        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(results.Count);
+        results.All(r => r.Type == JobTaskType.Extract).ShouldBeTrue();
     }
 
     [Fact]
@@ -145,6 +149,18 @@ public class YouTubeExtractorTest : BaseTest
         var video = results.Single();
         video.Uri.AbsoluteUri.ShouldBe("https://www.youtube.com/watch?v=_BSSJi-sHh8");
         video.ItemId.ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#_BSSJi-sHh8");
+        video.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
+        video.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
+        video.Metadata["published"].ShouldBe("20210407");
+        video.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20210407__BSSJi-sHh8");
+        video.Metadata["video.id"].ShouldBe("_BSSJi-sHh8");
+        video.Metadata["video.title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
+        video.Metadata["video.duration"].ShouldBe("03:45");
+        video.Metadata["video.duration_seconds"].ShouldBe(225.966);
+        video.Metadata["video.description"].ShouldBe("I love shotguns!!!\n私の初めての英語のカバー曲です。温かく見守ってください。\nIt's my first cover in English song! Please listen warmly!\n\noriginal : The Cab Angel With A Shotgun\nmix : たけまる 様 @takemaru_game\nillust : あやみ 様 @ayamy_garubinu\nvocal,movie : うと @amatsukauto\n\n☆゜+.*.+゜☆゜+.*.+゜☆゜+.*.+゜☆");
+        video.Metadata["video.view_count"].ShouldBe("2,700,338 views");
+        video.Metadata["video.like_count"].ShouldBe("113,285 likes");
+        video.Metadata["video.comment_count"].ShouldBe("5.4K");
         video.Type.ShouldBe(JobTaskType.Download);
     }
 
@@ -158,6 +174,8 @@ public class YouTubeExtractorTest : BaseTest
 
         results.Count.ShouldBe(6);
         results.Select(r => r.Uri.AbsoluteUri).ToHashSet().Count.ShouldBe(results.Count);
+        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(results.Count);
+        results.All(r => r.Type == JobTaskType.Download).ShouldBeTrue();
     }
 
     [Fact]
@@ -169,7 +187,7 @@ public class YouTubeExtractorTest : BaseTest
             new MetadataObject('.')).ToListAsync();
 
         results.Count.ShouldBe(38);
-        results.Where(r => r.ItemId.Contains("#community#")).Count().ShouldBe(2);
+        results.Where(r => r.ItemId!.Contains("#community#")).Count().ShouldBe(2);
 
         var textResult = results.Single(r => r.ItemId == "UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         textResult.Uri.AbsoluteUri.ShouldBe("data:;base64,44K544Kx44K444Ol44O844Or44KS5b6p5rS744GV44Gb44G+44GX44Gf77yB4pypLirLmg0K44GT44KM44KS57aa44GR44Gm44GE44GP44Gu44GM55uu5qiZ44Gt44CC44CCDQrjgYLjgIHjgZ3jgYbjgYTjgYjjgbBUd2l0Y2jjgpLlp4vjgoHjgZ/jgojvvZ7vvIHvvIENCuOBn+OBvuOBq+aBr+aKnOOBjeOBq+S9v+OBhuS6iOWumuOBoOOBi+OCieaah+OBquS6uuOBr+imi+OBq+adpeOBpuOBre+9nuKZoQrjgrnjgrHjgrjjg6Xjg7zjg6vjga/ml6XmnKzmmYLplpPjgaDjgojvvZ4KCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQoKSSBoYXZlIG15IHNjaGVkdWxlIGJhY2sh4pypLirLmg0KTXkgZ29hbCBpcyB0byBrZWVwIHRoaXMgZ29pbmcuDQpPaCwgYnkgdGhlIHdheSwgSSd2ZSBzdGFydGVkIFR3aXRjaC4NCiBJJ20gZ29pbmcgdG8gdXNlIGl0IHRvIHJlbGF4IG9uY2UgaW4gYSB3aGlsZSwgc28gaWYgeW91J3JlIGZyZWUsIGNvbWUgY2hlY2sgaXQgb3V0fuKZoQoK4oC7VGhpcyBzY2hlZHVsZSBpcyBpbiBKYXBhbiB0aW1lIQoKCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQoKCg0KVXRv4oCZ772TIFR3aXRjaCAgaHR0cHM6Ly93d3cudHdpdGNoLnR2L3V0b19fXwoKCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQ==");
@@ -195,7 +213,7 @@ public class YouTubeExtractorTest : BaseTest
         imageResult.Metadata["votes"].ShouldBe("4.3K");
         imageResult.Type.ShouldBe(JobTaskType.Download);
 
-        var emojiResult = results.First(r => r.ItemId.Contains("#emoji#"));
+        var emojiResult = results.First(r => r.ItemId!.Contains("#emoji#"));
         emojiResult.ItemId.ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#emoji#YjYIYfvYAamL8gT4576oCA");
         emojiResult.Uri.AbsoluteUri.ShouldBe("https://yt3.ggpht.com/aI7NJRY3Q0B5jo-3nISoXGjmgXBNbB8ClpJaJNP5IhTLbGNWDea_m_XbTx5cIU5GKmZwEMKQoA=w512-h512-c-k-nd");
         emojiResult.Metadata!["file.extension"].ShouldBe("png");
