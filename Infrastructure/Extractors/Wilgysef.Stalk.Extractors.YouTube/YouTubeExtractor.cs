@@ -25,12 +25,17 @@ public class YouTubeExtractor : IExtractor
 
     private const string YouTubeClientVersion = "2.20220929.09.00";
 
+    private const int EmojiScaleWidth = 512;
+
     private const string UriPrefixRegex = @"^(?:https?://)?(?:(?:www\.|m\.)?youtube\.com|youtu\.be)";
     private static readonly Regex ChannelRegex = new(UriPrefixRegex + @"/(?<segment>c(?:hannel)?)/(?<channel>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
     private static readonly Regex VideosRegex = new(UriPrefixRegex + @"/c(?:hannel)?/(?<channel>[A-Za-z0-9_-]+)/videos", RegexOptions.Compiled);
     private static readonly Regex PlaylistRegex = new(UriPrefixRegex + @"/playlist\?", RegexOptions.Compiled);
     private static readonly Regex VideoRegex = new(UriPrefixRegex + @"/watch\?", RegexOptions.Compiled);
     private static readonly Regex CommunityRegex = new(UriPrefixRegex + @"/c(?:hannel)?/(?<channel>[A-Za-z0-9_-]+)/community", RegexOptions.Compiled);
+
+    private static readonly Regex CommunityImageRegex = new Regex(@"^https://yt3\.ggpht\.com/(?<image>[A-Za-z0-9_-]+)=s(?<size>[0-9]+)", RegexOptions.Compiled);
+    private static readonly Regex EmojiImageRegex = new Regex(@"^https://yt3\.ggpht\.com/(?<image>[A-Za-z0-9_-]+)=w(?<width>[0-9]+)-h(?<height>[0-9]+)", RegexOptions.Compiled);
 
     private HttpClient _httpClient;
 
@@ -189,7 +194,12 @@ public class YouTubeExtractor : IExtractor
                 }
             }
 
-            if (isSingle)
+            foreach (var result in ExtractEmojis(json, metadata, channelId))
+            {
+                yield return result;
+            }
+
+            if (isSingle && !communityPosts.Any())
             {
                 break;
             }
@@ -248,11 +258,14 @@ public class YouTubeExtractor : IExtractor
                 }
             }
 
+            var textMetadata = metadata.Copy();
+            textMetadata.SetByParts("txt", MetadataObjectConsts.File.ExtensionKeys);
+
             yield return new ExtractResult(
                     Encoding.UTF8.GetBytes(textBuilder.ToString()),
                     $"{channelId}#community#{postId}",
                     JobTaskType.Download,
-                    metadata: metadata);
+                    metadata: textMetadata);
         }
 
         var images = post.SelectToken("$..backstageImageRenderer.image.thumbnails");
@@ -269,6 +282,56 @@ public class YouTubeExtractor : IExtractor
                     metadata: metadata);
             }
         }
+    }
+
+    private IEnumerable<ExtractResult> ExtractEmojis(JObject json, IMetadataObject metadata, string? channelId = null)
+    {
+        var customEmojis = json.SelectTokens("$..customEmojis[*]");
+        if (customEmojis == null || !customEmojis.Any())
+        {
+            yield break;
+        }
+
+        foreach (var emoji in customEmojis)
+        {
+            var result = ExtractEmoji(emoji, metadata.Copy(), channelId);
+            if (result != null)
+            {
+                yield return result;
+            }
+        }
+    }
+
+    private ExtractResult? ExtractEmoji(JToken emoji, IMetadataObject metadata, string? channelId = null)
+    {
+        var emojiIdParts = emoji["emojiId"]?.ToString().Split("/");
+        if (emojiIdParts == null || emojiIdParts.Length != 2)
+        {
+            throw new ArgumentException("Invalid emoji Id.");
+        }
+
+        var emojiChannelId = emojiIdParts[0];
+        var emojiSubId = emojiIdParts[1];
+
+        if (channelId != null && emojiChannelId != channelId)
+        {
+            return null;
+        }
+
+        var url = emoji["image"]?["thumbnails"]?.LastOrDefault()?["url"]?.ToString();
+        if (url == null)
+        {
+            throw new ArgumentException("Could not get emoji URL.");
+        }
+
+        metadata["emoji_name"] = emoji.SelectToken("$..label")?.ToString();
+        metadata.SetByParts("png", MetadataObjectConsts.File.ExtensionKeys);
+
+        return new ExtractResult(
+            new Uri(GetScaledEmojiImageUri(url)),
+            $"{emojiChannelId}#emoji#{emojiSubId}",
+            JobTaskType.Download,
+            metadata: metadata);
     }
 
     private async Task<JObject> GetPlaylistJsonAsync(Uri uri, CancellationToken cancellationToken)
@@ -393,14 +456,34 @@ public class YouTubeExtractor : IExtractor
 
     private string GetCommunityImageUrlFromThumbnail(string url)
     {
-        var imageRegex = new Regex(@"^https://yt3\.ggpht\.com/(?<image>[A-Za-z0-9_-]+)=s(?<size>[0-9]+)", RegexOptions.Compiled);
-        var match = imageRegex.Match(url);
+        var match = CommunityImageRegex.Match(url);
+        return match.Success
+            ? $"https://yt3.ggpht.com/{match.Groups["image"].Value}=s{match.Groups["size"].Value}-nd-v1"
+            : url;
+    }
+
+    private string GetScaledEmojiImageUri(string url)
+    {
+        var match = EmojiImageRegex.Match(url);
         if (!match.Success)
         {
             return url;
         }
 
-        return $"https://yt3.ggpht.com/{match.Groups["image"].Value}=s{match.Groups["size"].Value}-nd-v1";
+        if (!int.TryParse(match.Groups["width"].Value, out var width)
+            || !int.TryParse(match.Groups["height"].Value, out var height))
+        {
+            return url;
+        }
+
+        if (width < EmojiScaleWidth)
+        {
+            var mult = (float)EmojiScaleWidth / width;
+            width = EmojiScaleWidth;
+            height = (int)(height * mult);
+        }
+
+        return $"https://yt3.ggpht.com/{match.Groups["image"].Value}=w{width}-h{height}-c-k-nd";
     }
 
     private static string? GetVideoId(Uri uri)

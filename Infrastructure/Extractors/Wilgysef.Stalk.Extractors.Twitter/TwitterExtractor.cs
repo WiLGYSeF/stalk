@@ -205,7 +205,7 @@ public class TwitterExtractor : IExtractor
             fullText += "\n" + string.Join('\n', entityUrls);
         }
 
-        metadata.SetByParts("txt", "file", "extension");
+        metadata.SetByParts("txt", MetadataObjectConsts.File.ExtensionKeys);
 
         SetRetweetMetadata(tweet, metadata);
 
@@ -254,7 +254,7 @@ public class TwitterExtractor : IExtractor
 
             var mediaMetadata = metadata.Copy();
             mediaMetadata["media_id"] = mediaId;
-            mediaMetadata.SetByParts(GetExtensionFromUri(new Uri(mediaUrl)), "file", "extension");
+            mediaMetadata.SetByParts(GetExtensionFromUri(new Uri(mediaUrl)), MetadataObjectConsts.File.ExtensionKeys);
 
             if (largestSize)
             {
@@ -295,7 +295,7 @@ public class TwitterExtractor : IExtractor
 
             var mediaMetadata = metadata.Copy();
             mediaMetadata["media_id"] = mediaId;
-            mediaMetadata.SetByParts(GetExtensionFromUri(videoUri), "file", "extension");
+            mediaMetadata.SetByParts(GetExtensionFromUri(videoUri), MetadataObjectConsts.File.ExtensionKeys);
             mediaMetadata.SetByParts(bestVariant["bitrate"]?.Value<int>(), "video", "bitrate");
             mediaMetadata.SetByParts(videoInfo["duration_millis"]?.Value<int>(), "video", "duration_millis");
             mediaMetadata.SetByParts(mediaItem["mediaStats"]?["viewCount"]?.Value<int>(), "video", "view_count");

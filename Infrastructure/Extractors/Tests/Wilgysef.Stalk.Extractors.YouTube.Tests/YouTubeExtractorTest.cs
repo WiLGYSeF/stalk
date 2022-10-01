@@ -156,10 +156,13 @@ public class YouTubeExtractorTest : BaseTest
             null,
             new MetadataObject('.')).ToListAsync();
 
-        results.Count.ShouldBe(2);
+        results.Count.ShouldBe(38);
+        results.Where(r => r.ItemId.Contains("#community#")).Count().ShouldBe(2);
+
         var textResult = results.Single(r => r.ItemId == "UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         textResult.Uri.AbsoluteUri.ShouldBe("data:;base64,44K544Kx44K444Ol44O844Or44KS5b6p5rS744GV44Gb44G+44GX44Gf77yB4pypLirLmg0K44GT44KM44KS57aa44GR44Gm44GE44GP44Gu44GM55uu5qiZ44Gt44CC44CCDQrjgYLjgIHjgZ3jgYbjgYTjgYjjgbBUd2l0Y2jjgpLlp4vjgoHjgZ/jgojvvZ7vvIHvvIENCuOBn+OBvuOBq+aBr+aKnOOBjeOBq+S9v+OBhuS6iOWumuOBoOOBi+OCieaah+OBquS6uuOBr+imi+OBq+adpeOBpuOBre+9nuKZoQrjgrnjgrHjgrjjg6Xjg7zjg6vjga/ml6XmnKzmmYLplpPjgaDjgojvvZ4KCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQoKSSBoYXZlIG15IHNjaGVkdWxlIGJhY2sh4pypLirLmg0KTXkgZ29hbCBpcyB0byBrZWVwIHRoaXMgZ29pbmcuDQpPaCwgYnkgdGhlIHdheSwgSSd2ZSBzdGFydGVkIFR3aXRjaC4NCiBJJ20gZ29pbmcgdG8gdXNlIGl0IHRvIHJlbGF4IG9uY2UgaW4gYSB3aGlsZSwgc28gaWYgeW91J3JlIGZyZWUsIGNvbWUgY2hlY2sgaXQgb3V0fuKZoQoK4oC7VGhpcyBzY2hlZHVsZSBpcyBpbiBKYXBhbiB0aW1lIQoKCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQoKCg0KVXRv4oCZ772TIFR3aXRjaCAgaHR0cHM6Ly93d3cudHdpdGNoLnR2L3V0b19fXwoKCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQ==");
-        textResult.Metadata!["published"]!.ToString()!.StartsWith("10 months ago from ").ShouldBeTrue();
+        textResult.Metadata!["file.extension"].ShouldBe("txt");
+        textResult.Metadata["published"]!.ToString()!.StartsWith("10 months ago from ").ShouldBeTrue();
         textResult.Metadata["votes"].ShouldBe("4.3K");
         textResult.Type.ShouldBe(JobTaskType.Download);
 
@@ -168,5 +171,12 @@ public class YouTubeExtractorTest : BaseTest
         imageResult.Metadata!["published"]!.ToString()!.StartsWith("10 months ago from ").ShouldBeTrue();
         imageResult.Metadata["votes"].ShouldBe("4.3K");
         imageResult.Type.ShouldBe(JobTaskType.Download);
+
+        var emojiResult = results.First(r => r.ItemId.Contains("#emoji#"));
+        emojiResult.ItemId.ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#emoji#YjYIYfvYAamL8gT4576oCA");
+        emojiResult.Uri.AbsoluteUri.ShouldBe("https://yt3.ggpht.com/aI7NJRY3Q0B5jo-3nISoXGjmgXBNbB8ClpJaJNP5IhTLbGNWDea_m_XbTx5cIU5GKmZwEMKQoA=w512-h512-c-k-nd");
+        emojiResult.Metadata!["file.extension"].ShouldBe("png");
+        emojiResult.Metadata["emoji_name"].ShouldBe("konuto");
+        emojiResult.Type.ShouldBe(JobTaskType.Download);
     }
 }

@@ -4,6 +4,8 @@
     {
         public static class File
         {
+            public static readonly string[] ExtensionKeys = new[] { "file", "extension" };
+
             public static readonly string[] FilenameTemplateKeys = new[] { "file", "filename_template" };
 
             public static readonly string[] HashKeys = new[] { "file", "hash" };
