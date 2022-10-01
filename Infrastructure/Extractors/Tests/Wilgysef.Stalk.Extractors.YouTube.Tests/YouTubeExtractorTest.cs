@@ -124,8 +124,9 @@ public class YouTubeExtractorTest : BaseTest
     }
 
     [Fact]
-    public async Task Get_Playlist()
+    public async Task Get_Playlist_WithVideoMetadata()
     {
+        _youTubeExtractor.GetVideoMetadata = true;
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/playlist?list=UUdYR5Oyz8Q4g0ZmB4PkTD7g"),
             null,
@@ -135,6 +136,20 @@ public class YouTubeExtractorTest : BaseTest
         results.Select(r => r.Uri.AbsoluteUri).ToHashSet().Count.ShouldBe(results.Count);
         results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(results.Count);
         results.All(r => r.Type == JobTaskType.Extract).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Get_Playlist_WithoutVideoMetadata()
+    {
+        var results = await _youTubeExtractor.ExtractAsync(
+            new Uri("https://www.youtube.com/playlist?list=UUdYR5Oyz8Q4g0ZmB4PkTD7g"),
+            null,
+            new MetadataObject('.')).ToListAsync();
+
+        results.Count.ShouldBe(130);
+        results.Select(r => r.Uri.AbsoluteUri).ToHashSet().Count.ShouldBe(results.Count);
+        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(results.Count);
+        results.All(r => r.Type == JobTaskType.Download).ShouldBeTrue();
     }
 
     [Fact]

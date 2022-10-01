@@ -164,7 +164,7 @@ public class TwitterExtractor : IExtractor
     {
         var userScreenName = GetUserScreenName(tweet)!;
         var userId = GetUserId(tweet);
-        var legacy = tweet["legacy"];
+        var legacy = tweet["legacy"]!;
         var tweetId = tweet["rest_id"]!.ToString();
 
         metadata["created_at"] = TryParseDateTime(legacy["created_at"]?.ToString() ?? "", out _);
@@ -236,7 +236,7 @@ public class TwitterExtractor : IExtractor
     private IEnumerable<ExtractResult> GetEntitiesMedia(JToken tweet, IMetadataObject metadata, bool largestSize)
     {
         var userId = GetUserId(tweet);
-        var legacy = tweet["legacy"];
+        var legacy = tweet["legacy"]!;
         var tweetId = legacy["id_str"]?.ToString();
         var media = legacy["entities"]?["media"];
         if (media == null)
@@ -273,7 +273,7 @@ public class TwitterExtractor : IExtractor
     private IEnumerable<ExtractResult> GetExtendedEntitiesMedia(JToken tweet, IMetadataObject metadata)
     {
         var userId = GetUserId(tweet);
-        var legacy = tweet["legacy"];
+        var legacy = tweet["legacy"]!;
         var tweetId = legacy["id_str"]?.ToString();
         var media = legacy["extended_entities"]?["media"];
         if (media == null)
@@ -341,7 +341,7 @@ public class TwitterExtractor : IExtractor
         return tweet.SelectToken(@"$.core.user_results.result.legacy.screen_name")?.ToString();
     }
 
-    private string GetLargestSizeMediaUrl(string uri, JToken? sizes)
+    private static string GetLargestSizeMediaUrl(string uri, JToken? sizes)
     {
         if (sizes == null || sizes["large"] == null)
         {
@@ -356,7 +356,7 @@ public class TwitterExtractor : IExtractor
 
     private bool SetRetweetMetadata(JToken tweet, IMetadataObject metadata)
     {
-        var legacy = tweet["legacy"];
+        var legacy = tweet["legacy"]!;
         var retweetedTweet = legacy["retweeted_status_result"]?["result"];
         if (retweetedTweet == null)
         {
@@ -440,7 +440,7 @@ public class TwitterExtractor : IExtractor
         return response;
     }
 
-    private Uri GetUserTweetsApiUri(string userId, string? cursor)
+    private static Uri GetUserTweetsApiUri(string userId, string? cursor)
     {
         dynamic variablesObject = new ExpandoObject();
         variablesObject.userId = userId;
@@ -481,7 +481,7 @@ public class TwitterExtractor : IExtractor
         return new Uri($"{UserTweetsEndpoint}?variables={variables}&features={features}");
     }
 
-    private Uri GetTweetApiUri(string tweetId)
+    private static Uri GetTweetApiUri(string tweetId)
     {
         var variables = JsonSerializer.Serialize(new
         {
@@ -521,7 +521,7 @@ public class TwitterExtractor : IExtractor
         return new Uri($"{TweetDetailEndpoint}?variables={variables}&features={features}");
     }
 
-    private string GetTweetUri(string userId, string tweetId)
+    private static string GetTweetUri(string userId, string tweetId)
     {
         return $"https://twitter.com/{userId}/status/{tweetId}";
     }
@@ -540,7 +540,7 @@ public class TwitterExtractor : IExtractor
         return null;
     }
 
-    private string? GetExtensionFromUri(Uri uri)
+    private static string? GetExtensionFromUri(Uri uri)
     {
         var extension = Path.GetExtension(uri.AbsolutePath);
         return extension.Length > 0 && extension[0] == '.'
@@ -548,7 +548,7 @@ public class TwitterExtractor : IExtractor
             : extension;
     }
 
-    private object TryParseDateTime(string datetime, out bool success)
+    private static object TryParseDateTime(string datetime, out bool success)
     {
         var result = ParseDateTime(datetime);
         success = result.HasValue;
