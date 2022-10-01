@@ -6,9 +6,11 @@ namespace Wilgysef.Stalk.TestBase.Shared
 {
     public static class UriExtensions
     {
-        public static NameValueCollection GetQueryParameters(this Uri uri)
+        public static NameValueCollection? GetQueryParameters(this Uri? uri)
         {
-            return HttpUtility.ParseQueryString(uri.Query);
+            return uri != null
+                ? HttpUtility.ParseQueryString(uri.Query)
+                : null;
         }
     }
 }

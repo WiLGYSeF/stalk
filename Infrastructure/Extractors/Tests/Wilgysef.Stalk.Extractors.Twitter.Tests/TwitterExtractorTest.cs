@@ -1,10 +1,7 @@
 using Shouldly;
-using System.Net;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using System.Web;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Extractors.TestBase;
@@ -15,7 +12,7 @@ namespace Wilgysef.Stalk.Extractors.Twitter.Tests;
 
 public class TwitterExtractorTest : BaseTest
 {
-    private const string MockedDataResourcePrefix = "Wilgysef.Stalk.Extractors.Twitter.Tests.MockedData";
+    private static readonly string MockedDataResourcePrefix = $"{typeof(TwitterExtractorTest).Namespace}.MockedData";
 
     private static readonly Regex UserByScreenNameRegex = new(@"^https://twitter\.com/i/api/graphql/[A-Za-z0-9_]+/UserByScreenName", RegexOptions.Compiled);
     private static readonly Regex UserTweetsRegex = new(@"^https://twitter\.com/i/api/graphql/[A-Za-z0-9_]+/UserTweets", RegexOptions.Compiled);
@@ -74,7 +71,7 @@ public class TwitterExtractorTest : BaseTest
     {
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto"),
-            null!,
+            null,
             new MetadataObject('.')).ToListAsync();
 
         results.Count.ShouldBe(99);
@@ -86,7 +83,7 @@ public class TwitterExtractorTest : BaseTest
     {
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto/status/1560187874460733440"),
-            null!,
+            null,
             new MetadataObject('.')).ToListAsync();
 
         results.Count.ShouldBe(1);
@@ -114,7 +111,7 @@ public class TwitterExtractorTest : BaseTest
     {
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto/status/1554680837861683200"),
-            null!,
+            null,
             new MetadataObject('.')).ToListAsync();
 
         results.Count.ShouldBe(1);
@@ -141,7 +138,7 @@ public class TwitterExtractorTest : BaseTest
     {
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto/status/1523276529123397632"),
-            null!,
+            null,
             new MetadataObject('.')).ToListAsync();
 
         results.Count.ShouldBe(3);
@@ -207,7 +204,7 @@ public class TwitterExtractorTest : BaseTest
     {
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto/status/1567680068113285121"),
-            null!,
+            null,
             new MetadataObject('.')).ToListAsync();
 
         results.Count.ShouldBe(2);

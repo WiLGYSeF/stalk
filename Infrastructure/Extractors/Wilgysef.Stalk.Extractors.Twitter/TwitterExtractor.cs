@@ -55,8 +55,8 @@ public class TwitterExtractor : IExtractor
 
     public IDictionary<string, object?> Config { get; set; } = new Dictionary<string, object?>();
 
-    private readonly Regex _uriRegex = new(@"^(?:https?://)?(?:(?:www|mobile)\.)?twitter\.com(?:\:(?:80|443))?/(?<user>[^/]+)(?:/status/(?<tweet>[0-9]+))?", RegexOptions.Compiled);
-    private readonly Regex _mediaUrlRegex = new(@"^(?:https://)?pbs\.twimg\.com/media/(?<id>[A-Za-z0-9_]+)\.(?<extension>[A-Za-z0-9]+)");
+    private static readonly Regex UriRegex = new(@"^(?:https?://)?(?:(?:www|mobile)\.)?twitter\.com(?:\:(?:80|443))?/(?<user>[^/]+)(?:/status/(?<tweet>[0-9]+))?", RegexOptions.Compiled);
+    private static readonly Regex MediaUrlRegex = new(@"^(?:https://)?pbs\.twimg\.com/media/(?<id>[A-Za-z0-9_]+)\.(?<extension>[A-Za-z0-9]+)");
 
     private HttpClient _httpClient;
 
@@ -67,7 +67,7 @@ public class TwitterExtractor : IExtractor
 
     public bool CanExtract(Uri uri)
     {
-        return _uriRegex.IsMatch(uri.AbsoluteUri);
+        return UriRegex.IsMatch(uri.AbsoluteUri);
     }
 
     // TODO: should this be async?
@@ -87,7 +87,6 @@ public class TwitterExtractor : IExtractor
 
     public void SetHttpClient(HttpClient client)
     {
-        _httpClient?.Dispose();
         _httpClient = client;
     }
 
@@ -97,7 +96,7 @@ public class TwitterExtractor : IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var match = _uriRegex.Match(uri.AbsoluteUri);
+        var match = UriRegex.Match(uri.AbsoluteUri);
         var userScreenName = match.Groups["user"].Value;
 
         var userId = await GetUserIdAsync(userScreenName, cancellationToken);
@@ -105,6 +104,8 @@ public class TwitterExtractor : IExtractor
 
         while (true)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var userTweetsUri = GetUserTweetsUri(userId, cursor);
             var response = await GetAsync(userTweetsUri, cancellationToken);
 
@@ -119,7 +120,7 @@ public class TwitterExtractor : IExtractor
 
             foreach (var tweet in tweets)
             {
-                foreach (var result in ExtractTweet(tweet, metadata))
+                foreach (var result in ExtractTweet(tweet, metadata.Copy()))
                 {
                     yield return result;
                 }
@@ -142,7 +143,7 @@ public class TwitterExtractor : IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var match = _uriRegex.Match(uri.AbsoluteUri);
+        var match = UriRegex.Match(uri.AbsoluteUri);
         var tweetId = match.Groups["tweet"].Value;
 
         var tweetUri = GetTweetUri(tweetId);
@@ -204,10 +205,9 @@ public class TwitterExtractor : IExtractor
             fullText += "\n" + string.Join('\n', entityUrls);
         }
 
-        var textMetadata = metadata.Copy();
-        textMetadata.SetByParts("txt", "file", "extension");
+        metadata.SetByParts("txt", "file", "extension");
 
-        SetRetweetMetadata(tweet, textMetadata);
+        SetRetweetMetadata(tweet, metadata);
 
         if (fullText.Length > 0)
         {
@@ -215,7 +215,7 @@ public class TwitterExtractor : IExtractor
                 new Uri($"data:text/plain;base64,{Convert.ToBase64String(Encoding.UTF8.GetBytes(fullText))}"),
                 $"{userId}#{tweetId}",
                 JobTaskType.Download,
-                metadata: textMetadata);
+                metadata: metadata);
         }
     }
 
@@ -346,7 +346,7 @@ public class TwitterExtractor : IExtractor
             return uri;
         }
 
-        var match = _mediaUrlRegex.Match(uri);
+        var match = MediaUrlRegex.Match(uri);
         return match.Success
             ? $"https://pbs.twimg.com/media/{match.Groups["id"]}?format={match.Groups["extension"]}&name=large"
             : uri;
@@ -519,9 +519,9 @@ public class TwitterExtractor : IExtractor
         return new Uri($"{TweetDetailEndpoint}?variables={variables}&features={features}");
     }
 
-    private ExtractType? GetExtractType(Uri uri)
+    private static ExtractType? GetExtractType(Uri uri)
     {
-        var match = _uriRegex.Match(uri.AbsoluteUri);
+        var match = UriRegex.Match(uri.AbsoluteUri);
         if (match.Groups["tweet"].Success)
         {
             return ExtractType.Tweet;

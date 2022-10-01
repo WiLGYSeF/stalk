@@ -257,8 +257,8 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
         private static string ToHexString(byte[] bytes)
         {
-            StringBuilder result = new StringBuilder(bytes.Length * 2);
-            foreach (byte b in bytes)
+            var result = new StringBuilder(bytes.Length * 2);
+            foreach (var b in bytes)
             {
                 result.Append(HexAlphabet[b >> 4]);
                 result.Append(HexAlphabet[b & 15]);
