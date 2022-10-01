@@ -106,7 +106,7 @@ public class TwitterExtractor : IExtractor
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var userTweetsUri = GetUserTweetsUri(userId, cursor);
+            var userTweetsUri = GetUserTweetsApiUri(userId, cursor);
             var response = await GetAsync(userTweetsUri, cancellationToken);
 
             var data = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -146,7 +146,7 @@ public class TwitterExtractor : IExtractor
         var match = UriRegex.Match(uri.AbsoluteUri);
         var tweetId = match.Groups["tweet"].Value;
 
-        var tweetUri = GetTweetUri(tweetId);
+        var tweetUri = GetTweetApiUri(tweetId);
         var response = await GetAsync(tweetUri, cancellationToken);
 
         var data = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -162,12 +162,12 @@ public class TwitterExtractor : IExtractor
 
     private IEnumerable<ExtractResult> ExtractTweet(JToken tweet, IMetadataObject metadata)
     {
-        var userScreenName = GetUserScreenName(tweet);
+        var userScreenName = GetUserScreenName(tweet)!;
         var userId = GetUserId(tweet);
         var legacy = tweet["legacy"];
-        var tweetId = tweet["rest_id"].ToString();
+        var tweetId = tweet["rest_id"]!.ToString();
 
-        metadata["created_at"] = TryParseDateTime(legacy["created_at"]?.ToString(), out _);
+        metadata["created_at"] = TryParseDateTime(legacy["created_at"]?.ToString() ?? "", out _);
         metadata["favorite_count"] = legacy["favorite_count"]?.Value<int>();
         metadata["is_quote_status"] = legacy["is_quote_status"]?.Value<bool>();
         metadata["lang"] = legacy["lang"]?.ToString();
@@ -206,6 +206,7 @@ public class TwitterExtractor : IExtractor
         }
 
         metadata.SetByParts("txt", MetadataObjectConsts.File.ExtensionKeys);
+        metadata.SetByParts(GetTweetUri(userScreenName, tweetId), MetadataObjectConsts.Origin.UriKeys);
 
         SetRetweetMetadata(tweet, metadata);
 
@@ -329,9 +330,10 @@ public class TwitterExtractor : IExtractor
         return entityUrls;
     }
 
-    private string? GetUserId(JToken tweet)
+    private string GetUserId(JToken tweet)
     {
-        return tweet.SelectToken(@"$.core.user_results.result.rest_id")?.ToString();
+        return tweet.SelectToken(@"$.core.user_results.result.rest_id")?.ToString()
+            ?? throw new ArgumentException("Could not get user Id from tweet.", nameof(tweet));
     }
 
     private string? GetUserScreenName(JToken tweet)
@@ -438,7 +440,7 @@ public class TwitterExtractor : IExtractor
         return response;
     }
 
-    private Uri GetUserTweetsUri(string userId, string? cursor)
+    private Uri GetUserTweetsApiUri(string userId, string? cursor)
     {
         dynamic variablesObject = new ExpandoObject();
         variablesObject.userId = userId;
@@ -479,7 +481,7 @@ public class TwitterExtractor : IExtractor
         return new Uri($"{UserTweetsEndpoint}?variables={variables}&features={features}");
     }
 
-    private Uri GetTweetUri(string tweetId)
+    private Uri GetTweetApiUri(string tweetId)
     {
         var variables = JsonSerializer.Serialize(new
         {
@@ -517,6 +519,11 @@ public class TwitterExtractor : IExtractor
         });
 
         return new Uri($"{TweetDetailEndpoint}?variables={variables}&features={features}");
+    }
+
+    private string GetTweetUri(string userId, string tweetId)
+    {
+        return $"https://twitter.com/{userId}/status/{tweetId}";
     }
 
     private static ExtractType? GetExtractType(Uri uri)

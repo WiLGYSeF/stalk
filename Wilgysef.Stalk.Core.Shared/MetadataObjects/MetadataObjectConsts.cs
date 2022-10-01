@@ -21,6 +21,8 @@
         {
             public static readonly string[] ItemIdKeys = new[] { "origin", "item_id" };
 
+            public static readonly string[] ItemIdSeqKeys = new[] { "origin", "item_id_seq" };
+
             public static readonly string[] UriKeys = new[] { "origin", "uri" };
         }
 

@@ -123,6 +123,7 @@ public class TwitterExtractorTest : BaseTest
         result.Metadata["file.extension"].ShouldBe("txt");
         result.Metadata["is_quote_status"].ShouldBe(false);
         result.Metadata["lang"].ShouldBe("ja");
+        result.Metadata["origin.uri"].ShouldBe("https://twitter.com/amatsukauto/status/1554680837861683200");
         result.Metadata["possibly_sensitive"].ShouldBe(false);
         result.Metadata["quote_count"].ShouldBe(0);
         result.Metadata["reply_count"].ShouldBe(17);

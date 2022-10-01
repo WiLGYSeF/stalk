@@ -79,6 +79,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             metadata.TryAddValueByParts(filenameTemplate, MetadataObjectConsts.File.FilenameTemplateKeys);
             metadata.TryAddValueByParts(metadataFilenameTemplate, MetadataObjectConsts.MetadataFilenameTemplateKeys);
             metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdKeys);
+            metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdSeqKeys);
             metadata.TryAddValueByParts(uri.ToString(), MetadataObjectConsts.Origin.UriKeys);
             metadata.TryAddValueByParts(DateTime.Now, MetadataObjectConsts.RetrievedKeys);
 

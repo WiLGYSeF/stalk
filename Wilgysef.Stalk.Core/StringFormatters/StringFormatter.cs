@@ -30,7 +30,7 @@ public class StringFormatter : IStringFormatter, ITransientDependency
         MatchCollection matches = FormatRegex.Matches(value);
 
         var lastIndex = 0;
-        foreach (Match match in matches)
+        foreach (Match match in matches.Cast<Match>())
         {
             builder.Append(value[lastIndex..match.Index].Replace(FormatInitDoubleString, FormatInitString));
             lastIndex = match.Index + match.Length;
@@ -50,7 +50,7 @@ public class StringFormatter : IStringFormatter, ITransientDependency
         string? alignment = null;
         object? defaultValue = null;
 
-        foreach (Match m in matches)
+        foreach (Match m in matches.Cast<Match>())
         {
             var charValue = m.Groups[FormatInternalRegexCharGroup].Value;
             if (charValue.Length == 0)

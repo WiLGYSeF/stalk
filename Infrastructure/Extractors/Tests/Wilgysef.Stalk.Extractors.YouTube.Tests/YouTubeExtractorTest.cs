@@ -1,4 +1,4 @@
-using Shouldly;
+﻿using Shouldly;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -85,6 +85,18 @@ public class YouTubeExtractorTest : BaseTest
         _youTubeExtractor = new YouTubeExtractor(new HttpClient(messageHandler));
     }
 
+    [Theory]
+    [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g", true)]
+    [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/", true)]
+    [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/videos", true)]
+    [InlineData("https://www.youtube.com/playlist?list=UUdYR5Oyz8Q4g0ZmB4PkTD7g", true)]
+    [InlineData("https://www.youtube.com/watch?v=_BSSJi-sHh8", true)]
+    [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community", true)]
+    public void Can_Extract(string uri, bool expected)
+    {
+        _youTubeExtractor.CanExtract(new Uri(uri)).ShouldBe(expected);
+    }
+
     [Fact]
     public async Task Get_Channel()
     {
@@ -161,14 +173,25 @@ public class YouTubeExtractorTest : BaseTest
 
         var textResult = results.Single(r => r.ItemId == "UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         textResult.Uri.AbsoluteUri.ShouldBe("data:;base64,44K544Kx44K444Ol44O844Or44KS5b6p5rS744GV44Gb44G+44GX44Gf77yB4pypLirLmg0K44GT44KM44KS57aa44GR44Gm44GE44GP44Gu44GM55uu5qiZ44Gt44CC44CCDQrjgYLjgIHjgZ3jgYbjgYTjgYjjgbBUd2l0Y2jjgpLlp4vjgoHjgZ/jgojvvZ7vvIHvvIENCuOBn+OBvuOBq+aBr+aKnOOBjeOBq+S9v+OBhuS6iOWumuOBoOOBi+OCieaah+OBquS6uuOBr+imi+OBq+adpeOBpuOBre+9nuKZoQrjgrnjgrHjgrjjg6Xjg7zjg6vjga/ml6XmnKzmmYLplpPjgaDjgojvvZ4KCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQoKSSBoYXZlIG15IHNjaGVkdWxlIGJhY2sh4pypLirLmg0KTXkgZ29hbCBpcyB0byBrZWVwIHRoaXMgZ29pbmcuDQpPaCwgYnkgdGhlIHdheSwgSSd2ZSBzdGFydGVkIFR3aXRjaC4NCiBJJ20gZ29pbmcgdG8gdXNlIGl0IHRvIHJlbGF4IG9uY2UgaW4gYSB3aGlsZSwgc28gaWYgeW91J3JlIGZyZWUsIGNvbWUgY2hlY2sgaXQgb3V0fuKZoQoK4oC7VGhpcyBzY2hlZHVsZSBpcyBpbiBKYXBhbiB0aW1lIQoKCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQoKCg0KVXRv4oCZ772TIFR3aXRjaCAgaHR0cHM6Ly93d3cudHdpdGNoLnR2L3V0b19fXwoKCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQ==");
-        textResult.Metadata!["file.extension"].ShouldBe("txt");
-        textResult.Metadata["published"]!.ToString()!.StartsWith("10 months ago from ").ShouldBeTrue();
+        textResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
+        textResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
+        textResult.Metadata["file.extension"].ShouldBe("txt");
+        //textResult.Metadata["origin.item_id_seq"].ShouldBe("");
+        textResult.Metadata["origin.uri"].ShouldBe("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community?lb=UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
+        textResult.Metadata["post_id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
+        //textResult.Metadata["published"].ShouldBe();
+        textResult.Metadata["published_from"]!.ToString()!.StartsWith("10 months ago from ").ShouldBeTrue();
         textResult.Metadata["votes"].ShouldBe("4.3K");
         textResult.Type.ShouldBe(JobTaskType.Download);
 
         var imageResult = results.Single(r => r.ItemId == "UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP-image");
         imageResult.Uri.AbsoluteUri.ShouldBe("https://yt3.ggpht.com/BRWDFVKhADpFgyxc1iZgYop1k3QJGR67yoYoFulEYm35Jrvb7A2gLjpodlKVhmGtlBuUvx0VkQLD1Q=s1920-nd-v1");
-        imageResult.Metadata!["published"]!.ToString()!.StartsWith("10 months ago from ").ShouldBeTrue();
+        imageResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
+        imageResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
+        //textResult.Metadata["origin.item_id_seq"].ShouldBe("");
+        imageResult.Metadata["post_id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
+        //textResult.Metadata["published"].ShouldBe();
+        imageResult.Metadata["published_from"]!.ToString()!.StartsWith("10 months ago from ").ShouldBeTrue();
         imageResult.Metadata["votes"].ShouldBe("4.3K");
         imageResult.Type.ShouldBe(JobTaskType.Download);
 
