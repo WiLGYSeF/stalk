@@ -13,7 +13,10 @@ public class HttpClientInterceptorRuleBuilderTest
     public HttpClientInterceptorRuleBuilderTest()
     {
         _interceptor = HttpClientInterceptor.Create()
-            .AddUri(new Regex(".*"), _ => new HttpResponseMessage(HttpStatusCode.NotFound));
+            .AddUri(new Regex(".*"), request => new HttpResponseMessage(HttpStatusCode.NotFound)
+            {
+                RequestMessage = request
+            });
     }
 
     [Theory]
@@ -536,6 +539,45 @@ public class HttpClientInterceptorRuleBuilderTest
         });
     }
 
+    [Fact]
+    public async Task RequestFilter()
+    {
+        await ShouldMatchUriAsync(
+            new Uri("https://example.com"),
+            builder => builder.ForRequest(_ => true),
+            true);
+    }
+
+    [Fact]
+    public async Task ModifyRequest()
+    {
+        var response = await ShouldMatchUriAsync(
+            new Uri("https://example.com"),
+            builder => builder.ModifyRequestWith(request =>
+            {
+                request.Headers.Add("test", "asdf");
+                return request;
+            }),
+            true);
+
+        response.RequestMessage!.Headers.GetValues("test").Where(v => v == "asdf").Any().ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task ModifyResponse()
+    {
+        var response = await ShouldMatchUriAsync(
+            new Uri("https://example.com"),
+            builder => builder.ModifyResponseWith(response =>
+            {
+                response.Headers.Add("test", "asdf");
+                return response;
+            }),
+            true);
+
+        response.Headers.GetValues("test").Where(v => v == "asdf").Any().ShouldBeTrue();
+    }
+
     private async Task ShouldMatchVersionAsync(Version version, Action<HttpClientInterceptionRuleBuilder> action, bool expectedMatch)
     {
         await ShouldMatchRequestAsync(
@@ -561,7 +603,7 @@ public class HttpClientInterceptorRuleBuilderTest
     {
         var builder = new HttpClientInterceptionRuleBuilder();
         action(builder);
-        builder.LogRequestMessage();
+        builder.LogRequestMessage().LogResponseMessage();
 
         var match = false;
         _interceptor.AddRule(builder.Create()).LogRequests(_ => match = true);

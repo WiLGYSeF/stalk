@@ -20,9 +20,12 @@ namespace Wilgysef.HttpClientInterception
 
         public bool LogResponseAlways { get; set; }
 
+        public event EventHandler<Exception>? ErrorOccurred;
+
+        public bool ThrowOnError { get; set; } = true;
+
         private readonly List<HttpClientInterceptionRule> _rules = new List<HttpClientInterceptionRule>();
-        private readonly ConcurrentDictionary<HttpRequestMessage, Func<HttpRequestMessage, HttpResponseMessage>> _responseFuncs = new ConcurrentDictionary<HttpRequestMessage, Func<HttpRequestMessage, HttpResponseMessage>>();
-        private readonly ConcurrentDictionary<HttpRequestMessage, Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>> _responseAsyncFuncs = new ConcurrentDictionary<HttpRequestMessage, Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>>();
+        private readonly ConcurrentDictionary<HttpRequestMessage, HttpRequestMatch> _requestMatches = new ConcurrentDictionary<HttpRequestMessage, HttpRequestMatch>();
 
         private readonly HttpMessageInterceptor _messageInterceptor;
 
@@ -41,8 +44,7 @@ namespace Wilgysef.HttpClientInterception
             var messageInterceptor = new HttpMessageInterceptor(innerHandler);
             var interceptor = new HttpClientInterceptor(messageInterceptor);
 
-            messageInterceptor.ResponseFuncs = interceptor._responseFuncs;
-            messageInterceptor.ResponseAsyncFuncs = interceptor._responseAsyncFuncs;
+            messageInterceptor.GetResponseAsync = interceptor.GetResponseMessage;
     
             return interceptor;
         }
@@ -111,38 +113,74 @@ namespace Wilgysef.HttpClientInterception
             return this;
         }
 
+        public async Task<HttpResponseMessage?> GetResponseMessage(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            if (_requestMatches.TryGetValue(request, out var match))
+            {
+                if (match.ResponseAsyncFunc != null)
+                {
+                    return await match.ResponseAsyncFunc(request, cancellationToken);
+                }
+                if (match.ResponseFunc != null)
+                {
+                    return match.ResponseFunc(request);
+                }
+            }
+            return null;
+        }
+
         protected override HttpRequestMessage ProcessRequest(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            Func<HttpRequestMessage, HttpResponseMessage>? responseFunc = null;
+            Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>? responseAsyncFunc = null;
+            var matchingRules = new List<HttpClientInterceptionRule>();
             var logRequest = LogRequestAlways;
 
             for (var i = _rules.Count - 1; i >= 0; i--)
             {
                 var rule = _rules[i];
-                if (rule.IsMatch(request))
+
+                try
                 {
-                    logRequest |= rule.LogRequest;
+                    if (rule.IsMatch(request))
+                    {
+                        matchingRules.Add(rule);
+                        logRequest |= rule.LogRequest;
 
-                    if (rule.SendResponseMessageAsync != null)
-                    {
-                        _responseAsyncFuncs[request] = rule.SendResponseMessageAsync;
-                        break;
-                    }
-                    if (rule.SendResponseMessage != null)
-                    {
-                        _responseFuncs[request] = rule.SendResponseMessage;
-                        break;
-                    }
+                        if (responseFunc == null && responseAsyncFunc == null)
+                        {
+                            responseFunc = rule.SendResponseMessage;
+                            responseAsyncFunc = rule.SendResponseMessageAsync;
+                        }
 
-                    if (rule.ModifyRequest != null)
+                        if (rule.ModifyRequest != null)
+                        {
+                            request = rule.ModifyRequest(request);
+                        }
+                    }
+                }
+                catch (Exception exception)
+                {
+                    ErrorOccurred?.Invoke(this, exception);
+
+                    if (ThrowOnError)
                     {
-                        request = rule.ModifyRequest(request);
+                        throw;
                     }
                 }
             }
 
+            _requestMatches.TryAdd(
+                request,
+                new HttpRequestMatch(
+                    request,
+                    responseFunc,
+                    responseAsyncFunc,
+                    matchingRules));
+
             if (logRequest)
             {
-                LogRequestAction?.Invoke(request);
+                LogRequest(request);
             }
 
             return request;
@@ -152,26 +190,71 @@ namespace Wilgysef.HttpClientInterception
         {
             var logResponse = LogResponseAlways;
 
-            for (var i = _rules.Count - 1; i >= 0; i--)
+            if (response.RequestMessage != null && _requestMatches.TryGetValue(response.RequestMessage, out var match))
             {
-                var rule = _rules[i];
-                if (rule.IsMatch(response))
+                foreach (var rule in match.MatchingRules)
                 {
                     logResponse |= rule.LogResponse;
-
                     if (rule.ModifyResponse != null)
                     {
-                        response = rule.ModifyResponse(response);
+                        try
+                        {
+                            response = rule.ModifyResponse(response);
+                        }
+                        catch (Exception exception)
+                        {
+                            ErrorOccurred?.Invoke(this, exception);
+
+                            if (ThrowOnError)
+                            {
+                                throw;
+                            }
+                        }
                     }
                 }
+                _requestMatches.Remove(response.RequestMessage, out _);
             }
 
             if (logResponse)
             {
-                LogResponseAction?.Invoke(response);
+                LogResponse(response);
             }
 
             return response;
+        }
+
+        private void LogRequest(HttpRequestMessage request)
+        {
+            try
+            {
+                LogRequestAction?.Invoke(request);
+            }
+            catch (Exception exception)
+            {
+                ErrorOccurred?.Invoke(this, exception);
+
+                if (ThrowOnError)
+                {
+                    throw;
+                }
+            }
+        }
+
+        private void LogResponse(HttpResponseMessage response)
+        {
+            try
+            {
+                LogResponseAction?.Invoke(response);
+            }
+            catch (Exception exception)
+            {
+                ErrorOccurred?.Invoke(this, exception);
+
+                if (ThrowOnError)
+                {
+                    throw;
+                }
+            }
         }
     }
 }

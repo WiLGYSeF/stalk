@@ -15,8 +15,6 @@ namespace Wilgysef.HttpClientInterception
     {
         public IList<Func<HttpRequestMessage, bool>> RequestFilters = new List<Func<HttpRequestMessage, bool>>();
 
-        public IList<Func<HttpResponseMessage, bool>> ResponseFilters = new List<Func<HttpResponseMessage, bool>>();
-
         public Func<HttpRequestMessage, HttpResponseMessage>? SendResponseMessage
         {
             get => _sendResponseMessage;
@@ -169,11 +167,6 @@ namespace Wilgysef.HttpClientInterception
                 {
                     rule.RequestFilters.Add(filter);
                 }
-            }
-
-            foreach (var filter in ResponseFilters)
-            {
-                rule.ResponseFilters.Add(filter);
             }
 
             return rule;
