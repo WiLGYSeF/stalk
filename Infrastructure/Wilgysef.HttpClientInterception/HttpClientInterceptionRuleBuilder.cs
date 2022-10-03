@@ -49,9 +49,9 @@ namespace Wilgysef.HttpClientInterception
 
         public Func<HttpResponseMessage, HttpResponseMessage>? ModifyResponse { get; set; }
 
-        public bool LogRequest { get; set; }
+        public bool InvokeRequestEvents { get; set; }
 
-        public bool LogResponse { get; set; }
+        public bool InvokeResponseEvents { get; set; }
 
         public HttpStatusCode? ResponseCode
         {
@@ -103,8 +103,8 @@ namespace Wilgysef.HttpClientInterception
             {
                 ModifyRequest = ModifyRequest,
                 ModifyResponse = ModifyResponse,
-                LogRequest = LogRequest,
-                LogResponse = LogResponse,
+                InvokeRequestEvents = InvokeRequestEvents,
+                InvokeResponseEvents = InvokeResponseEvents,
             };
 
             if (SendResponseMessage != null || SendResponseMessageAsync != null)
@@ -465,16 +465,22 @@ namespace Wilgysef.HttpClientInterception
             return this;
         }
 
-        public HttpClientInterceptionRuleBuilder LogRequestMessage(bool log = true)
+        public HttpClientInterceptionRuleBuilder InvokeRequestMessageEvents(bool invoke = true)
         {
-            LogRequest = log;
+            InvokeRequestEvents = invoke;
             return this;
         }
 
-        public HttpClientInterceptionRuleBuilder LogResponseMessage(bool log = true)
+        public HttpClientInterceptionRuleBuilder InvokeResponseMessageEvents(bool invoke = true)
         {
-            LogResponse = log;
+            InvokeResponseEvents = invoke;
             return this;
+        }
+
+        public HttpClientInterceptionRuleBuilder InvokeEvents(bool invoke = true)
+        {
+            return InvokeRequestMessageEvents(invoke)
+                .InvokeResponseMessageEvents(invoke);
         }
 
         private void UnsetSendMessageResponse()

@@ -13,7 +13,7 @@ public class HttpClientInterceptorRuleBuilderTest
     public HttpClientInterceptorRuleBuilderTest()
     {
         _interceptor = HttpClientInterceptor.Create()
-            .AddUri(new Regex(".*"), request => new HttpResponseMessage(HttpStatusCode.NotFound)
+            .AddForAny(request => new HttpResponseMessage(HttpStatusCode.NotFound)
             {
                 RequestMessage = request
             });
@@ -603,10 +603,11 @@ public class HttpClientInterceptorRuleBuilderTest
     {
         var builder = new HttpClientInterceptionRuleBuilder();
         action(builder);
-        builder.LogRequestMessage().LogResponseMessage();
+        builder.InvokeEvents();
 
         var match = false;
-        _interceptor.AddRule(builder.Create()).LogRequests(_ => match = true);
+        _interceptor.AddRule(builder.Create());
+        _interceptor.RequestProcessed += (sender, request) => match = true;
         var client = new HttpClient(_interceptor);
 
         var response = await client.SendAsync(request);

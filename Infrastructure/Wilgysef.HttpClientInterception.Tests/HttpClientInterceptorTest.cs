@@ -1,6 +1,5 @@
 ﻿using Shouldly;
 using System.Net;
-using System.Text.RegularExpressions;
 
 namespace Wilgysef.HttpClientInterception.Tests;
 
@@ -11,7 +10,7 @@ public class HttpClientInterceptorTest
     public HttpClientInterceptorTest()
     {
         _interceptor = HttpClientInterceptor.Create()
-            .AddUri(new Regex(".*"), request => new HttpResponseMessage(HttpStatusCode.NotFound)
+            .AddForAny(request => new HttpResponseMessage(HttpStatusCode.NotFound)
             {
                 RequestMessage = request
             });
@@ -148,8 +147,8 @@ public class HttpClientInterceptorTest
         _interceptor.ErrorOccurred += (sender, exception) => threw = true;
 
         _interceptor
-            .AddRule(new HttpClientInterceptionRuleBuilder().LogRequestMessage().Create())
-            .LogRequests(_ => throw new InvalidOperationException());
+            .AddRule(new HttpClientInterceptionRuleBuilder().InvokeRequestMessageEvents().Create());
+        _interceptor.RequestProcessed += (sender, request) => throw new InvalidOperationException();
         var client = new HttpClient(_interceptor);
 
         if (throws)
@@ -173,8 +172,8 @@ public class HttpClientInterceptorTest
         _interceptor.ErrorOccurred += (sender, exception) => threw = true;
 
         _interceptor
-            .AddRule(new HttpClientInterceptionRuleBuilder().LogResponseMessage().Create())
-            .LogResponses(_ => throw new InvalidOperationException());
+            .AddRule(new HttpClientInterceptionRuleBuilder().InvokeResponseMessageEvents().Create());
+        _interceptor.ResponseReceived += (sender, response) => throw new InvalidOperationException();
         var client = new HttpClient(_interceptor);
 
         if (throws)

@@ -18,9 +18,9 @@ namespace Wilgysef.HttpClientInterception
 
         public Func<HttpResponseMessage, HttpResponseMessage>? ModifyResponse { get; set; }
 
-        public bool LogRequest { get; set; }
+        public bool InvokeRequestEvents { get; set; }
 
-        public bool LogResponse { get; set; }
+        public bool InvokeResponseEvents { get; set; }
 
         private readonly List<Func<HttpRequestMessage, bool>> _requestFilters = new List<Func<HttpRequestMessage, bool>>();
 

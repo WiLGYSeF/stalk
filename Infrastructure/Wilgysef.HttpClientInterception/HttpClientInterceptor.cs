@@ -12,15 +12,15 @@ namespace Wilgysef.HttpClientInterception
     {
         public List<HttpClientInterceptionRule> Rules => _rules;
 
-        public Action<HttpRequestMessage>? LogRequestAction { get; set; }
+        public event EventHandler<HttpRequestMessage>? RequestProcessed;
 
-        public Action<HttpResponseMessage>? LogResponseAction { get; set; }
-
-        public bool LogRequestAlways { get; set; }
-
-        public bool LogResponseAlways { get; set; }
+        public event EventHandler<HttpResponseMessage>? ResponseReceived;
 
         public event EventHandler<Exception>? ErrorOccurred;
+
+        public bool InvokeRequestEventsAlways { get; set; }
+
+        public bool InvokeResponseEventsAlways { get; set; }
 
         public bool ThrowOnError { get; set; } = true;
 
@@ -55,62 +55,48 @@ namespace Wilgysef.HttpClientInterception
             return this;
         }
 
-        public HttpClientInterceptor AddUri(Uri uri, Func<HttpRequestMessage, HttpResponseMessage> action)
+        #region AddUri
+
+        public HttpClientInterceptor AddUri(Uri uri, Func<HttpRequestMessage, HttpResponseMessage> action, bool invokeEvents = true)
         {
-            return AddRule(new HttpClientInterceptionRuleBuilder().ForUri(uri).RespondWith(action).Create());
+            return AddRule(new HttpClientInterceptionRuleBuilder().ForUri(uri).RespondWith(action).InvokeEvents(invokeEvents).Create());
         }
 
-        public HttpClientInterceptor AddUri(string uri, Func<HttpRequestMessage, HttpResponseMessage> action)
+        public HttpClientInterceptor AddUri(string uri, Func<HttpRequestMessage, HttpResponseMessage> action, bool invokeEvents = true)
         {
-            return AddRule(new HttpClientInterceptionRuleBuilder().ForUri(uri).RespondWith(action).Create());
+            return AddRule(new HttpClientInterceptionRuleBuilder().ForUri(uri).RespondWith(action).InvokeEvents(invokeEvents).Create());
         }
 
-        public HttpClientInterceptor AddUri(Regex regex, Func<HttpRequestMessage, HttpResponseMessage> action)
+        public HttpClientInterceptor AddUri(Regex regex, Func<HttpRequestMessage, HttpResponseMessage> action, bool invokeEvents = true)
         {
-            return AddRule(new HttpClientInterceptionRuleBuilder().ForUri(regex).RespondWith(action).Create());
+            return AddRule(new HttpClientInterceptionRuleBuilder().ForUri(regex).RespondWith(action).InvokeEvents(invokeEvents).Create());
         }
 
-        public HttpClientInterceptor AddUri(Uri uri, Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> action)
+        public HttpClientInterceptor AddUri(Uri uri, Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> action, bool invokeEvents = true)
         {
-            return AddRule(new HttpClientInterceptionRuleBuilder().ForUri(uri).RespondWith(action).Create());
+            return AddRule(new HttpClientInterceptionRuleBuilder().ForUri(uri).RespondWith(action).InvokeEvents(invokeEvents).Create());
         }
 
-        public HttpClientInterceptor AddUri(string uri, Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> action)
+        public HttpClientInterceptor AddUri(string uri, Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> action, bool invokeEvents = true)
         {
-            return AddRule(new HttpClientInterceptionRuleBuilder().ForUri(uri).RespondWith(action).Create());
+            return AddRule(new HttpClientInterceptionRuleBuilder().ForUri(uri).RespondWith(action).InvokeEvents(invokeEvents).Create());
         }
 
-        public HttpClientInterceptor AddUri(Regex regex, Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> action)
+        public HttpClientInterceptor AddUri(Regex regex, Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> action, bool invokeEvents = true)
         {
-            return AddRule(new HttpClientInterceptionRuleBuilder().ForUri(regex).RespondWith(action).Create());
+            return AddRule(new HttpClientInterceptionRuleBuilder().ForUri(regex).RespondWith(action).InvokeEvents(invokeEvents).Create());
         }
 
-        public HttpClientInterceptor LogRequests(Action<HttpRequestMessage> action)
+        #endregion
+
+        public HttpClientInterceptor AddForAny(Func<HttpRequestMessage, HttpResponseMessage> action, bool invokeEvents = false)
         {
-            LogRequestAction = action;
-            LogRequestAlways = false;
-            return this;
+            return AddRule(new HttpClientInterceptionRuleBuilder().RespondWith(action).InvokeEvents(invokeEvents).Create());
         }
 
-        public HttpClientInterceptor LogResponses(Action<HttpResponseMessage> action)
+        public HttpClientInterceptor AddForAny(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> action, bool invokeEvents = false)
         {
-            LogResponseAction = action;
-            LogResponseAlways = false;
-            return this;
-        }
-
-        public HttpClientInterceptor LogRequestsAlways(Action<HttpRequestMessage> action)
-        {
-            LogRequestAction = action;
-            LogRequestAlways = true;
-            return this;
-        }
-
-        public HttpClientInterceptor LogResponsesAlways(Action<HttpResponseMessage> action)
-        {
-            LogResponseAction = action;
-            LogResponseAlways = true;
-            return this;
+            return AddRule(new HttpClientInterceptionRuleBuilder().RespondWith(action).InvokeEvents(invokeEvents).Create());
         }
 
         public async Task<HttpResponseMessage?> GetResponseMessage(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -134,7 +120,7 @@ namespace Wilgysef.HttpClientInterception
             Func<HttpRequestMessage, HttpResponseMessage>? responseFunc = null;
             Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>>? responseAsyncFunc = null;
             var matchingRules = new List<HttpClientInterceptionRule>();
-            var logRequest = LogRequestAlways;
+            var invokeEvent = InvokeRequestEventsAlways;
 
             for (var i = _rules.Count - 1; i >= 0; i--)
             {
@@ -145,7 +131,7 @@ namespace Wilgysef.HttpClientInterception
                     if (rule.IsMatch(request))
                     {
                         matchingRules.Add(rule);
-                        logRequest |= rule.LogRequest;
+                        invokeEvent |= rule.InvokeRequestEvents;
 
                         if (responseFunc == null && responseAsyncFunc == null)
                         {
@@ -178,9 +164,9 @@ namespace Wilgysef.HttpClientInterception
                     responseAsyncFunc,
                     matchingRules));
 
-            if (logRequest)
+            if (invokeEvent)
             {
-                LogRequest(request);
+                InvokeRequestProcessed(request);
             }
 
             return request;
@@ -188,13 +174,13 @@ namespace Wilgysef.HttpClientInterception
 
         protected override HttpResponseMessage ProcessResponse(HttpResponseMessage response, CancellationToken cancellationToken)
         {
-            var logResponse = LogResponseAlways;
+            var invokeEvent = InvokeResponseEventsAlways;
 
             if (response.RequestMessage != null && _requestMatches.TryGetValue(response.RequestMessage, out var match))
             {
                 foreach (var rule in match.MatchingRules)
                 {
-                    logResponse |= rule.LogResponse;
+                    invokeEvent |= rule.InvokeResponseEvents;
                     if (rule.ModifyResponse != null)
                     {
                         try
@@ -215,19 +201,19 @@ namespace Wilgysef.HttpClientInterception
                 _requestMatches.Remove(response.RequestMessage, out _);
             }
 
-            if (logResponse)
+            if (invokeEvent)
             {
-                LogResponse(response);
+                InvokeResponseReceived(response);
             }
 
             return response;
         }
 
-        private void LogRequest(HttpRequestMessage request)
+        private void InvokeRequestProcessed(HttpRequestMessage request)
         {
             try
             {
-                LogRequestAction?.Invoke(request);
+                RequestProcessed?.Invoke(this, request);
             }
             catch (Exception exception)
             {
@@ -240,11 +226,11 @@ namespace Wilgysef.HttpClientInterception
             }
         }
 
-        private void LogResponse(HttpResponseMessage response)
+        private void InvokeResponseReceived(HttpResponseMessage response)
         {
             try
             {
-                LogResponseAction?.Invoke(response);
+                ResponseReceived?.Invoke(this, response);
             }
             catch (Exception exception)
             {
