@@ -2,11 +2,11 @@ using Shouldly;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Wilgysef.HttpClientInterception;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Extractors.TestBase;
 using Wilgysef.Stalk.TestBase.Shared;
-using Wilgysef.Stalk.TestBase.Shared.Mocks;
 
 namespace Wilgysef.Stalk.Extractors.Twitter.Tests;
 
@@ -24,15 +24,15 @@ public class TwitterExtractorTest : BaseTest
 
     public TwitterExtractorTest()
     {
-        var messageHandler = new MockHttpMessageHandler();
-        messageHandler
-            .AddEndpoint(UserByScreenNameRegex, request =>
+        var interceptor = HttpClientInterceptor.Create();
+        interceptor
+            .AddUri(UserByScreenNameRegex, request =>
             {
                 var json = GetUriQueryVariables(request.RequestUri!);
                 var userScreenName = json["screen_name"];
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.UserByScreenName.{userScreenName}.json");
             })
-            .AddEndpoint(UserTweetsRegex, request =>
+            .AddUri(UserTweetsRegex, request =>
             {
                 var json = GetUriQueryVariables(request.RequestUri!);
                 var userId = json["userId"];
@@ -42,18 +42,18 @@ public class TwitterExtractorTest : BaseTest
                     ? HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.UserTweets.{userId}.json")
                     : HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.UserTweets.{userId}.{cursor}.json");
             })
-            .AddEndpoint(TweetDetailRegex, request =>
+            .AddUri(TweetDetailRegex, request =>
             {
                 var json = GetUriQueryVariables(request.RequestUri!);
                 var tweetId = json["focalTweetId"];
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.TweetDetail.{tweetId}.json");
             })
-            .AddEndpoint(GuestTokenEndpoint, request =>
+            .AddUri(GuestTokenEndpoint, request =>
             {
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Activate.json");
             });
 
-        _twitterExtractor = new TwitterExtractor(new HttpClient(messageHandler));
+        _twitterExtractor = new TwitterExtractor(new HttpClient(interceptor));
     }
 
     [Theory]

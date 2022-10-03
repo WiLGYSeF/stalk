@@ -6,13 +6,15 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
 using System;
+using System.Net;
+using System.Text.RegularExpressions;
+using Wilgysef.HttpClientInterception;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
 using Wilgysef.Stalk.Core.Shared.FileServices;
 using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.EntityFrameworkCore;
 using Wilgysef.Stalk.TestBase.Mocks;
-using Wilgysef.Stalk.TestBase.Shared.Mocks;
 
 namespace Wilgysef.Stalk.TestBase;
 
@@ -28,7 +30,9 @@ public abstract class BaseTest
 
     public MockFileService? MockFileService { get; private set; }
 
-    public MockHttpMessageHandler? MockHttpMessageHandler { get; private set; }
+    public HttpClientInterceptor? HttpClientInterceptor { get; private set; }
+
+    public HttpRequestEntryLog? HttpRequestEntryLog { get; private set; }
 
     private IServiceProvider? _serviceProvider;
     private IServiceProvider ServiceProvider
@@ -187,11 +191,11 @@ public abstract class BaseTest
 
         if (DoMockFileService)
         {
-            MockFileService = ReplaceFileService();
+            ReplaceFileService();
         }
         if (DoMockHttpClient)
         {
-            MockHttpMessageHandler = ReplaceHttpClient();
+            ReplaceHttpClient();
         }
 
         foreach (var (implementation, service, type) in _replaceServices)
@@ -243,20 +247,33 @@ public abstract class BaseTest
 
     #region Mocks
 
-    private MockFileService ReplaceFileService()
+    private void ReplaceFileService()
     {
-        var fileService = new MockFileService();
-        _replaceServiceInstances.Insert(0, (fileService, typeof(IFileService)));
-        return fileService;
+        MockFileService = new MockFileService();
+        _replaceServiceInstances.Insert(0, (MockFileService, typeof(IFileService)));
     }
 
-    private MockHttpMessageHandler ReplaceHttpClient()
+    private void ReplaceHttpClient()
     {
-        var messageHandler = new MockHttpMessageHandler();
+        HttpClientInterceptor = HttpClientInterceptor.Create()
+            .AddForAny(request => new HttpResponseMessage(HttpStatusCode.NotFound), invokeEvents: true);
+        HttpRequestEntryLog = new HttpRequestEntryLog();
+
+        HttpClientInterceptor.RequestProcessed += (sender, request) =>
+        {
+            HttpRequestEntryLog.AddEntry(new HttpRequestEntry(request, DateTimeOffset.Now, null, null));
+        };
+        HttpClientInterceptor.ResponseReceived += (sender, response) =>
+        {
+            if (response.RequestMessage != null)
+            {
+                HttpRequestEntryLog.SetEntryResponse(response.RequestMessage, response, DateTimeOffset.Now);
+            }
+        };
+
         _replaceServiceDelegates.Insert(
             0,
-            (c => new HttpClient(messageHandler), typeof(HttpClient), ServiceRegistrationType.Transient));
-        return messageHandler;
+            (c => new HttpClient(HttpClientInterceptor), typeof(HttpClient), ServiceRegistrationType.Transient));
     }
 
     #endregion

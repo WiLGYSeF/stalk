@@ -5,11 +5,11 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Wilgysef.HttpClientInterception;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Extractors.TestBase;
 using Wilgysef.Stalk.TestBase.Shared;
-using Wilgysef.Stalk.TestBase.Shared.Mocks;
 
 namespace Wilgysef.Stalk.Extractors.YouTube.Tests;
 
@@ -27,21 +27,21 @@ public class YouTubeExtractorTest : BaseTest
 
     public YouTubeExtractorTest()
     {
-        var messageHandler = new MockHttpMessageHandler();
-        messageHandler
-            .AddEndpoint(PlaylistRegex, request =>
+        var interceptor = HttpClientInterceptor.Create();
+        interceptor
+            .AddUri(PlaylistRegex, request =>
             {
                 var query = request.RequestUri!.GetQueryParameters();
                 var playlistId = query["list"];
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Playlist.{playlistId}.html");
             })
-            .AddEndpoint(VideoRegex, request =>
+            .AddUri(VideoRegex, request =>
             {
                 var query = request.RequestUri!.GetQueryParameters();
                 var videoId = query["v"];
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Video.{videoId}.html");
             })
-            .AddEndpoint(CommunityRegex, request =>
+            .AddUri(CommunityRegex, request =>
             {
                 var match = CommunityRegex.Match(request.RequestUri!.AbsoluteUri);
                 var channelId = match.Groups["channel"].Value;
@@ -55,7 +55,7 @@ public class YouTubeExtractorTest : BaseTest
 
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Community.{channelId}.html");
             })
-            .AddEndpoint(BrowseRegex, async (request, cancellationToken) =>
+            .AddUri(BrowseRegex, async (request, cancellationToken) =>
             {
                 var json = JsonSerializer.Deserialize<JsonNode>(await request.Content!.ReadAsStringAsync(cancellationToken));
                 var originalUrl = new Uri(json["context"]["client"]["originalUrl"].ToString());
@@ -82,7 +82,7 @@ public class YouTubeExtractorTest : BaseTest
                 }
             });
 
-        _youTubeExtractor = new YouTubeExtractor(new HttpClient(messageHandler));
+        _youTubeExtractor = new YouTubeExtractor(new HttpClient(interceptor));
     }
 
     [Theory]
