@@ -24,8 +24,6 @@ public class YouTubeExtractor : IExtractor
 
     public IDictionary<string, object?> Config { get; set; } = new Dictionary<string, object?>();
 
-    public bool GetVideoMetadata { get; set; } = false;
-
     private const string YouTubeClientVersion = "2.20220929.09.00";
 
     private string[] ThumbnailUris = new string[]
@@ -40,12 +38,10 @@ public class YouTubeExtractor : IExtractor
 
     private const int EmojiScaleWidth = 512;
 
-    private const string UriPrefixRegex = @"^(?:https?://)?(?:(?:www\.|m\.)?youtube\.com|youtu\.be)";
-    private static readonly Regex ChannelRegex = new(UriPrefixRegex + @"/(?<segment>c(?:hannel)?)/(?<channel>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
-    private static readonly Regex VideosRegex = new(UriPrefixRegex + @"/c(?:hannel)?/(?<channel>[A-Za-z0-9_-]+)/videos", RegexOptions.Compiled);
-    private static readonly Regex PlaylistRegex = new(UriPrefixRegex + @"/playlist\?", RegexOptions.Compiled);
-    private static readonly Regex VideoRegex = new(UriPrefixRegex + @"/watch\?", RegexOptions.Compiled);
-    private static readonly Regex CommunityRegex = new(UriPrefixRegex + @"/c(?:hannel)?/(?<channel>[A-Za-z0-9_-]+)/community", RegexOptions.Compiled);
+    /// <summary>
+    /// Template string for file extension with youtube-dl.
+    /// </summary>
+    private const string YoutubeDlFileExtensionTemplate = "%(ext)s";
 
     private static readonly Regex CommunityImageRegex = new(@"^https://yt3\.ggpht\.com/(?<image>[A-Za-z0-9_-]+)=s(?<size>[0-9]+)", RegexOptions.Compiled);
     private static readonly Regex EmojiImageRegex = new(@"^https://yt3\.ggpht\.com/(?<image>[A-Za-z0-9_-]+)=w(?<width>[0-9]+)-h(?<height>[0-9]+)", RegexOptions.Compiled);
@@ -150,23 +146,13 @@ public class YouTubeExtractor : IExtractor
 
             foreach (var playlistItem in playlistItems)
             {
-                if (GetVideoMetadata)
-                {
-                    var videoId = playlistItem["videoId"]!.ToString();
-                    var channelId = playlistItem.SelectToken("$.shortBylineText..browseId")!.ToString();
+                var videoId = playlistItem["videoId"]!.ToString();
+                var channelId = playlistItem.SelectToken("$.shortBylineText..browseId")!.ToString();
 
-                    yield return new ExtractResult(
-                        new Uri($"https://www.youtube.com/watch?v={videoId}"),
-                        $"{channelId}#video#{videoId}",
-                        JobTaskType.Extract);
-                }
-                else
-                {
-                    foreach (var videoResult in ExtractVideoFromPlaylist(playlistItem, metadata.Copy()))
-                    {
-                        yield return videoResult;
-                    }
-                }
+                yield return new ExtractResult(
+                    new Uri($"https://www.youtube.com/watch?v={videoId}"),
+                    $"{channelId}#video#{videoId}",
+                    JobTaskType.Extract);
             }
 
             var continuationToken = json.SelectToken("$..continuationCommand.token")?.ToString();
@@ -253,11 +239,11 @@ public class YouTubeExtractor : IExtractor
 
         foreach (var uriFormat in ThumbnailUris)
         {
-            var uri = string.Format(uriFormat, videoId);
+            var uriString = string.Format(uriFormat, videoId);
 
             try
             {
-                var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, uri), cancellationToken);
+                var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, uriString), cancellationToken);
                 if (!response.IsSuccessStatusCode)
                 {
                     continue;
@@ -268,8 +254,11 @@ public class YouTubeExtractor : IExtractor
                     metadata.SetByParts($"{channelId}#video#{published}_{videoId}_thumb", MetadataObjectConsts.Origin.ItemIdSeqKeys);
                 }
 
+                var uri = new Uri(uriString);
+                metadata.SetByParts(GetExtensionFromUri(uri), MetadataObjectConsts.File.ExtensionKeys);
+
                 result = new ExtractResult(
-                    new Uri(uri),
+                    uri,
                     $"{channelId}#video#{videoId}_thumb",
                     JobTaskType.Download,
                     metadata: metadata);
@@ -345,6 +334,8 @@ public class YouTubeExtractor : IExtractor
         metadata.SetByParts(title, MetadataVideoTitleKeys);
         metadata.SetByParts(lengthText, MetadataVideoDurationKeys);
         metadata.SetByParts(lengthSeconds, MetadataVideoDurationSecondsKeys);
+
+        metadata.SetByParts(YoutubeDlFileExtensionTemplate, MetadataObjectConsts.File.ExtensionKeys);
 
         yield return new ExtractResult(
             new Uri($"https://www.youtube.com/watch?v={videoId}"),
@@ -716,31 +707,31 @@ public class YouTubeExtractor : IExtractor
 
     private static string GetChannel(Uri uri, out bool shortChannel)
     {
-        var match = ChannelRegex.Match(uri.AbsoluteUri);
-        shortChannel = match.Groups["segment"].Value == "c";
-        return match.Groups["channel"].Value;
+        var match = Consts.ChannelRegex.Match(uri.AbsoluteUri);
+        shortChannel = match.Groups[Consts.ChannelRegexChannelSegmentGroup].Value == "c";
+        return match.Groups[Consts.ChannelRegexChannelGroup].Value;
     }
 
     private static ExtractType? GetExtractType(Uri uri)
     {
         var absoluteUri = uri.AbsoluteUri;
-        if (VideosRegex.IsMatch(absoluteUri))
+        if (Consts.VideosRegex.IsMatch(absoluteUri))
         {
             return ExtractType.Videos;
         }
-        if (CommunityRegex.IsMatch(absoluteUri))
+        if (Consts.CommunityRegex.IsMatch(absoluteUri))
         {
             return ExtractType.Community;
         }
-        if (ChannelRegex.IsMatch(absoluteUri))
+        if (Consts.ChannelRegex.IsMatch(absoluteUri))
         {
             return ExtractType.Channel;
         }
-        if (PlaylistRegex.IsMatch(absoluteUri))
+        if (Consts.PlaylistRegex.IsMatch(absoluteUri))
         {
             return ExtractType.Playlist;
         }
-        if (VideoRegex.IsMatch(absoluteUri))
+        if (Consts.VideoRegex.IsMatch(absoluteUri))
         {
             return ExtractType.Video;
         }

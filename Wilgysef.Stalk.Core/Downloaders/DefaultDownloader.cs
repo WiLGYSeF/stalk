@@ -23,4 +23,9 @@ public sealed class DefaultDownloader : DownloaderBase
             metadataSerializer,
             httpClient)
     { }
+
+    public override bool CanDownload(Uri uri)
+    {
+        return true;
+    }
 }

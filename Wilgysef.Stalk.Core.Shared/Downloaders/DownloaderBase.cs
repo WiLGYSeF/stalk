@@ -54,10 +54,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             _httpClient = httpClient;
         }
 
-        public virtual bool CanDownload(Uri uri)
-        {
-            return true;
-        }
+        public abstract bool CanDownload(Uri uri);
 
         public virtual async IAsyncEnumerable<DownloadResult> DownloadAsync(
             Uri uri,
@@ -81,7 +78,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdKeys);
             metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdSeqKeys);
             metadata.TryAddValueByParts(uri.ToString(), MetadataObjectConsts.Origin.UriKeys);
-            metadata.TryAddValueByParts(DateTime.Now, MetadataObjectConsts.RetrievedKeys);
+            metadata.TryAddValueByParts(DateTimeOffset.Now.ToString(), MetadataObjectConsts.RetrievedKeys);
 
             metadata.TryAddValueByParts(downloadFileResult.FileSize, MetadataObjectConsts.File.SizeKeys);
             if (downloadFileResult.Hash != null)
