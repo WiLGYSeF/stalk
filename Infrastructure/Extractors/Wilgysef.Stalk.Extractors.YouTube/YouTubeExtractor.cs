@@ -28,6 +28,16 @@ public class YouTubeExtractor : IExtractor
 
     private const string YouTubeClientVersion = "2.20220929.09.00";
 
+    private string[] ThumbnailUris = new string[]
+    {
+        "https://img.youtube.com/vi_webp/{0}/maxresdefault.webp",
+        "https://img.youtube.com/vi/{0}/maxresdefault.jpg",
+        "https://img.youtube.com/vi/{0}/sddefault.jpg",
+        "https://img.youtube.com/vi/{0}/hqdefault.jpg",
+        "https://img.youtube.com/vi/{0}/mqdefault.jpg",
+        "https://img.youtube.com/vi/{0}/default.jpg",
+    };
+
     private const int EmojiScaleWidth = 512;
 
     private const string UriPrefixRegex = @"^(?:https?://)?(?:(?:www\.|m\.)?youtube\.com|youtu\.be)";
@@ -178,7 +188,7 @@ public class YouTubeExtractor : IExtractor
         var initialData = GetYtInitialData(doc);
         var playerResponse = GetYtInitialPlayerResponse(doc);
 
-        var channelId = initialData.SelectToken("$..videoOwnerRenderer.title.runs[0]..browseId")?.ToString();
+        var channelId = initialData.SelectToken("$..videoOwnerRenderer.title.runs[0]..browseId")!.ToString();
         var channelName = initialData.SelectToken("$..videoOwnerRenderer.title.runs[0].text")?.ToString();
         var videoId = initialData.SelectTokens("$..topLevelButtons..watchEndpoint.videoId").First().ToString();
         var title = ConcatRuns(initialData.SelectToken("$..videoPrimaryInfoRenderer.title.runs"));
@@ -209,6 +219,17 @@ public class YouTubeExtractor : IExtractor
         metadata.SetByParts(likeCount, "video", "like_count");
         metadata.SetByParts(commentCount, "video", "comment_count");
 
+        var thumbnailResult = await ExtractThumbnailAsync(
+            channelId,
+            videoId,
+            published,
+            metadata.Copy(),
+            cancellationToken);
+        if (thumbnailResult != null)
+        {
+            yield return thumbnailResult;
+        }
+
         if (published != null)
         {
             metadata.SetByParts($"{channelId}#video#{published}_{videoId}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
@@ -219,6 +240,49 @@ public class YouTubeExtractor : IExtractor
             $"{channelId}#video#{videoId}",
             JobTaskType.Download,
             metadata: metadata);
+    }
+
+    private async Task<ExtractResult?> ExtractThumbnailAsync(
+        string channelId,
+        string videoId,
+        string? published,
+        IMetadataObject metadata,
+        CancellationToken cancellationToken)
+    {
+        ExtractResult? result = null;
+
+        foreach (var uriFormat in ThumbnailUris)
+        {
+            var uri = string.Format(uriFormat, videoId);
+
+            try
+            {
+                var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, uri), cancellationToken);
+                if (!response.IsSuccessStatusCode)
+                {
+                    continue;
+                }
+
+                if (published != null)
+                {
+                    metadata.SetByParts($"{channelId}#video#{published}_{videoId}_thumb", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+                }
+
+                result = new ExtractResult(
+                    new Uri(uri),
+                    $"{channelId}#video#{videoId}_thumb",
+                    JobTaskType.Download,
+                    metadata: metadata);
+                break;
+            }
+            catch { }
+        }
+
+        if (result == null)
+        {
+            Logger?.LogError("YouTube: Could not get thumbnail for {VideoId}", videoId);
+        }
+        return result;
     }
 
     private async IAsyncEnumerable<ExtractResult> ExtractCommunityAsync(
@@ -356,7 +420,6 @@ public class YouTubeExtractor : IExtractor
         return new ExtractResult(
             Encoding.UTF8.GetBytes(text),
             $"{channelId}#community#{postId}",
-            JobTaskType.Download,
             metadata: metadata);
     }
 
@@ -376,16 +439,18 @@ public class YouTubeExtractor : IExtractor
         var postId = post["postId"]!.ToString();
         var channelId = post.SelectToken("$..authorEndpoint.browseEndpoint.browseId")!.ToString();
 
+        metadata.SetByParts("png", MetadataObjectConsts.File.ExtensionKeys);
+
         if (relativeDateTime != null)
         {
-            metadata.SetByParts($"{channelId}#community#{relativeDateTime}_{postId}-image", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+            metadata.SetByParts($"{channelId}#community#{relativeDateTime}_{postId}_image", MetadataObjectConsts.Origin.ItemIdSeqKeys);
         }
 
         imageUrl = GetCommunityImageUrlFromThumbnail(imageUrl);
 
         return new ExtractResult(
             new Uri(imageUrl),
-            $"{channelId}#community#{postId}-image",
+            $"{channelId}#community#{postId}_image",
             JobTaskType.Download,
             metadata: metadata);
     }
@@ -798,6 +863,14 @@ public class YouTubeExtractor : IExtractor
                 ? timeSpan.Value.ToString(@"hh\:mm\:ss")
                 : timeSpan.Value.ToString(@"mm\:ss")
             : null;
+    }
+
+    private static string? GetExtensionFromUri(Uri uri)
+    {
+        var extension = Path.GetExtension(uri.AbsolutePath);
+        return extension.Length > 0 && extension[0] == '.'
+            ? extension[1..]
+            : extension;
     }
 
     private enum ExtractType

@@ -28,7 +28,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// </summary>
         public virtual string? HashName { get; set; } = "SHA256";
 
-        public virtual string Name => "Default";
+        public abstract string Name { get; }
 
         public virtual ILogger? Logger { get; set; }
 

@@ -8,6 +8,8 @@ namespace Wilgysef.Stalk.Core.Downloaders;
 
 public class DataDownloader : DownloaderBase
 {
+    public override string Name => "Data";
+
     public DataDownloader(
         IFileService fileService,
         IStringFormatter stringFormatter,

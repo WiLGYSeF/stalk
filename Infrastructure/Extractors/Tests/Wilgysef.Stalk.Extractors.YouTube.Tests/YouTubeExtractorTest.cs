@@ -21,6 +21,7 @@ public class YouTubeExtractorTest : BaseTest
     private static readonly Regex PlaylistRegex = new(UriPrefixRegex + @"/playlist\?", RegexOptions.Compiled);
     private static readonly Regex BrowseRegex = new(@"^https://www.youtube.com/youtubei/v1/browse\?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8", RegexOptions.Compiled);
     private static readonly Regex VideoRegex = new(UriPrefixRegex + @"/watch\?", RegexOptions.Compiled);
+    private static readonly Regex ThumbnailRegex = new("https://img.youtube.com/vi(?:_webp)?/(?<video>[A-Za-z0-9_-]+)/", RegexOptions.Compiled);
     private static readonly Regex CommunityRegex = new(UriPrefixRegex + @"/c(?:hannel)?/(?<channel>[A-Za-z0-9_-]+)/community", RegexOptions.Compiled);
 
     private readonly YouTubeExtractor _youTubeExtractor;
@@ -29,6 +30,7 @@ public class YouTubeExtractorTest : BaseTest
     {
         var interceptor = HttpClientInterceptor.Create();
         interceptor
+            .AddForAny(_ => new HttpResponseMessage(HttpStatusCode.NotFound))
             .AddUri(PlaylistRegex, request =>
             {
                 var query = request.RequestUri!.GetQueryParameters();
@@ -40,6 +42,12 @@ public class YouTubeExtractorTest : BaseTest
                 var query = request.RequestUri!.GetQueryParameters();
                 var videoId = query["v"];
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Video.{videoId}.html");
+            })
+            .AddUri(ThumbnailRegex, request =>
+            {
+                var match = ThumbnailRegex.Match(request.RequestUri!.AbsoluteUri);
+                var videoId = match.Groups["video"].Value;
+                return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Thumbnail.{videoId}.webp");
             })
             .AddUri(CommunityRegex, request =>
             {
@@ -160,23 +168,38 @@ public class YouTubeExtractorTest : BaseTest
             null,
             new MetadataObject('.')).ToListAsync();
 
-        results.Count.ShouldBe(1);
-        var video = results.Single();
-        video.Uri.AbsoluteUri.ShouldBe("https://www.youtube.com/watch?v=_BSSJi-sHh8");
-        video.ItemId.ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#_BSSJi-sHh8");
-        video.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
-        video.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
-        video.Metadata["published"].ShouldBe("20210407");
-        video.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20210407__BSSJi-sHh8");
-        video.Metadata["video.id"].ShouldBe("_BSSJi-sHh8");
-        video.Metadata["video.title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
-        video.Metadata["video.duration"].ShouldBe("03:45");
-        video.Metadata["video.duration_seconds"].ShouldBe(225.966);
-        video.Metadata["video.description"].ShouldBe("I love shotguns!!!\n私の初めての英語のカバー曲です。温かく見守ってください。\nIt's my first cover in English song! Please listen warmly!\n\noriginal : The Cab Angel With A Shotgun\nmix : たけまる 様 @takemaru_game\nillust : あやみ 様 @ayamy_garubinu\nvocal,movie : うと @amatsukauto\n\n☆゜+.*.+゜☆゜+.*.+゜☆゜+.*.+゜☆");
-        video.Metadata["video.view_count"].ShouldBe("2,700,338 views");
-        video.Metadata["video.like_count"].ShouldBe("113,285 likes");
-        video.Metadata["video.comment_count"].ShouldBe("5.4K");
-        video.Type.ShouldBe(JobTaskType.Download);
+        results.Count.ShouldBe(2);
+        var thumbnailResult = results.Single(r => r.ItemId == "UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#_BSSJi-sHh8_thumb");
+        thumbnailResult.Uri.AbsoluteUri.StartsWith("https://img.youtube.com/vi_webp/_BSSJi-sHh8/maxresdefault.webp");
+        thumbnailResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
+        thumbnailResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
+        thumbnailResult.Metadata["published"].ShouldBe("20210407");
+        thumbnailResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20210407__BSSJi-sHh8_thumb");
+        thumbnailResult.Metadata["video.id"].ShouldBe("_BSSJi-sHh8");
+        thumbnailResult.Metadata["video.title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
+        thumbnailResult.Metadata["video.duration"].ShouldBe("03:45");
+        thumbnailResult.Metadata["video.duration_seconds"].ShouldBe(225.966);
+        thumbnailResult.Metadata["video.description"].ShouldBe("I love shotguns!!!\n私の初めての英語のカバー曲です。温かく見守ってください。\nIt's my first cover in English song! Please listen warmly!\n\noriginal : The Cab Angel With A Shotgun\nmix : たけまる 様 @takemaru_game\nillust : あやみ 様 @ayamy_garubinu\nvocal,movie : うと @amatsukauto\n\n☆゜+.*.+゜☆゜+.*.+゜☆゜+.*.+゜☆");
+        thumbnailResult.Metadata["video.view_count"].ShouldBe("2,700,338 views");
+        thumbnailResult.Metadata["video.like_count"].ShouldBe("113,285 likes");
+        thumbnailResult.Metadata["video.comment_count"].ShouldBe("5.4K");
+        thumbnailResult.Type.ShouldBe(JobTaskType.Download);
+
+        var videoResult = results.Single(r => r.ItemId == "UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#_BSSJi-sHh8");
+        videoResult.Uri.AbsoluteUri.ShouldBe("https://www.youtube.com/watch?v=_BSSJi-sHh8");
+        videoResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
+        videoResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
+        videoResult.Metadata["published"].ShouldBe("20210407");
+        videoResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20210407__BSSJi-sHh8");
+        videoResult.Metadata["video.id"].ShouldBe("_BSSJi-sHh8");
+        videoResult.Metadata["video.title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
+        videoResult.Metadata["video.duration"].ShouldBe("03:45");
+        videoResult.Metadata["video.duration_seconds"].ShouldBe(225.966);
+        videoResult.Metadata["video.description"].ShouldBe("I love shotguns!!!\n私の初めての英語のカバー曲です。温かく見守ってください。\nIt's my first cover in English song! Please listen warmly!\n\noriginal : The Cab Angel With A Shotgun\nmix : たけまる 様 @takemaru_game\nillust : あやみ 様 @ayamy_garubinu\nvocal,movie : うと @amatsukauto\n\n☆゜+.*.+゜☆゜+.*.+゜☆゜+.*.+゜☆");
+        videoResult.Metadata["video.view_count"].ShouldBe("2,700,338 views");
+        videoResult.Metadata["video.like_count"].ShouldBe("113,285 likes");
+        videoResult.Metadata["video.comment_count"].ShouldBe("5.4K");
+        videoResult.Type.ShouldBe(JobTaskType.Download);
     }
 
     [Fact]
@@ -217,7 +240,7 @@ public class YouTubeExtractorTest : BaseTest
         textResult.Metadata["votes"].ShouldBe("4.3K");
         textResult.Type.ShouldBe(JobTaskType.Download);
 
-        var imageResult = results.Single(r => r.ItemId == "UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP-image");
+        var imageResult = results.Single(r => r.ItemId == "UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP_image");
         imageResult.Uri.AbsoluteUri.ShouldBe("https://yt3.ggpht.com/BRWDFVKhADpFgyxc1iZgYop1k3QJGR67yoYoFulEYm35Jrvb7A2gLjpodlKVhmGtlBuUvx0VkQLD1Q=s1920-nd-v1");
         imageResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
         imageResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");

@@ -1,4 +1,5 @@
 using Shouldly;
+using System.Net;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -26,6 +27,7 @@ public class TwitterExtractorTest : BaseTest
     {
         var interceptor = HttpClientInterceptor.Create();
         interceptor
+            .AddForAny(_ => new HttpResponseMessage(HttpStatusCode.NotFound))
             .AddUri(UserByScreenNameRegex, request =>
             {
                 var json = GetUriQueryVariables(request.RequestUri!);

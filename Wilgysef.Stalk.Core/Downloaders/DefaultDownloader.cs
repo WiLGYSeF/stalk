@@ -8,6 +8,8 @@ namespace Wilgysef.Stalk.Core.Downloaders;
 
 public sealed class DefaultDownloader : DownloaderBase
 {
+    public override string Name => "Default";
+
     public DefaultDownloader(
         IFileService fileService,
         IStringFormatter stringFormatter,

@@ -215,7 +215,6 @@ public class TwitterExtractor : IExtractor
             yield return new ExtractResult(
                 Encoding.UTF8.GetBytes(fullText),
                 $"{userId}#{tweetId}",
-                JobTaskType.Download,
                 metadata: metadata);
         }
     }

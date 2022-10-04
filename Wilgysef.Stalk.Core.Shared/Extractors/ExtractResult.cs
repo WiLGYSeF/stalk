@@ -46,7 +46,6 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
         public ExtractResult(
             byte[] data,
             string itemId,
-            JobTaskType type,
             string? name = null,
             int priority = 0,
             string? itemData = null,
@@ -55,7 +54,7 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
             : this(
                   new Uri("data:;base64," + Convert.ToBase64String(data)),
                   itemId,
-                  type,
+                  JobTaskType.Download,
                   name,
                   priority,
                   itemData,
