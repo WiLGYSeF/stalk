@@ -10,10 +10,7 @@ public class HttpClientInterceptorTest
     public HttpClientInterceptorTest()
     {
         _interceptor = HttpClientInterceptor.Create()
-            .AddForAny(request => new HttpResponseMessage(HttpStatusCode.NotFound)
-            {
-                RequestMessage = request
-            });
+            .AddForAny(request => new HttpResponseMessage(HttpStatusCode.NotFound));
     }
 
     [Fact]

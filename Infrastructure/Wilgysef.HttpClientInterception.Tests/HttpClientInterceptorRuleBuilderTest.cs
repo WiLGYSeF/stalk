@@ -1,5 +1,4 @@
 using Shouldly;
-using System;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -13,10 +12,7 @@ public class HttpClientInterceptorRuleBuilderTest
     public HttpClientInterceptorRuleBuilderTest()
     {
         _interceptor = HttpClientInterceptor.Create()
-            .AddForAny(request => new HttpResponseMessage(HttpStatusCode.NotFound)
-            {
-                RequestMessage = request
-            });
+            .AddForAny(request => new HttpResponseMessage(HttpStatusCode.NotFound));
     }
 
     [Theory]

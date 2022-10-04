@@ -109,14 +109,34 @@ namespace Wilgysef.HttpClientInterception
 
             if (SendResponseMessage != null || SendResponseMessageAsync != null)
             {
-                rule.SendResponseMessage = SendResponseMessage;
-                rule.SendResponseMessageAsync = SendResponseMessageAsync;
+                if (SendResponseMessage != null)
+                {
+                    rule.SendResponseMessage = request =>
+                    {
+                        var response = SendResponseMessage(request);
+                        response.RequestMessage ??= request;
+                        return response;
+                    };
+                }
+                if (SendResponseMessageAsync != null)
+                {
+                    rule.SendResponseMessageAsync = async (request, cancellationToken) =>
+                    {
+                        var response = await SendResponseMessageAsync(request, cancellationToken);
+                        response.RequestMessage ??= request;
+                        return response;
+                    };
+                }
             }
             else if (ResponseCode != null || ResponseContent != null)
             {
                 rule.SendResponseMessage = request =>
                 {
-                    var response = new HttpResponseMessage(ResponseCode ?? HttpStatusCode.OK);
+                    var response = new HttpResponseMessage(ResponseCode ?? HttpStatusCode.OK)
+                    {
+                        RequestMessage = request
+                    };
+
                     if (ResponseContent != null)
                     {
                         response.Content = ResponseContent;
