@@ -109,7 +109,7 @@ public class YouTubeExtractorTest : BaseTest
             null,
             new MetadataObject('.')).ToListAsync();
 
-        results.Count.ShouldBe(136);
+        results.Count.ShouldBe(159);
         results.Select(r => r.Uri.AbsoluteUri).ToHashSet().Count.ShouldBe(results.Count);
         results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(results.Count);
     }

@@ -75,7 +75,7 @@ public class YouTubeExtractor : IExtractor
         return GetExtractType(uri) switch
         {
             ExtractType.Channel => ExtractChannelAsync(uri, metadata, cancellationToken),
-            ExtractType.Videos => ExtractVideosAsync(uri, metadata, cancellationToken),
+            ExtractType.Videos => ExtractVideosAsync(uri, null, metadata, cancellationToken),
             ExtractType.Playlist => ExtractPlaylistAsync(uri, metadata, cancellationToken),
             ExtractType.Video => ExtractVideoAsync(uri, metadata, cancellationToken),
             ExtractType.Community => ExtractCommunityAsync(uri, metadata, cancellationToken),
@@ -94,9 +94,21 @@ public class YouTubeExtractor : IExtractor
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var channelNameOrId = GetChannel(uri, out var shortChannel);
+        var channelId = shortChannel
+            ? await GetChannelIdAsync(channelNameOrId, cancellationToken)
+            : channelNameOrId;
 
         await foreach (var result in ExtractVideosAsync(
             GetVideosUri(channelNameOrId, shortChannel),
+            channelId,
+            metadata,
+            cancellationToken))
+        {
+            yield return result;
+        }
+
+        await foreach (var result in ExtractPlaylistAsync(
+            GetVideosMembersOnlyUri(channelId),
             metadata,
             cancellationToken))
         {
@@ -114,13 +126,17 @@ public class YouTubeExtractor : IExtractor
 
     private async IAsyncEnumerable<ExtractResult> ExtractVideosAsync(
         Uri uri,
+        string? channelId,
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var channelNameOrId = GetChannel(uri, out var shortChannel);
-        var channelId = shortChannel
-            ? await GetChannelIdAsync(channelNameOrId, cancellationToken)
-            : channelNameOrId;
+        if (channelId == null)
+        {
+            var channelNameOrId = GetChannel(uri, out var shortChannel);
+            channelId = shortChannel
+                ? await GetChannelIdAsync(channelNameOrId, cancellationToken)
+                : channelNameOrId;
+        }
 
         await foreach (var result in ExtractPlaylistAsync(
             GetVideosPlaylistUri(channelId),
@@ -221,6 +237,8 @@ public class YouTubeExtractor : IExtractor
             metadata.SetByParts($"{channelId}#video#{published}_{videoId}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
         }
 
+        metadata.SetByParts(YoutubeDlFileExtensionTemplate, MetadataObjectConsts.File.ExtensionKeys);
+
         yield return new ExtractResult(
             uri,
             $"{channelId}#video#{videoId}",
@@ -316,32 +334,6 @@ public class YouTubeExtractor : IExtractor
 
             json = await GetCommunityJsonAsync(channelId, continuationToken, cancellationToken);
         }
-    }
-
-    private IEnumerable<ExtractResult> ExtractVideoFromPlaylist(JToken video, IMetadataObject metadata)
-    {
-        var videoId = video["videoId"]!.ToString();
-        var channelId = video.SelectToken("$..shortBylineText..browseId")!.ToString();
-        var channelName = video.SelectToken("$..shortBylineText..runs[0].text")!.ToString();
-
-        var title = ConcatRuns(video.SelectToken("$.title.runs"));
-        var lengthSeconds = video["lengthSeconds"]?.Value<int>();
-        var lengthText = video.SelectToken("$.lengthText.simpleText")?.ToString();
-
-        metadata.SetByParts(channelId, MetadataChannelIdKeys);
-        metadata.SetByParts(channelName, MetadataChannelNameKeys);
-        metadata.SetByParts(videoId, MetadataVideoIdKeys);
-        metadata.SetByParts(title, MetadataVideoTitleKeys);
-        metadata.SetByParts(lengthText, MetadataVideoDurationKeys);
-        metadata.SetByParts(lengthSeconds, MetadataVideoDurationSecondsKeys);
-
-        metadata.SetByParts(YoutubeDlFileExtensionTemplate, MetadataObjectConsts.File.ExtensionKeys);
-
-        yield return new ExtractResult(
-            new Uri($"https://www.youtube.com/watch?v={videoId}"),
-            $"{channelId}#video#{videoId}",
-            JobTaskType.Download,
-            metadata: metadata);
     }
 
     private IEnumerable<ExtractResult> ExtractCommunity(JToken post, IMetadataObject metadata)
@@ -683,14 +675,25 @@ public class YouTubeExtractor : IExtractor
         return new Uri(GetChannelUriPrefix(channel, shortChannel) + "videos");
     }
 
-    private static Uri GetVideosPlaylistUri(string channel)
+    private static Uri GetVideosMembersOnlyUri(string channelId)
     {
-        if (!channel.StartsWith("UC") || channel.Length < 20)
+        if (!channelId.StartsWith("UC") || channelId.Length < 20)
         {
-            throw new ArgumentException("Invalid channel format.", nameof(channel));
+            throw new ArgumentException("Invalid channel format.", nameof(channelId));
         }
 
-        var channelPlaylist = "UU" + channel[2..];
+        var channelPlaylist = "UUMO" + channelId[2..];
+        return new Uri($"https://www.youtube.com/playlist?list={channelPlaylist}");
+    }
+
+    private static Uri GetVideosPlaylistUri(string channelId)
+    {
+        if (!channelId.StartsWith("UC") || channelId.Length < 20)
+        {
+            throw new ArgumentException("Invalid channel format.", nameof(channelId));
+        }
+
+        var channelPlaylist = "UU" + channelId[2..];
         return new Uri($"https://www.youtube.com/playlist?list={channelPlaylist}");
     }
 

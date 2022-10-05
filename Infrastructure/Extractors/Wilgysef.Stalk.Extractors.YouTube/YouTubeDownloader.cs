@@ -1,6 +1,4 @@
 ﻿using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Text.RegularExpressions;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.FilenameSlugs;
 using Wilgysef.Stalk.Core.Shared.FileServices;
@@ -44,6 +42,11 @@ public class YouTubeDownloader : DownloaderBase
     /// </summary>
     public bool WriteInfoJson { get; set; } = true;
 
+    /// <summary>
+    /// <c>--write-subs</c>
+    /// </summary>
+    public bool WriteSubs { get; set; } = true;
+
     private readonly IStringFormatter _stringFormatter;
     private readonly IFilenameSlugSelector _filenameSlugSelector;
 
@@ -69,22 +72,14 @@ public class YouTubeDownloader : DownloaderBase
         return Consts.VideoRegex.IsMatch(uri.AbsoluteUri);
     }
 
-    protected override async Task<Stream> SaveFileAsync(
+    protected override async Task<DownloadFileResult> SaveFileAsync(
         Uri uri,
         string filenameTemplate,
         IMetadataObject metadata,
         DownloadRequestData? requestData = null,
         CancellationToken cancellationToken = default)
     {
-        // --output TEMPLATE
-
         // --cookies FILE
-
-        // ?
-        // --write-subs
-        // --progress
-        // --newline
-        // --verbose
 
         var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
         var filename = filenameSlug.SlugifyPath(
@@ -100,9 +95,6 @@ public class YouTubeDownloader : DownloaderBase
             RedirectStandardInput = true,
             UseShellExecute = false,
         };
-
-        processStartInfo.ArgumentList.Add("--output");
-        processStartInfo.ArgumentList.Add(filename);
 
         processStartInfo.ArgumentList.Add("--retries");
         processStartInfo.ArgumentList.Add(Retries.ToString());
@@ -121,5 +113,52 @@ public class YouTubeDownloader : DownloaderBase
 
         processStartInfo.ArgumentList.Add("--buffer-size");
         processStartInfo.ArgumentList.Add(BufferSize.ToString());
+
+        processStartInfo.ArgumentList.Add("--newline");
+
+        if (WriteInfoJson)
+        {
+            processStartInfo.ArgumentList.Add("--write-info-json");
+        }
+        if (WriteSubs)
+        {
+            processStartInfo.ArgumentList.Add("--write-subs");
+        }
+
+        processStartInfo.ArgumentList.Add("--output");
+        processStartInfo.ArgumentList.Add(filename);
+
+        processStartInfo.ArgumentList.Add(uri.AbsoluteUri);
+
+        var process = Process.Start(processStartInfo)
+            ?? throw new InvalidOperationException($"Could not start process: {processStartInfo.FileName}");
+        process.OutputDataReceived += OutputReceivedHandler;
+        process.ErrorDataReceived += ErrorReceivedHandler;
+
+        try
+        {
+            await process.WaitForExitAsync(cancellationToken);
+        }
+        catch (OperationCanceledException exception)
+        {
+            Debug.WriteLine($"Cancelled {process.ExitCode} {process.HasExited}");
+            throw;
+        }
+
+        return new DownloadFileResult(
+            "a",
+            1,
+            "b",
+            "3");
+    }
+
+    private void OutputReceivedHandler(object sender, DataReceivedEventArgs args)
+    {
+        Debug.WriteLine(args.Data);
+    }
+
+    private void ErrorReceivedHandler(object sender, DataReceivedEventArgs args)
+    {
+        Debug.WriteLine(args.Data);
     }
 }

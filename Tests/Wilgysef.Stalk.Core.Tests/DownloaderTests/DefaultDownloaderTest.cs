@@ -2,7 +2,6 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using System.Text.RegularExpressions;
 using Wilgysef.HttpClientInterception;
 using Wilgysef.Stalk.Core.Downloaders;
 using Wilgysef.Stalk.Core.MetadataObjects;
@@ -35,12 +34,12 @@ public class DefaultDownloaderTest : BaseTest
         _httpInterceptor = HttpClientInterceptor!;
         _httpEntryLog = HttpRequestEntryLog!;
 
-        _httpInterceptor.AddForAny((request, cancellationToken) =>
+        _httpInterceptor.AddForAny(request =>
         {
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            return new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StreamContent(new MemoryStream(TestDownloadData))
-            });
+            };
         });
     }
 

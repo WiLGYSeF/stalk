@@ -40,7 +40,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         private readonly IMetadataSerializer _metadataSerializer;
         private HttpClient _httpClient;
 
-        public DownloaderBase(
+        protected DownloaderBase(
             IFileService fileService,
             IStringFormatter stringFormatter,
             IFilenameSlugSelector filenameSlugSelector,
