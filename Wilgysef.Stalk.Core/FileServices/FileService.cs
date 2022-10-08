@@ -9,4 +9,9 @@ public class FileService : IFileService, ITransientDependency
     {
         return File.Open(path, fileMode);
     }
+
+    public void Delete(string path)
+    {
+        File.Delete(path);
+    }
 }

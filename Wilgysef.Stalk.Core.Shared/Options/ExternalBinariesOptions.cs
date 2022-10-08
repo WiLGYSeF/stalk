@@ -1,6 +1,6 @@
 ﻿namespace Wilgysef.Stalk.Core.Shared.Options
 {
-    internal class ExternalBinariesOptions : IOptionSection
+    public class ExternalBinariesOptions : IOptionSection
     {
         public string Label => "ExternalBinaries";
 

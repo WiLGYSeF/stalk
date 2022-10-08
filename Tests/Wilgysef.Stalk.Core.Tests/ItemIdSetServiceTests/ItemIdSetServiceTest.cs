@@ -2,7 +2,7 @@
 using System.Text;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.TestBase;
-using Wilgysef.Stalk.TestBase.Mocks;
+using Wilgysef.Stalk.TestBase.Shared.Mocks;
 
 namespace Wilgysef.Stalk.Core.Tests.ItemIdSetServiceTests;
 

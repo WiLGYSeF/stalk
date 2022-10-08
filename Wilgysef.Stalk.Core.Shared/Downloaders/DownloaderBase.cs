@@ -60,45 +60,53 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             Uri uri,
             string filenameTemplate,
             string? itemId,
-            string? itemData,
             string? metadataFilenameTemplate,
             IMetadataObject metadata,
             DownloadRequestData? requestData = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            var downloadFileResult = await SaveFileAsync(
+            await foreach (var downloadFileResult in SaveFileAsync(
                 uri,
                 filenameTemplate,
                 metadata,
                 requestData,
-                cancellationToken);
-
-            metadata.TryAddValueByParts(filenameTemplate, MetadataObjectConsts.File.FilenameTemplateKeys);
-            metadata.TryAddValueByParts(metadataFilenameTemplate, MetadataObjectConsts.MetadataFilenameTemplateKeys);
-            metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdKeys);
-            metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdSeqKeys);
-            metadata.TryAddValueByParts(uri.ToString(), MetadataObjectConsts.Origin.UriKeys);
-            metadata.TryAddValueByParts(DateTimeOffset.Now.ToString(), MetadataObjectConsts.RetrievedKeys);
-
-            metadata.TryAddValueByParts(downloadFileResult.FileSize, MetadataObjectConsts.File.SizeKeys);
-            if (downloadFileResult.Hash != null)
+                cancellationToken))
             {
-                metadata.TryAddValueByParts(downloadFileResult.Hash, MetadataObjectConsts.File.HashKeys);
-                metadata.TryAddValueByParts(downloadFileResult.HashName, MetadataObjectConsts.File.HashAlgorithmKeys);
+                var resultMetadata = metadata.Copy();
+                resultMetadata.TryAddValueByParts(filenameTemplate, MetadataObjectConsts.File.FilenameTemplateKeys);
+                resultMetadata.TryAddValueByParts(metadataFilenameTemplate, MetadataObjectConsts.MetadataFilenameTemplateKeys);
+                resultMetadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdKeys);
+                resultMetadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdSeqKeys);
+                resultMetadata.TryAddValueByParts(uri.ToString(), MetadataObjectConsts.Origin.UriKeys);
+                resultMetadata.TryAddValueByParts(DateTimeOffset.Now.ToString(), MetadataObjectConsts.RetrievedKeys);
+
+                resultMetadata.TryAddValueByParts(downloadFileResult.FileSize, MetadataObjectConsts.File.SizeKeys);
+                if (downloadFileResult.Hash != null)
+                {
+                    resultMetadata.TryAddValueByParts(downloadFileResult.Hash, MetadataObjectConsts.File.HashKeys);
+                    resultMetadata.TryAddValueByParts(downloadFileResult.HashName, MetadataObjectConsts.File.HashAlgorithmKeys);
+                }
+
+                string? metadataFilename;
+                if (downloadFileResult.MetadataFilename == null && downloadFileResult.CreateMetadata)
+                {
+                    metadataFilename = await SaveMetadataAsync(
+                        metadataFilenameTemplate,
+                        resultMetadata.GetFlattenedDictionary(),
+                        cancellationToken);
+                }
+                else
+                {
+                    metadataFilename = downloadFileResult.MetadataFilename;
+                }
+
+                yield return new DownloadResult(
+                    downloadFileResult.Filename,
+                    uri,
+                    itemId,
+                    metadataPath: metadataFilename,
+                    metadata: resultMetadata);
             }
-
-            var metadataFilename = await SaveMetadataAsync(
-                metadataFilenameTemplate,
-                metadata.GetFlattenedDictionary(),
-                cancellationToken);
-
-            yield return new DownloadResult(
-                downloadFileResult.Filename,
-                uri,
-                itemId,
-                itemData: itemData,
-                metadataPath: metadataFilename,
-                metadata: metadata);
         }
 
         public virtual void SetHttpClient(HttpClient client)
@@ -114,12 +122,12 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// <param name="metadata">Metadata object.</param>
         /// <param name="cancellationToken"></param>
         /// <returns>Download file result.</returns>
-        protected virtual async Task<DownloadFileResult> SaveFileAsync(
+        protected virtual async IAsyncEnumerable<DownloadFileResult> SaveFileAsync(
             Uri uri,
             string filenameTemplate,
             IMetadataObject metadata,
             DownloadRequestData? requestData = null,
-            CancellationToken cancellationToken = default)
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
             var filename = filenameSlug.SlugifyPath(
@@ -128,7 +136,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             using var stream = await GetFileStreamAsync(uri, requestData, cancellationToken);
             using var fileStream = _fileService.Open(filename, FileMode.CreateNew);
 
-            return await SaveStreamAsync(
+            yield return await SaveStreamAsync(
                 stream,
                 fileStream,
                 filename,
@@ -211,9 +219,11 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
             return new DownloadFileResult(
                 filename,
+                null,
                 fileSize,
                 hashAlgorithm?.Hash != null ? ToHexString(hashAlgorithm.Hash) : null,
-                hashAlgorithm?.Hash != null ? hashName : null);
+                hashAlgorithm?.Hash != null ? hashName : null,
+                createMetadata: true);
         }
 
         /// <summary>

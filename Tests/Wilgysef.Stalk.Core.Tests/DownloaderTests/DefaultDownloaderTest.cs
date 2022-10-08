@@ -8,7 +8,7 @@ using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.TestBase;
-using Wilgysef.Stalk.TestBase.Mocks;
+using Wilgysef.Stalk.TestBase.Shared.Mocks;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -49,7 +49,6 @@ public class DefaultDownloaderTest : BaseTest
         var uri = RandomValues.RandomUri();
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
-        var itemData = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
         var metadata = new MetadataObject('.');
 
@@ -57,14 +56,12 @@ public class DefaultDownloaderTest : BaseTest
             uri,
             filename,
             itemId,
-            itemData,
             metadataFilename,
             metadata))
         {
             result.Path.ShouldBe(filename);
             result.Uri.ShouldBe(uri);
             result.ItemId.ShouldBe(itemId);
-            result.ItemData.ShouldBe(itemData);
             result.MetadataPath.ShouldBe(metadataFilename);
         }
 
@@ -100,7 +97,6 @@ public class DefaultDownloaderTest : BaseTest
         var uri = RandomValues.RandomUri();
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
-        var itemData = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
         var metadata = new MetadataObject('.');
 
@@ -109,14 +105,12 @@ public class DefaultDownloaderTest : BaseTest
             uri,
             filename,
             itemId,
-            itemData,
             metadataFilename,
             metadata))
         {
             result.Path.ShouldBe(filename);
             result.Uri.ShouldBe(uri);
             result.ItemId.ShouldBe(itemId);
-            result.ItemData.ShouldBe(itemData);
             result.MetadataPath.ShouldBe(metadataFilename);
         }
 
@@ -149,7 +143,6 @@ public class DefaultDownloaderTest : BaseTest
         var uri = RandomValues.RandomUri();
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
-        var itemData = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
         var metadata = new MetadataObject('.');
 
@@ -160,7 +153,6 @@ public class DefaultDownloaderTest : BaseTest
             uri,
             filename,
             itemId,
-            itemData,
             metadataFilename,
             metadata,
             new DownloadRequestData(
@@ -174,7 +166,6 @@ public class DefaultDownloaderTest : BaseTest
             result.Path.ShouldBe(filename);
             result.Uri.ShouldBe(uri);
             result.ItemId.ShouldBe(itemId);
-            result.ItemData.ShouldBe(itemData);
             result.MetadataPath.ShouldBe(metadataFilename);
         }
 

@@ -4,7 +4,7 @@ using Wilgysef.Stalk.Core.Downloaders;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.TestBase;
-using Wilgysef.Stalk.TestBase.Mocks;
+using Wilgysef.Stalk.TestBase.Shared.Mocks;
 
 namespace Wilgysef.Stalk.Core.Tests.DownloaderTests;
 
@@ -30,7 +30,6 @@ public class DataDownloaderTest : BaseTest
         var uri = new Uri($"data:text/plain;base64,{Convert.ToBase64String(data)}");
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
-        var itemData = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
         var metadata = new MetadataObject('.');
 
@@ -38,14 +37,12 @@ public class DataDownloaderTest : BaseTest
             uri,
             filename,
             itemId,
-            itemData,
             metadataFilename,
             metadata))
         {
             result.Path.ShouldBe(filename);
             result.Uri.ShouldBe(uri);
             result.ItemId.ShouldBe(itemId);
-            result.ItemData.ShouldBe(itemData);
             result.MetadataPath.ShouldBe(metadataFilename);
         }
 

@@ -5,16 +5,14 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
-using System;
 using System.Net;
-using System.Text.RegularExpressions;
 using Wilgysef.HttpClientInterception;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
 using Wilgysef.Stalk.Core.Shared.FileServices;
 using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.EntityFrameworkCore;
-using Wilgysef.Stalk.TestBase.Mocks;
+using Wilgysef.Stalk.TestBase.Shared.Mocks;
 
 namespace Wilgysef.Stalk.TestBase;
 

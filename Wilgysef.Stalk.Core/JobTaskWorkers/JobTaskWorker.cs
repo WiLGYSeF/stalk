@@ -235,7 +235,6 @@ public class JobTaskWorker : IJobTaskWorker
             jobTaskUri,
             JobConfig.DownloadFilenameTemplate,
             JobTask.ItemId,
-            JobTask.ItemData,
             JobConfig.SaveMetadata ? JobConfig.MetadataFilenameTemplate : null,
             JobTask.GetMetadata(),
             requestData: JobTask.DownloadRequestData,
