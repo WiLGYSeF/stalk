@@ -1,4 +1,5 @@
 ﻿using Shouldly;
+using System.IO.Abstractions.TestingHelpers;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -20,7 +21,7 @@ public class DefaultDownloaderTest : BaseTest
 
     private readonly HttpClientInterceptor _httpInterceptor;
     private readonly HttpRequestEntryLog _httpEntryLog;
-    private readonly MockFileService _fileService;
+    private readonly MockFileSystem _fileSystem;
     private readonly DefaultDownloader _downloader;
 
     public DefaultDownloaderTest()
@@ -30,7 +31,7 @@ public class DefaultDownloaderTest : BaseTest
         var downloaders = GetRequiredService<IEnumerable<IDownloader>>();
         _downloader = (downloaders.Single(d => d is DefaultDownloader) as DefaultDownloader)!;
 
-        _fileService = MockFileService!;
+        _fileSystem = MockFileSystem!;
         _httpInterceptor = HttpClientInterceptor!;
         _httpEntryLog = HttpRequestEntryLog!;
 
@@ -68,15 +69,15 @@ public class DefaultDownloaderTest : BaseTest
         _httpEntryLog.Entries.Count.ShouldBe(1);
         _httpEntryLog.Entries.Single().Request.RequestUri.ShouldBe(uri);
 
-        _fileService.Files.Keys.Count().ShouldBe(2);
-        (_fileService.Files[filename] as MemoryStream)!.ToArray().ShouldBe(TestDownloadData);
+        _fileSystem.AllFiles.Count().ShouldBe(2);
+        _fileSystem.File.ReadAllBytes(filename).ShouldBe(TestDownloadData);
 
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
         var metadataWritten = new MetadataObject(metadata.KeySeparator);
         metadataWritten.From(deserializer.Deserialize<IDictionary<object, object?>>(
-                Encoding.UTF8.GetString((_fileService.Files[metadataFilename] as MemoryStream)!.ToArray())));
+                Encoding.UTF8.GetString(_fileSystem.File.ReadAllBytes(metadataFilename))));
 
         var hashName = "SHA256";
         metadataWritten.GetValueByParts(MetadataObjectConsts.File.FilenameTemplateKeys).ShouldBe(filename);
@@ -117,15 +118,15 @@ public class DefaultDownloaderTest : BaseTest
         _httpEntryLog.Entries.Count.ShouldBe(1);
         _httpEntryLog.Entries.Single().Request.RequestUri.ShouldBe(uri);
 
-        _fileService.Files.Keys.Count().ShouldBe(2);
-        (_fileService.Files[filename] as MemoryStream)!.ToArray().ShouldBe(TestDownloadData);
+        _fileSystem.AllFiles.Count().ShouldBe(2);
+        _fileSystem.File.ReadAllBytes(filename).ShouldBe(TestDownloadData);
 
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
         var metadataWritten = new MetadataObject(metadata.KeySeparator);
         metadataWritten.From(deserializer.Deserialize<IDictionary<object, object?>>(
-                Encoding.UTF8.GetString((_fileService.Files[metadataFilename] as MemoryStream)!.ToArray())));
+                Encoding.UTF8.GetString(_fileSystem.File.ReadAllBytes(metadataFilename))));
 
         metadataWritten.GetValueByParts(MetadataObjectConsts.File.FilenameTemplateKeys).ShouldBe(filename);
         metadataWritten.GetValueByParts(MetadataObjectConsts.MetadataFilenameTemplateKeys).ShouldBe(metadataFilename);

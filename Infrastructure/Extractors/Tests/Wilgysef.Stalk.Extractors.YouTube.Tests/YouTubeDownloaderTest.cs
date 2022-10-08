@@ -1,5 +1,6 @@
 ﻿using Shouldly;
 using System.Diagnostics;
+using System.IO.Abstractions.TestingHelpers;
 using System.Net;
 using System.Reflection;
 using System.Text.RegularExpressions;
@@ -18,7 +19,6 @@ public class YouTubeDownloaderTest : BaseTest
 {
     private static readonly string MockedDataResourcePrefix = $"{typeof(YouTubeDownloaderTest).Namespace}.MockedData";
 
-    private readonly MockFileService _fileService;
     private readonly MockProcessService _processService;
     private readonly YouTubeDownloader _youTubeDownloader;
 
@@ -29,10 +29,12 @@ public class YouTubeDownloaderTest : BaseTest
 
         var assembly = Assembly.GetExecutingAssembly();
 
-        _fileService = new MockFileService();
-        _fileService.SetFileStream(
-            Path.Combine(Directory.GetCurrentDirectory(), "output\\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.info.json"), 
-            assembly.GetManifestResourceStream($"{MockedDataResourcePrefix}.Video.2SVDVhzzzSY.info.json")!);
+        var fileSystem = new MockFileSystem();
+        fileSystem.AddFileFromEmbeddedResource(
+            Path.Combine(Directory.GetCurrentDirectory(), "output\\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.info.json"),
+            assembly,
+            $"{MockedDataResourcePrefix}.Video.2SVDVhzzzSY.info.json");
+
         _processService = new MockProcessService();
         _processService.For(new Regex(".*"), builder =>
         {
@@ -47,7 +49,7 @@ public class YouTubeDownloaderTest : BaseTest
         });
 
         _youTubeDownloader = new YouTubeDownloader(
-            _fileService,
+            fileSystem,
             new StringFormatter(),
             new FilenameSlugSelector(new[] { new WindowsFilenameSlug() }),
             new MetadataSerializer(),

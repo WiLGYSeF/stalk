@@ -1,14 +1,13 @@
 ﻿using Shouldly;
-using System.Text;
+using System.IO.Abstractions.TestingHelpers;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.TestBase;
-using Wilgysef.Stalk.TestBase.Shared.Mocks;
 
 namespace Wilgysef.Stalk.Core.Tests.ItemIdSetServiceTests;
 
 public class ItemIdSetServiceTest : BaseTest
 {
-    private readonly MockFileService _fileService;
+    private readonly MockFileSystem _fileSystem;
     private readonly IItemIdSetService _itemIdSetService;
 
     private readonly string[] TestData = new[]
@@ -22,7 +21,7 @@ public class ItemIdSetServiceTest : BaseTest
     public ItemIdSetServiceTest()
     {
         _itemIdSetService = GetRequiredService<IItemIdSetService>();
-        _fileService = MockFileService!;
+        _fileSystem = MockFileSystem!;
     }
 
     [Fact]
@@ -46,7 +45,7 @@ public class ItemIdSetServiceTest : BaseTest
     [Fact]
     public async Task Get_ItemIdSet_From_Disk()
     {
-        _fileService.SetFileStream("abc", GetTestDataAsStream());
+        _fileSystem.AddFile("abc", GetTestData());
 
         var itemIds = await _itemIdSetService.GetItemIdSetAsync("abc", 0);
 
@@ -60,8 +59,8 @@ public class ItemIdSetServiceTest : BaseTest
     [Fact]
     public async Task Write_Changes()
     {
-        using var stream = GetTestDataAsStream();
-        _fileService.SetFileStream("abc", stream);
+        var path = "abc";
+        _fileSystem.AddFile(path, GetTestData());
 
         var newIds = new[]
         {
@@ -69,7 +68,6 @@ public class ItemIdSetServiceTest : BaseTest
             "1234",
         };
 
-        var path = "abc";
         var itemIds = await _itemIdSetService.GetItemIdSetAsync(path, 0);
 
         foreach (var id in newIds)
@@ -81,9 +79,7 @@ public class ItemIdSetServiceTest : BaseTest
 
         await _itemIdSetService.WriteChangesAsync(path, itemIds);
 
-        stream.Position = 0;
-        using var reader = new StreamReader(stream);
-        var contents = await reader.ReadToEndAsync();
+        var contents = _fileSystem.File.ReadAllText(path);
 
         contents.ShouldBe(
             string.Join(Environment.NewLine, TestData.Concat(newIds)) + Environment.NewLine);
@@ -137,13 +133,9 @@ public class ItemIdSetServiceTest : BaseTest
         itemIdSetCollectionService.GetItemIdSet(path1, 0).ShouldBeNull();
     }
 
-    private Stream GetTestDataAsStream()
+    private string GetTestData()
     {
-        var stream = new MemoryStreamNonDisposable();
-        var buffer = Encoding.UTF8.GetBytes(string.Join(Environment.NewLine, TestData) + Environment.NewLine);
-        stream.Write(buffer, 0, buffer.Length);
-        stream.Position -= buffer.Length;
-        return stream;
+        return string.Join(Environment.NewLine, TestData) + Environment.NewLine;
     }
 
     private class MemoryStreamNonDisposable : MemoryStream

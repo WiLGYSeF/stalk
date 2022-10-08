@@ -5,10 +5,11 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
+using System.IO.Abstractions;
+using System.IO.Abstractions.TestingHelpers;
 using System.Net;
 using Wilgysef.HttpClientInterception;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
-using Wilgysef.Stalk.Core.Shared.FileServices;
 using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.EntityFrameworkCore;
@@ -26,7 +27,7 @@ public abstract class BaseTest
 
     public bool DoMockHttpClient { get; set; } = true;
 
-    public MockFileService? MockFileService { get; private set; }
+    public MockFileSystem? MockFileSystem { get; private set; }
 
     public HttpClientInterceptor? HttpClientInterceptor { get; private set; }
 
@@ -247,8 +248,8 @@ public abstract class BaseTest
 
     private void ReplaceFileService()
     {
-        MockFileService = new MockFileService();
-        _replaceServiceInstances.Insert(0, (MockFileService, typeof(IFileService)));
+        MockFileSystem = new MockFileSystem();
+        _replaceServiceInstances.Insert(0, (MockFileSystem, typeof(IFileSystem)));
     }
 
     private void ReplaceHttpClient()
@@ -271,7 +272,7 @@ public abstract class BaseTest
 
         _replaceServiceDelegates.Insert(
             0,
-            (c => new HttpClient(HttpClientInterceptor), typeof(HttpClient), ServiceRegistrationType.Transient));
+            (_ => new HttpClient(HttpClientInterceptor), typeof(HttpClient), ServiceRegistrationType.Transient));
     }
 
     #endregion

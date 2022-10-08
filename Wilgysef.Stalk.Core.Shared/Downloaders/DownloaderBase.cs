@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
@@ -9,7 +10,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Wilgysef.Stalk.Core.Shared.FilenameSlugs;
-using Wilgysef.Stalk.Core.Shared.FileServices;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.MetadataSerializers;
 using Wilgysef.Stalk.Core.Shared.StringFormatters;
@@ -34,20 +34,20 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
         public virtual IDictionary<string, object?> Config { get; set; } = new Dictionary<string, object?>();
 
-        private readonly IFileService _fileService;
+        private readonly IFileSystem _fileSystem;
         private readonly IStringFormatter _stringFormatter;
         private readonly IFilenameSlugSelector _filenameSlugSelector;
         private readonly IMetadataSerializer _metadataSerializer;
         private HttpClient _httpClient;
 
         protected DownloaderBase(
-            IFileService fileService,
+            IFileSystem fileSystem,
             IStringFormatter stringFormatter,
             IFilenameSlugSelector filenameSlugSelector,
             IMetadataSerializer metadataSerializer,
             HttpClient httpClient)
         {
-            _fileService = fileService;
+            _fileSystem = fileSystem;
             _stringFormatter = stringFormatter;
             _filenameSlugSelector = filenameSlugSelector;
             _metadataSerializer = metadataSerializer;
@@ -134,7 +134,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
                 _stringFormatter.Format(filenameTemplate, metadata.GetFlattenedDictionary()));
 
             using var stream = await GetFileStreamAsync(uri, requestData, cancellationToken);
-            using var fileStream = _fileService.Open(filename, FileMode.CreateNew);
+            using var fileStream = _fileSystem.File.Open(filename, FileMode.CreateNew);
 
             yield return await SaveStreamAsync(
                 stream,
@@ -249,7 +249,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
             try
             {
-                using var stream = _fileService.Open(metadataFilename, FileMode.CreateNew);
+                using var stream = _fileSystem.File.Open(metadataFilename, FileMode.CreateNew);
                 using var writer = new StreamWriter(stream);
                 _metadataSerializer.Serialize(writer, metadata);
             }

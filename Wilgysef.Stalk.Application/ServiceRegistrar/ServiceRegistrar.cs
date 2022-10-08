@@ -7,6 +7,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Quartz;
 using Quartz.Impl;
+using System.IO.Abstractions;
 using System.Reflection;
 using Wilgysef.Stalk.Application.AssemblyLoaders;
 using Wilgysef.Stalk.Application.HttpClientPolicies;
@@ -84,17 +85,22 @@ public class ServiceRegistrar
         builder.RegisterAutoMapper(true, internalAssemblies);
 
         // IdGen registration
-        builder.Register(c => new IdGenerator(new IdGen.IdGenerator(IdGeneratorId, IdGen.IdGeneratorOptions.Default)))
+        builder.Register(_ => new IdGenerator(new IdGen.IdGenerator(IdGeneratorId, IdGen.IdGeneratorOptions.Default)))
             .As<IIdGenerator<long>>()
             .SingleInstance();
 
         // Quartz registration
-        builder.Register(c => new StdSchedulerFactory())
+        builder.Register(_ => new StdSchedulerFactory())
             .As<ISchedulerFactory>()
             .SingleInstance();
         RegisterAssemblyTypes<IJob>(builder, internalAssemblies)
             .AsSelf()
             .InstancePerDependency();
+
+        // System.IO.Abstractions registration
+        builder.Register(_ => new FileSystem())
+            .As<IFileSystem>()
+            .SingleInstance();
 
         if (logger != null)
         {

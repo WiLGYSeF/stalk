@@ -3,13 +3,13 @@ using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO.Abstractions;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.FilenameSlugs;
-using Wilgysef.Stalk.Core.Shared.FileServices;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.MetadataSerializers;
 using Wilgysef.Stalk.Core.Shared.Options;
@@ -93,14 +93,14 @@ public class YouTubeDownloader : DownloaderBase
 
     private readonly ConcurrentDictionary<object, DownloadStatus> _downloadStatuses = new();
 
-    private readonly IFileService _fileService;
+    private readonly IFileSystem _fileSystem;
     private readonly IStringFormatter _stringFormatter;
     private readonly IFilenameSlugSelector _filenameSlugSelector;
     private readonly ExternalBinariesOptions _externalBinariesOptions;
     private readonly IProcessService _processService;
 
     public YouTubeDownloader(
-        IFileService fileService,
+        IFileSystem fileSystem,
         IStringFormatter stringFormatter,
         IFilenameSlugSelector filenameSlugSelector,
         IMetadataSerializer metadataSerializer,
@@ -108,13 +108,13 @@ public class YouTubeDownloader : DownloaderBase
         IProcessService processService,
         HttpClient httpClient)
         : base(
-            fileService,
+            fileSystem,
             stringFormatter,
             filenameSlugSelector,
             metadataSerializer,
             httpClient)
     {
-        _fileService = fileService;
+        _fileSystem = fileSystem;
         _stringFormatter = stringFormatter;
         _filenameSlugSelector = filenameSlugSelector;
         _externalBinariesOptions = externalBinariesOptions;
@@ -226,7 +226,7 @@ public class YouTubeDownloader : DownloaderBase
             {
                 try
                 {
-                    using var stream = _fileService.Open(status.MetadataFilename, FileMode.Open);
+                    using var stream = _fileSystem.File.Open(status.MetadataFilename, FileMode.Open);
                     using var reader = new StreamReader(stream);
 
                     var deserializer = new DeserializerBuilder()
@@ -235,7 +235,7 @@ public class YouTubeDownloader : DownloaderBase
                     var youtubeMetadata = deserializer.Deserialize(reader);
                     metadata["youtube"] = youtubeMetadata;
 
-                    _fileService.Delete(status.MetadataFilename);
+                    _fileSystem.File.Delete(status.MetadataFilename);
                 }
                 catch (Exception exception)
                 {
