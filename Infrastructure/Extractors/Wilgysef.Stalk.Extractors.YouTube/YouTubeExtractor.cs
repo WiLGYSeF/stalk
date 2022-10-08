@@ -83,6 +83,11 @@ public class YouTubeExtractor : IExtractor
         };
     }
 
+    public string? GetItemId(Uri uri)
+    {
+        return null;
+    }
+
     public void SetHttpClient(HttpClient client)
     {
         _httpClient = client;

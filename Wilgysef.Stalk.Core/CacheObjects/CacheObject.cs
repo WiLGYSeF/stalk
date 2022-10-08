@@ -50,6 +50,18 @@ public class CacheObject<TKey, TValue> : ICacheObject<TKey, TValue> where TKey :
         return false;
     }
 
+    public bool TryGetValueAs<T>(TKey key, out T? value)
+    {
+        if (TryGetValue(key, out var val) && val is T castVal)
+        {
+            value = castVal;
+            return true;
+        }
+
+        value = default;
+        return false;
+    }
+
     public bool ContainsKey(TKey key)
     {
         return TryGetValue(key, out _);

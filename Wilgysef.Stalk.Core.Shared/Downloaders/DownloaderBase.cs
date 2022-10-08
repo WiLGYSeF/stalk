@@ -65,6 +65,12 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             DownloadRequestData? requestData = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
+            metadata.TryAddValueByParts(filenameTemplate, MetadataObjectConsts.File.FilenameTemplateKeys);
+            metadata.TryAddValueByParts(metadataFilenameTemplate, MetadataObjectConsts.MetadataFilenameTemplateKeys);
+            metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdKeys);
+            metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdSeqKeys);
+            metadata.TryAddValueByParts(uri.ToString(), MetadataObjectConsts.Origin.UriKeys);
+
             await foreach (var downloadFileResult in SaveFileAsync(
                 uri,
                 filenameTemplate,
@@ -73,11 +79,6 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
                 cancellationToken))
             {
                 var resultMetadata = metadata.Copy();
-                resultMetadata.TryAddValueByParts(filenameTemplate, MetadataObjectConsts.File.FilenameTemplateKeys);
-                resultMetadata.TryAddValueByParts(metadataFilenameTemplate, MetadataObjectConsts.MetadataFilenameTemplateKeys);
-                resultMetadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdKeys);
-                resultMetadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdSeqKeys);
-                resultMetadata.TryAddValueByParts(uri.ToString(), MetadataObjectConsts.Origin.UriKeys);
                 resultMetadata.TryAddValueByParts(DateTimeOffset.Now.ToString(), MetadataObjectConsts.RetrievedKeys);
 
                 resultMetadata.TryAddValueByParts(downloadFileResult.FileSize, MetadataObjectConsts.File.SizeKeys);
@@ -92,7 +93,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
                 {
                     metadataFilename = await SaveMetadataAsync(
                         metadataFilenameTemplate,
-                        resultMetadata.GetFlattenedDictionary(),
+                        resultMetadata,
                         cancellationToken);
                 }
                 else
@@ -132,6 +133,8 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
             var filename = filenameSlug.SlugifyPath(
                 _stringFormatter.Format(filenameTemplate, metadata.GetFlattenedDictionary()));
+
+            CreateDirectoriesFromFilename(filename);
 
             using var stream = await GetFileStreamAsync(uri, requestData, cancellationToken);
             using var fileStream = _fileSystem.File.Open(filename, FileMode.CreateNew);
@@ -235,7 +238,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// <returns>Metadata filename.</returns>
         protected virtual Task<string?> SaveMetadataAsync(
             string? metadataFilenameTemplate,
-            IDictionary<string, object?> metadata,
+            IMetadataObject metadata,
             CancellationToken cancellationToken = default)
         {
             if (metadataFilenameTemplate == null)
@@ -245,13 +248,15 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
             var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
             var metadataFilename = filenameSlug.SlugifyPath(
-                _stringFormatter.Format(metadataFilenameTemplate, metadata));
+                _stringFormatter.Format(metadataFilenameTemplate, metadata.GetFlattenedDictionary()));
+
+            CreateDirectoriesFromFilename(metadataFilename);
 
             try
             {
                 using var stream = _fileSystem.File.Open(metadataFilename, FileMode.CreateNew);
                 using var writer = new StreamWriter(stream);
-                _metadataSerializer.Serialize(writer, metadata);
+                _metadataSerializer.Serialize(writer, metadata.GetDictionary());
             }
             catch (IOException exception)
             {
@@ -259,6 +264,15 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             }
 
             return Task.FromResult<string?>(metadataFilename);
+        }
+
+        private void CreateDirectoriesFromFilename(string filename)
+        {
+            var dirname = Path.GetDirectoryName(filename);
+            if (!string.IsNullOrEmpty(dirname))
+            {
+                _fileSystem.Directory.CreateDirectory(dirname);
+            }
         }
 
         private const string HexAlphabet = "0123456789abcdef";

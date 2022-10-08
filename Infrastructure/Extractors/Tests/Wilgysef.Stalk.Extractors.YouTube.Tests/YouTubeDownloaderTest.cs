@@ -96,4 +96,12 @@ public class YouTubeDownloaderTest : BaseTest
         var videoResult = results.Single(r => r.Path.EndsWith(".webm"));
         videoResult.Metadata!.Contains("youtube").ShouldBeFalse();
     }
+
+    [Theory]
+    [InlineData("https://www.youtube.com/watch?v=2SVDVhzzzSY", true)]
+    [InlineData("https://youtube.com/watch?v=2SVDVhzzzSY", true)]
+    public void Can_Download(string uri, bool expected)
+    {
+        _youTubeDownloader.CanDownload(new Uri(uri)).ShouldBe(expected);
+    }
 }

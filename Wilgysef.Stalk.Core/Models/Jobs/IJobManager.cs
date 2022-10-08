@@ -68,6 +68,14 @@ public interface IJobManager
     Task<Job> UpdateJobAsync(Job job, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Updates jobs.
+    /// </summary>
+    /// <param name="jobs">Jobs.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    Task UpdateJobsAsync(IEnumerable<Job> jobs, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Deletes job.
     /// </summary>
     /// <param name="job">Job.</param>

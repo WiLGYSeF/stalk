@@ -148,6 +148,12 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         void From(IDictionary<object, object?> dictionary);
 
         /// <summary>
+        /// Sets keys and values from the keys and values of an <see cref="IDictionary{TKey, TValue}"/>.
+        /// </summary>
+        /// <param name="dictionary">Dictionary.</param>
+        void From(IDictionary<string, object?> dictionary);
+
+        /// <summary>
         /// Gets the key from key parts.
         /// </summary>
         /// <param name="keyParts">Key parts.</param>

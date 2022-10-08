@@ -322,12 +322,7 @@ public class JobTask : Entity
             return new MetadataObject(MetadataKeySeparator);
         }
 
-        var metadataDictionary = JsonUtils.TryDeserialize<IDictionary<object, object?>>(
-            MetadataJson,
-            new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true,
-            });
+        var metadataDictionary = JsonUtils.TryDeserializeObject(MetadataJson);
         if (metadataDictionary == null)
         {
             throw new InvalidOperationException("Metadata must be a dictionary.");

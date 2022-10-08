@@ -87,7 +87,7 @@ public class JobTaskWorker : IJobTaskWorker
                 JobTask.Fail(
                     errorCode: workerException?.Code,
                     errorMessage: exception.Message,
-                    errorDetail: workerException?.Details ?? exception.ToString());
+                    errorDetail: exception.ToString());
             }
         }
         finally
@@ -117,8 +117,7 @@ public class JobTaskWorker : IJobTaskWorker
         {
             throw new JobTaskWorkerException(
                 StalkErrorCodes.JobTaskWorkerNoExtractor,
-                "No extractor found.",
-                $"No extractor was able to extract from {jobTaskUri}");
+                $"No extractor found to extract from {jobTaskUri}");
         }
 
         var extractorConfig = JobConfig.GetExtractorConfig(extractor);
@@ -130,34 +129,48 @@ public class JobTaskWorker : IJobTaskWorker
         extractor.Cache = extractorCacheObjectCollectionService.GetCache(extractor);
         extractor.Config = extractorConfig;
 
-        Logger?.LogInformation("Job task {JobTaskId} using extractor {Extractor}.", JobTask.Id, extractor.Name);
-
         var idGenerator = scope.GetRequiredService<IIdGenerator<long>>();
         var itemIdSetService = scope.GetRequiredService<IItemIdSetService>();
         var newTasks = new List<JobTask>();
         IItemIdSet? itemIds = null;
 
-        Logger?.LogInformation("Job task {JobTaskId} extracting from {Uri}", JobTask.Id, jobTaskUri);
+        Logger?.LogInformation("Job task {JobTaskId} extracting with {Extractor} from {Uri}", JobTask.Id, extractor.Name, jobTaskUri);
 
         if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
         {
             itemIds = await itemIdSetService.GetItemIdSetAsync(JobConfig.ItemIdPath, JobTask.JobId);
-            if (JobTask.ItemId != null && itemIds.Contains(JobTask.ItemId))
+            var itemId = JobTask.ItemId ?? extractor.GetItemId(jobTaskUri);
+            if (itemId != null && itemIds.Contains(itemId))
             {
-                Logger?.LogInformation("Job task {JobTaskId} skipping item {ItemId} from {Uri}", JobTask.Id, JobTask.ItemId, jobTaskUri);
+                Logger?.LogInformation("Job task {JobTaskId} skipping item {ItemId} from {Uri}", JobTask.Id, itemId, jobTaskUri);
                 return;
             }
         }
 
+        var resultsCount = 0;
+        var resultsSkipped = 0;
+
         await foreach (var result in extractor.ExtractAsync(jobTaskUri, JobTask.ItemData, JobTask.GetMetadata(), cancellationToken))
         {
+            resultsCount++;
+
             if (itemIds != null && result.ItemId != null && itemIds.Contains(result.ItemId))
             {
-                Logger?.LogInformation("Job task {JobTaskId} skipping item {ItemId} from {Uri}", JobTask.Id, JobTask.ItemId, jobTaskUri);
+                Logger?.LogInformation("Job task {JobTaskId} skipping item {ItemId} from {Uri}", JobTask.Id, result.ItemId, jobTaskUri);
+                resultsSkipped++;
                 continue;
             }
 
             Logger?.LogInformation("Job task {JobTaskId} extracted {Uri}", JobTask.Id, result.Uri);
+            Logger?.LogDebug("Job task {JobTaskId} extracted {Uri}: {@Result}", JobTask.Id, result.Uri, new
+            {
+                result.ItemId,
+                result.Type,
+                result.Priority,
+                result.Name,
+                result.ItemData,
+                result.DownloadRequestData,
+            });
 
             var jobTaskBuilder = new JobTaskBuilder()
                 .WithExtractResult(JobTask, result)
@@ -175,7 +188,10 @@ public class JobTaskWorker : IJobTaskWorker
                     JobConfig.Delay.TaskDelay.Max)));
             }
 
-            newTasks.Add(jobTaskBuilder.Create());
+            var newTask = jobTaskBuilder.Create();
+
+            Logger?.LogInformation("Job task {JobTaskId} adding new job task {NewJobTaskId}", JobTask.Id, newTask.Id);
+            newTasks.Add(newTask);
         }
 
         if (!JobConfig.StopWithNoNewItemIds || newTasks.Any(t => t.ItemId != null))
@@ -183,9 +199,9 @@ public class JobTaskWorker : IJobTaskWorker
             var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
             await jobTaskManager.CreateJobTasksAsync(newTasks, CancellationToken.None);
         }
-        else if (newTasks.Count > 0)
+        else if (resultsSkipped > 0)
         {
-            Logger?.LogInformation("Job task {JobTaskId} skipped {JobTasksCount} since they had no item Ids,", JobTask.Id, newTasks.Count);
+            Logger?.LogInformation("Job task {JobTaskId} skipped {ResultsSkipped} since they had no item Ids,", JobTask.Id, resultsSkipped);
         }
     }
 
@@ -212,11 +228,9 @@ public class JobTaskWorker : IJobTaskWorker
             throw new JobTaskWorkerException("No download filename template given.");
         }
 
-        // TODO: HttpClient?
+        // TODO: HttpClient, user agent
         //downloader.SetHttpClient(_httpClient);
         downloader.Config = JobConfig.GetDownloaderConfig(downloader);
-
-        Logger?.LogInformation("Job task {JobTaskId} using downloader {Downloader}.", JobTask.Id, downloader.Name);
 
         IItemIdSet? itemIds = null;
         if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
@@ -229,7 +243,7 @@ public class JobTaskWorker : IJobTaskWorker
             }
         }
 
-        Logger?.LogInformation("Job task {JobTaskId} downloading from {Uri}", JobTask.Id, jobTaskUri);
+        Logger?.LogInformation("Job task {JobTaskId} downloading with {Downloader} from {Uri}", JobTask.Id, downloader.Name, jobTaskUri);
 
         await foreach (var result in downloader.DownloadAsync(
             jobTaskUri,
@@ -240,7 +254,12 @@ public class JobTaskWorker : IJobTaskWorker
             requestData: JobTask.DownloadRequestData,
             cancellationToken: cancellationToken))
         {
-            Logger?.LogInformation("Job task {JobTaskId} downloaded {Uri}", JobTask.Id, result.Uri);
+            Logger?.LogInformation("Job task {JobTaskId} downloaded {Uri} to {Path}", JobTask.Id, result.Uri, result.Path);
+            Logger?.LogInformation("Job task {JobTaskId} downloaded {Uri}: {@Result}", JobTask.Id, result.Uri, new
+            {
+                result.ItemId,
+                result.MetadataPath,
+            });
 
             if (result.ItemId != null)
             {
@@ -261,8 +280,6 @@ public class JobTaskWorker : IJobTaskWorker
             return null;
         }
 
-        Logger?.LogInformation("Job task {JobTaskId} creating retry task.", JobTask.Id);
-
         try
         {
             using var scope = _lifetimeScope.BeginLifetimeScope();
@@ -270,6 +287,7 @@ public class JobTaskWorker : IJobTaskWorker
             var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
 
             var retryTask = CreateRetryJobTask(idGenerator.CreateId(), tooManyRequests);
+            Logger?.LogInformation("Job task {JobTaskId} creating retry task {RetryJobTaskId}.", JobTask.Id, retryTask.Id);
 
             await jobTaskManager.CreateJobTaskAsync(retryTask, CancellationToken.None);
             return retryTask;

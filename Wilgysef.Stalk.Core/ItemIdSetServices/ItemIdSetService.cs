@@ -28,6 +28,8 @@ public class ItemIdSetService : IItemIdSetService, ITransientDependency
             itemIds = new ItemIdSet();
             try
             {
+                CreateDirectoriesFromFilename(path);
+
                 using var stream = _fileSystem.File.Open(path, FileMode.Open);
                 using var reader = new StreamReader(stream);
 
@@ -73,5 +75,14 @@ public class ItemIdSetService : IItemIdSetService, ITransientDependency
         }
 
         return Task.FromResult(itemIds.ResetChangeTracking());
+    }
+
+    private void CreateDirectoriesFromFilename(string filename)
+    {
+        var dirname = Path.GetDirectoryName(filename);
+        if (!string.IsNullOrEmpty(dirname))
+        {
+            _fileSystem.Directory.CreateDirectory(dirname);
+        }
     }
 }

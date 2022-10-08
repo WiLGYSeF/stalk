@@ -36,6 +36,6 @@ public class DataDownloader : DownloaderBase
     {
         var absoluteUri = uri.AbsoluteUri;
         var base64Index = absoluteUri.IndexOf("base64,");
-        return Task.FromResult<Stream>(new MemoryStream(Convert.FromBase64String(absoluteUri.Substring(base64Index + "base64,".Length))));
+        return Task.FromResult<Stream>(new MemoryStream(Convert.FromBase64String(absoluteUri[(base64Index + "base64,".Length)..])));
     }
 }

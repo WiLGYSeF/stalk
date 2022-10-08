@@ -344,6 +344,11 @@ public class Job : Entity
         {
             throw new InvalidOperationException($"{nameof(ConfigJson)} is not valid config.");
         }
+
+        // deserializer marks these null when not present
+        config.Delay ??= new();
+        config.ExtractorConfig ??= new();
+        config.DownloaderConfig ??= new();
         return config;
     }
 

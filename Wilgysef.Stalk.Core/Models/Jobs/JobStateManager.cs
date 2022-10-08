@@ -1,5 +1,4 @@
-﻿using Wilgysef.Stalk.Core.JobTaskWorkerServices;
-using Wilgysef.Stalk.Core.JobWorkerServices;
+﻿using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
@@ -9,17 +8,17 @@ namespace Wilgysef.Stalk.Core.Models.Jobs;
 public class JobStateManager : IJobStateManager, ITransientDependency
 {
     private readonly IJobManager _jobManager;
+    private readonly IJobRepository _jobRepository;
     private readonly IJobWorkerService _jobWorkerService;
-    private readonly IJobTaskWorkerService _jobTaskWorkerService;
 
     public JobStateManager(
         IJobManager jobManager,
-        IJobWorkerService jobWorkerService,
-        IJobTaskWorkerService jobTaskWorkerService)
+        IJobRepository jobRepository,
+        IJobWorkerService jobWorkerService)
     {
         _jobManager = jobManager;
+        _jobRepository = jobRepository;
         _jobWorkerService = jobWorkerService;
-        _jobTaskWorkerService = jobTaskWorkerService;
     }
 
     public async Task StopJobAsync(Job job)
@@ -56,6 +55,7 @@ public class JobStateManager : IJobStateManager, ITransientDependency
     public async Task PauseJobAsync(Job job)
     {
         await PauseJobAsync(job, true);
+        await _jobManager.UpdateJobAsync(job);
     }
 
     public async Task UnpauseJobAsync(Job job)
@@ -73,6 +73,18 @@ public class JobStateManager : IJobStateManager, ITransientDependency
         await _jobManager.UpdateJobAsync(job);
     }
 
+    public async Task PauseJobsAsync()
+    {
+        var jobs = await _jobManager.GetJobsAsync();
+
+        foreach (var job in jobs)
+        {
+            await PauseJobAsync(job, true);
+        }
+
+        await _jobManager.UpdateJobsAsync(jobs);
+    }
+
     private async Task PauseJobAsync(Job job, bool changeState)
     {
         if (job.IsDone || job.IsTransitioning)
@@ -87,7 +99,7 @@ public class JobStateManager : IJobStateManager, ITransientDependency
             if (changeState)
             {
                 job.ChangeState(JobState.Pausing);
-                await _jobManager.UpdateJobAsync(job);
+                _jobRepository.Update(job);
             }
 
             await _jobWorkerService.StopJobWorkerAsync(job);
@@ -104,7 +116,7 @@ public class JobStateManager : IJobStateManager, ITransientDependency
                 }
             }
 
-            await _jobManager.UpdateJobAsync(job);
+            _jobRepository.Update(job);
         }
     }
 }

@@ -17,6 +17,12 @@ public interface IJobStateManager
     Task PauseJobAsync(Job job);
 
     /// <summary>
+    /// Pauses all jobs.
+    /// </summary>
+    /// <returns></returns>
+    Task PauseJobsAsync();
+
+    /// <summary>
     /// Unpauses paused job.
     /// </summary>
     /// <param name="job">Job.</param>

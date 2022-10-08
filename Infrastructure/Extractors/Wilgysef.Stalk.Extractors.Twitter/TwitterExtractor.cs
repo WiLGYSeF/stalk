@@ -28,7 +28,7 @@ public class TwitterExtractor : IExtractor
 
     private const string AuthorizationHeader = "Authorization";
 
-    private const string UserIdCacheKey = "UserId";
+    private const string UserIdCacheKey = "UserIds";
     private const string GuestTokenCacheKey = "GuestToken";
 
     private static readonly Dictionary<string, int> Month3Letters = new()
@@ -83,6 +83,25 @@ public class TwitterExtractor : IExtractor
             ExtractType.Tweet => ExtractTweetAsync(uri, itemData, metadata, cancellationToken),
             _ => throw new ArgumentException("Cannot extract URI.", nameof(uri)),
         };
+    }
+
+    public string? GetItemId(Uri uri)
+    {
+        var match = UriRegex.Match(uri.AbsoluteUri);
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        var user = match.Groups["user"];
+        var tweet = match.Groups["tweet"];
+        if (!tweet.Success)
+        {
+            return null;
+        }
+
+        var userId = GetUserIdFromCache(user.Value);
+        return userId != null ? $"{userId}#{tweet.Value}" : null;
     }
 
     public void SetHttpClient(HttpClient client)
@@ -370,9 +389,21 @@ public class TwitterExtractor : IExtractor
 
     private async Task<string> GetUserIdAsync(string userScreenName, CancellationToken cancellationToken)
     {
-        if (Cache?.TryGetValue(UserIdCacheKey, out var userIdObj) ?? false)
+        IDictionary<string, string>? userIds = null;
+        if (Cache != null)
         {
-            return (string)userIdObj!;
+            if (Cache.TryGetValueAs(UserIdCacheKey, out userIds))
+            {
+                if (userIds?.TryGetValue(userScreenName, out var userIdResult) ?? false)
+                {
+                    return userIdResult;
+                }
+            }
+            else
+            {
+                userIds = new Dictionary<string, string>();
+                Cache.Set(UserIdCacheKey, userIds);
+            }
         }
 
         var variables = JsonSerializer.Serialize(new
@@ -394,16 +425,33 @@ public class TwitterExtractor : IExtractor
         var jObject = JObject.Parse(data);
 
         var userId = jObject.SelectToken("$.data.user.result.rest_id")!.ToString();
-        Cache?.Set(UserIdCacheKey, userId);
+        if (userIds != null)
+        {
+            userIds[userScreenName] = userId;
+        }
         return userId;
+    }
+
+    private string? GetUserIdFromCache(string userScreenName)
+    {
+        if (Cache?.TryGetValueAs<IDictionary<string, string>>(UserIdCacheKey, out var userIds) ?? false)
+        {
+            if (userIds?.TryGetValue(userScreenName, out var userIdResult) ?? false)
+            {
+                return userIdResult;
+            }
+        }
+        return null;
     }
 
     private async Task<string> GetGuestTokenAsync(CancellationToken cancellationToken)
     {
-        if (Cache?.TryGetValue(GuestTokenCacheKey, out var guestTokenObj) ?? false)
+        if (Cache?.TryGetValueAs<string>(GuestTokenCacheKey, out var guestTokenObj) ?? false)
         {
-            return (string)guestTokenObj!;
+            return guestTokenObj!;
         }
+
+        Logger?.LogDebug("Twitter: Getting guest token");
 
         using var request = new HttpRequestMessage(HttpMethod.Post, GuestTokenEndpoint);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", DefaultAuthenticationBearerToken);

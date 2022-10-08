@@ -1,4 +1,5 @@
-﻿using Wilgysef.Stalk.Core.BackgroundJobs.Args;
+﻿using Microsoft.Extensions.Logging;
+using Wilgysef.Stalk.Core.BackgroundJobs.Args;
 using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 
@@ -6,6 +7,8 @@ namespace Wilgysef.Stalk.Core.BackgroundJobs.Executors;
 
 public class WorkPrioritizedJobsJob : BackgroundJobHandler<WorkPrioritizedJobsArgs>
 {
+    public ILogger? Logger { get; set; }
+
     private readonly IJobManager _jobManager;
     private readonly IJobWorkerService _jobWorkerService;
 

@@ -139,6 +139,8 @@ public class YouTubeDownloader : DownloaderBase
         var filename = filenameSlug.SlugifyPath(
             _stringFormatter.Format(filenameTemplate, metadata.GetFlattenedDictionary()));
 
+        CreateDirectoriesFromFilename(filename);
+
         if (!Config.TryGetValue(ConfigExeName, out var exeName))
         {
             exeName = YouTubeDlDefaultExeNames;
@@ -359,6 +361,15 @@ public class YouTubeDownloader : DownloaderBase
     private string GetFullPath(IProcess process, string path)
     {
         return Path.GetFullPath(Path.Combine(process.StartInfo.WorkingDirectory, path));
+    }
+
+    private void CreateDirectoriesFromFilename(string filename)
+    {
+        var dirname = Path.GetDirectoryName(filename);
+        if (!string.IsNullOrEmpty(dirname))
+        {
+            _fileSystem.Directory.CreateDirectory(dirname);
+        }
     }
 
     private static long? SizeToBytes(string size)
