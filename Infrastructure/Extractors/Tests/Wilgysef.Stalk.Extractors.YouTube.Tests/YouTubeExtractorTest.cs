@@ -267,12 +267,12 @@ public class YouTubeExtractorTest : BaseTest
         {
             cookies["YSC"] = "_wwCnBu9guc";
             cookies["VISITOR_INFO1_LIVE"] = "MHllVv46iSU";
-            _youTubeExtractor.Config.Add(YouTubeExtractorConfig.CookiesKey, cookies.Select(p => $"{p.Key}={p.Value}"));
+            _youTubeExtractor.Config[YouTubeExtractorConfig.CookiesKey] = cookies.Select(p => $"{p.Key}={p.Value}");
         }
         else
         {
             cookies["VISITOR_INFO1_LIVE"] = "MHllVv46iSU";
-            _youTubeExtractor.Config.Add(YouTubeExtractorConfig.CookiesKey, cookies.Select(p => $"{p.Key}={p.Value}").Single());
+            _youTubeExtractor.Config[YouTubeExtractorConfig.CookiesKey] = cookies.Select(p => $"{p.Key}={p.Value}").Single();
         }
 
         var results = await _youTubeExtractor.ExtractAsync(
@@ -292,7 +292,7 @@ public class YouTubeExtractorTest : BaseTest
     [Fact]
     public async Task Config_NoWebpThumbnail()
     {
-        _youTubeExtractor.Config.Add(YouTubeExtractorConfig.UseWebpThumbnailsKey, false);
+        _youTubeExtractor.Config[YouTubeExtractorConfig.UseWebpThumbnailsKey] = false;
 
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/watch?v=_BSSJi-sHh8"),

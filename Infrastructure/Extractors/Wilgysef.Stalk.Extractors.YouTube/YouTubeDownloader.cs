@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -23,57 +22,6 @@ public class YouTubeDownloader : DownloaderBase
 {
     public override string Name => "YouTube";
 
-    /// <summary>
-    /// <c>-R</c>, <c>--retries</c>
-    /// </summary>
-    public int Retries { get; set; } = 10;
-
-    /// <summary>
-    /// <c>--file-access-retries</c>
-    /// </summary>
-    public int FileAccessRetries { get; set; } = 3;
-
-    /// <summary>
-    /// <c>--fragment-retries</c>
-    /// </summary>
-    public int FragmentRetries { get; set; } = 10;
-
-    /// <summary>
-    /// <c>--retry-sleep</c>
-    /// </summary>
-    public List<string> RetrySleep { get; set; } = new();
-
-    /// <summary>
-    /// <c>--buffer-size</c>
-    /// </summary>
-    public int BufferSize
-    {
-        get => _bufferSize;
-        set
-        {
-            if (value <= 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(BufferSize), "Buffer size must be greater than zero.");
-            }
-            _bufferSize = value;
-        }
-    }
-    private int _bufferSize = 1024;
-
-    /// <summary>
-    /// <c>--write-info-json</c>
-    /// </summary>
-    public bool WriteInfoJson { get; set; } = true;
-
-    /// <summary>
-    /// <c>--write-subs</c>
-    /// </summary>
-    public bool WriteSubs { get; set; } = true;
-
-    public bool MoveInfoJsonToMetadata { get; set; } = false;
-
-    private const string ConfigExeName = "executableName";
-
     private static readonly string[] YouTubeDlDefaultExeNames = new string[]
     {
         "youtube-dl.exe",
@@ -91,6 +39,8 @@ public class YouTubeDownloader : DownloaderBase
     private static readonly Regex SizeRegex = new(@"^(?<amount>[0-9.]+)(?<size>(?:[KMG]i?)?B)(?:/s)?$", RegexOptions.Compiled);
 
     private readonly ConcurrentDictionary<int, DownloadStatus> _downloadStatuses = new();
+
+    private YouTubeDownloaderConfig _config = new();
 
     private readonly IFileSystem _fileSystem;
     private readonly IStringFormatter _stringFormatter;
@@ -132,7 +82,7 @@ public class YouTubeDownloader : DownloaderBase
         DownloadRequestData? requestData = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        // TODO: --cookies FILE
+        _config = new(Config);
 
         var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
         var filename = filenameSlug.SlugifyPath(
@@ -140,14 +90,7 @@ public class YouTubeDownloader : DownloaderBase
 
         CreateDirectoriesFromFilename(filename);
 
-        if (!Config.TryGetValue(ConfigExeName, out var exeName))
-        {
-            exeName = YouTubeDlDefaultExeNames;
-        }
-
-        var youtubeDlFilename = Path.Combine(_externalBinariesOptions.Path, exeName.ToString());
-
-        var processStartInfo = new ProcessStartInfo(youtubeDlFilename)
+        var processStartInfo = new ProcessStartInfo()
         {
             CreateNoWindow = true,
             RedirectStandardOutput = true,
@@ -157,33 +100,39 @@ public class YouTubeDownloader : DownloaderBase
         };
 
         processStartInfo.ArgumentList.Add("--retries");
-        processStartInfo.ArgumentList.Add(Retries.ToString());
+        processStartInfo.ArgumentList.Add(_config.Retries.ToString());
 
         processStartInfo.ArgumentList.Add("--file-access-retries");
-        processStartInfo.ArgumentList.Add(FileAccessRetries.ToString());
+        processStartInfo.ArgumentList.Add(_config.FileAccessRetries.ToString());
 
         processStartInfo.ArgumentList.Add("--fragment-retries");
-        processStartInfo.ArgumentList.Add(FragmentRetries.ToString());
+        processStartInfo.ArgumentList.Add(_config.FragmentRetries.ToString());
 
-        foreach (var retry in RetrySleep)
+        foreach (var retry in _config.RetrySleep)
         {
             processStartInfo.ArgumentList.Add("--retry-sleep");
             processStartInfo.ArgumentList.Add(retry);
         }
 
         processStartInfo.ArgumentList.Add("--buffer-size");
-        processStartInfo.ArgumentList.Add(BufferSize.ToString());
+        processStartInfo.ArgumentList.Add(_config.BufferSize.ToString());
 
         processStartInfo.ArgumentList.Add("--progress");
         processStartInfo.ArgumentList.Add("--newline");
 
-        if (WriteInfoJson)
+        if (_config.WriteInfoJson)
         {
             processStartInfo.ArgumentList.Add("--write-info-json");
         }
-        if (WriteSubs)
+        if (_config.WriteSubs)
         {
             processStartInfo.ArgumentList.Add("--write-subs");
+        }
+
+        if (_config.CookieString != null)
+        {
+            processStartInfo.ArgumentList.Add("--add-header");
+            processStartInfo.ArgumentList.Add($"Cookie:{_config.CookieString}");
         }
 
         processStartInfo.ArgumentList.Add("--output");
@@ -237,7 +186,7 @@ public class YouTubeDownloader : DownloaderBase
 
         if (status.MetadataFilename != null)
         {
-            if (MoveInfoJsonToMetadata)
+            if (_config.MoveInfoJsonToMetadata)
             {
                 try
                 {
@@ -282,21 +231,21 @@ public class YouTubeDownloader : DownloaderBase
     private IProcess FindAndStartProcess(ProcessStartInfo startInfo)
     {
         var combineExternalBinaryPath = _externalBinariesOptions.Path != null && _externalBinariesOptions.Path.Length > 0;
-        if (!Config.TryGetValue(ConfigExeName, out var exeName))
+        if (_config.ExecutableName != null)
         {
-            foreach (var possibleName in YouTubeDlDefaultExeNames)
-            {
-                try
-                {
-                    return StartProcess(possibleName);
-                }
-                catch (Win32Exception) { }
-            }
-
-            throw new InvalidOperationException("Could not start youtube-dl.");
+            return StartProcess(_config.ExecutableName.ToString());
         }
 
-        return StartProcess(exeName!.ToString()!);
+        foreach (var possibleName in YouTubeDlDefaultExeNames)
+        {
+            try
+            {
+                return StartProcess(possibleName);
+            }
+            catch (Win32Exception) { }
+        }
+
+        throw new InvalidOperationException("Could not start youtube-dl.");
 
         IProcess StartProcess(string executableName)
         {
@@ -323,7 +272,7 @@ public class YouTubeDownloader : DownloaderBase
             // sender could either be a Process or IProcess :(
             dynamic senderProcess = sender;
             int processId = senderProcess.Id;
-            if (!_downloadStatuses.TryGetValue(processId, out downloadStatus))
+            if (!_downloadStatuses.TryGetValue(processId, out downloadStatus!))
             {
                 Logger?.LogError("YouTube: Could not get download status object from process Id {ProcessId}.", processId);
                 return;

@@ -3,14 +3,14 @@ using Wilgysef.Stalk.Core.Shared.Extensions;
 
 namespace Wilgysef.Stalk.Extractors.YouTube;
 
-public class YouTubeExtractorConfig
+public class YouTubeExtractorConfig : YouTubeConfig
 {
-    public static string CookiesKey = "cookies";
-    public static string UseWebpThumbnailsKey = "useWebpThumbnails";
+    public static readonly string CookiesKey = "cookies";
+    public static readonly string UseWebpThumbnailsKey = "useWebpThumbnails";
 
-    public string? CookieString { get; }
+    public string? CookieString { get; set; }
 
-    public bool UseWebpThumbnails { get; } = true;
+    public bool UseWebpThumbnails { get; set; } = true;
 
     public YouTubeExtractorConfig() { }
 
@@ -29,22 +29,5 @@ public class YouTubeExtractorConfig
         {
             UseWebpThumbnails = useWebpThumbnails;
         }
-    }
-
-    private static string GetCookieString(IEnumerable<string> cookies)
-    {
-        var builder = new StringBuilder();
-
-        foreach (var cookie in cookies)
-        {
-            builder.Append(cookie.TrimEnd(';', ' '));
-            builder.Append("; ");
-        }
-
-        if (builder.Length != 0)
-        {
-            builder.Remove(builder.Length - 2, 2);
-        }
-        return builder.ToString();
     }
 }

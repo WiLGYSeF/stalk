@@ -64,7 +64,7 @@ public class YouTubeDownloaderTest : BaseTest
     [Fact]
     public async Task Download_With_Subtitle_Combined_InfoMetaData()
     {
-        _youTubeDownloader.MoveInfoJsonToMetadata = true;
+        _youTubeDownloader.Config[YouTubeDownloaderConfig.MoveInfoJsonToMetadataKey] = true;
 
         var results = await _youTubeDownloader.DownloadAsync(
             new Uri("https://www.youtube.com/watch?v=2SVDVhzzzSY"),
@@ -82,7 +82,7 @@ public class YouTubeDownloaderTest : BaseTest
     [Fact]
     public async Task Download_With_Subtitle_Separate_InfoMetadata()
     {
-        _youTubeDownloader.MoveInfoJsonToMetadata = false;
+        _youTubeDownloader.Config[YouTubeDownloaderConfig.MoveInfoJsonToMetadataKey] = false;
 
         var results = await _youTubeDownloader.DownloadAsync(
             new Uri("https://www.youtube.com/watch?v=2SVDVhzzzSY"),
@@ -96,6 +96,49 @@ public class YouTubeDownloaderTest : BaseTest
         var metadataResult = results.Single(r => r.Path.EndsWith(".info.json"));
         var videoResult = results.Single(r => r.Path.EndsWith(".webm"));
         videoResult.Metadata!.Contains("youtube").ShouldBeFalse();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Download_With_Cookies(bool multipleCookies)
+    {
+        var cookies = new Dictionary<string, string>();
+        if (multipleCookies)
+        {
+            cookies["YSC"] = "_wwCnBu9guc";
+            cookies["VISITOR_INFO1_LIVE"] = "MHllVv46iSU";
+            _youTubeDownloader.Config[YouTubeDownloaderConfig.CookiesKey] = cookies.Select(p => $"{p.Key}={p.Value}");
+        }
+        else
+        {
+            cookies["VISITOR_INFO1_LIVE"] = "MHllVv46iSU";
+            _youTubeDownloader.Config[YouTubeDownloaderConfig.CookiesKey] = cookies.Select(p => $"{p.Key}={p.Value}").Single();
+        }
+
+        var results = await _youTubeDownloader.DownloadAsync(
+            new Uri("https://www.youtube.com/watch?v=2SVDVhzzzSY"),
+            "test.%(ext)s",
+            "itemId",
+            "meta.txt",
+            new MetadataObject('.')).ToListAsync();
+
+        var process = _processService.Processes.Single();
+
+        using var enumerator = process.StartInfo.ArgumentList.GetEnumerator();
+        string? cookieHeader = null;
+
+        while (enumerator.MoveNext())
+        {
+            if (enumerator.Current == "--add-header")
+            {
+                enumerator.MoveNext();
+                cookieHeader = enumerator.Current;
+                break;
+            }
+        }
+
+        cookieHeader.ShouldBe("Cookie:" + string.Join("; ", cookies.Select(p => $"{p.Key}={p.Value}")));
     }
 
     [Theory]
