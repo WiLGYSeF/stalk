@@ -1,0 +1,114 @@
+﻿[youtube] 2SVDVhzzzSY: Downloading webpage
+[youtube] 2SVDVhzzzSY: Downloading android player API JSON
+[info] 2SVDVhzzzSY: Downloading subtitles: ja
+[info] 2SVDVhzzzSY: Downloading 1 format(s): 303+251
+[info] Writing video subtitles to: output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.ja.vtt
+[download] Destination: output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.ja.vtt
+[download] 1.00KiB at  Unknown B/s (00:00)
+[download] 3.00KiB at    1.94MiB/s (00:00)
+[download] 3.88KiB at    1.81MiB/s (00:00)
+[download] 100% of 3.88KiB in 00:00 at 67.02KiB/s
+[info] Writing video metadata as JSON to: output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.info.json
+[download] Destination: output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.f303.webm
+[download]   0.0% of 57.42MiB at  332.30KiB/s ETA 02:56
+[download]   0.0% of 57.42MiB at  996.90KiB/s ETA 00:58
+[download]   0.0% of 57.42MiB at    2.27MiB/s ETA 00:25
+[download]   0.0% of 57.42MiB at    3.65MiB/s ETA 00:15
+[download]   0.1% of 57.42MiB at    3.16MiB/s ETA 00:18
+[download]   0.1% of 57.42MiB at    4.29MiB/s ETA 00:13
+[download]   0.2% of 57.42MiB at    5.52MiB/s ETA 00:10
+[download]   0.4% of 57.42MiB at    6.76MiB/s ETA 00:08
+[download]   0.9% of 57.42MiB at    8.72MiB/s ETA 00:06
+[download]   1.7% of 57.42MiB at    6.77MiB/s ETA 00:08
+[download]   3.5% of 57.42MiB at    9.74MiB/s ETA 00:05
+[download]   7.0% of 57.42MiB at   12.63MiB/s ETA 00:04
+[download]  13.9% of 57.42MiB at   15.32MiB/s ETA 00:03
+[download]  16.8% of 57.42MiB at   15.84MiB/s ETA 00:03
+[download]  16.8% of 57.42MiB at  Unknown B/s ETA  Unknown
+[download]  16.8% of 57.42MiB at  Unknown B/s ETA  Unknown
+[download]  16.9% of 57.42MiB at  Unknown B/s ETA  Unknown
+[download]  16.9% of 57.42MiB at   10.37MiB/s ETA 00:04
+[download]  16.9% of 57.42MiB at    4.06MiB/s ETA 00:11
+[download]  16.9% of 57.42MiB at    3.92MiB/s ETA 00:12
+[download]  17.1% of 57.42MiB at    6.23MiB/s ETA 00:07
+[download]  17.3% of 57.42MiB at    8.00MiB/s ETA 00:05
+[download]  17.7% of 57.42MiB at    9.94MiB/s ETA 00:04
+[download]  18.6% of 57.42MiB at   12.38MiB/s ETA 00:03
+[download]  20.3% of 57.42MiB at   13.57MiB/s ETA 00:03
+[download]  23.8% of 57.42MiB at   15.07MiB/s ETA 00:02
+[download]  30.8% of 57.42MiB at   16.39MiB/s ETA 00:02
+[download]  34.1% of 57.42MiB at   17.23MiB/s ETA 00:02
+[download]  34.1% of 57.42MiB at  Unknown B/s ETA  Unknown
+[download]  34.1% of 57.42MiB at  Unknown B/s ETA  Unknown
+[download]  34.1% of 57.42MiB at  Unknown B/s ETA  Unknown
+[download]  34.1% of 57.42MiB at   14.54MiB/s ETA 00:02
+[download]  34.2% of 57.42MiB at    4.66MiB/s ETA 00:08
+[download]  34.2% of 57.42MiB at    4.47MiB/s ETA 00:08
+[download]  34.3% of 57.42MiB at    6.56MiB/s ETA 00:05
+[download]  34.5% of 57.42MiB at    7.62MiB/s ETA 00:04
+[download]  35.0% of 57.42MiB at   11.08MiB/s ETA 00:03
+[download]  35.9% of 57.42MiB at   14.22MiB/s ETA 00:02
+[download]  37.6% of 57.42MiB at   17.21MiB/s ETA 00:02
+[download]  41.1% of 57.42MiB at   17.71MiB/s ETA 00:01
+[download]  48.0% of 57.42MiB at   19.33MiB/s ETA 00:01
+[download]  51.2% of 57.42MiB at   19.76MiB/s ETA 00:01
+[download]  51.2% of 57.42MiB at  417.97KiB/s ETA 01:08
+[download]  51.2% of 57.42MiB at    1.08MiB/s ETA 00:30
+[download]  51.2% of 57.42MiB at    2.12MiB/s ETA 00:13
+[download]  51.2% of 57.42MiB at    4.55MiB/s ETA 00:06
+[download]  51.3% of 57.42MiB at    2.71MiB/s ETA 00:10
+[download]  51.3% of 57.42MiB at    4.08MiB/s ETA 00:06
+[download]  51.4% of 57.42MiB at    5.19MiB/s ETA 00:05
+[download]  51.6% of 57.42MiB at    7.37MiB/s ETA 00:03
+[download]  52.1% of 57.42MiB at   10.49MiB/s ETA 00:02
+[download]  52.9% of 57.42MiB at   14.15MiB/s ETA 00:01
+[download]  54.7% of 57.42MiB at   16.80MiB/s ETA 00:01
+[download]  58.2% of 57.42MiB at   18.71MiB/s ETA 00:01
+[download]  65.1% of 57.42MiB at   19.28MiB/s ETA 00:01
+[download]  68.4% of 57.42MiB at   19.77MiB/s ETA 00:00
+[download]  68.4% of 57.42MiB at  500.10KiB/s ETA 00:37
+[download]  68.4% of 57.42MiB at    1.17MiB/s ETA 00:15
+[download]  68.4% of 57.42MiB at    2.28MiB/s ETA 00:07
+[download]  68.5% of 57.42MiB at    4.88MiB/s ETA 00:03
+[download]  68.5% of 57.42MiB at    2.76MiB/s ETA 00:06
+[download]  68.5% of 57.42MiB at    3.24MiB/s ETA 00:05
+[download]  68.6% of 57.42MiB at    4.59MiB/s ETA 00:03
+[download]  68.9% of 57.42MiB at    6.54MiB/s ETA 00:02
+[download]  69.3% of 57.42MiB at    9.45MiB/s ETA 00:01
+[download]  70.2% of 57.42MiB at   13.01MiB/s ETA 00:01
+[download]  71.9% of 57.42MiB at   15.92MiB/s ETA 00:01
+[download]  75.4% of 57.42MiB at   18.22MiB/s ETA 00:00
+[download]  82.4% of 57.42MiB at   19.64MiB/s ETA 00:00
+[download]  85.1% of 57.42MiB at   20.06MiB/s ETA 00:00
+[download]  85.1% of 57.42MiB at  728.94KiB/s ETA 00:12
+[download]  85.1% of 57.42MiB at    2.05MiB/s ETA 00:04
+[download]  85.1% of 57.42MiB at    3.55MiB/s ETA 00:02
+[download]  85.1% of 57.42MiB at    7.60MiB/s ETA 00:01
+[download]  85.1% of 57.42MiB at    3.39MiB/s ETA 00:02
+[download]  85.2% of 57.42MiB at    4.42MiB/s ETA 00:01
+[download]  85.3% of 57.42MiB at    5.22MiB/s ETA 00:01
+[download]  85.5% of 57.42MiB at    7.87MiB/s ETA 00:01
+[download]  86.0% of 57.42MiB at   11.03MiB/s ETA 00:00
+[download]  86.8% of 57.42MiB at   14.09MiB/s ETA 00:00
+[download]  88.6% of 57.42MiB at   16.01MiB/s ETA 00:00
+[download]  92.1% of 57.42MiB at   18.12MiB/s ETA 00:00
+[download]  99.0% of 57.42MiB at   18.79MiB/s ETA 00:00
+[download] 100.0% of 57.42MiB at   19.11MiB/s ETA 00:00
+[download] 100% of 57.42MiB in 00:03 at 17.33MiB/s
+[download] Destination: output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.f251.webm
+[download]   0.0% of 3.88MiB at  169.65KiB/s ETA 00:23
+[download]   0.1% of 3.88MiB at  453.23KiB/s ETA 00:08
+[download]   0.2% of 3.88MiB at    1.01MiB/s ETA 00:03
+[download]   0.4% of 3.88MiB at    2.01MiB/s ETA 00:01
+[download]   0.8% of 3.88MiB at    4.15MiB/s ETA 00:00
+[download]   1.6% of 3.88MiB at    3.84MiB/s ETA 00:00
+[download]   3.2% of 3.88MiB at    4.88MiB/s ETA 00:00
+[download]   6.4% of 3.88MiB at    6.41MiB/s ETA 00:00
+[download]  12.8% of 3.88MiB at    9.10MiB/s ETA 00:00
+[download]  25.7% of 3.88MiB at   12.75MiB/s ETA 00:00
+[download]  51.5% of 3.88MiB at   16.26MiB/s ETA 00:00
+[download] 100.0% of 3.88MiB at   15.99MiB/s ETA 00:00
+[download] 100% of 3.88MiB in 00:00 at 14.49MiB/s
+[Merger] Merging formats into "output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.webm"
+Deleting original file output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.f303.webm (pass -k to keep)
+Deleting original file output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.f251.webm (pass -k to keep)

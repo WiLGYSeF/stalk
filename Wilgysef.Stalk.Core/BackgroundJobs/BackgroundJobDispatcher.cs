@@ -41,13 +41,13 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher, ITransientDepen
             }
 
             cancellationToken.ThrowIfCancellationRequested();
-            if (job.MaxAttempts.HasValue)
+            if (job.Attempts == 0)
+            {
+                Logger?.LogInformation("Background job {JobId} {JobArgsName} starting.", job.Id, job.JobArgsName);
+            }
+            else if (job.MaxAttempts.HasValue)
             {
                 Logger?.LogInformation("Background job {JobId} {JobArgsName} starting attempt {Attempts} / {MaxAttempts}.", job.Id, job.JobArgsName, job.Attempts, job.MaxAttempts);
-            }
-            else
-            {
-                Logger?.LogInformation("Background job {JobId} {JobArgsName} starting attempt {Attempts}.", job.Id, job.JobArgsName, job.Attempts);
             }
 
             try

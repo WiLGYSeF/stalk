@@ -82,10 +82,15 @@ public class JobManager : IJobManager, ITransientDependency
 
     public async Task<Job> UpdateJobAsync(Job job, CancellationToken cancellationToken = default)
     {
-        // TODO: change this?
         _jobRepository.Update(job);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return job;
+    }
+
+    public async Task UpdateJobsAsync(IEnumerable<Job> jobs, CancellationToken cancellationToken = default)
+    {
+        _jobRepository.UpdateRange(jobs);
+        await _unitOfWork.SaveChangesAsync(cancellationToken);
     }
 
     public async Task DeleteJobAsync(Job job, CancellationToken cancellationToken = default)

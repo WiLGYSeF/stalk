@@ -208,6 +208,11 @@ public class MetadataObject : IMetadataObject
         SetValues(dictionary, null);
     }
 
+    public void From(IDictionary<string, object?> dictionary)
+    {
+        SetValues(dictionary, null);
+    }
+
     public string GetKey(params string[] keyParts)
     {
         return string.Join(KeySeparator, keyParts);
@@ -293,6 +298,22 @@ public class MetadataObject : IMetadataObject
 
             var keyStr = root != null ? root + KeySeparator + keyToString : keyToString;
             if (value is IDictionary<object, object?> dict)
+            {
+                SetValues(dict, keyStr);
+            }
+            else
+            {
+                this[keyStr] = value;
+            }
+        }
+    }
+
+    private void SetValues(IDictionary<string, object?> dictionary, string? root)
+    {
+        foreach (var (key, value) in dictionary)
+        {
+            var keyStr = root != null ? root + KeySeparator + key : key;
+            if (value is IDictionary<string, object?> dict)
             {
                 SetValues(dict, keyStr);
             }

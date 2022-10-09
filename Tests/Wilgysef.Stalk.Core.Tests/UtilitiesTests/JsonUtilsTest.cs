@@ -8,6 +8,22 @@ namespace Wilgysef.Stalk.Core.Tests.UtilitiesTests;
 public class JsonUtilsTest : BaseTest
 {
     [Fact]
+    public void TryDeserializeObject()
+    {
+        var result = JsonUtils.TryDeserializeObject("{\"abc\": \"a\", \"test\": 123, \"obj\": {\"arr\": [1, 2, 3]}}")!;
+        result["abc"].ShouldBe("a");
+        result["test"].ShouldBe(123);
+        ((IDictionary<string, object>)result["obj"]!)["arr"].ShouldBe(new[] { 1, 2, 3 });
+    }
+
+    [Fact]
+    public void TryDeserializeObject_Fail()
+    {
+        var result = JsonUtils.TryDeserializeObject("invalid");
+        result.ShouldBeNull();
+    }
+
+    [Fact]
     public void JsonElement_Value_Array()
     {
         var value = new object?[] { "abc", 123, null };
@@ -88,7 +104,7 @@ public class JsonUtilsTest : BaseTest
         type.ShouldBe(typeof(bool));
     }
 
-    private JsonElement GetJsonElement(object? obj)
+    private static JsonElement GetJsonElement(object? obj)
     {
         var json = JsonSerializer.Deserialize<IDictionary<string, object?>>(
             JsonSerializer.Serialize(

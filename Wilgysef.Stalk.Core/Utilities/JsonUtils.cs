@@ -9,6 +9,22 @@ public static class JsonUtils
         return TryDeserialize<T>(json, options, out _);
     }
 
+    public static IDictionary<string, object?>? TryDeserializeObject(string json, JsonSerializerOptions? options = null)
+    {
+        var dict = TryDeserialize<IDictionary<string, object?>>(json, options, out _);
+        if (dict != null)
+        {
+            foreach (var (key, value) in dict)
+            {
+                if (value is JsonElement element)
+                {
+                    dict[key] = GetJsonElementValue(element, out _);
+                }
+            }
+        }
+        return dict;
+    }
+
     public static T? TryDeserialize<T>(string json, JsonSerializerOptions? options, out JsonException? jsonException)
     {
         try

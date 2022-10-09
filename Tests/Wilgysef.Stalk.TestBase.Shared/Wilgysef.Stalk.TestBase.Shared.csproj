@@ -5,4 +5,12 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.IO.Abstractions.TestingHelpers" Version="17.2.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Wilgysef.Stalk.Core.Shared\Wilgysef.Stalk.Core.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

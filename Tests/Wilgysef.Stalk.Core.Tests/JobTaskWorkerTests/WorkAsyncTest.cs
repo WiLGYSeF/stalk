@@ -437,7 +437,6 @@ public class WorkAsyncTest : BaseTest
         Uri uri,
         string filenameTemplate,
         string itemId,
-        string itemData,
         string metadataFilenameTemplate,
         IMetadataObject metadata,
         DownloadRequestData? requestData = null,

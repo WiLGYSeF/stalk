@@ -1,21 +1,19 @@
 using Shouldly;
 using System.Net;
-using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using System.Web;
+using Wilgysef.HttpClientInterception;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Extractors.TestBase;
 using Wilgysef.Stalk.TestBase.Shared;
-using Wilgysef.Stalk.TestBase.Shared.Mocks;
 
 namespace Wilgysef.Stalk.Extractors.Twitter.Tests;
 
 public class TwitterExtractorTest : BaseTest
 {
-    private const string MockedDataResourcePrefix = "Wilgysef.Stalk.Extractors.Twitter.Tests.MockedData";
+    private static readonly string MockedDataResourcePrefix = $"{typeof(TwitterExtractorTest).Namespace}.MockedData";
 
     private static readonly Regex UserByScreenNameRegex = new(@"^https://twitter\.com/i/api/graphql/[A-Za-z0-9_]+/UserByScreenName", RegexOptions.Compiled);
     private static readonly Regex UserTweetsRegex = new(@"^https://twitter\.com/i/api/graphql/[A-Za-z0-9_]+/UserTweets", RegexOptions.Compiled);
@@ -27,15 +25,16 @@ public class TwitterExtractorTest : BaseTest
 
     public TwitterExtractorTest()
     {
-        var messageHandler = new MockHttpMessageHandler();
-        messageHandler
-            .AddEndpoint(UserByScreenNameRegex, request =>
+        var interceptor = HttpClientInterceptor.Create();
+        interceptor
+            .AddForAny(_ => new HttpResponseMessage(HttpStatusCode.NotFound))
+            .AddUri(UserByScreenNameRegex, request =>
             {
                 var json = GetUriQueryVariables(request.RequestUri!);
                 var userScreenName = json["screen_name"];
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.UserByScreenName.{userScreenName}.json");
             })
-            .AddEndpoint(UserTweetsRegex, request =>
+            .AddUri(UserTweetsRegex, request =>
             {
                 var json = GetUriQueryVariables(request.RequestUri!);
                 var userId = json["userId"];
@@ -45,18 +44,18 @@ public class TwitterExtractorTest : BaseTest
                     ? HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.UserTweets.{userId}.json")
                     : HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.UserTweets.{userId}.{cursor}.json");
             })
-            .AddEndpoint(TweetDetailRegex, request =>
+            .AddUri(TweetDetailRegex, request =>
             {
                 var json = GetUriQueryVariables(request.RequestUri!);
                 var tweetId = json["focalTweetId"];
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.TweetDetail.{tweetId}.json");
             })
-            .AddEndpoint(GuestTokenEndpoint, request =>
+            .AddUri(GuestTokenEndpoint, request =>
             {
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Activate.json");
             });
 
-        _twitterExtractor = new TwitterExtractor(new HttpClient(messageHandler));
+        _twitterExtractor = new TwitterExtractor(new HttpClient(interceptor));
     }
 
     [Theory]
@@ -74,7 +73,7 @@ public class TwitterExtractorTest : BaseTest
     {
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto"),
-            null!,
+            null,
             new MetadataObject('.')).ToListAsync();
 
         results.Count.ShouldBe(99);
@@ -86,7 +85,7 @@ public class TwitterExtractorTest : BaseTest
     {
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto/status/1560187874460733440"),
-            null!,
+            null,
             new MetadataObject('.')).ToListAsync();
 
         results.Count.ShouldBe(1);
@@ -114,18 +113,19 @@ public class TwitterExtractorTest : BaseTest
     {
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto/status/1554680837861683200"),
-            null!,
+            null,
             new MetadataObject('.')).ToListAsync();
 
         results.Count.ShouldBe(1);
         var result = results.Single();
         result.ItemId.ShouldBe("1308334634745249793#1554680837861683200");
-        result.Uri.AbsoluteUri.ShouldBe("data:text/plain;base64,U3BsYXRvb24yIOOBj+OCszrlvaEgaHR0cHM6Ly90LmNvL0VXYkJQVG1FNEwKaHR0cHM6Ly93d3cudHdpdGNoLnR2L3V0b255YW4=");
+        result.Uri.AbsoluteUri.ShouldBe("data:text/plain;charset=UTF-8;base64,U3BsYXRvb24yIOOBj+OCszrlvaEgaHR0cHM6Ly90LmNvL0VXYkJQVG1FNEwKaHR0cHM6Ly93d3cudHdpdGNoLnR2L3V0b255YW4=");
         result.Metadata!["created_at"].ShouldBe(new DateTime(2022, 8, 3, 4, 9, 30));
         result.Metadata["favorite_count"].ShouldBe(2022);
         result.Metadata["file.extension"].ShouldBe("txt");
         result.Metadata["is_quote_status"].ShouldBe(false);
         result.Metadata["lang"].ShouldBe("ja");
+        result.Metadata["origin.uri"].ShouldBe("https://twitter.com/amatsukauto/status/1554680837861683200");
         result.Metadata["possibly_sensitive"].ShouldBe(false);
         result.Metadata["quote_count"].ShouldBe(0);
         result.Metadata["reply_count"].ShouldBe(17);
@@ -141,13 +141,13 @@ public class TwitterExtractorTest : BaseTest
     {
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto/status/1523276529123397632"),
-            null!,
+            null,
             new MetadataObject('.')).ToListAsync();
 
         results.Count.ShouldBe(3);
         var textResult = results.Single(r => r.Uri.AbsoluteUri.StartsWith("data:"));
         textResult.ItemId.ShouldBe("1308334634745249793#1523276529123397632");
-        textResult.Uri.AbsoluteUri.ShouldBe("data:text/plain;base64,5paw44GX44GE44Kr44OQ44O844KS5oqV56i/44GX44G+44GX44Gf4p2VCuOBi+OBo+OBk+OBhOOBhOOBruOBp+OBn+OBj+OBleOCk+iBnuOBhOOBpuOBj+OBoOOBleOBhOODvO+8geKZoQpmdWxs77yaaHR0cHM6Ly90LmNvL25sTE9ZbENtbE0KClZvY2Fs77ya44OK44OK44Kr44Kw44OpLCDlpKnkvb/jgYbjgagKSWxsdXN077yaSmFueWhlcm8gICDmp5gKTWl477yaUGQuNDbjgIDmp5gKTW92aWXvvJpSaWVzeiAg5qeYCmh0dHBzOi8veW91dHUuYmUvSEJrdExUeUxMOVU=");
+        textResult.Uri.AbsoluteUri.ShouldBe("data:text/plain;charset=UTF-8;base64,5paw44GX44GE44Kr44OQ44O844KS5oqV56i/44GX44G+44GX44Gf4p2VCuOBi+OBo+OBk+OBhOOBhOOBruOBp+OBn+OBj+OBleOCk+iBnuOBhOOBpuOBj+OBoOOBleOBhOODvO+8geKZoQpmdWxs77yaaHR0cHM6Ly90LmNvL25sTE9ZbENtbE0KClZvY2Fs77ya44OK44OK44Kr44Kw44OpLCDlpKnkvb/jgYbjgagKSWxsdXN077yaSmFueWhlcm8gICDmp5gKTWl477yaUGQuNDbjgIDmp5gKTW92aWXvvJpSaWVzeiAg5qeYCmh0dHBzOi8veW91dHUuYmUvSEJrdExUeUxMOVU=");
         textResult.Metadata!["created_at"].ShouldBe(new DateTime(2022, 5, 8, 12, 20, 0));
         textResult.Metadata["favorite_count"].ShouldBe(5823);
         textResult.Metadata["file.extension"].ShouldBe("txt");
@@ -207,13 +207,13 @@ public class TwitterExtractorTest : BaseTest
     {
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto/status/1567680068113285121"),
-            null!,
+            null,
             new MetadataObject('.')).ToListAsync();
 
         results.Count.ShouldBe(2);
         var result = results.Single(r => r.Uri.AbsoluteUri.StartsWith("data:"));
         result.ItemId.ShouldBe("1308334634745249793#1567680068113285121");
-        result.Uri.AbsoluteUri.ShouldBe("data:text/plain;base64,UlQgQEFzdGVyQXJjYWRpYTogRElWSU5FIERVTyBUQUtJTkcgT1ZFUiBBUEVYIExFR0VORFMhCkdhbWluZyB3LyDimIHvuI9AYW1hdHN1a2F1dG8gCgrwn5KraHR0cHM6Ly90LmNvL0NXZnhtMFlVTXggaHR0cHM6Ly90LmNvL0tYTnB5THhQeQpodHRwOi8veW91dHUuYmUvM0Vobm1rWjhPQlE=");
+        result.Uri.AbsoluteUri.ShouldBe("data:text/plain;charset=UTF-8;base64,UlQgQEFzdGVyQXJjYWRpYTogRElWSU5FIERVTyBUQUtJTkcgT1ZFUiBBUEVYIExFR0VORFMhCkdhbWluZyB3LyDimIHvuI9AYW1hdHN1a2F1dG8gCgrwn5KraHR0cHM6Ly90LmNvL0NXZnhtMFlVTXggaHR0cHM6Ly90LmNvL0tYTnB5THhQeQpodHRwOi8veW91dHUuYmUvM0Vobm1rWjhPQlE=");
         result.Metadata!["created_at"].ShouldBe(new DateTime(2022, 9, 8, 1, 3, 48));
         result.Metadata["favorite_count"].ShouldBe(0);
         result.Metadata["file.extension"].ShouldBe("txt");

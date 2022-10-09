@@ -1,6 +1,6 @@
-﻿using Wilgysef.Stalk.Core.FileHandlerLockServices;
+﻿using System.IO.Abstractions;
+using Wilgysef.Stalk.Core.FileHandlerLockServices;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
-using Wilgysef.Stalk.Core.Shared.FileServices;
 
 namespace Wilgysef.Stalk.Core.ItemIdSetServices;
 
@@ -8,16 +8,16 @@ public class ItemIdSetService : IItemIdSetService, ITransientDependency
 {
     private readonly IItemIdSetCollectionService _itemSetCollectionService;
     private readonly IFileHandlerLockService _fileHandlerLockService;
-    private readonly IFileService _fileService;
+    private readonly IFileSystem _fileSystem;
 
     public ItemIdSetService(
         IItemIdSetCollectionService itemSetCollectionService,
         IFileHandlerLockService fileHandlerLockService,
-        IFileService fileService)
+        IFileSystem fileSystem)
     {
         _itemSetCollectionService = itemSetCollectionService;
         _fileHandlerLockService = fileHandlerLockService;
-        _fileService = fileService;
+        _fileSystem = fileSystem;
     }
 
     public async Task<IItemIdSet> GetItemIdSetAsync(string path, long jobId)
@@ -28,10 +28,12 @@ public class ItemIdSetService : IItemIdSetService, ITransientDependency
             itemIds = new ItemIdSet();
             try
             {
-                using var stream = _fileService.Open(path, FileMode.Open);
+                CreateDirectoriesFromFilename(path);
+
+                using var stream = _fileSystem.File.Open(path, FileMode.Open);
                 using var reader = new StreamReader(stream);
 
-                for (string? line; (line = await reader.ReadLineAsync()) != null; )
+                for (string? line; (line = await reader.ReadLineAsync()) != null;)
                 {
                     line = line.Trim();
                     if (line.Length > 0)
@@ -63,7 +65,7 @@ public class ItemIdSetService : IItemIdSetService, ITransientDependency
     {
         lock (_fileHandlerLockService.GetFileHandlerLock(path))
         {
-            using var stream = _fileService.Open(path, FileMode.Append);
+            using var stream = _fileSystem.File.Open(path, FileMode.Append);
             using var writer = new StreamWriter(stream);
 
             foreach (var item in itemIds.PendingItems)
@@ -73,5 +75,14 @@ public class ItemIdSetService : IItemIdSetService, ITransientDependency
         }
 
         return Task.FromResult(itemIds.ResetChangeTracking());
+    }
+
+    private void CreateDirectoriesFromFilename(string filename)
+    {
+        var dirname = Path.GetDirectoryName(filename);
+        if (!string.IsNullOrEmpty(dirname))
+        {
+            _fileSystem.Directory.CreateDirectory(dirname);
+        }
     }
 }

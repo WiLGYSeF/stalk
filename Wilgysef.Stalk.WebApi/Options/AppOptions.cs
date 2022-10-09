@@ -7,4 +7,6 @@ public class AppOptions : IOptionSection
     public string Label => "App";
 
     public bool ExceptionsInResponse { get; set; }
+
+    public bool PauseJobsOnStart { get; set; }
 }

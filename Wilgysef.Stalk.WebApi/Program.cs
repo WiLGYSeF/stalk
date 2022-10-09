@@ -5,6 +5,7 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
+using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.EntityFrameworkCore;
 using Wilgysef.Stalk.WebApi.Extensions;
@@ -32,7 +33,11 @@ var appOptions = GetOptions<AppOptions>(app.Configuration);
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(config =>
+    {
+        // swagger sucks and is very slow for "large" requests
+        config.ConfigObject.AdditionalItems.Add("syntaxHighlight", false);
+    });
 }
 
 app.UseHttpsRedirection();
@@ -49,6 +54,14 @@ using (var scope = app.Services.CreateScope())
     logger?.LogInformation("Initializing application...");
 
     var appStartup = scope.ServiceProvider.GetRequiredService<Startup>();
+
+    if (appOptions.PauseJobsOnStart)
+    {
+        logger?.LogInformation("Pausing all jobs...");
+        var jobStateManager = scope.ServiceProvider.GetRequiredService<IJobStateManager>();
+        await jobStateManager.PauseJobsAsync();
+    }
+
     await appStartup.StartAsync(app.Services.GetAutofacRoot());
 }
 

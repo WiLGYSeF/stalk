@@ -1,6 +1,6 @@
-﻿using Wilgysef.Stalk.Core.Shared.Downloaders;
+﻿using System.IO.Abstractions;
+using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.FilenameSlugs;
-using Wilgysef.Stalk.Core.Shared.FileServices;
 using Wilgysef.Stalk.Core.Shared.MetadataSerializers;
 using Wilgysef.Stalk.Core.Shared.StringFormatters;
 
@@ -8,14 +8,16 @@ namespace Wilgysef.Stalk.Core.Downloaders;
 
 public class DataDownloader : DownloaderBase
 {
+    public override string Name => "Data";
+
     public DataDownloader(
-        IFileService fileService,
+        IFileSystem fileSystem,
         IStringFormatter stringFormatter,
         IFilenameSlugSelector filenameSlugSelector,
         IMetadataSerializer metadataSerializer,
         HttpClient httpClient)
         : base(
-            fileService,
+            fileSystem,
             stringFormatter,
             filenameSlugSelector,
             metadataSerializer,
@@ -34,6 +36,6 @@ public class DataDownloader : DownloaderBase
     {
         var absoluteUri = uri.AbsoluteUri;
         var base64Index = absoluteUri.IndexOf("base64,");
-        return Task.FromResult<Stream>(new MemoryStream(Convert.FromBase64String(absoluteUri.Substring(base64Index + "base64,".Length))));
+        return Task.FromResult<Stream>(new MemoryStream(Convert.FromBase64String(absoluteUri[(base64Index + "base64,".Length)..])));
     }
 }

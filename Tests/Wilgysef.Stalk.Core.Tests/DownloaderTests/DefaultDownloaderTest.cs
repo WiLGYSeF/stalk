@@ -1,13 +1,14 @@
 ﻿using Shouldly;
+using System.IO.Abstractions.TestingHelpers;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using Wilgysef.HttpClientInterception;
 using Wilgysef.Stalk.Core.Downloaders;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.TestBase;
-using Wilgysef.Stalk.TestBase.Mocks;
 using Wilgysef.Stalk.TestBase.Shared.Mocks;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
@@ -18,8 +19,9 @@ public class DefaultDownloaderTest : BaseTest
 {
     private static readonly byte[] TestDownloadData = Encoding.UTF8.GetBytes("test");
 
-    private readonly MockHttpMessageHandler _httpMessageHandler;
-    private readonly MockFileService _fileService;
+    private readonly HttpClientInterceptor _httpInterceptor;
+    private readonly HttpRequestEntryLog _httpEntryLog;
+    private readonly MockFileSystem _fileSystem;
     private readonly DefaultDownloader _downloader;
 
     public DefaultDownloaderTest()
@@ -29,16 +31,17 @@ public class DefaultDownloaderTest : BaseTest
         var downloaders = GetRequiredService<IEnumerable<IDownloader>>();
         _downloader = (downloaders.Single(d => d is DefaultDownloader) as DefaultDownloader)!;
 
-        _fileService = MockFileService!;
-        _httpMessageHandler = MockHttpMessageHandler!;
+        _fileSystem = MockFileSystem!;
+        _httpInterceptor = HttpClientInterceptor!;
+        _httpEntryLog = HttpRequestEntryLog!;
 
-        _httpMessageHandler.DefaultEndpointAction = (request, cancellationToken) =>
+        _httpInterceptor.AddForAny(request =>
         {
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            return new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StreamContent(new MemoryStream(TestDownloadData))
-            });
-        };
+            };
+        });
     }
 
     [Fact]
@@ -47,7 +50,6 @@ public class DefaultDownloaderTest : BaseTest
         var uri = RandomValues.RandomUri();
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
-        var itemData = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
         var metadata = new MetadataObject('.');
 
@@ -55,29 +57,27 @@ public class DefaultDownloaderTest : BaseTest
             uri,
             filename,
             itemId,
-            itemData,
             metadataFilename,
             metadata))
         {
             result.Path.ShouldBe(filename);
             result.Uri.ShouldBe(uri);
             result.ItemId.ShouldBe(itemId);
-            result.ItemData.ShouldBe(itemData);
             result.MetadataPath.ShouldBe(metadataFilename);
         }
 
-        _httpMessageHandler.Requests.Count.ShouldBe(1);
-        _httpMessageHandler.Requests.Single().Request.RequestUri.ShouldBe(uri);
+        _httpEntryLog.Entries.Count.ShouldBe(1);
+        _httpEntryLog.Entries.Single().Request.RequestUri.ShouldBe(uri);
 
-        _fileService.Files.Keys.Count().ShouldBe(2);
-        (_fileService.Files[filename] as MemoryStream)!.ToArray().ShouldBe(TestDownloadData);
+        _fileSystem.AllFiles.Count().ShouldBe(2);
+        _fileSystem.File.ReadAllBytes(filename).ShouldBe(TestDownloadData);
 
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
         var metadataWritten = new MetadataObject(metadata.KeySeparator);
         metadataWritten.From(deserializer.Deserialize<IDictionary<object, object?>>(
-                Encoding.UTF8.GetString((_fileService.Files[metadataFilename] as MemoryStream)!.ToArray())));
+                Encoding.UTF8.GetString(_fileSystem.File.ReadAllBytes(metadataFilename))));
 
         var hashName = "SHA256";
         metadataWritten.GetValueByParts(MetadataObjectConsts.File.FilenameTemplateKeys).ShouldBe(filename);
@@ -98,7 +98,6 @@ public class DefaultDownloaderTest : BaseTest
         var uri = RandomValues.RandomUri();
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
-        var itemData = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
         var metadata = new MetadataObject('.');
 
@@ -107,29 +106,27 @@ public class DefaultDownloaderTest : BaseTest
             uri,
             filename,
             itemId,
-            itemData,
             metadataFilename,
             metadata))
         {
             result.Path.ShouldBe(filename);
             result.Uri.ShouldBe(uri);
             result.ItemId.ShouldBe(itemId);
-            result.ItemData.ShouldBe(itemData);
             result.MetadataPath.ShouldBe(metadataFilename);
         }
 
-        _httpMessageHandler.Requests.Count.ShouldBe(1);
-        _httpMessageHandler.Requests.Single().Request.RequestUri.ShouldBe(uri);
+        _httpEntryLog.Entries.Count.ShouldBe(1);
+        _httpEntryLog.Entries.Single().Request.RequestUri.ShouldBe(uri);
 
-        _fileService.Files.Keys.Count().ShouldBe(2);
-        (_fileService.Files[filename] as MemoryStream)!.ToArray().ShouldBe(TestDownloadData);
+        _fileSystem.AllFiles.Count().ShouldBe(2);
+        _fileSystem.File.ReadAllBytes(filename).ShouldBe(TestDownloadData);
 
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
         var metadataWritten = new MetadataObject(metadata.KeySeparator);
         metadataWritten.From(deserializer.Deserialize<IDictionary<object, object?>>(
-                Encoding.UTF8.GetString((_fileService.Files[metadataFilename] as MemoryStream)!.ToArray())));
+                Encoding.UTF8.GetString(_fileSystem.File.ReadAllBytes(metadataFilename))));
 
         metadataWritten.GetValueByParts(MetadataObjectConsts.File.FilenameTemplateKeys).ShouldBe(filename);
         metadataWritten.GetValueByParts(MetadataObjectConsts.MetadataFilenameTemplateKeys).ShouldBe(metadataFilename);
@@ -147,7 +144,6 @@ public class DefaultDownloaderTest : BaseTest
         var uri = RandomValues.RandomUri();
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
-        var itemData = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
         var metadata = new MetadataObject('.');
 
@@ -158,7 +154,6 @@ public class DefaultDownloaderTest : BaseTest
             uri,
             filename,
             itemId,
-            itemData,
             metadataFilename,
             metadata,
             new DownloadRequestData(
@@ -172,12 +167,11 @@ public class DefaultDownloaderTest : BaseTest
             result.Path.ShouldBe(filename);
             result.Uri.ShouldBe(uri);
             result.ItemId.ShouldBe(itemId);
-            result.ItemData.ShouldBe(itemData);
             result.MetadataPath.ShouldBe(metadataFilename);
         }
 
-        _httpMessageHandler.Requests.Count.ShouldBe(1);
-        var request = _httpMessageHandler.Requests.Single().Request;
+        _httpEntryLog.Entries.Count.ShouldBe(1);
+        var request = _httpEntryLog.Entries.Single().Request;
         request.RequestUri.ShouldBe(uri);
         request.Method.ShouldBe(HttpMethod.Post);
         request.Headers.GetValues("Set-Cookie").Single().ShouldBe(cookie);

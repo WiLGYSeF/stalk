@@ -34,13 +34,13 @@ public class WorkAsyncTest : BaseTest
         _jobManager = GetRequiredService<IJobManager>();
         _jobWorkerFactory = GetRequiredService<IJobWorkerFactory>();
 
-        MockHttpMessageHandler!.DefaultEndpointAction = (request, cancellationToken) =>
+        HttpClientInterceptor!.AddForAny((request, cancellationToken) =>
         {
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StreamContent(new MemoryStream())
             });
-        };
+        });
 
         _jobWorkerStarter = new JobWorkerStarter(_jobWorkerFactory);
     }

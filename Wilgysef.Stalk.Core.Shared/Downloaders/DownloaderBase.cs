@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Abstractions;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
@@ -9,7 +10,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Wilgysef.Stalk.Core.Shared.FilenameSlugs;
-using Wilgysef.Stalk.Core.Shared.FileServices;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.MetadataSerializers;
 using Wilgysef.Stalk.Core.Shared.StringFormatters;
@@ -21,86 +21,108 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// <summary>
         /// Buffer size for downloading files.
         /// </summary>
-        public virtual int DownloadBufferSize { get; set; } = 4 * 1024;
+        public virtual int DownloadBufferSize
+        {
+            get => _downloadBufferSize;
+            set
+            {
+                if (value <= 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), "Buffer size must be greater than zero.");
+                }
+                _downloadBufferSize = value;
+            }
+        }
+        private int _downloadBufferSize = 4 * 1024;
 
         /// <summary>
         /// Hash name used in <see cref="HashAlgorithm.Create(string)"/>.
         /// </summary>
         public virtual string? HashName { get; set; } = "SHA256";
 
-        public virtual string Name => "Default";
+        public abstract string Name { get; }
 
         public virtual ILogger? Logger { get; set; }
 
         public virtual IDictionary<string, object?> Config { get; set; } = new Dictionary<string, object?>();
 
-        private readonly IFileService _fileService;
+        private readonly IFileSystem _fileSystem;
         private readonly IStringFormatter _stringFormatter;
         private readonly IFilenameSlugSelector _filenameSlugSelector;
         private readonly IMetadataSerializer _metadataSerializer;
         private HttpClient _httpClient;
 
-        public DownloaderBase(
-            IFileService fileService,
+        protected DownloaderBase(
+            IFileSystem fileSystem,
             IStringFormatter stringFormatter,
             IFilenameSlugSelector filenameSlugSelector,
             IMetadataSerializer metadataSerializer,
             HttpClient httpClient)
         {
-            _fileService = fileService;
+            _fileSystem = fileSystem;
             _stringFormatter = stringFormatter;
             _filenameSlugSelector = filenameSlugSelector;
             _metadataSerializer = metadataSerializer;
             _httpClient = httpClient;
         }
 
-        public virtual bool CanDownload(Uri uri)
-        {
-            return true;
-        }
+        public abstract bool CanDownload(Uri uri);
 
         public virtual async IAsyncEnumerable<DownloadResult> DownloadAsync(
             Uri uri,
             string filenameTemplate,
             string? itemId,
-            string? itemData,
             string? metadataFilenameTemplate,
             IMetadataObject metadata,
             DownloadRequestData? requestData = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            var downloadFileResult = await SaveFileAsync(
+            metadata.TryAddValueByParts(filenameTemplate, MetadataObjectConsts.File.FilenameTemplateKeys);
+            metadata.TryAddValueByParts(metadataFilenameTemplate, MetadataObjectConsts.MetadataFilenameTemplateKeys);
+            metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdKeys);
+            metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdSeqKeys);
+            metadata.TryAddValueByParts(uri.ToString(), MetadataObjectConsts.Origin.UriKeys);
+
+            await foreach (var downloadFileResult in SaveFileAsync(
                 uri,
                 filenameTemplate,
                 metadata,
                 requestData,
-                cancellationToken);
-
-            metadata.TryAddValueByParts(filenameTemplate, MetadataObjectConsts.File.FilenameTemplateKeys);
-            metadata.TryAddValueByParts(metadataFilenameTemplate, MetadataObjectConsts.MetadataFilenameTemplateKeys);
-            metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdKeys);
-            metadata.TryAddValueByParts(uri.ToString(), MetadataObjectConsts.Origin.UriKeys);
-            metadata.TryAddValueByParts(DateTime.Now, MetadataObjectConsts.RetrievedKeys);
-
-            metadata.TryAddValueByParts(downloadFileResult.FileSize, MetadataObjectConsts.File.SizeKeys);
-            if (downloadFileResult.Hash != null)
+                cancellationToken))
             {
-                metadata.TryAddValueByParts(downloadFileResult.Hash, MetadataObjectConsts.File.HashKeys);
-                metadata.TryAddValueByParts(downloadFileResult.HashName, MetadataObjectConsts.File.HashAlgorithmKeys);
+                var resultMetadata = metadata.Copy();
+                resultMetadata.TryAddValueByParts(DateTimeOffset.Now.ToString(), MetadataObjectConsts.RetrievedKeys);
+
+                if (downloadFileResult.FileSize.HasValue)
+                {
+                    resultMetadata.TryAddValueByParts(downloadFileResult.FileSize, MetadataObjectConsts.File.SizeKeys);
+                }
+                if (downloadFileResult.Hash != null)
+                {
+                    resultMetadata.TryAddValueByParts(downloadFileResult.Hash, MetadataObjectConsts.File.HashKeys);
+                    resultMetadata.TryAddValueByParts(downloadFileResult.HashName, MetadataObjectConsts.File.HashAlgorithmKeys);
+                }
+
+                string? metadataFilename;
+                if (downloadFileResult.MetadataFilename == null && downloadFileResult.CreateMetadata)
+                {
+                    metadataFilename = await SaveMetadataAsync(
+                        metadataFilenameTemplate,
+                        resultMetadata,
+                        cancellationToken);
+                }
+                else
+                {
+                    metadataFilename = downloadFileResult.MetadataFilename;
+                }
+
+                yield return new DownloadResult(
+                    downloadFileResult.Filename,
+                    uri,
+                    itemId,
+                    metadataPath: metadataFilename,
+                    metadata: resultMetadata);
             }
-
-            var metadataFilename = await SaveMetadataAsync(
-                metadataFilenameTemplate,
-                metadata.GetFlattenedDictionary(),
-                cancellationToken);
-
-            yield return new DownloadResult(
-                downloadFileResult.Filename,
-                uri,
-                itemId,
-                itemData: itemData,
-                metadataPath: metadataFilename,
-                metadata: metadata);
         }
 
         public virtual void SetHttpClient(HttpClient client)
@@ -116,21 +138,23 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// <param name="metadata">Metadata object.</param>
         /// <param name="cancellationToken"></param>
         /// <returns>Download file result.</returns>
-        protected virtual async Task<DownloadFileResult> SaveFileAsync(
+        protected virtual async IAsyncEnumerable<DownloadFileResult> SaveFileAsync(
             Uri uri,
             string filenameTemplate,
             IMetadataObject metadata,
             DownloadRequestData? requestData = null,
-            CancellationToken cancellationToken = default)
+            [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
             var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
             var filename = filenameSlug.SlugifyPath(
                 _stringFormatter.Format(filenameTemplate, metadata.GetFlattenedDictionary()));
 
-            using var stream = await GetFileStreamAsync(uri, requestData, cancellationToken);
-            using var fileStream = _fileService.Open(filename, FileMode.CreateNew);
+            CreateDirectoriesFromFilename(filename);
 
-            return await SaveStreamAsync(
+            using var stream = await GetFileStreamAsync(uri, requestData, cancellationToken);
+            using var fileStream = _fileSystem.File.Open(filename, FileMode.CreateNew);
+
+            yield return await SaveStreamAsync(
                 stream,
                 fileStream,
                 filename,
@@ -213,9 +237,11 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
             return new DownloadFileResult(
                 filename,
+                null,
                 fileSize,
                 hashAlgorithm?.Hash != null ? ToHexString(hashAlgorithm.Hash) : null,
-                hashAlgorithm?.Hash != null ? hashName : null);
+                hashAlgorithm?.Hash != null ? hashName : null,
+                createMetadata: true);
         }
 
         /// <summary>
@@ -227,7 +253,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// <returns>Metadata filename.</returns>
         protected virtual Task<string?> SaveMetadataAsync(
             string? metadataFilenameTemplate,
-            IDictionary<string, object?> metadata,
+            IMetadataObject metadata,
             CancellationToken cancellationToken = default)
         {
             if (metadataFilenameTemplate == null)
@@ -237,13 +263,15 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
             var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
             var metadataFilename = filenameSlug.SlugifyPath(
-                _stringFormatter.Format(metadataFilenameTemplate, metadata));
+                _stringFormatter.Format(metadataFilenameTemplate, metadata.GetFlattenedDictionary()));
+
+            CreateDirectoriesFromFilename(metadataFilename);
 
             try
             {
-                using var stream = _fileService.Open(metadataFilename, FileMode.CreateNew);
+                using var stream = _fileSystem.File.Open(metadataFilename, FileMode.CreateNew);
                 using var writer = new StreamWriter(stream);
-                _metadataSerializer.Serialize(writer, metadata);
+                _metadataSerializer.Serialize(writer, metadata.GetDictionary());
             }
             catch (IOException exception)
             {
@@ -253,12 +281,21 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             return Task.FromResult<string?>(metadataFilename);
         }
 
+        private void CreateDirectoriesFromFilename(string filename)
+        {
+            var dirname = Path.GetDirectoryName(filename);
+            if (!string.IsNullOrEmpty(dirname))
+            {
+                _fileSystem.Directory.CreateDirectory(dirname);
+            }
+        }
+
         private const string HexAlphabet = "0123456789abcdef";
 
         private static string ToHexString(byte[] bytes)
         {
-            StringBuilder result = new StringBuilder(bytes.Length * 2);
-            foreach (byte b in bytes)
+            var result = new StringBuilder(bytes.Length * 2);
+            foreach (var b in bytes)
             {
                 result.Append(HexAlphabet[b >> 4]);
                 result.Append(HexAlphabet[b & 15]);

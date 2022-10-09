@@ -1,17 +1,19 @@
 ﻿using Shouldly;
+using System.IO.Abstractions.TestingHelpers;
 using System.Text;
 using Wilgysef.Stalk.Core.Downloaders;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.TestBase;
-using Wilgysef.Stalk.TestBase.Mocks;
+using Wilgysef.Stalk.TestBase.Shared.Mocks;
 
 namespace Wilgysef.Stalk.Core.Tests.DownloaderTests;
 
 public class DataDownloaderTest : BaseTest
 {
-    private readonly MockFileService _fileService;
     private readonly DataDownloader _downloader;
+
+    private readonly MockFileSystem _fileSystem;
 
     public DataDownloaderTest()
     {
@@ -20,7 +22,7 @@ public class DataDownloaderTest : BaseTest
         var downloaders = GetRequiredService<IEnumerable<IDownloader>>();
         _downloader = (downloaders.Single(d => d is DataDownloader) as DataDownloader)!;
 
-        _fileService = MockFileService!;
+        _fileSystem = MockFileSystem!;
     }
 
     [Fact]
@@ -30,7 +32,6 @@ public class DataDownloaderTest : BaseTest
         var uri = new Uri($"data:text/plain;base64,{Convert.ToBase64String(data)}");
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
-        var itemData = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
         var metadata = new MetadataObject('.');
 
@@ -38,19 +39,17 @@ public class DataDownloaderTest : BaseTest
             uri,
             filename,
             itemId,
-            itemData,
             metadataFilename,
             metadata))
         {
             result.Path.ShouldBe(filename);
             result.Uri.ShouldBe(uri);
             result.ItemId.ShouldBe(itemId);
-            result.ItemData.ShouldBe(itemData);
             result.MetadataPath.ShouldBe(metadataFilename);
         }
 
-        _fileService.Files.Keys.Count().ShouldBe(2);
-        (_fileService.Files[filename] as MemoryStream)!.ToArray().ShouldBe(data);
+        _fileSystem.AllFiles.Count().ShouldBe(2);
+        _fileSystem.File.ReadAllBytes(filename).ShouldBe(data);
     }
 
     [Theory]

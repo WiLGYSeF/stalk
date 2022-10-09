@@ -37,7 +37,6 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// <param name="uri">URI to download from.</param>
         /// <param name="filenameTemplate">Filename template to save downloaded files.</param>
         /// <param name="itemId">Item Id.</param>
-        /// <param name="itemData">Item data.</param>
         /// <param name="metadataTemplate">Metadata filename template to save metadata files.</param>
         /// <param name="metadata">Metadata object.</param>
         /// <param name="requestData">Download request data.</param>
@@ -47,7 +46,6 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             Uri uri,
             string filenameTemplate,
             string? itemId,
-            string? itemData,
             string? metadataTemplate,
             IMetadataObject metadata,
             DownloadRequestData? requestData = null,

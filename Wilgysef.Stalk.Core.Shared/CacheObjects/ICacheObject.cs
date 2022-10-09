@@ -17,6 +17,8 @@ namespace Wilgysef.Stalk.Core.Shared.CacheObjects
 
         bool TryGetValue(object key, out object? value);
 
+        bool TryGetValueAs<T>(object key, out T value);
+
         bool ContainsKey(object key);
 
         bool Remove(object key);
@@ -41,6 +43,8 @@ namespace Wilgysef.Stalk.Core.Shared.CacheObjects
         void Set(TKey key, TValue value, DateTime? expires = null);
 
         bool TryGetValue(TKey key, out TValue value);
+
+        bool TryGetValueAs<T>(TKey key, out T value);
 
         bool ContainsKey(TKey key);
 
