@@ -1,8 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using System;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Web;
 using Wilgysef.Stalk.Core.Shared.CacheObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
@@ -35,6 +37,15 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        if (ExtractorConfig.CommunityEmojisOnly)
+        {
+            await foreach (var result in ExtractCommunityEmojisOnlyAsync(uri, metadata, cancellationToken))
+            {
+                yield return result;
+            }
+            yield break;
+        }
+
         var json = await GetCommunityJsonAsync(uri, cancellationToken);
         var channelId = json.SelectToken("$..channelId")?.ToString()
             ?? json.SelectToken("$..authorEndpoint.browseEndpoint.browseId")!.ToString();
@@ -81,10 +92,48 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
         }
     }
 
+    private async IAsyncEnumerable<ExtractResult> ExtractCommunityEmojisOnlyAsync(
+        Uri uri,
+        IMetadataObject metadata,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var match = Consts.CommunityPostRegex.Match(uri.AbsoluteUri);
+        if (!match.Success)
+        {
+            var isSingle = uri.Query.Length > 0 && HttpUtility.ParseQueryString(uri.Query)["lb"] != null;
+            if (!isSingle)
+            {
+                uri = await GetFirstCommunityPostUri(uri, cancellationToken);
+            }
+        }
+
+        var json = await GetCommunityJsonAsync(uri, cancellationToken);
+        var channelId = json.SelectToken("$..channelId")?.ToString()
+            ?? json.SelectToken("$..authorEndpoint.browseEndpoint.browseId")!.ToString();
+
+        // assume the emojis are one continuation token away from the community post
+        // I have no idea where to find the emojis normally
+
+        var continuationToken = json.SelectToken("$..continuationCommand.token")!.ToString();
+        json = await GetCommunityJsonAsync(channelId, continuationToken, cancellationToken);
+
+        foreach (var result in ExtractEmojis(json, metadata, channelId))
+        {
+            yield return result;
+        }
+    }
+
     public static bool IsCommunityExtractType(Uri uri)
     {
         var absoluteUri = uri.AbsoluteUri;
         return Consts.CommunityRegex.IsMatch(absoluteUri) || Consts.CommunityPostRegex.IsMatch(absoluteUri);
+    }
+
+    private async Task<Uri> GetFirstCommunityPostUri(Uri communityUri, CancellationToken cancellationToken)
+    {
+        var json = await GetCommunityJsonAsync(communityUri, cancellationToken);
+        var postId = json.SelectTokens("$..postId").First().ToString();
+        return new Uri($"https://www.youtube.com/post/{postId}");
     }
 
     private IEnumerable<ExtractResult> ExtractCommunity(JToken post, IMetadataObject metadata)

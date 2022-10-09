@@ -254,6 +254,23 @@ public class YouTubeExtractorTest : BaseTest
     }
 
     [Theory]
+    [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community")]
+    [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community?lb=UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")]
+    [InlineData("https://www.youtube.com/post/UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")]
+    public async Task Get_Community_EmojisOnly(string uri)
+    {
+        _youTubeExtractor.Config[YouTubeExtractorConfig.CommunityEmojisOnlyKey] = true;
+
+        var results = await _youTubeExtractor.ExtractAsync(
+            new Uri(uri),
+            null,
+            new MetadataObject('.')).ToListAsync();
+
+        results.Count.ShouldBe(36);
+        results.All(r => r.ItemId!.Contains("#emoji#")).ShouldBeTrue();
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task Config_Cookies(bool multipleCookies)
