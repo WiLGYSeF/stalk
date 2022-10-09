@@ -1,5 +1,4 @@
-﻿using System.Text;
-using Wilgysef.Stalk.Core.Shared.Extensions;
+﻿using Wilgysef.Stalk.Core.Shared.Extensions;
 
 namespace Wilgysef.Stalk.Extractors.YouTube;
 
@@ -7,10 +6,16 @@ public class YouTubeExtractorConfig : YouTubeConfig
 {
     public static readonly string CookiesKey = "cookies";
     public static readonly string UseWebpThumbnailsKey = "useWebpThumbnails";
+    public static readonly string EmojiScaleWidthKey = "emojiScaleWidth";
+    public static readonly string YouTubeClientVersionKey = "youtubeClientVersion";
 
     public string? CookieString { get; set; }
 
     public bool UseWebpThumbnails { get; set; } = true;
+
+    public int EmojiScaleWidth { get; set; } = 512;
+
+    public string YouTubeClientVersion { get; set; } = "2.20220929.09.00";
 
     public YouTubeExtractorConfig() { }
 
@@ -28,6 +33,14 @@ public class YouTubeExtractorConfig : YouTubeConfig
         if (config?.TryGetValueAs<bool, string, object?>(UseWebpThumbnailsKey, out var useWebpThumbnails) ?? false)
         {
             UseWebpThumbnails = useWebpThumbnails;
+        }
+        if (config?.TryGetValueAs<int, string, object?>(EmojiScaleWidthKey, out var emojiScaleWidth) ?? false)
+        {
+            EmojiScaleWidth = emojiScaleWidth;
+        }
+        if (config?.TryGetValueAs<string, string, object?>(YouTubeClientVersion, out var youtubeClientVersion) ?? false)
+        {
+            YouTubeClientVersion = youtubeClientVersion;
         }
     }
 }
