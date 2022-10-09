@@ -16,6 +16,10 @@ namespace Wilgysef.Stalk.Extractors.YouTube;
 
 public class YouTubeExtractor : IExtractor
 {
+    // TODO:
+    //   live chat? (handled by youtube-dl already)
+    //   comments?
+
     public string Name => "YouTube";
 
     public ILogger? Logger { get; set; }
@@ -26,7 +30,7 @@ public class YouTubeExtractor : IExtractor
 
     private const string YouTubeClientVersion = "2.20220929.09.00";
 
-    private string[] ThumbnailUris = new string[]
+    private readonly string[] ThumbnailUris = new string[]
     {
         "https://img.youtube.com/vi_webp/{0}/maxresdefault.webp",
         "https://img.youtube.com/vi/{0}/maxresdefault.jpg",
@@ -53,6 +57,8 @@ public class YouTubeExtractor : IExtractor
     private static readonly string[] MetadataVideoDurationKeys = new string[] { "video", "duration" };
     private static readonly string[] MetadataVideoDurationSecondsKeys = new string[] { "video", "duration_seconds" };
 
+    private YouTubeExtractorConfig _config = new();
+
     private HttpClient _httpClient;
 
     public YouTubeExtractor(HttpClient httpClient)
@@ -72,6 +78,8 @@ public class YouTubeExtractor : IExtractor
         IMetadataObject metadata,
         CancellationToken cancellationToken = default)
     {
+        _config = new YouTubeExtractorConfig(Config);
+
         return GetExtractType(uri) switch
         {
             ExtractType.Channel => ExtractChannelAsync(uri, metadata, cancellationToken),
@@ -262,11 +270,17 @@ public class YouTubeExtractor : IExtractor
 
         foreach (var uriFormat in ThumbnailUris)
         {
+            if (!_config.UseWebpThumbnails && uriFormat.EndsWith(".webp"))
+            {
+                continue;
+            }
+
             var uriString = string.Format(uriFormat, videoId);
 
             try
             {
-                var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Head, uriString), cancellationToken);
+                var request = ConfigureRequest(new HttpRequestMessage(HttpMethod.Head, uriString));
+                var response = await _httpClient.SendAsync(request, cancellationToken);
                 if (!response.IsSuccessStatusCode)
                 {
                     continue;
@@ -551,7 +565,8 @@ public class YouTubeExtractor : IExtractor
 
     private async Task<HtmlDocument> GetHtmlDocument(Uri uri, CancellationToken cancellationToken)
     {
-        var response = await _httpClient.GetAsync(uri, cancellationToken);
+        var request = ConfigureRequest(new HttpRequestMessage(HttpMethod.Get, uri));
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var doc = new HtmlDocument();
@@ -600,7 +615,7 @@ public class YouTubeExtractor : IExtractor
         string continuationToken,
         CancellationToken cancellationToken)
     {
-        var request = new
+        var data = new
         {
             context = new
             {
@@ -643,10 +658,10 @@ public class YouTubeExtractor : IExtractor
         };
 
         // TODO: replace with INNERTUBE_API_KEY
-        var response = await _httpClient.PostAsJsonAsync(
-            "https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8&prettyPrint=false",
-            request,
-            cancellationToken);
+        var request = ConfigureRequest(new HttpRequestMessage(HttpMethod.Post, "https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8&prettyPrint=false"));
+        request.Content = JsonContent.Create(data);
+
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -656,8 +671,8 @@ public class YouTubeExtractor : IExtractor
     private async Task<string> GetChannelIdAsync(string channelName, CancellationToken cancellationToken)
     {
         // TODO: cache?
-
-        var response = await _httpClient.GetAsync(GetChannelUriPrefix(channelName, true), cancellationToken);
+        var request = ConfigureRequest(new HttpRequestMessage(HttpMethod.Get, GetChannelUriPrefix(channelName, true)));
+        var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var doc = new HtmlDocument();
@@ -665,6 +680,15 @@ public class YouTubeExtractor : IExtractor
 
         var metaChannelId = doc.DocumentNode.SelectSingleNode("//meta[@itemprop=\"channelId\"]");
         return metaChannelId.Attributes["content"].Value;
+    }
+
+    private HttpRequestMessage ConfigureRequest(HttpRequestMessage request)
+    {
+        if (_config.CookieString != null)
+        {
+            request.Headers.Add("Cookie", _config.CookieString);
+        }
+        return request;
     }
 
     private static string GetCommunityImageUrlFromThumbnail(string url)

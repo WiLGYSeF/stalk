@@ -1,4 +1,5 @@
 ﻿using Shouldly;
+using System;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -22,10 +23,12 @@ public class YouTubeExtractorTest : BaseTest
 
     private readonly YouTubeExtractor _youTubeExtractor;
 
+    private readonly HttpClientInterceptor _httpInterceptor;
+
     public YouTubeExtractorTest()
     {
-        var interceptor = HttpClientInterceptor.Create();
-        interceptor
+        _httpInterceptor = HttpClientInterceptor.Create();
+        _httpInterceptor
             .AddForAny(_ => new HttpResponseMessage(HttpStatusCode.NotFound))
             .AddUri(Consts.PlaylistRegex, request =>
             {
@@ -92,7 +95,7 @@ public class YouTubeExtractorTest : BaseTest
                 }
             });
 
-        _youTubeExtractor = new YouTubeExtractor(new HttpClient(interceptor));
+        _youTubeExtractor = new YouTubeExtractor(new HttpClient(_httpInterceptor));
     }
 
     [Theory]
@@ -248,5 +251,54 @@ public class YouTubeExtractorTest : BaseTest
         emojiResult.Metadata!["file.extension"].ShouldBe("png");
         emojiResult.Metadata["emoji_name"].ShouldBe("konuto");
         emojiResult.Type.ShouldBe(JobTaskType.Download);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Config_Cookies(bool multipleCookies)
+    {
+        HttpRequestMessage? request = null;
+
+        _httpInterceptor.RequestProcessed += HttpInterceptor_RequestProcessed;
+
+        var cookies = new Dictionary<string, string>();
+        if (multipleCookies)
+        {
+            cookies["YSC"] = "_wwCnBu9guc";
+            cookies["VISITOR_INFO1_LIVE"] = "MHllVv46iSU";
+            _youTubeExtractor.Config.Add(YouTubeExtractorConfig.CookiesKey, cookies.Select(p => $"{p.Key}={p.Value}"));
+        }
+        else
+        {
+            cookies["VISITOR_INFO1_LIVE"] = "MHllVv46iSU";
+            _youTubeExtractor.Config.Add(YouTubeExtractorConfig.CookiesKey, cookies.Select(p => $"{p.Key}={p.Value}").Single());
+        }
+
+        var results = await _youTubeExtractor.ExtractAsync(
+            new Uri("https://www.youtube.com/watch?v=_BSSJi-sHh8"),
+            null,
+            new MetadataObject('.')).ToListAsync();
+
+        request!.Headers.Single(p => p.Key == "Cookie").Value
+            .ShouldBe(new[] { string.Join("; ", cookies.Select(q => $"{q.Key}={q.Value}")) });
+
+        void HttpInterceptor_RequestProcessed(object? sender, HttpRequestMessage e)
+        {
+            request = e;
+        }
+    }
+
+    [Fact]
+    public async Task Config_NoWebpThumbnail()
+    {
+        _youTubeExtractor.Config.Add(YouTubeExtractorConfig.UseWebpThumbnailsKey, false);
+
+        var results = await _youTubeExtractor.ExtractAsync(
+            new Uri("https://www.youtube.com/watch?v=_BSSJi-sHh8"),
+            null,
+            new MetadataObject('.')).ToListAsync();
+        var thumbnailResult = results.Single(r => r.ItemId == "UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#_BSSJi-sHh8_thumb");
+        thumbnailResult.Uri.AbsoluteUri.EndsWith(".jpg").ShouldBeTrue();
     }
 }
