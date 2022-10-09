@@ -48,7 +48,7 @@ public class YouTubeExtractorTest : BaseTest
             .AddUri(Consts.CommunityRegex, request =>
             {
                 var match = Consts.CommunityRegex.Match(request.RequestUri!.AbsoluteUri);
-                var channelId = match.Groups["channel"].Value;
+                var channelId = match.Groups[Consts.CommunityRegexChannelGroup].Value;
 
                 if (request.RequestUri.Query.Length > 0)
                 {
@@ -58,6 +58,12 @@ public class YouTubeExtractorTest : BaseTest
                 }
 
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Community.{channelId}.html");
+            })
+            .AddUri(Consts.CommunityPostRegex, request =>
+            {
+                var match = Consts.CommunityPostRegex.Match(request.RequestUri!.AbsoluteUri);
+                var postId = match.Groups[Consts.CommunityPostRegexPostGroup].Value;
+                return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.CommunityPost.{postId}.html");
             })
             .AddUri(BrowseRegex, async (request, cancellationToken) =>
             {
@@ -199,11 +205,13 @@ public class YouTubeExtractorTest : BaseTest
         results.All(r => r.Type == JobTaskType.Download).ShouldBeTrue();
     }
 
-    [Fact]
-    public async Task Get_Community_Single()
+    [Theory]
+    [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community?lb=UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")]
+    [InlineData("https://www.youtube.com/post/UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")]
+    public async Task Get_Community_Single(string uri)
     {
         var results = await _youTubeExtractor.ExtractAsync(
-            new Uri("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community?lb=UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP"),
+            new Uri(uri),
             null,
             new MetadataObject('.')).ToListAsync();
 
@@ -216,7 +224,7 @@ public class YouTubeExtractorTest : BaseTest
         textResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
         textResult.Metadata["file.extension"].ShouldBe("txt");
         //textResult.Metadata["origin.item_id_seq"].ShouldBe("");
-        textResult.Metadata["origin.uri"].ShouldBe("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community?lb=UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
+        textResult.Metadata["origin.uri"].ShouldBe("https://www.youtube.com/post/UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         textResult.Metadata["post_id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         //textResult.Metadata["published"].ShouldBe();
         textResult.Metadata["published_from"]!.ToString()!.StartsWith("10 months ago from ").ShouldBeTrue();

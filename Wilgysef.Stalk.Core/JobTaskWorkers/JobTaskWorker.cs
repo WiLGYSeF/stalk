@@ -255,7 +255,7 @@ public class JobTaskWorker : IJobTaskWorker
             cancellationToken: cancellationToken))
         {
             Logger?.LogInformation("Job task {JobTaskId} downloaded {Uri} to {Path}", JobTask.Id, result.Uri, result.Path);
-            Logger?.LogInformation("Job task {JobTaskId} downloaded {Uri}: {@Result}", JobTask.Id, result.Uri, new
+            Logger?.LogDebug("Job task {JobTaskId} downloaded {Uri}: {@Result}", JobTask.Id, result.Uri, new
             {
                 result.ItemId,
                 result.MetadataPath,

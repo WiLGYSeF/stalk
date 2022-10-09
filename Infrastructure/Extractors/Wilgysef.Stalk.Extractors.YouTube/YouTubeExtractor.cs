@@ -331,7 +331,14 @@ public class YouTubeExtractor : IExtractor
                 break;
             }
 
-            var continuationToken = json.SelectToken("$..continuationCommand.token")?.ToString();
+            var continuationTokens = json.SelectTokens("$..continuationCommand.token");
+            if (continuationTokens.Count() != 1)
+            {
+                // TODO: handle?
+                break;
+            }
+
+            var continuationToken = continuationTokens.First().ToString();
             if (continuationToken == null)
             {
                 break;
@@ -412,7 +419,13 @@ public class YouTubeExtractor : IExtractor
         var text = textBuilder.ToString();
 
         metadata.SetByParts("txt", MetadataObjectConsts.File.ExtensionKeys);
-        metadata.SetByParts($"https://www.youtube.com/channel/{channelId}/community?lb={postId}", MetadataObjectConsts.Origin.UriKeys);
+
+        var canonicalBaseUrl = post.SelectToken("$..publishedTimeText..canonicalBaseUrl")?.ToString();
+        metadata.SetByParts(
+            canonicalBaseUrl != null
+                ? $"https://www.youtube.com{canonicalBaseUrl}"
+                : $"https://www.youtube.com/post/{postId}",
+            MetadataObjectConsts.Origin.UriKeys);
 
         return new ExtractResult(
             Encoding.UTF8.GetBytes(text),
@@ -629,6 +642,7 @@ public class YouTubeExtractor : IExtractor
             continuation = continuationToken
         };
 
+        // TODO: replace with INNERTUBE_API_KEY
         var response = await _httpClient.PostAsJsonAsync(
             "https://www.youtube.com/youtubei/v1/browse?key=AIzaSyAO_FJ2SlqU8Q4STEHLGCilw_Y9_11qcW8&prettyPrint=false",
             request,
@@ -737,7 +751,7 @@ public class YouTubeExtractor : IExtractor
         {
             return ExtractType.Videos;
         }
-        if (Consts.CommunityRegex.IsMatch(absoluteUri))
+        if (Consts.CommunityRegex.IsMatch(absoluteUri) || Consts.CommunityPostRegex.IsMatch(absoluteUri))
         {
             return ExtractType.Community;
         }
