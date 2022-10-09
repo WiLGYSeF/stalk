@@ -248,7 +248,7 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
         imageUrl = GetCommunityImageUrlFromThumbnail(imageUrl);
 
         return new ExtractResult(
-            new Uri(imageUrl),
+            imageUrl,
             $"{channelId}#community#{postId}_image",
             JobTaskType.Download,
             metadata: metadata);
@@ -299,7 +299,7 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
         metadata.SetByParts("png", MetadataObjectConsts.File.ExtensionKeys);
 
         return new ExtractResult(
-            new Uri(GetScaledEmojiImageUri(url)),
+            GetScaledEmojiImageUri(url),
             $"{emojiChannelId}#emoji#{emojiSubId}",
             JobTaskType.Download,
             metadata: metadata);

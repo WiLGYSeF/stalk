@@ -282,7 +282,7 @@ public class TwitterExtractor : IExtractor
             }
 
             yield return new ExtractResult(
-                new Uri(mediaUrl),
+                mediaUrl,
                 $"{userId}#{tweetId}#{mediaId}",
                 JobTaskType.Download,
                 metadata: mediaMetadata);
@@ -321,7 +321,7 @@ public class TwitterExtractor : IExtractor
             mediaMetadata.SetByParts(mediaItem["mediaStats"]?["viewCount"]?.Value<int>(), "video", "view_count");
 
             yield return new ExtractResult(
-                videoUri,
+                videoUri.AbsoluteUri,
                 $"{userId}#{tweetId}#{mediaId}",
                 JobTaskType.Download,
                 metadata: mediaMetadata);

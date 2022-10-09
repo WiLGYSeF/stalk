@@ -160,7 +160,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
                 var channelId = playlistItem.SelectToken("$.shortBylineText..browseId")!.ToString();
 
                 yield return new ExtractResult(
-                    new Uri($"https://www.youtube.com/watch?v={videoId}"),
+                    $"https://www.youtube.com/watch?v={videoId}",
                     $"{channelId}#video#{videoId}",
                     JobTaskType.Extract);
             }
@@ -234,7 +234,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         metadata.SetByParts(YoutubeDlFileExtensionTemplate, MetadataObjectConsts.File.ExtensionKeys);
 
         yield return new ExtractResult(
-            uri,
+            uri.AbsoluteUri,
             $"{channelId}#video#{videoId}",
             JobTaskType.Download,
             metadata: metadata);
@@ -276,7 +276,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
                 metadata.SetByParts(GetExtensionFromUri(uri), MetadataObjectConsts.File.ExtensionKeys);
 
                 result = new ExtractResult(
-                    uri,
+                    uri.AbsoluteUri,
                     $"{channelId}#video#{videoId}_thumb",
                     JobTaskType.Download,
                     metadata: metadata);

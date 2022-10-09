@@ -421,12 +421,12 @@ public class WorkAsyncTest : BaseTest
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         yield return new ExtractResult(
-            RandomValues.RandomUri(),
+            RandomValues.RandomUri().AbsoluteUri,
             RandomValues.RandomString(10),
             JobTaskType.Extract);
 
         yield return new ExtractResult(
-            RandomValues.RandomUri(),
+            RandomValues.RandomUri().AbsoluteUri,
             RandomValues.RandomString(10),
             JobTaskType.Extract);
     }
