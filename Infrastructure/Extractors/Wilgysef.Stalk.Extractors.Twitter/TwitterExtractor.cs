@@ -233,7 +233,8 @@ public class TwitterExtractor : IExtractor
         {
             yield return new ExtractResult(
                 Encoding.UTF8.GetBytes(fullText),
-                $"{userId}#{tweetId}",
+                mediaType: "text/plain;charset=UTF-8",
+                itemId: $"{userId}#{tweetId}",
                 metadata: metadata);
         }
     }

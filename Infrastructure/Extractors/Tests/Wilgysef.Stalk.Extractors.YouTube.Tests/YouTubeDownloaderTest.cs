@@ -76,7 +76,6 @@ public class YouTubeDownloaderTest : BaseTest
         results.Count.ShouldBe(2);
         var subtitlesResult = results.Single(r => r.Path.EndsWith(".vtt"));
         var videoResult = results.Single(r => r.Path.EndsWith(".webm"));
-        videoResult.Metadata!["file.size"].ShouldBeNull();
         ((IDictionary<object, object>)(videoResult.Metadata["youtube"]!)).Count.ShouldBe(56);
     }
 

@@ -396,18 +396,28 @@ public class YouTubeExtractor : IExtractor
             metadata.SetByParts($"{channelId}#community#{relativeDateTime}_{postId}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
         }
 
-        var text = ConcatRuns(contextTextRuns);
-        if (text == null)
+        var textBuilder = new StringBuilder();
+        foreach (var content in contextTextRuns)
         {
-            return null;
+            var url = GetContentRunsUrl(content);
+            if (url != null)
+            {
+                textBuilder.Append(url);
+            }
+            else if (content["text"] != null)
+            {
+                textBuilder.Append(content["text"]!.ToString());
+            }
         }
+        var text = textBuilder.ToString();
 
         metadata.SetByParts("txt", MetadataObjectConsts.File.ExtensionKeys);
         metadata.SetByParts($"https://www.youtube.com/channel/{channelId}/community?lb={postId}", MetadataObjectConsts.Origin.UriKeys);
 
         return new ExtractResult(
             Encoding.UTF8.GetBytes(text),
-            $"{channelId}#community#{postId}",
+            mediaType: "text/plain;charset=UTF-8",
+            itemId: $"{channelId}#community#{postId}",
             metadata: metadata);
     }
 
@@ -762,6 +772,27 @@ public class YouTubeExtractor : IExtractor
             }
         }
         return textBuilder.ToString();
+    }
+
+    private static string? GetContentRunsUrl(JToken content)
+    {
+        var redirectUrl = content["navigationEndpoint"]?["urlEndpoint"]?["url"]?.ToString();
+        if (redirectUrl == null)
+        {
+            return null;
+        }
+
+        try
+        {
+            var uri = new Uri(redirectUrl);
+            var query = HttpUtility.ParseQueryString(uri.Query);
+            var q = query["q"];
+            return q;
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private static TimeSpan? GetApproximateDuration(JToken playerResponse)
