@@ -1,12 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO.Abstractions;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Text.RegularExpressions;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.FilenameSlugs;
@@ -71,7 +70,7 @@ public class YouTubeDownloader : DownloaderBase
     /// </summary>
     public bool WriteSubs { get; set; } = true;
 
-    public bool MoveInfoJsonToMetadata { get; set; } = true;
+    public bool MoveInfoJsonToMetadata { get; set; } = false;
 
     private const string ConfigExeName = "executableName";
 
@@ -91,7 +90,7 @@ public class YouTubeDownloader : DownloaderBase
     private static readonly Regex OutputDownloadProgress = new(@"^\[download\]\s+(?<percent>[0-9.]+)% of (?<size>[0-9.]+(?:[KMG]i?)?B) at \s+(?<rate>Unknown B/s|[0-9.]+(?:[KMG]i?)?B/s) ETA\s+(?<eta>Unknown|[0-9:]+)", RegexOptions.Compiled);
     private static readonly Regex SizeRegex = new(@"^(?<amount>[0-9.]+)(?<size>(?:[KMG]i?)?B)(?:/s)?$", RegexOptions.Compiled);
 
-    private readonly ConcurrentDictionary<object, DownloadStatus> _downloadStatuses = new();
+    private readonly ConcurrentDictionary<int, DownloadStatus> _downloadStatuses = new();
 
     private readonly IFileSystem _fileSystem;
     private readonly IStringFormatter _stringFormatter;
@@ -133,7 +132,7 @@ public class YouTubeDownloader : DownloaderBase
         DownloadRequestData? requestData = null,
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
-        // --cookies FILE
+        // TODO: --cookies FILE
 
         var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
         var filename = filenameSlug.SlugifyPath(
@@ -195,22 +194,36 @@ public class YouTubeDownloader : DownloaderBase
         var process = FindAndStartProcess(processStartInfo);
 
         var status = new DownloadStatus();
-        _downloadStatuses[process] = status;
+        _downloadStatuses[process.Id] = status;
 
         process.OutputDataReceived += OutputReceivedHandler;
         process.ErrorDataReceived += ErrorReceivedHandler;
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
-        
+
         try
         {
             await process.WaitForExitAsync(cancellationToken);
         }
-        catch
+        catch (Exception exception)
         {
-            Debug.WriteLine($"Cancelled {process.ExitCode} {process.HasExited}");
+            Logger?.LogError(exception, "YouTube: Failed to run youtube-dl: {ExitCode}", process.ExitCode);
             throw;
         }
+
+        if (status.OutputFilename != null)
+        {
+            status.OutputFilename = GetFullPath(process, status.OutputFilename);
+        }
+        if (status.MetadataFilename != null)
+        {
+            status.MetadataFilename = GetFullPath(process, status.MetadataFilename);
+        }
+        if (status.SubtitlesFilename != null)
+        {
+            status.SubtitlesFilename = GetFullPath(process, status.SubtitlesFilename);
+        }
+        status.DestinationFilename = null;
 
         if (status.SubtitlesFilename != null)
         {
@@ -228,20 +241,22 @@ public class YouTubeDownloader : DownloaderBase
             {
                 try
                 {
-                    using var stream = _fileSystem.File.Open(status.MetadataFilename, FileMode.Open);
-                    using var reader = new StreamReader(stream);
+                    using (var stream = _fileSystem.File.Open(status.MetadataFilename, FileMode.Open))
+                    {
+                        using var reader = new StreamReader(stream);
 
-                    var deserializer = new DeserializerBuilder()
-                        .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                        .Build();
-                    var youtubeMetadata = deserializer.Deserialize(reader);
-                    metadata["youtube"] = youtubeMetadata;
+                        var deserializer = new DeserializerBuilder()
+                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
+                            .Build();
+                        var youtubeMetadata = deserializer.Deserialize(reader);
+                        metadata["youtube"] = youtubeMetadata;
+                    }
 
                     _fileSystem.File.Delete(status.MetadataFilename);
                 }
                 catch (Exception exception)
                 {
-                    Logger?.LogError(exception, "Could not get YouTube metadata.");
+                    Logger?.LogError(exception, "YouTube: Could not get YouTube metadata.");
                 }
             }
             else
@@ -295,12 +310,28 @@ public class YouTubeDownloader : DownloaderBase
 
     private void OutputReceivedHandler(object sender, DataReceivedEventArgs args)
     {
-        Debug.WriteLine(args.Data);
-
-        if (sender is not IProcess process
-            || args.Data == null
-            || !_downloadStatuses.TryGetValue(sender, out var downloadStatus))
+        if (args.Data == null)
         {
+            return;
+        }
+
+        Logger?.LogDebug("YouTube: {Output}", args.Data);
+
+        DownloadStatus downloadStatus;
+        try
+        {
+            // sender could either be a Process or IProcess :(
+            dynamic senderProcess = sender;
+            int processId = senderProcess.Id;
+            if (!_downloadStatuses.TryGetValue(processId, out downloadStatus))
+            {
+                Logger?.LogError("YouTube: Could not get download status object from process Id {ProcessId}.", processId);
+                return;
+            }
+        }
+        catch (Exception exception)
+        {
+            Logger?.LogError(exception, "YouTube: Could not get process Id.");
             return;
         }
 
@@ -311,22 +342,22 @@ public class YouTubeDownloader : DownloaderBase
 
         if (args.Data.StartsWith(OutputSubtitlesPrefix))
         {
-            downloadStatus.SubtitlesFilename = GetFullPath(process, args.Data[OutputSubtitlesPrefix.Length..]);
+            downloadStatus.SubtitlesFilename = args.Data[OutputSubtitlesPrefix.Length..];
             downloadStatus.DestinationFilename = downloadStatus.SubtitlesFilename;
         }
         else if (args.Data.StartsWith(OutputMetadataPrefix))
         {
-            downloadStatus.MetadataFilename = GetFullPath(process, args.Data[OutputMetadataPrefix.Length..]);
+            downloadStatus.MetadataFilename = args.Data[OutputMetadataPrefix.Length..];
             downloadStatus.DestinationFilename = downloadStatus.MetadataFilename;
         }
         else if (args.Data.StartsWith(OutputOutputPrefix))
         {
-            downloadStatus.OutputFilename = GetFullPath(process, args.Data[OutputOutputPrefix.Length..^1]);
+            downloadStatus.OutputFilename = args.Data[OutputOutputPrefix.Length..^1];
             downloadStatus.DestinationFilename = downloadStatus.OutputFilename;
         }
         else if (args.Data.StartsWith(OutputDownloadDestination))
         {
-            downloadStatus.DestinationFilename = GetFullPath(process, args.Data[OutputDownloadDestination.Length..]);
+            downloadStatus.DestinationFilename = args.Data[OutputDownloadDestination.Length..];
         }
         else
         {
@@ -355,7 +386,10 @@ public class YouTubeDownloader : DownloaderBase
 
     private void ErrorReceivedHandler(object sender, DataReceivedEventArgs args)
     {
-        Logger?.LogError("YouTube: error: {Error}", args.Data);
+        if (args.Data != null)
+        {
+            Logger?.LogError("YouTube: error: {Error}", args.Data);
+        }
     }
 
     private string GetFullPath(IProcess process, string path)

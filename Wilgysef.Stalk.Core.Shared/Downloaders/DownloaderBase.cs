@@ -21,7 +21,19 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// <summary>
         /// Buffer size for downloading files.
         /// </summary>
-        public virtual int DownloadBufferSize { get; set; } = 4 * 1024;
+        public virtual int DownloadBufferSize
+        {
+            get => _downloadBufferSize;
+            set
+            {
+                if (value <= 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(value), "Buffer size must be greater than zero.");
+                }
+                _downloadBufferSize = value;
+            }
+        }
+        private int _downloadBufferSize = 4 * 1024;
 
         /// <summary>
         /// Hash name used in <see cref="HashAlgorithm.Create(string)"/>.
@@ -81,7 +93,10 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
                 var resultMetadata = metadata.Copy();
                 resultMetadata.TryAddValueByParts(DateTimeOffset.Now.ToString(), MetadataObjectConsts.RetrievedKeys);
 
-                resultMetadata.TryAddValueByParts(downloadFileResult.FileSize, MetadataObjectConsts.File.SizeKeys);
+                if (downloadFileResult.FileSize.HasValue)
+                {
+                    resultMetadata.TryAddValueByParts(downloadFileResult.FileSize, MetadataObjectConsts.File.SizeKeys);
+                }
                 if (downloadFileResult.Hash != null)
                 {
                     resultMetadata.TryAddValueByParts(downloadFileResult.Hash, MetadataObjectConsts.File.HashKeys);

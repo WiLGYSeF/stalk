@@ -62,8 +62,10 @@ public class YouTubeDownloaderTest : BaseTest
     }
 
     [Fact]
-    public async Task Download_With_Subtitle()
+    public async Task Download_With_Subtitle_Combined_InfoMetaData()
     {
+        _youTubeDownloader.MoveInfoJsonToMetadata = true;
+
         var results = await _youTubeDownloader.DownloadAsync(
             new Uri("https://www.youtube.com/watch?v=2SVDVhzzzSY"),
             "test.%(ext)s",
@@ -79,7 +81,7 @@ public class YouTubeDownloaderTest : BaseTest
     }
 
     [Fact]
-    public async Task Download_With_Subtitle_InfoMetadata()
+    public async Task Download_With_Subtitle_Separate_InfoMetadata()
     {
         _youTubeDownloader.MoveInfoJsonToMetadata = false;
 
