@@ -235,7 +235,7 @@ public class JobTaskBuilder
     {
         return WithName(result.Name)
             .WithState(JobTaskState.Inactive)
-            .WithUri(result.Uri.AbsoluteUri)
+            .WithUri(result.Uri)
             .WithPriority(result.Priority)
             .WithItemId(result.ItemId)
             .WithItemData(result.ItemData)

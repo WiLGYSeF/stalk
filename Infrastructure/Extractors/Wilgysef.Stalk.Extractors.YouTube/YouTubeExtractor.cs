@@ -2,13 +2,12 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Web;
 using Wilgysef.Stalk.Core.Shared.CacheObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Shared.Extensions;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
@@ -77,6 +76,29 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
     public string? GetItemId(Uri uri)
     {
+        if (Consts.VideoRegex.IsMatch(uri.AbsoluteUri))
+        {
+            var query = HttpUtility.ParseQueryString(uri.Query);
+            if (query.TryGetValue("v", out var videoId))
+            {
+                return videoId;
+            }
+        }
+
+        if (Consts.CommunityRegex.IsMatch(uri.AbsoluteUri))
+        {
+            var query = HttpUtility.ParseQueryString(uri.Query);
+            if (query.TryGetValue("lb", out var postId))
+            {
+                return postId;
+            }
+        }
+
+        var match = Consts.CommunityPostRegex.Match(uri.AbsoluteUri);
+        if (match.Success)
+        {
+            return match.Groups[Consts.CommunityPostRegexPostGroup].Value;
+        }
         return null;
     }
 
@@ -160,8 +182,8 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
                 var channelId = playlistItem.SelectToken("$.shortBylineText..browseId")!.ToString();
 
                 yield return new ExtractResult(
-                    new Uri($"https://www.youtube.com/watch?v={videoId}"),
-                    $"{channelId}#video#{videoId}",
+                    $"https://www.youtube.com/watch?v={videoId}",
+                    videoId,
                     JobTaskType.Extract);
             }
 
@@ -234,8 +256,8 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         metadata.SetByParts(YoutubeDlFileExtensionTemplate, MetadataObjectConsts.File.ExtensionKeys);
 
         yield return new ExtractResult(
-            uri,
-            $"{channelId}#video#{videoId}",
+            uri.AbsoluteUri,
+            videoId,
             JobTaskType.Download,
             metadata: metadata);
     }
@@ -276,8 +298,8 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
                 metadata.SetByParts(GetExtensionFromUri(uri), MetadataObjectConsts.File.ExtensionKeys);
 
                 result = new ExtractResult(
-                    uri,
-                    $"{channelId}#video#{videoId}_thumb",
+                    uri.AbsoluteUri,
+                    $"{videoId}#thumb",
                     JobTaskType.Download,
                     metadata: metadata);
                 break;

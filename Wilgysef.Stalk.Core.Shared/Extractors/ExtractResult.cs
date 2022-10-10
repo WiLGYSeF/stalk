@@ -12,7 +12,8 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
 
         public int Priority { get; }
 
-        public Uri Uri { get; }
+        // Can't use Uri because data URI schemes may exceed the Uri length limit
+        public string Uri { get; }
 
         public string? ItemId { get; }
 
@@ -25,7 +26,7 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
         public DownloadRequestData? DownloadRequestData { get; }
 
         public ExtractResult(
-            Uri uri,
+            string uri,
             string itemId,
             JobTaskType type,
             string? name = null,
@@ -72,7 +73,7 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
             IMetadataObject? metadata = null,
             DownloadRequestData? downloadRequestData = null)
             : this(
-                  CreateUri(data, mediaType),
+                  CreateDataUri(data, mediaType),
                   itemId,
                   JobTaskType.Download,
                   name,
@@ -82,7 +83,7 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
                   downloadRequestData)
                 { }
 
-        private static Uri CreateUri(byte[] data, string? mediaType = null)
+        private static string CreateDataUri(byte[] data, string? mediaType = null)
         {
             var expectedLength = DivideRoundUp(data.Length, 3) * 4 + (mediaType?.Length ?? 0) + 13;
             var builder = new StringBuilder(expectedLength);
@@ -104,7 +105,7 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
             builder.Append("base64,");
             builder.Append(Convert.ToBase64String(data));
 
-            return new Uri(builder.ToString());
+            return builder.ToString();
         }
 
         private static int DivideRoundUp(int dividend, int divisor)
