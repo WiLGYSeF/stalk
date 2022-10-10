@@ -1,10 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using System;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading;
 using System.Web;
 using Wilgysef.Stalk.Core.Shared.CacheObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
@@ -218,7 +216,7 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
         return new ExtractResult(
             Encoding.UTF8.GetBytes(text),
             mediaType: "text/plain;charset=UTF-8",
-            itemId: $"{channelId}#community#{postId}",
+            itemId: postId,
             metadata: metadata);
     }
 
@@ -249,7 +247,7 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
 
         return new ExtractResult(
             imageUrl,
-            $"{channelId}#community#{postId}_image",
+            $"{postId}#image",
             JobTaskType.Download,
             metadata: metadata);
     }

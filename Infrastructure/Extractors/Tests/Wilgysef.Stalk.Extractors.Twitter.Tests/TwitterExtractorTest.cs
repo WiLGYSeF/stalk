@@ -68,6 +68,14 @@ public class TwitterExtractorTest : BaseTest
         _twitterExtractor.CanExtract(new Uri(uri)).ShouldBe(expected);
     }
 
+    [Theory]
+    [InlineData("https://twitter.com/amatsukauto/status/1560187874460733440", null)]
+    [InlineData("https://twitter.com/amatsukauto", null)]
+    public void GetItemIds(string uri, string expected)
+    {
+        _twitterExtractor.GetItemId(new Uri(uri)).ShouldBe(expected);
+    }
+
     [Fact]
     public async Task Get_User_Tweets()
     {
