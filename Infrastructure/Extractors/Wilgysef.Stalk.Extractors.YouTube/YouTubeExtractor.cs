@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Web;
 using Wilgysef.Stalk.Core.Shared.CacheObjects;
+using Wilgysef.Stalk.Core.Shared.DateTimeProviders;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extensions;
 using Wilgysef.Stalk.Core.Shared.Extractors;
@@ -15,9 +16,8 @@ namespace Wilgysef.Stalk.Extractors.YouTube;
 
 public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 {
-    // TODO:
-    //   live chat? (handled by youtube-dl already)
-    //   comments?
+    // TODO: live chat? (handled by youtube-dl already)
+    // TODO: comments?
 
     public string Name => "YouTube";
 
@@ -40,7 +40,10 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
     /// </summary>
     private const string YoutubeDlFileExtensionTemplate = "%(ext)s";
 
-    public YouTubeExtractor(HttpClient httpClient) : base(httpClient) { }
+    public YouTubeExtractor(
+        HttpClient httpClient,
+        IDateTimeProvider dateTimeProvider)
+        : base(httpClient, dateTimeProvider) { }
 
     public bool CanExtract(Uri uri)
     {
@@ -364,7 +367,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
     private YouTubeCommunityExtractor CreateCommunityExtractor()
     {
-        return new YouTubeCommunityExtractor(HttpClient, ExtractorConfig, Logger, Cache);
+        return new YouTubeCommunityExtractor(HttpClient, DateTimeProvider, ExtractorConfig, Logger, Cache);
     }
 
     private static Uri GetVideosUri(string channel, bool shortChannel = false)

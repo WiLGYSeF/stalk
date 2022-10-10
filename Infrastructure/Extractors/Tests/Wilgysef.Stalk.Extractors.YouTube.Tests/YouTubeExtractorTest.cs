@@ -7,10 +7,12 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Wilgysef.HttpClientInterception;
+using Wilgysef.Stalk.Core.DateTimeProviders;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Extractors.TestBase;
 using Wilgysef.Stalk.TestBase.Shared;
+using Wilgysef.Stalk.TestBase.Shared.Mocks;
 
 namespace Wilgysef.Stalk.Extractors.YouTube.Tests;
 
@@ -24,6 +26,7 @@ public class YouTubeExtractorTest : BaseTest
     private readonly YouTubeExtractor _youTubeExtractor;
 
     private readonly HttpClientInterceptor _httpInterceptor;
+    private readonly MockDateTimeProvider _dateTimeProvider;
 
     public YouTubeExtractorTest()
     {
@@ -95,7 +98,8 @@ public class YouTubeExtractorTest : BaseTest
                 }
             });
 
-        _youTubeExtractor = new YouTubeExtractor(new HttpClient(_httpInterceptor));
+        _dateTimeProvider = new();
+        _youTubeExtractor = new YouTubeExtractor(new HttpClient(_httpInterceptor), _dateTimeProvider);
     }
 
     [Theory]
@@ -224,6 +228,9 @@ public class YouTubeExtractorTest : BaseTest
     [InlineData("https://www.youtube.com/post/UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")]
     public async Task Get_Community_Single(string uri)
     {
+        _dateTimeProvider.SetDateTime(new DateTime(2022, 10, 1, 0, 0, 0, DateTimeKind.Utc));
+        _dateTimeProvider.SetDateTimeOffset(new DateTimeOffset(2022, 10, 1, 0, 0, 0, TimeSpan.Zero));
+
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri(uri),
             null,
@@ -237,11 +244,11 @@ public class YouTubeExtractorTest : BaseTest
         textResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
         textResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
         textResult.Metadata["file.extension"].ShouldBe("txt");
-        //textResult.Metadata["origin.item_id_seq"].ShouldBe("");
+        textResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#20211201_UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         textResult.Metadata["origin.uri"].ShouldBe("https://www.youtube.com/post/UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         textResult.Metadata["post_id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
-        //textResult.Metadata["published"].ShouldBe();
-        textResult.Metadata["published_from"]!.ToString()!.StartsWith("10 months ago from ").ShouldBeTrue();
+        textResult.Metadata["published"].ShouldBe("20211201");
+        textResult.Metadata["published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
         textResult.Metadata["votes"].ShouldBe("4.3K");
         textResult.Type.ShouldBe(JobTaskType.Download);
 
@@ -249,10 +256,10 @@ public class YouTubeExtractorTest : BaseTest
         imageResult.Uri.ShouldBe("https://yt3.ggpht.com/BRWDFVKhADpFgyxc1iZgYop1k3QJGR67yoYoFulEYm35Jrvb7A2gLjpodlKVhmGtlBuUvx0VkQLD1Q=s1920-nd-v1");
         imageResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
         imageResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
-        //textResult.Metadata["origin.item_id_seq"].ShouldBe("");
+        imageResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#20211201_UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP_image");
         imageResult.Metadata["post_id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
-        //textResult.Metadata["published"].ShouldBe();
-        imageResult.Metadata["published_from"]!.ToString()!.StartsWith("10 months ago from ").ShouldBeTrue();
+        imageResult.Metadata["published"].ShouldBe("20211201");
+        imageResult.Metadata["published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
         imageResult.Metadata["votes"].ShouldBe("4.3K");
         imageResult.Type.ShouldBe(JobTaskType.Download);
 

@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
 using Wilgysef.Stalk.Core.Shared.CacheObjects;
+using Wilgysef.Stalk.Core.Shared.DateTimeProviders;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
@@ -21,10 +22,11 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
 
     public YouTubeCommunityExtractor(
         HttpClient httpClient,
+        IDateTimeProvider dateTimeProvider,
         YouTubeExtractorConfig config,
         ILogger? logger,
         ICacheObject<string, object?>? cache)
-            : base(httpClient, config)
+        : base(httpClient, dateTimeProvider, config)
     {
         _logger = logger;
         _cache = cache;
@@ -150,7 +152,7 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
         {
             relativeDateTime = GetRelativeDateTime(publishedTime.ToString());
             metadata["published"] = relativeDateTime;
-            metadata["published_from"] = publishedTime.ToString() + $" from {DateTimeOffset.Now}";
+            metadata["published_from"] = publishedTime.ToString() + $" from {DateTimeProvider.OffsetNow}";
         }
 
         metadata["votes"] = post["voteCount"]?["simpleText"]?.ToString();

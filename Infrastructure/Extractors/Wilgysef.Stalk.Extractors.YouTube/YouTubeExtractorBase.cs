@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Net.Http.Json;
 using HtmlAgilityPack;
+using Wilgysef.Stalk.Core.Shared.DateTimeProviders;
 
 namespace Wilgysef.Stalk.Extractors.YouTube;
 
@@ -19,11 +20,18 @@ public abstract class YouTubeExtractorBase
 
     protected YouTubeExtractorConfig ExtractorConfig { get; set; }
 
-    protected YouTubeExtractorBase(HttpClient httpClient) : this(httpClient, new()) { }
+    protected IDateTimeProvider DateTimeProvider { get; set; }
 
-    protected YouTubeExtractorBase(HttpClient httpClient, YouTubeExtractorConfig config)
+    protected YouTubeExtractorBase(HttpClient httpClient, IDateTimeProvider dateTimeProvider)
+        : this(httpClient, dateTimeProvider, new()) { }
+
+    protected YouTubeExtractorBase(
+        HttpClient httpClient,
+        IDateTimeProvider dateTimeProvider,
+        YouTubeExtractorConfig config)
     {
         HttpClient = httpClient;
+        DateTimeProvider = dateTimeProvider;
         ExtractorConfig = config;
     }
 
@@ -128,7 +136,7 @@ public abstract class YouTubeExtractorBase
         return request;
     }
 
-    protected static DateTime? GetDateTime(string? dateTime)
+    protected DateTime? GetDateTime(string? dateTime)
     {
         if (dateTime == null)
         {
@@ -157,7 +165,7 @@ public abstract class YouTubeExtractorBase
         return relative != null ? DateTime.Parse(relative) : null;
     }
 
-    protected static string? GetRelativeDateTime(string relative, DateTime? dateTime = null)
+    protected string? GetRelativeDateTime(string relative, DateTime? dateTime = null)
     {
         var split = relative.Split(" ");
         if (split.Length != 3 || !int.TryParse(split[0], out var number) || split[2] != "ago")
@@ -167,7 +175,7 @@ public abstract class YouTubeExtractorBase
 
         DateTime relativeTime;
         var span = split[1];
-        dateTime ??= DateTime.Now;
+        dateTime ??= DateTimeProvider.Now;
 
         if (span.StartsWith("second"))
         {
