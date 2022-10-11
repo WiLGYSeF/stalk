@@ -249,11 +249,22 @@ public class YouTubeDownloader : DownloaderBase
 
         IProcess StartProcess(string executableName)
         {
-            startInfo.FileName = combineExternalBinaryPath
-                ? Path.Combine(_externalBinariesOptions.Path!, executableName)
-                : executableName;
-            return _processService.Start(startInfo)
-                ?? throw new InvalidOperationException($"Could not start process: {startInfo.FileName}");
+            try
+            {
+                return StartProcessInternal(executableName, true);
+            }
+            catch (Win32Exception) { }
+
+            return StartProcessInternal(executableName, false);
+
+            IProcess StartProcessInternal(string executableName, bool onlyExecutableName)
+            {
+                startInfo.FileName = combineExternalBinaryPath && !onlyExecutableName
+                    ? Path.Combine(_externalBinariesOptions.Path!, executableName)
+                    : executableName;
+                return _processService.Start(startInfo)
+                    ?? throw new InvalidOperationException($"Could not start process: {startInfo.FileName}");
+            }
         }
     }
 
