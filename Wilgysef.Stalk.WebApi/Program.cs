@@ -91,6 +91,12 @@ void ConfigureServices()
     var connectionString = builder.Configuration.GetConnectionString("Default");
     var extractorsOptions = GetOptions<ExtractorsOptions>(builder.Configuration);
 
+    var extractorPaths = extractorsOptions.Paths != null && extractorsOptions.Paths.Any()
+        ? extractorsOptions.Paths
+        : extractorsOptions.Path != null
+            ? new[] { extractorsOptions.Path }
+            : Array.Empty<string>();
+
     var serviceRegistrar = new ServiceRegistrar();
     serviceRegistrar.RegisterServices(builder.Services);
 
@@ -107,7 +113,7 @@ void ConfigureServices()
         serviceRegistrar.RegisterServices(
             containerBuilder,
             logger,
-            extractorsOptions.Path,
+            extractorPaths,
             t => GetOptionsByType(t, builder.Configuration));
     });
 }

@@ -65,13 +65,13 @@ public class ServiceRegistrar
     public void RegisterServices(
         ContainerBuilder builder,
         ILogger logger,
-        string? externalAssembliesPath,
+        IEnumerable<string>? externalAssembliesPaths,
         Func<Type, IOptionSection> getOptionSection)
     {
-        var internalAssemblies = ToArray(GetAssemblies(Assembly.GetCallingAssembly(), EligibleAssemblyFilter).ToList());
-        var externalAssemblies = ToArray(externalAssembliesPath != null
-            ? AssemblyLoader.LoadAssemblies(externalAssembliesPath)
-            : new List<Assembly>());
+        var internalAssemblies = GetAssemblies(Assembly.GetCallingAssembly(), EligibleAssemblyFilter).ToArray();
+        var externalAssemblies = externalAssembliesPaths != null
+            ? externalAssembliesPaths.SelectMany(p => AssemblyLoader.LoadAssemblies(p)).ToArray()
+            : Array.Empty<Assembly>();
 
         var loadedAssemblies = ToArray(
             internalAssemblies.Length + externalAssemblies.Length,
@@ -195,12 +195,12 @@ public class ServiceRegistrar
         }
     }
 
-    private T[] ToArray<T>(ICollection<T> items)
+    private static T[] ToArray<T>(ICollection<T> items)
     {
         return ToArray(items.Count, items);
     }
 
-    private T[] ToArray<T>(int count, IEnumerable<T> items)
+    private static T[] ToArray<T>(int count, IEnumerable<T> items)
     {
         var arr = new T[count];
         var index = 0;

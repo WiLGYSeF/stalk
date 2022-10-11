@@ -1,4 +1,6 @@
-﻿namespace Wilgysef.Stalk.Core.Shared.Options
+﻿using System.Collections.Generic;
+
+namespace Wilgysef.Stalk.Core.Shared.Options
 {
     public class ExternalBinariesOptions : IOptionSection
     {
