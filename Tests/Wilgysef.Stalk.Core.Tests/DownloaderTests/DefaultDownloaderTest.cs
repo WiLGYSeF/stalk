@@ -44,14 +44,24 @@ public class DefaultDownloaderTest : BaseTest
         });
     }
 
-    [Fact]
-    public async Task Download_File_Save_Metadata()
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task Download_File_Save_Metadata(bool computeHash, bool saveFilenameTemplateMetadata)
     {
         var uri = RandomValues.RandomUri();
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
         var metadata = new MetadataObject('.');
+
+        if (!computeHash)
+        {
+            _downloader.HashName = null;
+        }
+
+        _downloader.Config[DownloaderBase.SaveFilenameTemplatesMetadataKey] = saveFilenameTemplateMetadata;
 
         await foreach (var result in _downloader.DownloadAsync(
             uri,
@@ -79,64 +89,36 @@ public class DefaultDownloaderTest : BaseTest
         metadataWritten.From(deserializer.Deserialize<IDictionary<object, object?>>(
                 Encoding.UTF8.GetString(_fileSystem.File.ReadAllBytes(metadataFilename))));
 
-        var hashName = "SHA256";
-        metadataWritten.GetValueByParts(MetadataObjectConsts.File.FilenameTemplateKeys).ShouldBe(filename);
-        metadataWritten.GetValueByParts(MetadataObjectConsts.MetadataFilenameTemplateKeys).ShouldBe(metadataFilename);
-        metadataWritten.GetValueByParts(MetadataObjectConsts.Origin.ItemIdKeys).ShouldBe(itemId);
-        metadataWritten.GetValueByParts(MetadataObjectConsts.Origin.UriKeys).ShouldBe(uri.ToString());
-        (DateTime.Now - DateTime.Parse((string)metadataWritten.GetValueByParts(MetadataObjectConsts.RetrievedKeys)!))
-            .Duration().TotalMinutes.ShouldBeLessThan(1);
-        metadataWritten.GetValueByParts(MetadataObjectConsts.File.SizeKeys).ShouldBe(TestDownloadData.Length.ToString());
-        metadataWritten.GetValueByParts(MetadataObjectConsts.File.HashKeys)
-            .ShouldBe(Convert.ToHexString(HashAlgorithm.Create(hashName)!.ComputeHash(TestDownloadData)).ToLower());
-        metadataWritten.GetValueByParts(MetadataObjectConsts.File.HashAlgorithmKeys).ShouldBe(hashName);
-    }
-
-    [Fact]
-    public async Task Download_File_Save_Metadata_No_Hash()
-    {
-        var uri = RandomValues.RandomUri();
-        var filename = "testfile";
-        var itemId = RandomValues.RandomString(10);
-        var metadataFilename = "testmeta";
-        var metadata = new MetadataObject('.');
-
-        _downloader.HashName = null;
-        await foreach (var result in _downloader.DownloadAsync(
-            uri,
-            filename,
-            itemId,
-            metadataFilename,
-            metadata))
+        if (saveFilenameTemplateMetadata)
         {
-            result.Path.ShouldBe(filename);
-            result.Uri.ShouldBe(uri);
-            result.ItemId.ShouldBe(itemId);
-            result.MetadataPath.ShouldBe(metadataFilename);
+            metadataWritten.GetValueByParts(MetadataObjectConsts.File.FilenameTemplateKeys).ShouldBe(filename);
+            metadataWritten.GetValueByParts(MetadataObjectConsts.MetadataFilenameTemplateKeys).ShouldBe(metadataFilename);
+        }
+        else
+        {
+            metadataWritten.ContainsByParts(MetadataObjectConsts.File.FilenameTemplateKeys).ShouldBeFalse();
+            metadataWritten.ContainsByParts(MetadataObjectConsts.MetadataFilenameTemplateKeys).ShouldBeFalse();
         }
 
-        _httpEntryLog.Entries.Count.ShouldBe(1);
-        _httpEntryLog.Entries.Single().Request.RequestUri.ShouldBe(uri);
-
-        _fileSystem.AllFiles.Count().ShouldBe(2);
-        _fileSystem.File.ReadAllBytes(filename).ShouldBe(TestDownloadData);
-
-        var deserializer = new DeserializerBuilder()
-            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-            .Build();
-        var metadataWritten = new MetadataObject(metadata.KeySeparator);
-        metadataWritten.From(deserializer.Deserialize<IDictionary<object, object?>>(
-                Encoding.UTF8.GetString(_fileSystem.File.ReadAllBytes(metadataFilename))));
-
-        metadataWritten.GetValueByParts(MetadataObjectConsts.File.FilenameTemplateKeys).ShouldBe(filename);
-        metadataWritten.GetValueByParts(MetadataObjectConsts.MetadataFilenameTemplateKeys).ShouldBe(metadataFilename);
         metadataWritten.GetValueByParts(MetadataObjectConsts.Origin.ItemIdKeys).ShouldBe(itemId);
         metadataWritten.GetValueByParts(MetadataObjectConsts.Origin.UriKeys).ShouldBe(uri.ToString());
         (DateTime.Now - DateTime.Parse((string)metadataWritten.GetValueByParts(MetadataObjectConsts.RetrievedKeys)!))
             .Duration().TotalMinutes.ShouldBeLessThan(1);
         metadataWritten.GetValueByParts(MetadataObjectConsts.File.SizeKeys).ShouldBe(TestDownloadData.Length.ToString());
-    }
 
+        if (computeHash)
+        {
+            var hashName = "SHA256";
+            metadataWritten.GetValueByParts(MetadataObjectConsts.File.HashKeys)
+                .ShouldBe(Convert.ToHexString(HashAlgorithm.Create(hashName)!.ComputeHash(TestDownloadData)).ToLower());
+            metadataWritten.GetValueByParts(MetadataObjectConsts.File.HashAlgorithmKeys).ShouldBe(hashName);
+        }
+        else
+        {
+            metadataWritten.ContainsByParts(MetadataObjectConsts.File.HashKeys).ShouldBeFalse();
+            metadataWritten.ContainsByParts(MetadataObjectConsts.File.HashAlgorithmKeys).ShouldBeFalse();
+        }
+    }
 
     [Fact]
     public async Task Download_File_DownloadRequestData()

@@ -12,6 +12,8 @@ public class JobConfigDto
 
     public bool? SaveMetadata { get; set; }
 
+    public bool? SaveFilenameTemplatesMetadata { get; set; }
+
     public string? ItemIdPath { get; set; }
 
     public bool? SaveItemIds { get; set; }

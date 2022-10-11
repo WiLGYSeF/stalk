@@ -9,6 +9,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Wilgysef.Stalk.Core.Shared.Extensions;
 using Wilgysef.Stalk.Core.Shared.FilenameSlugs;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.MetadataSerializers;
@@ -18,6 +19,8 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 {
     public abstract class DownloaderBase : IDownloader
     {
+        public const string SaveFilenameTemplatesMetadataKey = "saveFilenameTemplatesMetadata";
+
         /// <summary>
         /// Buffer size for downloading files.
         /// </summary>
@@ -77,8 +80,13 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             DownloadRequestData? requestData = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            metadata.TryAddValueByParts(filenameTemplate, MetadataObjectConsts.File.FilenameTemplateKeys);
-            metadata.TryAddValueByParts(metadataFilenameTemplate, MetadataObjectConsts.MetadataFilenameTemplateKeys);
+            if (Config.TryGetValueAs<bool, string, object?>(SaveFilenameTemplatesMetadataKey, out var saveFilenameTemplatesMetadata)
+                && saveFilenameTemplatesMetadata)
+            {
+                metadata.TryAddValueByParts(filenameTemplate, MetadataObjectConsts.File.FilenameTemplateKeys);
+                metadata.TryAddValueByParts(metadataFilenameTemplate, MetadataObjectConsts.MetadataFilenameTemplateKeys);
+            }
+
             metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdKeys);
             metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdSeqKeys);
             metadata.TryAddValueByParts(uri.ToString(), MetadataObjectConsts.Origin.UriKeys);

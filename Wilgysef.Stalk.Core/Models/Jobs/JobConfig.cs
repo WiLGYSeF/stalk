@@ -40,6 +40,11 @@ public class JobConfig
     public bool SaveMetadata { get; set; } = true;
 
     /// <summary>
+    /// Whether to save <see cref="DownloadFilenameTemplate"/> and <see cref="MetadataFilenameTemplate"/> to metadata.
+    /// </summary>
+    public bool SaveFilenameTemplatesMetadata { get; set; }
+
+    /// <summary>
     /// Item Id path.
     /// </summary>
     public string? ItemIdPath { get; set; }
@@ -99,7 +104,11 @@ public class JobConfig
     /// <returns>Downloader configuration from global config groups and config groups with the same name as <see cref="IDownloader.Name"/>.</returns>
     public Dictionary<string, object?> GetDownloaderConfig(IDownloader downloader)
     {
-        var config = new Dictionary<string, object?>();
+        var config = new Dictionary<string, object?>
+        {
+            [DownloaderBase.SaveFilenameTemplatesMetadataKey] = SaveFilenameTemplatesMetadata
+        };
+
         GetConfig(DownloaderConfig.Where(c => c.Name == GlobalConfigGroupName), config);
         GetConfig(DownloaderConfig.Where(c => c.Name == downloader.Name), config);
         return config;
