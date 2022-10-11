@@ -58,12 +58,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.Stalk.Extractors.Y
 		{B2282E99-7A56-449E-A00F-6BA7482ABA49} = {B2282E99-7A56-449E-A00F-6BA7482ABA49}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wilgysef.HttpClientInterception", "Infrastructure\Wilgysef.HttpClientInterception\Wilgysef.HttpClientInterception.csproj", "{5ADE3567-5446-491C-AC8F-1A50265F7EE3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.HttpClientInterception", "Infrastructure\Wilgysef.HttpClientInterception\Wilgysef.HttpClientInterception.csproj", "{5ADE3567-5446-491C-AC8F-1A50265F7EE3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wilgysef.HttpClientInterception.Tests", "Infrastructure\Wilgysef.HttpClientInterception.Tests\Wilgysef.HttpClientInterception.Tests.csproj", "{C37502D7-5F4C-444D-A8F5-E658006B09A7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.HttpClientInterception.Tests", "Infrastructure\Wilgysef.HttpClientInterception.Tests\Wilgysef.HttpClientInterception.Tests.csproj", "{C37502D7-5F4C-444D-A8F5-E658006B09A7}"
 	ProjectSection(ProjectDependencies) = postProject
 		{5ADE3567-5446-491C-AC8F-1A50265F7EE3} = {5ADE3567-5446-491C-AC8F-1A50265F7EE3}
 	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wilgysef.Stalk.Extractors.YoutubeDl.Core", "Infrastructure\Extractors\Wilgysef.Stalk.Extractors.YoutubeDl.Core\Wilgysef.Stalk.Extractors.YoutubeDl.Core.csproj", "{9F941D77-BFB9-41BC-9A19-D5D7162D9094}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -143,6 +145,10 @@ Global
 		{C37502D7-5F4C-444D-A8F5-E658006B09A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C37502D7-5F4C-444D-A8F5-E658006B09A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C37502D7-5F4C-444D-A8F5-E658006B09A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9F941D77-BFB9-41BC-9A19-D5D7162D9094}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9F941D77-BFB9-41BC-9A19-D5D7162D9094}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9F941D77-BFB9-41BC-9A19-D5D7162D9094}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9F941D77-BFB9-41BC-9A19-D5D7162D9094}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -163,6 +169,7 @@ Global
 		{1968ABA7-3ED4-4CA6-B4BE-8A57BABF8764} = {23D9EB93-071E-4BB1-96DC-90D8D9EFA98B}
 		{5ADE3567-5446-491C-AC8F-1A50265F7EE3} = {EAE7F40A-3A86-4E78-9CB8-F06284A3E677}
 		{C37502D7-5F4C-444D-A8F5-E658006B09A7} = {EAE7F40A-3A86-4E78-9CB8-F06284A3E677}
+		{9F941D77-BFB9-41BC-9A19-D5D7162D9094} = {2647EF06-050B-45D1-BD89-1BE03F335941}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {975B6EDC-28CD-42DA-AE1B-C8FBD1666827}

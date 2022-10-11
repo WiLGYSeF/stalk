@@ -13,6 +13,7 @@ using Wilgysef.Stalk.Core.Shared.MetadataSerializers;
 using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.Core.Shared.ProcessServices;
 using Wilgysef.Stalk.Core.Shared.StringFormatters;
+using Wilgysef.Stalk.Extractors.YoutubeDl.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -21,14 +22,6 @@ namespace Wilgysef.Stalk.Extractors.YouTube;
 public class YouTubeDownloader : DownloaderBase
 {
     public override string Name => "YouTube";
-
-    private static readonly string[] YouTubeDlDefaultExeNames = new string[]
-    {
-        "youtube-dl.exe",
-        "youtube-dl",
-        "yt-dlp.exe",
-        "yt-dlp"
-    };
 
     private static readonly string OutputMetadataPrefix = "[info] Writing video metadata as JSON to: ";
     private static readonly string OutputSubtitlesPrefix = "[info] Writing video subtitles to: ";
@@ -84,63 +77,18 @@ public class YouTubeDownloader : DownloaderBase
     {
         _config = new(Config);
 
+        var youtubeDl = new YoutubeDlRunner(_processService)
+        {
+            Config = _config.ToYoutubeDlConfig(),
+        };
+
         var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
         var filename = filenameSlug.SlugifyPath(
             _stringFormatter.Format(filenameTemplate, metadata.GetFlattenedDictionary()));
 
         CreateDirectoriesFromFilename(filename);
 
-        var processStartInfo = new ProcessStartInfo()
-        {
-            CreateNoWindow = true,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            RedirectStandardInput = true,
-            UseShellExecute = false,
-        };
-
-        processStartInfo.ArgumentList.Add("--retries");
-        processStartInfo.ArgumentList.Add(_config.Retries.ToString());
-
-        processStartInfo.ArgumentList.Add("--file-access-retries");
-        processStartInfo.ArgumentList.Add(_config.FileAccessRetries.ToString());
-
-        processStartInfo.ArgumentList.Add("--fragment-retries");
-        processStartInfo.ArgumentList.Add(_config.FragmentRetries.ToString());
-
-        foreach (var retry in _config.RetrySleep)
-        {
-            processStartInfo.ArgumentList.Add("--retry-sleep");
-            processStartInfo.ArgumentList.Add(retry);
-        }
-
-        processStartInfo.ArgumentList.Add("--buffer-size");
-        processStartInfo.ArgumentList.Add(_config.BufferSize.ToString());
-
-        processStartInfo.ArgumentList.Add("--progress");
-        processStartInfo.ArgumentList.Add("--newline");
-
-        if (_config.WriteInfoJson)
-        {
-            processStartInfo.ArgumentList.Add("--write-info-json");
-        }
-        if (_config.WriteSubs)
-        {
-            processStartInfo.ArgumentList.Add("--write-subs");
-        }
-
-        if (_config.CookieString != null)
-        {
-            processStartInfo.ArgumentList.Add("--add-header");
-            processStartInfo.ArgumentList.Add($"Cookie:{_config.CookieString}");
-        }
-
-        processStartInfo.ArgumentList.Add("--output");
-        processStartInfo.ArgumentList.Add(filename);
-
-        processStartInfo.ArgumentList.Add(uri.AbsoluteUri);
-
-        var process = FindAndStartProcess(processStartInfo);
+        var process = youtubeDl.FindAndStartProcess(uri, filename);
 
         var status = new DownloadStatus();
         _downloadStatuses[process.Id] = status;
@@ -226,46 +174,6 @@ public class YouTubeDownloader : DownloaderBase
             null,
             null,
             createMetadata: true);
-    }
-
-    private IProcess FindAndStartProcess(ProcessStartInfo startInfo)
-    {
-        var combineExternalBinaryPath = _externalBinariesOptions.Path != null && _externalBinariesOptions.Path.Length > 0;
-        if (_config.ExecutableName != null)
-        {
-            return StartProcess(_config.ExecutableName.ToString());
-        }
-
-        foreach (var possibleName in YouTubeDlDefaultExeNames)
-        {
-            try
-            {
-                return StartProcess(possibleName);
-            }
-            catch (Win32Exception) { }
-        }
-
-        throw new InvalidOperationException("Could not start youtube-dl.");
-
-        IProcess StartProcess(string executableName)
-        {
-            try
-            {
-                return StartProcessInternal(executableName, true);
-            }
-            catch (Win32Exception) { }
-
-            return StartProcessInternal(executableName, false);
-
-            IProcess StartProcessInternal(string executableName, bool onlyExecutableName)
-            {
-                startInfo.FileName = combineExternalBinaryPath && !onlyExecutableName
-                    ? Path.Combine(_externalBinariesOptions.Path!, executableName)
-                    : executableName;
-                return _processService.Start(startInfo)
-                    ?? throw new InvalidOperationException($"Could not start process: {startInfo.FileName}");
-            }
-        }
     }
 
     private void OutputReceivedHandler(object sender, DataReceivedEventArgs args)

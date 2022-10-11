@@ -1,4 +1,5 @@
 ﻿using Wilgysef.Stalk.Core.Shared.Extensions;
+using Wilgysef.Stalk.Extractors.YoutubeDl.Core;
 
 namespace Wilgysef.Stalk.Extractors.YouTube;
 
@@ -117,5 +118,22 @@ public class YouTubeDownloaderConfig : YouTubeConfig
         {
             CookieString = GetCookieString(new[] { cookie });
         }
+    }
+
+    public YoutubeDlConfig ToYoutubeDlConfig()
+    {
+        return new YoutubeDlConfig
+        {
+            Retries = Retries,
+            FileAccessRetries = FileAccessRetries,
+            FragmentRetries = FragmentRetries,
+            RetrySleep = RetrySleep,
+            BufferSize = BufferSize,
+            WriteInfoJson = WriteInfoJson,
+            WriteSubs = WriteSubs,
+            MoveInfoJsonToMetadata = MoveInfoJsonToMetadata,
+            ExecutableName = ExecutableName,
+            CookieString = CookieString,
+        };
     }
 }
