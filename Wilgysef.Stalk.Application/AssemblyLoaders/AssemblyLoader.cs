@@ -11,7 +11,7 @@ internal static class AssemblyLoader
         {
             try
             {
-                assemblies.Add(Assembly.LoadFile(file));
+                assemblies.Add(Assembly.LoadFrom(file));
             }
             catch (BadImageFormatException) { }
         }

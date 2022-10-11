@@ -64,7 +64,7 @@ public class ServiceRegistrar
     /// <param name="builder">Container builder.</param>
     public void RegisterServices(
         ContainerBuilder builder,
-        ILogger logger,
+        ILogger? logger,
         IEnumerable<string>? externalAssembliesPaths,
         Func<Type, IOptionSection> getOptionSection)
     {
@@ -72,6 +72,11 @@ public class ServiceRegistrar
         var externalAssemblies = externalAssembliesPaths != null
             ? externalAssembliesPaths.SelectMany(p => AssemblyLoader.LoadAssemblies(p)).ToArray()
             : Array.Empty<Assembly>();
+
+        foreach (var externalAssembly in externalAssemblies)
+        {
+            logger?.LogDebug("Loaded external assembly {AssemblyName}", externalAssembly.FullName);
+        }
 
         var loadedAssemblies = ToArray(
             internalAssemblies.Length + externalAssemblies.Length,
