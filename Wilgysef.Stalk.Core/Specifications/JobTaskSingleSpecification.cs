@@ -17,8 +17,7 @@ public class JobTaskSingleSpecification : Specification<JobTask>
     {
         Query
             .Include(t => t.Job)
-                // TODO: FIX!
-                //.ThenInclude(j => j.Tasks)
+            .Include(t => t.ParentTask)
             .Where(t => t.Id == jobTaskId);
 
         if (readOnly)

@@ -22,8 +22,6 @@ public class JobTaskManager : IJobTaskManager, ITransientDependency
     {
         var entity = await _jobTaskRepository.AddAsync(jobTask, cancellationToken);
 
-        // TODO: events?
-
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return entity;
     }
@@ -49,7 +47,6 @@ public class JobTaskManager : IJobTaskManager, ITransientDependency
 
     public async Task<JobTask> UpdateJobTaskAsync(JobTask jobTask, CancellationToken cancellationToken = default)
     {
-        // TODO: change this?
         _jobTaskRepository.Update(jobTask);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return jobTask;

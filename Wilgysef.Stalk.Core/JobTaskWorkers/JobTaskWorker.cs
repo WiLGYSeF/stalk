@@ -96,11 +96,18 @@ public class JobTaskWorker : IJobTaskWorker
 
             if (JobTask != null)
             {
-                using var scope = _lifetimeScope.BeginLifetimeScope();
-                var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
+                try
+                {
+                    using var scope = _lifetimeScope.BeginLifetimeScope();
+                    var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
 
-                JobTask.Deactivate();
-                await jobTaskManager.UpdateJobTaskAsync(JobTask, CancellationToken.None);
+                    JobTask.Deactivate();
+                    await jobTaskManager.UpdateJobTaskAsync(JobTask, CancellationToken.None);
+                }
+                catch (Exception exception)
+                {
+                    Logger?.LogError(exception, "Failed to update Job task {JobTaskId} state.", JobTask?.Id);
+                }
             }
         }
     }

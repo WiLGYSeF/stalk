@@ -28,7 +28,8 @@ public class StalkDbContext : DbContext, IStalkDbContext, IScopedDependency
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         // TODO: synchronous domain events?
-        return base.SaveChanges(acceptAllChangesOnSuccess);
+        throw new NotImplementedException("Use SaveChangesAsync() instead.");
+        //return base.SaveChanges(acceptAllChangesOnSuccess);
     }
 
     public override async Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)

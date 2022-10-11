@@ -94,8 +94,6 @@ public class JobStateManager : IJobStateManager, ITransientDependency
 
         if (job.IsActive)
         {
-            // TODO: restore state
-
             if (changeState)
             {
                 job.ChangeState(JobState.Pausing);

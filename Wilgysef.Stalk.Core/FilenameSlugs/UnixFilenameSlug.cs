@@ -10,10 +10,9 @@ public class UnixFilenameSlug : IFilenameSlug, ITransientDependency
 
     public char PathSeparator => '/';
 
-    private bool _useUnicode = true;
-
     // TODO: support turning off unicode
     public bool UseUnicode { get => _useUnicode; set => throw new NotImplementedException(); }
+    private bool _useUnicode = true;
 
     public string SlugifyPath(string path)
     {
@@ -44,7 +43,7 @@ public class UnixFilenameSlug : IFilenameSlug, ITransientDependency
             : slugPath + PathSeparator + slugFile;
     }
 
-    private string SlugifyPart(string part)
+    private static string SlugifyPart(string part)
     {
         if (part.Length == 0)
         {

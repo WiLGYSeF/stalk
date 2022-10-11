@@ -8,8 +8,6 @@ namespace Wilgysef.Stalk.Core.JobWorkers;
 
 public class JobWorker : IJobWorker
 {
-    private Job _job = null!;
-
     public Job Job
     {
         get => _job;
@@ -23,10 +21,8 @@ public class JobWorker : IJobWorker
                 : 4;
         }
     }
-
+    private Job _job = null!;
     private JobConfig _jobConfig = null!;
-
-    private int _workerLimit = 4;
 
     public int WorkerLimit
     {
@@ -40,6 +36,7 @@ public class JobWorker : IJobWorker
             _workerLimit = value;
         }
     }
+    private int _workerLimit = 4;
 
     public TimeSpan TaskWaitTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
@@ -65,6 +62,8 @@ public class JobWorker : IJobWorker
 
     public virtual async Task WorkAsync(CancellationToken cancellationToken = default)
     {
+        var isDone = false;
+
         try
         {
             Logger?.LogInformation("Job {JobId} starting.", Job.Id);
@@ -115,7 +114,7 @@ public class JobWorker : IJobWorker
             await ReloadJobAsync();
             if (!Job.HasUnfinishedTasks || !JobTaskFailuresLessThanMaxFailures())
             {
-                Job.Done();
+                isDone = true;
             }
         }
         catch (OperationCanceledException)
@@ -133,11 +132,24 @@ public class JobWorker : IJobWorker
 
             if (Job != null)
             {
-                using var scope = _lifetimeScope.BeginLifetimeScope();
-                var jobManager = scope.GetRequiredService<IJobManager>();
+                try
+                {
+                    using var scope = _lifetimeScope.BeginLifetimeScope();
+                    var jobManager = scope.GetRequiredService<IJobManager>();
+                    await ReloadJobAsync(jobManager);
 
-                Job.Deactivate();
-                await jobManager.UpdateJobAsync(Job, CancellationToken.None);
+                    if (isDone)
+                    {
+                        Job.Done();
+                    }
+
+                    Job.Deactivate();
+                    await jobManager.UpdateJobAsync(Job, CancellationToken.None);
+                }
+                catch (Exception exception)
+                {
+                    Logger?.LogError(exception, "Failed to update Job {JobId} state.", Job?.Id);
+                }
             }
         }
     }
@@ -229,6 +241,11 @@ public class JobWorker : IJobWorker
     private async Task<Job> ReloadJobAsync(IServiceLifetimeScope scope)
     {
         var jobManager = scope.GetRequiredService<IJobManager>();
+        return await ReloadJobAsync(jobManager);
+    }
+
+    private async Task<Job> ReloadJobAsync(IJobManager jobManager)
+    {
         var job = await jobManager.GetJobAsync(Job!.Id);
 
         Job = job;

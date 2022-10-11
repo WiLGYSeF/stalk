@@ -26,7 +26,6 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
             IMetadataObject metadata,
             CancellationToken cancellationToken = default);
 
-        // TODO: remove?
         string? GetItemId(Uri uri);
 
         void SetHttpClient(HttpClient client);

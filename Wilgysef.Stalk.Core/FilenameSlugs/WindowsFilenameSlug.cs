@@ -14,10 +14,9 @@ public class WindowsFilenameSlug : IFilenameSlug, ITransientDependency
 
     public static char VolumeSeparator => ':';
 
-    private bool _useUnicode = true;
-
     // TODO: support turning off unicode
     public bool UseUnicode { get => _useUnicode; set => throw new NotImplementedException(); }
+    private bool _useUnicode = true;
 
     private readonly static HashSet<string> _specialFilenames = new()
     {
@@ -70,7 +69,7 @@ public class WindowsFilenameSlug : IFilenameSlug, ITransientDependency
             : slugPath + PathSeparator + slugFile;
     }
 
-    private string SlugifyPart(string part)
+    private static string SlugifyPart(string part)
     {
         if (part.Length == 0)
         {
@@ -110,7 +109,7 @@ public class WindowsFilenameSlug : IFilenameSlug, ITransientDependency
         return builder.ToString();
     }
 
-    private string GetPathPrefix(string path)
+    private static string GetPathPrefix(string path)
     {
         var driveLetter = GetDriveLetter(path);
         if (driveLetter != null)
@@ -127,7 +126,7 @@ public class WindowsFilenameSlug : IFilenameSlug, ITransientDependency
         return "";
     }
 
-    private (string Server, string Share)? GetUncPathPrefix(string path)
+    private static (string Server, string Share)? GetUncPathPrefix(string path)
     {
         if (!(path[0] == '\\' && path[1] == '\\'))
         {
@@ -144,7 +143,7 @@ public class WindowsFilenameSlug : IFilenameSlug, ITransientDependency
         return (path[2..firstIndex], path[(firstIndex + 1)..secondIndex]);
     }
 
-    private char? GetDriveLetter(string path)
+    private static char? GetDriveLetter(string path)
     {
         return path.Length >= 2 && path[1] == VolumeSeparator && char.IsLetter(path[0])
             ? path[0]

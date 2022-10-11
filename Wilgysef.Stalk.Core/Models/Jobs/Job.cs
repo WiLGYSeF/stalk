@@ -493,6 +493,11 @@ public class Job : Entity
             default:
                 break;
         }
+
+        foreach (var jobTask in Tasks)
+        {
+            jobTask.Deactivate();
+        }
     }
 
     /// <summary>
