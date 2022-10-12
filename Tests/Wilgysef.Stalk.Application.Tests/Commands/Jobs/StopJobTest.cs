@@ -44,8 +44,8 @@ public class StopJobTest : BaseTest
 
         await _jobStarter.WorkPrioritizedJobsAsync();
 
-        var job = await this.WaitUntilJobAsync(jobId, job => job.IsActive);
-        job.State.ShouldBe(JobState.Active);
+        var job = await this.WaitUntilJobAsync(jobId, job => job.Tasks.Any(t => t.IsActive));
+        job.Tasks.Any(t => t.IsActive).ShouldBeTrue();
 
         using (var scope = BeginLifetimeScope())
         {

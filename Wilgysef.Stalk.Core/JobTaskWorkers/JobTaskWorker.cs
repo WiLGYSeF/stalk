@@ -38,6 +38,9 @@ public class JobTaskWorker : IJobTaskWorker
 
     public virtual async Task WorkAsync(CancellationToken cancellationToken = default)
     {
+        var isDone = false;
+        (string? Code, string Message, string Detail)? fail = null;
+
         try
         {
             Logger?.LogInformation("Job task {JobTaskId} starting.", JobTask.Id);
@@ -67,7 +70,7 @@ public class JobTaskWorker : IJobTaskWorker
                     throw new NotImplementedException();
             }
 
-            JobTask.Success();
+            isDone = true;
         }
         catch (OperationCanceledException)
         {
@@ -84,10 +87,7 @@ public class JobTaskWorker : IJobTaskWorker
 
                 await CheckAndRetryJobAsync(exception);
 
-                JobTask.Fail(
-                    errorCode: workerException?.Code,
-                    errorMessage: exception.Message,
-                    errorDetail: exception.ToString());
+                fail = (workerException?.Code, exception.Message, exception.ToString());
             }
         }
         finally
@@ -100,6 +100,16 @@ public class JobTaskWorker : IJobTaskWorker
                 {
                     using var scope = _lifetimeScope.BeginLifetimeScope();
                     var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
+                    JobTask = await jobTaskManager.GetJobTaskAsync(JobTask.Id, CancellationToken.None);
+
+                    if (fail.HasValue)
+                    {
+                        JobTask.Fail(fail.Value.Code, fail.Value.Message, fail.Value.Detail);
+                    }
+                    else if (isDone)
+                    {
+                        JobTask.Success();
+                    }
 
                     JobTask.Deactivate();
                     await jobTaskManager.UpdateJobTaskAsync(JobTask, CancellationToken.None);

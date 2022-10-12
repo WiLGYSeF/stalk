@@ -7,6 +7,8 @@ namespace Wilgysef.Stalk.Core.Models.Jobs;
 
 public class JobStateManager : IJobStateManager, ITransientDependency
 {
+    // TODO: possible concurrency issues
+
     private readonly IJobManager _jobManager;
     private readonly IJobRepository _jobRepository;
     private readonly IJobWorkerService _jobWorkerService;
