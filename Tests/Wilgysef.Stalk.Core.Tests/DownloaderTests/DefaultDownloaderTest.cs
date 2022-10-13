@@ -44,6 +44,12 @@ public class DefaultDownloaderTest : BaseTest
         });
     }
 
+    [Fact]
+    public void Can_Always_Download()
+    {
+        _downloader.CanDownload(null!).ShouldBeTrue();
+    }
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(true, false)]
@@ -161,8 +167,26 @@ public class DefaultDownloaderTest : BaseTest
     }
 
     [Fact]
-    public void Can_Always_Download()
+    public async Task Download_File_FormatFilename()
     {
-        _downloader.CanDownload(null!).ShouldBeTrue();
+        var uri = RandomValues.RandomUri();
+        var filename = "testfile${value}";
+        var itemId = RandomValues.RandomString(10);
+        var metadataFilename = "testmeta";
+        var metadata = new MetadataObject('.');
+        metadata["value"] = "abc";
+
+        await foreach (var result in _downloader.DownloadAsync(
+            uri,
+            filename,
+            itemId,
+            metadataFilename,
+            metadata))
+        {
+            result.Path.ShouldBe("testfileabc");
+            result.Uri.ShouldBe(uri);
+            result.ItemId.ShouldBe(itemId);
+            result.MetadataPath.ShouldBe(metadataFilename);
+        }
     }
 }

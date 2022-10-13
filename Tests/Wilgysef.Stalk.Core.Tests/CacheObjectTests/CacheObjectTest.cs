@@ -40,6 +40,12 @@ public class CacheObjectTest : BaseTest
         Should.Throw<ArgumentException>(() => cache["b"]);
         cache.TryGetValue("b", out _).ShouldBeFalse();
         cache.ContainsKey("b").ShouldBeFalse();
+
+        cache.TryGetValueAs<int>("a", out var intValue).ShouldBeTrue();
+        intValue.ShouldBe(1);
+
+        cache.TryGetValueAs<string>("a", out _).ShouldBeFalse();
+        cache.TryGetValueAs<int>("b", out _).ShouldBeFalse();
     }
 
     [Fact]

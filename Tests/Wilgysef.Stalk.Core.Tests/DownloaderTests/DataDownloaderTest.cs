@@ -25,6 +25,14 @@ public class DataDownloaderTest : BaseTest
         _fileSystem = MockFileSystem!;
     }
 
+    [Theory]
+    [InlineData("data:text/plain;base64,aGVsbG8gdGhlcmU=", true)]
+    [InlineData("https://example.com", false)]
+    public void Can_Download(string uri, bool downloadable)
+    {
+        _downloader.CanDownload(new Uri(uri)).ShouldBe(downloadable);
+    }
+
     [Fact]
     public async Task Download_File_And_Save_Metadata()
     {
@@ -50,13 +58,5 @@ public class DataDownloaderTest : BaseTest
 
         _fileSystem.AllFiles.Count().ShouldBe(2);
         _fileSystem.File.ReadAllBytes(filename).ShouldBe(data);
-    }
-
-    [Theory]
-    [InlineData("data:text/plain;base64,aGVsbG8gdGhlcmU=", true)]
-    [InlineData("https://example.com", false)]
-    public void Can_Download(string uri, bool downloadable)
-    {
-        _downloader.CanDownload(new Uri(uri)).ShouldBe(downloadable);
     }
 }
