@@ -52,6 +52,5 @@ public class DeleteJobTaskTest : BaseTest
         }
 
         job = await this.WaitUntilJobAsync(jobId, job => !job.Tasks.Any(t => t.Id == jobTaskId));
-        job.Tasks.SingleOrDefault(t => t.Id == jobTaskId).ShouldBeNull();
     }
 }

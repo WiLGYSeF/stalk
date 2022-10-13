@@ -368,7 +368,10 @@ public class WorkAsyncTest : BaseTest
         _jobWorkerStarter.EnsureTaskSuccessesOnDispose = false;
         var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
-        job = await this.WaitUntilJobAsync(job.Id, job => job.State == JobState.Active);
+        job = await this.WaitUntilJobAsync(
+            job.Id,
+            job => job.State == JobState.Active,
+            shouldCheckCondition: false);
         workerInstance.WorkerTask.Exception.ShouldBeNull();
 
         job.State.ShouldBe(JobState.Active);
@@ -379,12 +382,10 @@ public class WorkAsyncTest : BaseTest
     private async Task<Job> CreateRunAndCompleteJob(Job job)
     {
         var initialTaskCount = job.Tasks.Count;
-        (job, var workerInstance) = await CreateAndRunJob(job);
+        var result = await CreateAndRunJob(job);
 
+        using var workerInstance = result.WorkerInstance;
         job = await this.WaitUntilJobAsync(job.Id, job => job.IsDone);
-
-        job.IsDone.ShouldBeTrue();
-        workerInstance.Dispose();
 
         return job;
     }
@@ -394,19 +395,14 @@ public class WorkAsyncTest : BaseTest
         // TODO: this may be unstable
 
         var initialTaskCount = job.Tasks.Count;
-        (job, var workerInstance) = await CreateAndRunJob(job);
+        var result = await CreateAndRunJob(job);
 
-        job = await this.WaitUntilJobAsync(
-            job.Id,
-            job => job.Tasks.Count >= initialTaskCount + minimumTasksAdded,
-            TimeSpan.FromSeconds(3));
+        using var workerInstance = result.WorkerInstance;
+        job = await this.WaitUntilJobAsync(job.Id, job => job.Tasks.Count >= initialTaskCount + minimumTasksAdded);
 
-        job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(initialTaskCount + minimumTasksAdded);
         workerInstance.CancellationTokenSource.Cancel();
 
         job = await this.WaitUntilJobAsync(job.Id, job => !job.IsActive);
-
-        job.IsActive.ShouldBeFalse();
         workerInstance.Dispose();
 
         return job;

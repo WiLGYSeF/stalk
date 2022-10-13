@@ -24,38 +24,34 @@ public class WorkPrioritizedJobsJob : BackgroundJobHandler<WorkPrioritizedJobsAr
     {
         if (_jobWorkerService.CanStartAdditionalWorkers)
         {
-            while (_jobWorkerService.CanStartAdditionalWorkers)
+            var jobs = await _jobManager.GetNextPriorityJobsAsync(_jobWorkerService.AvailableWorkers, cancellationToken);
+
+            for (var i = 0; i < jobs.Count && _jobWorkerService.CanStartAdditionalWorkers; i++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                var nextPriorityJob = await _jobManager.GetNextPriorityJobAsync(cancellationToken);
-                if (nextPriorityJob == null)
-                {
-                    break;
-                }
-
-                cancellationToken.ThrowIfCancellationRequested();
-                await _jobWorkerService.StartJobWorkerAsync(nextPriorityJob);
+                await _jobWorkerService.StartJobWorkerAsync(jobs[i]);
             }
             return;
         }
 
+        var queuedJobs = await _jobManager.GetNextPriorityJobsAsync(_jobWorkerService.WorkerLimit, cancellationToken);
         var activeJobs = new Stack<Job>(_jobWorkerService.GetJobsByPriority());
+        var queuedIndex = 0;
 
-        while (activeJobs.Count > 0)
+        while (activeJobs.Count > 0 && queuedIndex < queuedJobs.Count)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
             var job = activeJobs.Pop();
-            var nextPriorityJob = await _jobManager.GetNextPriorityJobAsync(cancellationToken);
-            if (nextPriorityJob == null || job.Priority >= nextPriorityJob.Priority)
+            var queuedJob = queuedJobs[queuedIndex];
+            if (job.Priority >= queuedJob.Priority)
             {
                 break;
             }
 
-            cancellationToken.ThrowIfCancellationRequested();
-
             await _jobWorkerService.StopJobWorkerAsync(job);
-            await _jobWorkerService.StartJobWorkerAsync(nextPriorityJob);
+            await _jobWorkerService.StartJobWorkerAsync(queuedJob);
+            queuedIndex++;
         }
     }
 }

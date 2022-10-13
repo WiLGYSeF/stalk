@@ -12,8 +12,9 @@ public class QueuedJobsSpecification : Specification<Job>
     /// <summary>
     /// Get queued jobs in highest priority order.
     /// </summary>
+    /// <param name="limit">Job limit, returns all jobs if <see langword="null"/>.</param>
     /// <param name="readOnly">Indicates if the query is intended for read only.</param>
-    public QueuedJobsSpecification(bool readOnly = false)
+    public QueuedJobsSpecification(int? limit = null, bool readOnly = false)
     {
         Query
             .Include(j => j.Tasks)
@@ -22,6 +23,11 @@ public class QueuedJobsSpecification : Specification<Job>
                 .Any(JobTask.IsQueuedExpression))
             .OrderByDescending(j => j.Priority)
             .ThenBy(j => j.Started);
+
+        if (limit.HasValue)
+        {
+            Query.Take(limit.Value);
+        }
 
         if (readOnly)
         {

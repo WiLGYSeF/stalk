@@ -43,8 +43,6 @@ public class BackgroundJobManager : IBackgroundJobManager, ITransientDependency
         var queuedJobs = await _backgroundJobRepository.ListAsync(
             new BackgroundJobQuerySpecification(_backgroundJobCollectionService.ActiveJobs, job),
             cancellationToken);
-        cancellationToken.ThrowIfCancellationRequested();
-
         var jobArgs = job.DeserializeArgs();
 
         var matchingJobs = queuedJobs.Where(j => compareTo(jobArgs, j.DeserializeArgs()));

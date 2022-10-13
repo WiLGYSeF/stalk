@@ -9,6 +9,7 @@ using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared;
 using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.IdGenerators;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
@@ -49,10 +50,12 @@ public class JobTaskWorker : IJobTaskWorker
             {
                 var jobTaskManager = scope.GetRequiredService<IJobTaskManager>();
                 JobTask = await jobTaskManager.GetJobTaskAsync(JobTask.Id, cancellationToken);
+                cancellationToken.ThrowIfCancellationRequested();
 
                 if (!JobTask.IsActive)
                 {
-                    await jobTaskManager.SetJobTaskActiveAsync(JobTask, CancellationToken.None);
+                    await jobTaskManager.SetJobTaskActiveAsync(JobTask, cancellationToken);
+                    cancellationToken.ThrowIfCancellationRequested();
                 }
             }
 

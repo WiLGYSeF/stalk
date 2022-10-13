@@ -24,6 +24,9 @@ public class JobWorkerMock : IJobWorker
 
     public async Task WorkAsync(CancellationToken cancellationToken = default)
     {
+        var jobManager = _lifetimeScope.GetRequiredService<IJobManager>();
+        await jobManager.SetJobActiveAsync(Job, cancellationToken);
+
         while (!cancellationToken.IsCancellationRequested)
         {
             await Task.Delay(100, cancellationToken);

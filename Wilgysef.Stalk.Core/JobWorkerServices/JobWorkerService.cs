@@ -1,40 +1,37 @@
-﻿using Wilgysef.Stalk.Core.JobWorkerFactories;
+﻿using Microsoft.Extensions.Logging;
+using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
-using Wilgysef.Stalk.Core.Shared.Exceptions;
 
 namespace Wilgysef.Stalk.Core.JobWorkerServices;
 
 public class JobWorkerService : IJobWorkerService, ITransientDependency
 {
-    public bool CanStartAdditionalWorkers => _jobWorkerCollectionService.Workers.Count < WorkerLimit;
+    // TODO: configure
+    public int WorkerLimit => 4;
 
-    private int WorkerLimit { get; set; } = 4;
+    public int AvailableWorkers => WorkerLimit - _jobWorkerCollectionService.Workers.Count;
 
-    private readonly IJobManager _jobManager;
+    public bool CanStartAdditionalWorkers => AvailableWorkers > 0;
+
+    public ILogger? Logger { get; set; }
+
     private readonly IJobWorkerFactory _jobWorkerFactory;
     private readonly IJobWorkerCollectionService _jobWorkerCollectionService;
 
     public JobWorkerService(
-        IJobManager jobManager,
         IJobWorkerFactory jobWorkerFactory,
         IJobWorkerCollectionService jobWorkerCollectionService)
     {
-        _jobManager = jobManager;
         _jobWorkerFactory = jobWorkerFactory;
         _jobWorkerCollectionService = jobWorkerCollectionService;
     }
 
-    public async Task<bool> StartJobWorkerAsync(Job job)
+    public Task<bool> StartJobWorkerAsync(Job job)
     {
-        if (_jobWorkerCollectionService.GetJobWorker(job) != null)
+        if (_jobWorkerCollectionService.GetJobWorker(job) != null || !CanStartAdditionalWorkers)
         {
-            throw new JobActiveException();
-        }
-
-        if (!CanStartAdditionalWorkers)
-        {
-            return false;
+            return Task.FromResult(false);
         }
 
         var worker = _jobWorkerFactory.CreateWorker(job);
@@ -42,18 +39,7 @@ public class JobWorkerService : IJobWorkerService, ITransientDependency
         var task = Task.Run(DoWorkAsync);
 
         _jobWorkerCollectionService.AddJobWorker(worker, task, cancellationTokenSource);
-
-        try
-        {
-            await _jobManager.SetJobActiveAsync(job);
-        }
-        catch
-        {
-            _jobWorkerCollectionService.RemoveJobWorker(worker);
-            throw;
-        }
-
-        return true;
+        return Task.FromResult(true);
 
         async Task DoWorkAsync()
         {

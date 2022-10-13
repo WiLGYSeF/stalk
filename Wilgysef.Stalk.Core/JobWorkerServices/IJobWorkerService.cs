@@ -5,6 +5,16 @@ namespace Wilgysef.Stalk.Core.JobWorkerServices;
 public interface IJobWorkerService
 {
     /// <summary>
+    /// Job worker limit.
+    /// </summary>
+    int WorkerLimit { get; }
+
+    /// <summary>
+    /// Number of available workers.
+    /// </summary>
+    int AvailableWorkers { get; }
+
+    /// <summary>
     /// Whether additional workers can be started.
     /// </summary>
     bool CanStartAdditionalWorkers { get; }

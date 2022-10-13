@@ -52,7 +52,6 @@ public class StopJobTaskTest : BaseTest
             await stopJobTaskCommandHandler.HandleCommandAsync(new StopJobTask(jobTaskId));
         }
 
-        job = await this.WaitUntilJobAsync(jobId, job => !job.Tasks.Single(t => t.Id == jobTaskId).IsActive);
-        job.Tasks.Single(t => t.Id == jobTaskId).State.ShouldBe(JobTaskState.Cancelled);
+        job = await this.WaitUntilJobAsync(jobId, job => job.Tasks.Single(t => t.Id == jobTaskId).State == JobTaskState.Cancelled);
     }
 }

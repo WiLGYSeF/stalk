@@ -60,6 +60,14 @@ public interface IJobManager
     Task<Job?> GetNextPriorityJobAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Gets next priority queued job.
+    /// </summary>
+    /// <param name="limit">Job limit, returns all jobs if <see langword="null"/>.</param>
+    /// <param name="cancellationToken"></param>
+    /// <returns>Queued jobs.</returns>
+    Task<List<Job>> GetNextPriorityJobsAsync(int? limit = null, CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Updates job.
     /// </summary>
     /// <param name="job">Job.</param>

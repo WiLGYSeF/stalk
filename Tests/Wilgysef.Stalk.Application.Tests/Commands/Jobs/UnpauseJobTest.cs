@@ -46,7 +46,6 @@ public class UnpauseJobTest : BaseTest
         await _jobStarter.WorkPrioritizedJobsAsync();
 
         var job = await this.WaitUntilJobAsync(jobId, job => job.State == JobState.Paused);
-        job.State.ShouldBe(JobState.Paused);
 
         using (var scope = BeginLifetimeScope())
         {
@@ -55,6 +54,5 @@ public class UnpauseJobTest : BaseTest
         }
 
         job = await this.WaitUntilJobAsync(jobId, job => job.State == JobState.Inactive);
-        job.State.ShouldBe(JobState.Inactive);
     }
 }

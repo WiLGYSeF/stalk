@@ -176,8 +176,9 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
         while (true)
         {
-            var playlistItems = json.SelectTokens("$..playlistVideoRenderer");
             cancellationToken.ThrowIfCancellationRequested();
+
+            var playlistItems = json.SelectTokens("$..playlistVideoRenderer");
 
             foreach (var playlistItem in playlistItems)
             {

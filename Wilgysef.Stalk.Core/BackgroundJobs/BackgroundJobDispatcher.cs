@@ -40,7 +40,6 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher, ITransientDepen
                 break;
             }
 
-            cancellationToken.ThrowIfCancellationRequested();
             if (job.Attempts == 0)
             {
                 Logger?.LogInformation("Background job {JobId} {JobArgsName} starting.", job.Id, job.JobArgsName);
@@ -53,6 +52,8 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher, ITransientDepen
             try
             {
                 _backgroundJobCollectionService.AddActiveJob(job);
+                cancellationToken.ThrowIfCancellationRequested();
+
                 await ExecuteJobAsync(job, cancellationToken);
 
                 Logger?.LogInformation("Background job {JobId} finished.", job.Id);

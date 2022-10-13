@@ -47,7 +47,6 @@ public class DeleteJobTest : BaseTest
         await _jobStarter.WorkPrioritizedJobsAsync();
 
         var job = await this.WaitUntilJobAsync(jobId, job => job.IsActive);
-        job.State.ShouldBe(JobState.Active);
 
         using (var scope = BeginLifetimeScope())
         {

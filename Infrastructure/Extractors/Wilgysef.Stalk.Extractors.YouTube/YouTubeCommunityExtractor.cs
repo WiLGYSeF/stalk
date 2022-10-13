@@ -54,8 +54,9 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
 
         while (true)
         {
-            var communityPosts = json.SelectTokens("$..backstagePostRenderer");
             cancellationToken.ThrowIfCancellationRequested();
+
+            var communityPosts = json.SelectTokens("$..backstagePostRenderer");
 
             foreach (var communityPost in communityPosts)
             {

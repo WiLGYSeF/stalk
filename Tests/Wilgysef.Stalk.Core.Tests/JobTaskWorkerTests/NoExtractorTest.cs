@@ -49,14 +49,7 @@ public class NoExtractorTest : BaseTest
         using var workerInstance = _jobWorkerStarter.CreateAndStartWorker(job);
 
         job = await this.WaitUntilJobAsync(job.Id, job => job.State == JobState.Active);
-        workerInstance.WorkerTask.Exception.ShouldBeNull();
-
-        job.State.ShouldBe(JobState.Active);
-
         job = await this.WaitUntilJobAsync(job.Id, job => job.IsDone);
-        workerInstance.WorkerTask.Exception.ShouldBeNull();
-
-        job.IsDone.ShouldBeTrue();
 
         var jobTask = job.Tasks.Single();
         jobTask.Result.Success!.Value.ShouldBeFalse();

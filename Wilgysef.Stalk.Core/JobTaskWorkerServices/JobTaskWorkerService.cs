@@ -1,31 +1,27 @@
 ﻿using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
-using Wilgysef.Stalk.Core.Shared.Exceptions;
 
 namespace Wilgysef.Stalk.Core.JobTaskWorkerServices;
 
 public class JobTaskWorkerService : IJobTaskWorkerService, ITransientDependency
 {
-    private readonly IJobTaskManager _jobTaskManager;
     private readonly IJobTaskWorkerFactory _jobTaskWorkerFactory;
     private readonly IJobTaskWorkerCollectionService _jobTaskWorkerCollectionService;
 
     public JobTaskWorkerService(
-        IJobTaskManager jobTaskManager,
         IJobTaskWorkerFactory jobTaskWorkerFactory,
         IJobTaskWorkerCollectionService jobTaskWorkerCollectionService)
     {
-        _jobTaskManager = jobTaskManager;
         _jobTaskWorkerFactory = jobTaskWorkerFactory;
         _jobTaskWorkerCollectionService = jobTaskWorkerCollectionService;
     }
 
-    public async Task<Task> StartJobTaskWorkerAsync(JobTask jobTask, CancellationToken jobCancellationToken)
+    public Task<Task?> StartJobTaskWorkerAsync(JobTask jobTask, CancellationToken jobCancellationToken)
     {
         if (_jobTaskWorkerCollectionService.GetJobTaskWorker(jobTask) != null)
         {
-            throw new JobTaskActiveException();
+            return Task.FromResult<Task?>(null);
         }
 
         var worker = _jobTaskWorkerFactory.CreateWorker(jobTask);
@@ -34,18 +30,8 @@ public class JobTaskWorkerService : IJobTaskWorkerService, ITransientDependency
 
         _jobTaskWorkerCollectionService.AddJobTaskWorker(worker, task, cancellationTokenSource);
 
-        try
-        {
-            await _jobTaskManager.SetJobTaskActiveAsync(jobTask, cancellationTokenSource.Token);
-        }
-        catch
-        {
-            _jobTaskWorkerCollectionService.RemoveJobTaskWorker(worker);
-            throw;
-        }
-
         // return task, do not await
-        return task;
+        return Task.FromResult<Task?>(task);
 
         async Task DoWorkAsync()
         {

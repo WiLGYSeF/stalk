@@ -60,6 +60,5 @@ public class UnpauseJobTaskTest : BaseTest
         }
 
         job = await this.WaitUntilJobAsync(jobId, job => job.Tasks.Single(t => t.Id == jobTaskId).State == JobTaskState.Inactive);
-        job.Tasks.Single(t => t.Id == jobTaskId).State.ShouldBe(JobTaskState.Inactive);
     }
 }

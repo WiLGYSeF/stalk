@@ -80,6 +80,13 @@ public class JobManager : IJobManager, ITransientDependency
             cancellationToken);
     }
 
+    public async Task<List<Job>> GetNextPriorityJobsAsync(int? limit = null, CancellationToken cancellationToken = default)
+    {
+        return await _jobRepository.ListAsync(
+            new QueuedJobsSpecification(limit),
+            cancellationToken);
+    }
+
     public async Task<Job> UpdateJobAsync(Job job, CancellationToken cancellationToken = default)
     {
         _jobRepository.Update(job);

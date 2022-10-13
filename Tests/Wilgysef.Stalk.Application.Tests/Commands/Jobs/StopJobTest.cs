@@ -45,7 +45,6 @@ public class StopJobTest : BaseTest
         await _jobStarter.WorkPrioritizedJobsAsync();
 
         var job = await this.WaitUntilJobAsync(jobId, job => job.Tasks.Any(t => t.IsActive));
-        job.Tasks.Any(t => t.IsActive).ShouldBeTrue();
 
         using (var scope = BeginLifetimeScope())
         {
@@ -53,8 +52,7 @@ public class StopJobTest : BaseTest
             await stopJobCommandHandler.HandleCommandAsync(new StopJob(jobId));
         }
 
-        job = await this.WaitUntilJobAsync(jobId, job => job.IsDone);
-        job.State.ShouldBe(JobState.Cancelled);
+        job = await this.WaitUntilJobAsync(jobId, job => job.State == JobState.Cancelled);
         job.Tasks.All(t => t.IsDone).ShouldBeTrue();
     }
 }

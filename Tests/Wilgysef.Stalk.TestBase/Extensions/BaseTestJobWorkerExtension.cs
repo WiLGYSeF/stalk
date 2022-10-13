@@ -1,4 +1,5 @@
-﻿using Wilgysef.Stalk.Core.Models.Jobs;
+﻿using Shouldly;
+using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.TestBase.Extensions;
@@ -11,7 +12,8 @@ public static class BaseTestJobWorkerExtension
         long jobId,
         Func<Job, bool> condition,
         TimeSpan? timeout = null,
-        TimeSpan? interval = null)
+        TimeSpan? interval = null,
+        bool shouldCheckCondition = true)
     {
         Job job = null!;
         await BaseTest.WaitUntilAsync(async () =>
@@ -19,6 +21,12 @@ public static class BaseTestJobWorkerExtension
             job = await ReloadJobAsync(baseTest, jobId);
             return condition(job);
         }, timeout ?? DefaultTimeout, interval ?? TimeSpan.Zero);
+
+        if (shouldCheckCondition)
+        {
+            condition(job).ShouldBeTrue();
+        }
+
         return job;
     }
 
@@ -26,7 +34,8 @@ public static class BaseTestJobWorkerExtension
         long jobId,
         Func<Job, Task<bool>> condition,
         TimeSpan? timeout = null,
-        TimeSpan? interval = null)
+        TimeSpan? interval = null,
+        bool shouldCheckCondition = true)
     {
         Job job = null!;
         await BaseTest.WaitUntilAsync(async () =>
@@ -34,6 +43,12 @@ public static class BaseTestJobWorkerExtension
             job = await ReloadJobAsync(baseTest, jobId);
             return await condition(job);
         }, timeout ?? DefaultTimeout, interval ?? TimeSpan.Zero);
+
+        if (shouldCheckCondition)
+        {
+            (await condition(job)).ShouldBeTrue();
+        }
+
         return job;
     }
 

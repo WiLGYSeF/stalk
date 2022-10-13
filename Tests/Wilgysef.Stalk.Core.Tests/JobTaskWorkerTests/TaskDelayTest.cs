@@ -77,7 +77,6 @@ public class TaskDelayTest : BaseTest
 
         job = await this.WaitUntilJobAsync(job.Id, job => job.Tasks.Count >= 2);
 
-        job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(2);
         workerInstance.CancellationTokenSource.Cancel();
 
         var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
@@ -108,7 +107,6 @@ public class TaskDelayTest : BaseTest
 
         job = await this.WaitUntilJobAsync(job.Id, job => job.Tasks.Count >= 2);
 
-        job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(2);
         workerInstance.CancellationTokenSource.Cancel();
 
         var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
@@ -145,7 +143,6 @@ public class TaskDelayTest : BaseTest
 
         job = await this.WaitUntilJobAsync(job.Id, job => job.Tasks.Count >= 2);
 
-        job.Tasks.Count.ShouldBeGreaterThanOrEqualTo(2);
         workerInstance.CancellationTokenSource.Cancel();
 
         var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);

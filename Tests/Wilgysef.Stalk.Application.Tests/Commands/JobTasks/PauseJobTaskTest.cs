@@ -1,6 +1,5 @@
 ﻿using Autofac;
 using AutoMapper;
-using Shouldly;
 using Wilgysef.Stalk.Application.Contracts.Commands.Jobs;
 using Wilgysef.Stalk.Application.Contracts.Commands.JobTasks;
 using Wilgysef.Stalk.Application.Contracts.Dtos;
@@ -55,6 +54,5 @@ public class PauseJobTaskTest : BaseTest
         }
 
         job = await this.WaitUntilJobAsync(jobId, job => job.Tasks.Single(t => t.Id == jobTaskId).State == JobTaskState.Paused);
-        job.Tasks.Single(t => t.Id == jobTaskId).State.ShouldBe(JobTaskState.Paused);
     }
 }

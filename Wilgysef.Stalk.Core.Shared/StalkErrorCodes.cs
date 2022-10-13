@@ -30,12 +30,16 @@
 
         #endregion
 
+        #region Job Worker Error Codes
+
+        #endregion
+
         #region Job Task Worker Error Codes
 
         /// <summary>
         /// No extractor could be found to extract from the URI.
         /// </summary>
-        public const string JobTaskWorkerNoExtractor = "Stalk:002001";
+        public const string JobTaskWorkerNoExtractor = "Stalk:003001";
 
         #endregion
     }

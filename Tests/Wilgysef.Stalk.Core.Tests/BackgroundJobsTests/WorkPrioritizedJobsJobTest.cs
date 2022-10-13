@@ -6,6 +6,7 @@ using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.TestBase;
+using Wilgysef.Stalk.TestBase.Extensions;
 using Wilgysef.Stalk.TestBase.Mocks;
 
 namespace Wilgysef.Stalk.Core.Tests.BackgroundJobsTests;
@@ -80,13 +81,16 @@ public class WorkPrioritizedJobsJobTest : BaseTest
                 .WithRandomTasks(JobTaskState.Inactive, 2)
                 .Create(),
         });
-        foreach (var job in jobs)
+        foreach (var j in jobs)
         {
-            await _jobManager.CreateJobAsync(job);
+            await _jobManager.CreateJobAsync(j);
         }
 
-        await _jobWorkerService.StartJobWorkerAsync(jobs.Dequeue());
+        var job = jobs.Dequeue();
+        await _jobWorkerService.StartJobWorkerAsync(job);
         _jobWorkerCollectionService.Workers.Count.ShouldBe(1);
+
+        job = await this.WaitUntilJobAsync(job.Id, job => job.IsActive);
 
         await _workPrioritizedJobsHandler.ExecuteJobAsync(new WorkPrioritizedJobsArgs());
         _jobWorkerCollectionService.Workers.Count.ShouldBe(4);
@@ -130,6 +134,8 @@ public class WorkPrioritizedJobsJobTest : BaseTest
         {
             await _jobWorkerService.StartJobWorkerAsync(job);
         }
+
+        lowestPriorityJob = await this.WaitUntilJobAsync(lowestPriorityJob.Id, job => job.IsActive);
 
         var newJob = new JobBuilder()
             .WithRandomInitializedState(JobState.Inactive)
@@ -183,6 +189,8 @@ public class WorkPrioritizedJobsJobTest : BaseTest
         {
             await _jobWorkerService.StartJobWorkerAsync(job);
         }
+
+        lowestPriorityJob = await this.WaitUntilJobAsync(lowestPriorityJob.Id, job => job.IsActive);
 
         var newJob = new JobBuilder()
             .WithRandomInitializedState(JobState.Inactive)

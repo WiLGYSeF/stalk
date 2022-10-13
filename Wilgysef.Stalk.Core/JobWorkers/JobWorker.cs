@@ -183,8 +183,16 @@ public class JobWorker : IJobWorker
             cancellationToken.ThrowIfCancellationRequested();
 
             var jobTask = jobTasks[jobTaskIndex++];
-            _tasks.Add(await jobTaskWorkerService.StartJobTaskWorkerAsync(jobTask, cancellationToken), jobTask.Id);
-            Logger?.LogDebug("Job {JobId} added task worker for {JobTaskId}.", Job.Id, jobTask.Id);
+            var task = await jobTaskWorkerService.StartJobTaskWorkerAsync(jobTask, cancellationToken);
+            if (task != null)
+            {
+                _tasks.Add(task, jobTask.Id);
+                Logger?.LogDebug("Job {JobId} added task worker for {JobTaskId}.", Job.Id, jobTask.Id);
+            }
+            else
+            {
+                Logger?.LogDebug("Job {JobId} task worker already started for {JobTaskId}.", Job.Id, jobTask.Id);
+            }
         }
     }
 
