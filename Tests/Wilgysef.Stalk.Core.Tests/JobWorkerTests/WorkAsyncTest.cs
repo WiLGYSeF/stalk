@@ -6,6 +6,7 @@ using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.Core.Tests.Utilities;
 using Wilgysef.Stalk.TestBase;
@@ -169,7 +170,7 @@ public class WorkAsyncTest : BaseTest
 
         foreach (var jobTask in job.Tasks)
         {
-            _jobTaskWorkerFactory.FailJobTaskWorker(jobTask);
+            _jobTaskWorkerFactory.FailJobTaskWorker(jobTask, new JobTaskWorkerException(""));
         }
 
         job = await this.WaitUntilJobAsync(job.Id, job => job.State == JobState.Failed);

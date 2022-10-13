@@ -64,6 +64,8 @@ public class JobWorker : IJobWorker
     {
         var isDone = false;
 
+        using var _ = Logger?.BeginScope("Job {JobId}", Job.Id);
+
         try
         {
             Logger?.LogInformation("Job {JobId} starting.", Job.Id);

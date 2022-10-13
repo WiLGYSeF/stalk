@@ -42,6 +42,8 @@ public class JobTaskWorker : IJobTaskWorker
         var isDone = false;
         (string? Code, string Message, string Detail)? fail = null;
 
+        using var _ = Logger?.BeginScope("Job task {JobTaskId}", JobTask.Id);
+
         try
         {
             Logger?.LogInformation("Job task {JobTaskId} starting.", JobTask.Id);
@@ -356,7 +358,10 @@ public class JobTaskWorker : IJobTaskWorker
                     tooManyRequests = httpException.StatusCode.Value == HttpStatusCode.TooManyRequests;
                 }
                 break;
+            case JobTaskWorkerException workerException:
+                break;
             default:
+                retry = true;
                 break;
         }
 
