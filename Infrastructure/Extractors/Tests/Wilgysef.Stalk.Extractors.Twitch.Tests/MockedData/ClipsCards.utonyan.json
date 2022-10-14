@@ -1,0 +1,774 @@
+﻿[
+  {
+    "data": {
+      "user": {
+        "id": "662849096",
+        "clips": {
+          "pageInfo": {
+            "hasNextPage": true,
+            "__typename": "PageInfo"
+          },
+          "edges": [
+            {
+              "cursor": null,
+              "node": {
+                "id": "400638626",
+                "slug": "SillyDistinctRaccoonBatChest-Ms-nlEdOXsNiAL9e",
+                "url": "https://clips.twitch.tv/SillyDistinctRaccoonBatChest-Ms-nlEdOXsNiAL9e",
+                "embedURL": "https://clips.twitch.tv/embed?clip=SillyDistinctRaccoonBatChest-Ms-nlEdOXsNiAL9e",
+                "title": "She miss Selen",
+                "viewCount": 2050,
+                "language": "JA",
+                "curator": {
+                  "id": "442539197",
+                  "login": "renanamiya",
+                  "displayName": "renanamiya",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "511224",
+                  "name": "Apex Legends",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/511224-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/mHrIvDLPp5RHTl7DYgC_Xg/AT-cm%7CmHrIvDLPp5RHTl7DYgC_Xg-preview-260x147.jpg",
+                "createdAt": "2022-07-31T11:16:24Z",
+                "durationSeconds": 31,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "1796802747",
+                "slug": "ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc",
+                "url": "https://clips.twitch.tv/ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc",
+                "embedURL": "https://clips.twitch.tv/embed?clip=ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc",
+                "title": "Uto vibing",
+                "viewCount": 1689,
+                "language": "JA",
+                "curator": {
+                  "id": "442539197",
+                  "login": "renanamiya",
+                  "displayName": "renanamiya",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "518006",
+                  "name": "Stray",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/518006_IGDB-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/9m6CDf2hXjXFkjIjQt-AXA/AT-cm%7C9m6CDf2hXjXFkjIjQt-AXA-preview-260x147.jpg",
+                "createdAt": "2022-07-28T07:39:31Z",
+                "durationSeconds": 49,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "2187558875",
+                "slug": "NastyBoxyWeaselRickroll-eZ9ChUWuzcqI5Fnh",
+                "url": "https://clips.twitch.tv/NastyBoxyWeaselRickroll-eZ9ChUWuzcqI5Fnh",
+                "embedURL": "https://clips.twitch.tv/embed?clip=NastyBoxyWeaselRickroll-eZ9ChUWuzcqI5Fnh",
+                "title": "UTO's English class www",
+                "viewCount": 1115,
+                "language": "EN",
+                "curator": {
+                  "id": "718180102",
+                  "login": "norari3939",
+                  "displayName": "のらり",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "511224",
+                  "name": "Apex Legends",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/511224-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/AT-cm%7CMMqtBnmfQoVFrs3KiORZ4Q-preview-260x147.jpg",
+                "createdAt": "2021-11-19T13:18:51Z",
+                "durationSeconds": 45,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "3654761507",
+                "slug": "VictoriousOutstandingWeaselPanicBasket-HPJ5QZv4RiNf4VLa",
+                "url": "https://clips.twitch.tv/VictoriousOutstandingWeaselPanicBasket-HPJ5QZv4RiNf4VLa",
+                "embedURL": "https://clips.twitch.tv/embed?clip=VictoriousOutstandingWeaselPanicBasket-HPJ5QZv4RiNf4VLa",
+                "title": "Too kowai",
+                "viewCount": 934,
+                "language": "JA",
+                "curator": {
+                  "id": "528303206",
+                  "login": "leonidus69",
+                  "displayName": "leonidus69",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "516575",
+                  "name": "VALORANT",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/516575-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/MY0pqhzyeUGb-EYjX-FS2g/AT-cm%7CMY0pqhzyeUGb-EYjX-FS2g-preview-260x147.jpg",
+                "createdAt": "2022-07-31T05:41:20Z",
+                "durationSeconds": 21,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "333927380",
+                "slug": "HonestDeadAlfalfaDendiFace-Z9bctRS64LcO6grs",
+                "url": "https://clips.twitch.tv/HonestDeadAlfalfaDendiFace-Z9bctRS64LcO6grs",
+                "embedURL": "https://clips.twitch.tv/embed?clip=HonestDeadAlfalfaDendiFace-Z9bctRS64LcO6grs",
+                "title": "I'm not 5head (Uto don't know what is 5head meme)",
+                "viewCount": 859,
+                "language": "JA",
+                "curator": {
+                  "id": "442539197",
+                  "login": "renanamiya",
+                  "displayName": "renanamiya",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "518006",
+                  "name": "Stray",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/518006_IGDB-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/Ck6N_mfW3LUUuuC3DuoK7A/AT-cm%7CCk6N_mfW3LUUuuC3DuoK7A-preview-260x147.jpg",
+                "createdAt": "2022-07-28T06:39:54Z",
+                "durationSeconds": 60,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "4267823852",
+                "slug": "EnchantingCrypticLEDDxAbomb-y1sXe0RIf01YXw7p",
+                "url": "https://clips.twitch.tv/EnchantingCrypticLEDDxAbomb-y1sXe0RIf01YXw7p",
+                "embedURL": "https://clips.twitch.tv/embed?clip=EnchantingCrypticLEDDxAbomb-y1sXe0RIf01YXw7p",
+                "title": "harry potter ???????",
+                "viewCount": 804,
+                "language": "EN",
+                "curator": {
+                  "id": "658885922",
+                  "login": "kusachama_yt",
+                  "displayName": "kusachama_yt",
+                  "__typename": "User"
+                },
+                "game": null,
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/AT-cm%7C99n_N8tbF3tESH9NWF8O6Q-preview-260x147.jpg",
+                "createdAt": "2021-12-09T10:59:49Z",
+                "durationSeconds": 28,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "200981338",
+                "slug": "CaringTangibleOkapiBibleThump-ZJyNtZVgeuOTAWP8",
+                "url": "https://clips.twitch.tv/CaringTangibleOkapiBibleThump-ZJyNtZVgeuOTAWP8",
+                "embedURL": "https://clips.twitch.tv/embed?clip=CaringTangibleOkapiBibleThump-ZJyNtZVgeuOTAWP8",
+                "title": "Uto: Valorant is good game Selen: No, love yourself lol",
+                "viewCount": 673,
+                "language": "JA",
+                "curator": {
+                  "id": "442539197",
+                  "login": "renanamiya",
+                  "displayName": "renanamiya",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "511224",
+                  "name": "Apex Legends",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/511224-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/2EhvamScjbWVYHrjkwFj_A/39536895015-offset-15586-preview-260x147.jpg",
+                "createdAt": "2022-08-02T07:17:35Z",
+                "durationSeconds": 28,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "3834645557",
+                "slug": "ExcitedAuspiciousDaikonSpicyBoy-5X-jUdUY2QC5usGQ",
+                "url": "https://clips.twitch.tv/ExcitedAuspiciousDaikonSpicyBoy-5X-jUdUY2QC5usGQ",
+                "embedURL": "https://clips.twitch.tv/embed?clip=ExcitedAuspiciousDaikonSpicyBoy-5X-jUdUY2QC5usGQ",
+                "title": "Shut up f up Restya :lul:",
+                "viewCount": 644,
+                "language": "EN",
+                "curator": {
+                  "id": "442539197",
+                  "login": "renanamiya",
+                  "displayName": "renanamiya",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "511224",
+                  "name": "Apex Legends",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/511224-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/AT-cm%7CZxIC7-V_o1HVGNkAubrBkA-preview-260x147.jpg",
+                "createdAt": "2021-11-19T14:48:41Z",
+                "durationSeconds": 22,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "2559539097",
+                "slug": "AlluringBoldWasabiDAESuppy-C3U0NL0IwxskL_DS",
+                "url": "https://clips.twitch.tv/AlluringBoldWasabiDAESuppy-C3U0NL0IwxskL_DS",
+                "embedURL": "https://clips.twitch.tv/embed?clip=AlluringBoldWasabiDAESuppy-C3U0NL0IwxskL_DS",
+                "title": "Oh sheetu",
+                "viewCount": 589,
+                "language": "JA",
+                "curator": {
+                  "id": "442539197",
+                  "login": "renanamiya",
+                  "displayName": "renanamiya",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "510117",
+                  "name": "Outlast II",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/510117_IGDB-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/8eyKmQt1NDS9CMMbJC_w0g/AT-cm%7C8eyKmQt1NDS9CMMbJC_w0g-preview-260x147.jpg",
+                "createdAt": "2022-08-01T11:17:14Z",
+                "durationSeconds": 13,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "894591666",
+                "slug": "SpotlessNiceWolverineSaltBae-BeRraEHOVPDi_qbB",
+                "url": "https://clips.twitch.tv/SpotlessNiceWolverineSaltBae-BeRraEHOVPDi_qbB",
+                "embedURL": "https://clips.twitch.tv/embed?clip=SpotlessNiceWolverineSaltBae-BeRraEHOVPDi_qbB",
+                "title": "Uto will play Outlast 2 with Selen",
+                "viewCount": 549,
+                "language": "JA",
+                "curator": {
+                  "id": "442539197",
+                  "login": "renanamiya",
+                  "displayName": "renanamiya",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "509658",
+                  "name": "Just Chatting",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/509658-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/yBzmwgXka2hBzlTw4v6mwQ/AT-cm%7CyBzmwgXka2hBzlTw4v6mwQ-preview-260x147.jpg",
+                "createdAt": "2022-08-05T11:55:43Z",
+                "durationSeconds": 29,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "3470874522",
+                "slug": "SaltyComfortableVampireNinjaGrumpy-h7OP1Jtcp8jNly91",
+                "url": "https://clips.twitch.tv/SaltyComfortableVampireNinjaGrumpy-h7OP1Jtcp8jNly91",
+                "embedURL": "https://clips.twitch.tv/embed?clip=SaltyComfortableVampireNinjaGrumpy-h7OP1Jtcp8jNly91",
+                "title": "is that moan? O_o",
+                "viewCount": 517,
+                "language": "JA",
+                "curator": {
+                  "id": "492072750",
+                  "login": "guangguang2",
+                  "displayName": "guangguang2",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "516575",
+                  "name": "VALORANT",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/516575-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/0YKBz4ezj9SbXKfIzZcvdQ/AT-cm%7C0YKBz4ezj9SbXKfIzZcvdQ-preview-260x147.jpg",
+                "createdAt": "2022-07-29T05:28:49Z",
+                "durationSeconds": 5,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "2905680089",
+                "slug": "BombasticIncredulousPancakeTBTacoRight-k4B5obnhmNFd5_BZ",
+                "url": "https://clips.twitch.tv/BombasticIncredulousPancakeTBTacoRight-k4B5obnhmNFd5_BZ",
+                "embedURL": "https://clips.twitch.tv/embed?clip=BombasticIncredulousPancakeTBTacoRight-k4B5obnhmNFd5_BZ",
+                "title": "Uto show her English learning!",
+                "viewCount": 509,
+                "language": "JA",
+                "curator": {
+                  "id": "442539197",
+                  "login": "renanamiya",
+                  "displayName": "renanamiya",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "509658",
+                  "name": "Just Chatting",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/509658-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/j7vLdJOAeaG54ZjRXefwWQ/AT-cm%7Cj7vLdJOAeaG54ZjRXefwWQ-preview-260x147.jpg",
+                "createdAt": "2022-08-04T10:09:34Z",
+                "durationSeconds": 59,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "1503385686",
+                "slug": "QuaintDifficultSheepYouDontSay-SueB10rJXnVVDrAI",
+                "url": "https://clips.twitch.tv/QuaintDifficultSheepYouDontSay-SueB10rJXnVVDrAI",
+                "embedURL": "https://clips.twitch.tv/embed?clip=QuaintDifficultSheepYouDontSay-SueB10rJXnVVDrAI",
+                "title": "It me!",
+                "viewCount": 383,
+                "language": "JA",
+                "curator": {
+                  "id": "31190157",
+                  "login": "kurikona",
+                  "displayName": "KuriKona",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "518006",
+                  "name": "Stray",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/518006_IGDB-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/R_PK0ErngddKyV51VQ6wCA/AT-cm%7CR_PK0ErngddKyV51VQ6wCA-preview-260x147.jpg",
+                "createdAt": "2022-07-28T06:04:44Z",
+                "durationSeconds": 5,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "438627050",
+                "slug": "ElegantFuriousKaleFreakinStinkin-AAG61VQp5VhW7w-C",
+                "url": "https://clips.twitch.tv/ElegantFuriousKaleFreakinStinkin-AAG61VQp5VhW7w-C",
+                "embedURL": "https://clips.twitch.tv/embed?clip=ElegantFuriousKaleFreakinStinkin-AAG61VQp5VhW7w-C",
+                "title": "Uto knows write c++ code",
+                "viewCount": 377,
+                "language": "EN",
+                "curator": {
+                  "id": "442539197",
+                  "login": "renanamiya",
+                  "displayName": "renanamiya",
+                  "__typename": "User"
+                },
+                "game": null,
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/AT-cm%7C18g38AAButVUKeVYVu8Pgg-preview-260x147.jpg",
+                "createdAt": "2021-12-09T16:24:51Z",
+                "durationSeconds": 60,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "661302757",
+                "slug": "DullSweetCiderSpicyBoy-xKk63AXRcoI1pWJp",
+                "url": "https://clips.twitch.tv/DullSweetCiderSpicyBoy-xKk63AXRcoI1pWJp",
+                "embedURL": "https://clips.twitch.tv/embed?clip=DullSweetCiderSpicyBoy-xKk63AXRcoI1pWJp",
+                "title": "mumbling",
+                "viewCount": 375,
+                "language": "JA",
+                "curator": {
+                  "id": "442539197",
+                  "login": "renanamiya",
+                  "displayName": "renanamiya",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "518006",
+                  "name": "Stray",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/518006_IGDB-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/pLS_aMSpOtwF0XKCNaViaQ/39523648471-offset-4642-preview-260x147.jpg",
+                "createdAt": "2022-07-28T07:23:28Z",
+                "durationSeconds": 28,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "283837687",
+                "slug": "SparklingObedientSushiCoolCat-3dmNRjf1dlMEWe7Q",
+                "url": "https://clips.twitch.tv/SparklingObedientSushiCoolCat-3dmNRjf1dlMEWe7Q",
+                "embedURL": "https://clips.twitch.tv/embed?clip=SparklingObedientSushiCoolCat-3dmNRjf1dlMEWe7Q",
+                "title": "Kiara mentioned",
+                "viewCount": 375,
+                "language": "JA",
+                "curator": {
+                  "id": "442539197",
+                  "login": "renanamiya",
+                  "displayName": "renanamiya",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "509658",
+                  "name": "Just Chatting",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/509658-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/RHBUXt3ZjUY39XZTBFnu0A/39573914327-offset-1382-preview-260x147.jpg",
+                "createdAt": "2022-08-16T10:26:15Z",
+                "durationSeconds": 26,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "1550468476",
+                "slug": "ResoluteRelievedSnailPupper-F81I8HQdF_kGEXIW",
+                "url": "https://clips.twitch.tv/ResoluteRelievedSnailPupper-F81I8HQdF_kGEXIW",
+                "embedURL": "https://clips.twitch.tv/embed?clip=ResoluteRelievedSnailPupper-F81I8HQdF_kGEXIW",
+                "title": "punch her",
+                "viewCount": 373,
+                "language": "JA",
+                "curator": {
+                  "id": "23851935",
+                  "login": "goburrito_",
+                  "displayName": "GOBurrito_",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "509658",
+                  "name": "Just Chatting",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/509658-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/KPuluxfNSPB0HRf5BhFyFg/AT-cm%7CKPuluxfNSPB0HRf5BhFyFg-preview-260x147.jpg",
+                "createdAt": "2022-08-07T10:24:23Z",
+                "durationSeconds": 11,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "1746694288",
+                "slug": "FunnyRacySnoodBatChest-3y8IpmKysWAbp4wy",
+                "url": "https://clips.twitch.tv/FunnyRacySnoodBatChest-3y8IpmKysWAbp4wy",
+                "embedURL": "https://clips.twitch.tv/embed?clip=FunnyRacySnoodBatChest-3y8IpmKysWAbp4wy",
+                "title": "体調がバケモンでした",
+                "viewCount": 361,
+                "language": "JA",
+                "curator": {
+                  "id": "143736017",
+                  "login": "donksities",
+                  "displayName": "Donksities",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "509658",
+                  "name": "Just Chatting",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/509658-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/8ib5m98vCKZisrFgG6eMMg/39751107975-offset-4016-preview-260x147.jpg",
+                "createdAt": "2022-10-09T07:09:39Z",
+                "durationSeconds": 26,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "id": "1378332743",
+                "slug": "RespectfulBelovedReubenBCouch-ouGEzPsoEHe5rcKJ",
+                "url": "https://clips.twitch.tv/RespectfulBelovedReubenBCouch-ouGEzPsoEHe5rcKJ",
+                "embedURL": "https://clips.twitch.tv/embed?clip=RespectfulBelovedReubenBCouch-ouGEzPsoEHe5rcKJ",
+                "title": "WHERE YOU SELEN????",
+                "viewCount": 353,
+                "language": "JA",
+                "curator": {
+                  "id": "442539197",
+                  "login": "renanamiya",
+                  "displayName": "renanamiya",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "516575",
+                  "name": "VALORANT",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/516575-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/jt8xWKLhhMz7KBB3ua3CiQ/AT-cm%7Cjt8xWKLhhMz7KBB3ua3CiQ-preview-260x147.jpg",
+                "createdAt": "2022-08-05T10:53:17Z",
+                "durationSeconds": 4,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            },
+            {
+              "cursor": "MjA=",
+              "node": {
+                "id": "1762169959",
+                "slug": "LovelyLitigiousTurtleDeIlluminati-hm6rkNNm5hqaPMLL",
+                "url": "https://clips.twitch.tv/LovelyLitigiousTurtleDeIlluminati-hm6rkNNm5hqaPMLL",
+                "embedURL": "https://clips.twitch.tv/embed?clip=LovelyLitigiousTurtleDeIlluminati-hm6rkNNm5hqaPMLL",
+                "title": "No scope kraber Uto",
+                "viewCount": 342,
+                "language": "EN",
+                "curator": {
+                  "id": "442539197",
+                  "login": "renanamiya",
+                  "displayName": "renanamiya",
+                  "__typename": "User"
+                },
+                "game": {
+                  "id": "511224",
+                  "name": "Apex Legends",
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/511224-52x72.jpg",
+                  "__typename": "Game"
+                },
+                "broadcaster": {
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "displayName": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "thumbnailURL": "https://clips-media-assets2.twitch.tv/AT-cm%7Cjmx1T4Zuq5DTZuYamjzCyw-preview-260x147.jpg",
+                "createdAt": "2021-11-23T13:13:54Z",
+                "durationSeconds": 20,
+                "champBadge": null,
+                "__typename": "Clip"
+              },
+              "__typename": "ClipEdge"
+            }
+          ],
+          "__typename": "ClipConnection"
+        },
+        "__typename": "User"
+      }
+    },
+    "extensions": {
+      "durationMilliseconds": 97,
+      "operationName": "ClipsCards__User",
+      "requestID": "01GFAC1R9VVFBRRSSP65E1JCB6"
+    }
+  }
+]
