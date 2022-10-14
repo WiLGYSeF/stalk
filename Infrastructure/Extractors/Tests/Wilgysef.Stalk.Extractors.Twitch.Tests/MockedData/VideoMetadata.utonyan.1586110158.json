@@ -1,0 +1,49 @@
+﻿[
+  {
+    "data": {
+      "user": {
+        "id": "662849096",
+        "primaryColorHex": "FFFFFF",
+        "isPartner": true,
+        "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-70x70.png",
+        "lastBroadcast": {
+          "id": "39759141639",
+          "startedAt": "2022-10-12T06:36:48.571769Z",
+          "__typename": "Broadcast"
+        },
+        "__typename": "User"
+      },
+      "currentUser": null,
+      "video": {
+        "id": "1586110158",
+        "title": "Twitch partner get!!!!!!!!!",
+        "description": null,
+        "previewThumbnailURL": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/a2197cb3f8db6cc072b2_utonyan_39655744983_1662723806//thumb/thumb0-90x60.jpg",
+        "createdAt": "2022-09-09T11:43:33Z",
+        "viewCount": 19762,
+        "publishedAt": "2022-09-09T11:43:33Z",
+        "lengthSeconds": 9178,
+        "broadcastType": "ARCHIVE",
+        "owner": {
+          "id": "662849096",
+          "login": "utonyan",
+          "displayName": "utonyan",
+          "__typename": "User"
+        },
+        "game": {
+          "id": "518006",
+          "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/518006_IGDB-{width}x{height}.jpg",
+          "name": "Stray",
+          "displayName": "Stray",
+          "__typename": "Game"
+        },
+        "__typename": "Video"
+      }
+    },
+    "extensions": {
+      "durationMilliseconds": 40,
+      "operationName": "VideoMetadata",
+      "requestID": "01GFAA4WBSP758GB11YHHQ1EP6"
+    }
+  }
+]

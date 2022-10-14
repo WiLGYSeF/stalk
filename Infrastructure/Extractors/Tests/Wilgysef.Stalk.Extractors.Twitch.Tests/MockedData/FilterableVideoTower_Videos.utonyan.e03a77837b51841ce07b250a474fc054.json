@@ -1,0 +1,272 @@
+﻿[
+  {
+    "data": {
+      "user": {
+        "id": "662849096",
+        "videos": {
+          "edges": [
+            {
+              "cursor": null,
+              "node": {
+                "animatedPreviewURL": "https://d3vd9lfkzbru3h.cloudfront.net/a2197cb3f8db6cc072b2_utonyan_39655744983_1662723806/storyboards/1586110158-strip-0.jpg",
+                "game": {
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/518006_IGDB-40x56.jpg",
+                  "id": "518006",
+                  "displayName": "Stray",
+                  "name": "Stray",
+                  "__typename": "Game"
+                },
+                "id": "1586110158",
+                "lengthSeconds": 9178,
+                "owner": {
+                  "displayName": "utonyan",
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "previewThumbnailURL": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/a2197cb3f8db6cc072b2_utonyan_39655744983_1662723806//thumb/thumb0-320x180.jpg",
+                "publishedAt": "2022-09-09T11:43:33Z",
+                "self": {
+                  "isRestricted": false,
+                  "viewingHistory": null,
+                  "__typename": "VideoSelfEdge"
+                },
+                "title": "Twitch partner get!!!!!!!!!",
+                "viewCount": 19762,
+                "resourceRestriction": null,
+                "contentTags": [
+                  {
+                    "id": "6ba1d230-e52f-4d81-b1e0-41f25a8a9f5d",
+                    "isLanguageTag": true,
+                    "localizedName": "Japanese",
+                    "tagName": "auto___lang_ja",
+                    "__typename": "Tag"
+                  }
+                ],
+                "__typename": "Video"
+              },
+              "__typename": "VideoEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "animatedPreviewURL": "https://d3vd9lfkzbru3h.cloudfront.net/795955e0f61209da3c73_utonyan_39651047959_1662602443/storyboards/1584970378-strip-0.jpg",
+                "game": {
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/511224-40x56.jpg",
+                  "id": "511224",
+                  "displayName": "Apex Legends",
+                  "name": "Apex Legends",
+                  "__typename": "Game"
+                },
+                "id": "1584970378",
+                "lengthSeconds": 16434,
+                "owner": {
+                  "displayName": "utonyan",
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "previewThumbnailURL": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/795955e0f61209da3c73_utonyan_39651047959_1662602443//thumb/thumb0-320x180.jpg",
+                "publishedAt": "2022-09-08T02:00:50Z",
+                "self": {
+                  "isRestricted": false,
+                  "viewingHistory": null,
+                  "__typename": "VideoSelfEdge"
+                },
+                "title": "Apex Collab w/ Aster Arcadia",
+                "viewCount": 23157,
+                "resourceRestriction": null,
+                "contentTags": [],
+                "__typename": "Video"
+              },
+              "__typename": "VideoEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "animatedPreviewURL": "https://d3vd9lfkzbru3h.cloudfront.net/50ce669f2281ad64ddd5_utonyan_39626200391_1661935206/storyboards/1577714683-strip-0.jpg",
+                "game": {
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/516575-40x56.jpg",
+                  "id": "516575",
+                  "displayName": "VALORANT",
+                  "name": "VALORANT",
+                  "__typename": "Game"
+                },
+                "id": "1577714683",
+                "lengthSeconds": 574,
+                "owner": {
+                  "displayName": "utonyan",
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "previewThumbnailURL": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/50ce669f2281ad64ddd5_utonyan_39626200391_1661935206//thumb/thumb0-320x180.jpg",
+                "publishedAt": "2022-08-31T08:40:12Z",
+                "self": {
+                  "isRestricted": false,
+                  "viewingHistory": null,
+                  "__typename": "VideoSelfEdge"
+                },
+                "title": "5度寝しました。",
+                "viewCount": 4873,
+                "resourceRestriction": null,
+                "contentTags": [
+                  {
+                    "id": "6ba1d230-e52f-4d81-b1e0-41f25a8a9f5d",
+                    "isLanguageTag": true,
+                    "localizedName": "Japanese",
+                    "tagName": "auto___lang_ja",
+                    "__typename": "Tag"
+                  }
+                ],
+                "__typename": "Video"
+              },
+              "__typename": "VideoEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "animatedPreviewURL": "https://d3vd9lfkzbru3h.cloudfront.net/975160841905dca096b5_utonyan_39625532727_1661920986/storyboards/1577629472-strip-0.jpg",
+                "game": {
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/509658-40x56.jpg",
+                  "id": "509658",
+                  "displayName": "Just Chatting",
+                  "name": "Just Chatting",
+                  "__typename": "Game"
+                },
+                "id": "1577629472",
+                "lengthSeconds": 14172,
+                "owner": {
+                  "displayName": "utonyan",
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "previewThumbnailURL": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/975160841905dca096b5_utonyan_39625532727_1661920986//thumb/thumb0-320x180.jpg",
+                "publishedAt": "2022-08-31T04:43:13Z",
+                "self": {
+                  "isRestricted": false,
+                  "viewingHistory": null,
+                  "__typename": "VideoSelfEdge"
+                },
+                "title": "5度寝しました。",
+                "viewCount": 18431,
+                "resourceRestriction": null,
+                "contentTags": [
+                  {
+                    "id": "6ba1d230-e52f-4d81-b1e0-41f25a8a9f5d",
+                    "isLanguageTag": true,
+                    "localizedName": "Japanese",
+                    "tagName": "auto___lang_ja",
+                    "__typename": "Tag"
+                  }
+                ],
+                "__typename": "Video"
+              },
+              "__typename": "VideoEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "animatedPreviewURL": "https://d3vd9lfkzbru3h.cloudfront.net/9646925f8a25b3d49f54_utonyan_39619111079_1661784261/storyboards/1576019790-strip-0.jpg",
+                "game": {
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/1215521805_IGDB-40x56.jpg",
+                  "id": "1215521805",
+                  "displayName": "Needy Streamer Overload",
+                  "name": "Needy Streamer Overload",
+                  "__typename": "Game"
+                },
+                "id": "1576019790",
+                "lengthSeconds": 6712,
+                "owner": {
+                  "displayName": "utonyan",
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "previewThumbnailURL": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/9646925f8a25b3d49f54_utonyan_39619111079_1661784261//thumb/thumb0-320x180.jpg",
+                "publishedAt": "2022-08-29T14:44:28Z",
+                "self": {
+                  "isRestricted": false,
+                  "viewingHistory": null,
+                  "__typename": "VideoSelfEdge"
+                },
+                "title": "need girl overdose !!!",
+                "viewCount": 11986,
+                "resourceRestriction": null,
+                "contentTags": [
+                  {
+                    "id": "6ba1d230-e52f-4d81-b1e0-41f25a8a9f5d",
+                    "isLanguageTag": true,
+                    "localizedName": "Japanese",
+                    "tagName": "auto___lang_ja",
+                    "__typename": "Tag"
+                  }
+                ],
+                "__typename": "Video"
+              },
+              "__typename": "VideoEdge"
+            },
+            {
+              "cursor": null,
+              "node": {
+                "animatedPreviewURL": "https://d3vd9lfkzbru3h.cloudfront.net/bdde9ad203bcf39b123a_utonyan_39611949255_1661652751/storyboards/1574702841-strip-0.jpg",
+                "game": {
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/1158884259_IGDB-40x56.jpg",
+                  "id": "1158884259",
+                  "displayName": "Splatoon 3",
+                  "name": "Splatoon 3",
+                  "__typename": "Game"
+                },
+                "id": "1574702841",
+                "lengthSeconds": 8098,
+                "owner": {
+                  "displayName": "utonyan",
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "previewThumbnailURL": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/bdde9ad203bcf39b123a_utonyan_39611949255_1661652751//thumb/thumb0-320x180.jpg",
+                "publishedAt": "2022-08-28T02:12:38Z",
+                "self": {
+                  "isRestricted": false,
+                  "viewingHistory": null,
+                  "__typename": "VideoSelfEdge"
+                },
+                "title": "Splatoon3 Ya----!!!!!!!",
+                "viewCount": 13714,
+                "resourceRestriction": null,
+                "contentTags": [],
+                "__typename": "Video"
+              },
+              "__typename": "VideoEdge"
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": false,
+            "__typename": "PageInfo"
+          },
+          "__typename": "VideoConnection"
+        },
+        "__typename": "User"
+      }
+    },
+    "extensions": {
+      "durationMilliseconds": 93,
+      "operationName": "FilterableVideoTower_Videos",
+      "requestID": "01GFA55RP21C8KGA6N5K1PHGDE"
+    }
+  }
+]

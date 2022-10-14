@@ -1,0 +1,228 @@
+﻿[
+  {
+    "data": {
+      "user": {
+        "id": "662849096",
+        "videos": {
+          "edges": [
+            {
+              "cursor": "1607306954|12417|2022-10-02T13:36:52Z",
+              "node": {
+                "animatedPreviewURL": "https://d3vd9lfkzbru3h.cloudfront.net/7011481c68f917ead44d_utonyan_39759141639_1665549506/storyboards/1621957472-strip-0.jpg",
+                "game": {
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/516575-40x56.jpg",
+                  "id": "516575",
+                  "displayName": "VALORANT",
+                  "name": "VALORANT",
+                  "__typename": "Game"
+                },
+                "id": "1621957472",
+                "lengthSeconds": 7077,
+                "owner": {
+                  "displayName": "utonyan",
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "previewThumbnailURL": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/7011481c68f917ead44d_utonyan_39759141639_1665549506//thumb/thumb0-320x180.jpg",
+                "publishedAt": "2022-10-12T04:38:33Z",
+                "self": {
+                  "isRestricted": false,
+                  "viewingHistory": null,
+                  "__typename": "VideoSelfEdge"
+                },
+                "title": "新しいお友達しょうかいします",
+                "viewCount": 12981,
+                "resourceRestriction": null,
+                "contentTags": [
+                  {
+                    "id": "6ba1d230-e52f-4d81-b1e0-41f25a8a9f5d",
+                    "isLanguageTag": true,
+                    "localizedName": "Japanese",
+                    "tagName": "auto___lang_ja",
+                    "__typename": "Tag"
+                  }
+                ],
+                "__typename": "Video"
+              },
+              "__typename": "VideoEdge"
+            },
+            {
+              "cursor": "1607306954|12417|2022-10-02T13:36:52Z",
+              "node": {
+                "animatedPreviewURL": "https://d3vd9lfkzbru3h.cloudfront.net/3cef77176bfb93d2f2cc_utonyan_39756704663_1665470122/storyboards/1621124352-strip-0.jpg",
+                "game": {
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/1584532157_IGDB-40x56.jpg",
+                  "id": "1584532157",
+                  "displayName": "The Bathhouse",
+                  "name": "The Bathhouse",
+                  "__typename": "Game"
+                },
+                "id": "1621124352",
+                "lengthSeconds": 5764,
+                "owner": {
+                  "displayName": "utonyan",
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "previewThumbnailURL": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/3cef77176bfb93d2f2cc_utonyan_39756704663_1665470122//thumb/thumb0-320x180.jpg",
+                "publishedAt": "2022-10-11T06:35:29Z",
+                "self": {
+                  "isRestricted": false,
+                  "viewingHistory": null,
+                  "__typename": "VideoSelfEdge"
+                },
+                "title": "巷で噂のホラゲやる。。？",
+                "viewCount": 9033,
+                "resourceRestriction": null,
+                "contentTags": [
+                  {
+                    "id": "6ba1d230-e52f-4d81-b1e0-41f25a8a9f5d",
+                    "isLanguageTag": true,
+                    "localizedName": "Japanese",
+                    "tagName": "auto___lang_ja",
+                    "__typename": "Tag"
+                  }
+                ],
+                "__typename": "Video"
+              },
+              "__typename": "VideoEdge"
+            },
+            {
+              "cursor": "1607306954|12417|2022-10-02T13:36:52Z",
+              "node": {
+                "animatedPreviewURL": "https://d3vd9lfkzbru3h.cloudfront.net/e937e0af626f45f99b29_utonyan_39755507799_1665413153/storyboards/1620443152-strip-0.jpg",
+                "game": {
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/509658-40x56.jpg",
+                  "id": "509658",
+                  "displayName": "Just Chatting",
+                  "name": "Just Chatting",
+                  "__typename": "Game"
+                },
+                "id": "1620443152",
+                "lengthSeconds": 10888,
+                "owner": {
+                  "displayName": "utonyan",
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "previewThumbnailURL": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/e937e0af626f45f99b29_utonyan_39755507799_1665413153//thumb/thumb0-320x180.jpg",
+                "publishedAt": "2022-10-10T14:46:00Z",
+                "self": {
+                  "isRestricted": false,
+                  "viewingHistory": null,
+                  "__typename": "VideoSelfEdge"
+                },
+                "title": "なにしよーかなーーー",
+                "viewCount": 16309,
+                "resourceRestriction": null,
+                "contentTags": [
+                  {
+                    "id": "6ba1d230-e52f-4d81-b1e0-41f25a8a9f5d",
+                    "isLanguageTag": true,
+                    "localizedName": "Japanese",
+                    "tagName": "auto___lang_ja",
+                    "__typename": "Tag"
+                  }
+                ],
+                "__typename": "Video"
+              },
+              "__typename": "VideoEdge"
+            },
+            {
+              "cursor": "1607306954|12417|2022-10-02T13:36:52Z",
+              "node": {
+                "animatedPreviewURL": "https://d3vd9lfkzbru3h.cloudfront.net/5182b875156514126b44_utonyan_39751107975_1665295358/storyboards/1619315959-strip-0.jpg",
+                "game": {
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/509658-40x56.jpg",
+                  "id": "509658",
+                  "displayName": "Just Chatting",
+                  "name": "Just Chatting",
+                  "__typename": "Game"
+                },
+                "id": "1619315959",
+                "lengthSeconds": 5740,
+                "owner": {
+                  "displayName": "utonyan",
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "previewThumbnailURL": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/5182b875156514126b44_utonyan_39751107975_1665295358//thumb/thumb0-320x180.jpg",
+                "publishedAt": "2022-10-09T06:02:46Z",
+                "self": {
+                  "isRestricted": false,
+                  "viewingHistory": null,
+                  "__typename": "VideoSelfEdge"
+                },
+                "title": "体調がバケモンでした",
+                "viewCount": 13435,
+                "resourceRestriction": null,
+                "contentTags": [],
+                "__typename": "Video"
+              },
+              "__typename": "VideoEdge"
+            },
+            {
+              "cursor": "1607306954|12417|2022-10-02T13:36:52Z",
+              "node": {
+                "animatedPreviewURL": "https://d3vd9lfkzbru3h.cloudfront.net/55b517fa83eb5f430032_utonyan_39732200743_1664717804/storyboards/1607306954-strip-0.jpg",
+                "game": {
+                  "boxArtURL": "https://static-cdn.jtvnw.net/ttv-boxart/516575-40x56.jpg",
+                  "id": "516575",
+                  "displayName": "VALORANT",
+                  "name": "VALORANT",
+                  "__typename": "Game"
+                },
+                "id": "1607306954",
+                "lengthSeconds": 8342,
+                "owner": {
+                  "displayName": "utonyan",
+                  "id": "662849096",
+                  "login": "utonyan",
+                  "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-50x50.png",
+                  "primaryColorHex": "FFFFFF",
+                  "__typename": "User"
+                },
+                "previewThumbnailURL": "https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/55b517fa83eb5f430032_utonyan_39732200743_1664717804//thumb/thumb0-320x180.jpg",
+                "publishedAt": "2022-10-02T13:36:52Z",
+                "self": {
+                  "isRestricted": false,
+                  "viewingHistory": null,
+                  "__typename": "VideoSelfEdge"
+                },
+                "title": "valorant w/ !duo",
+                "viewCount": 12417,
+                "resourceRestriction": null,
+                "contentTags": [],
+                "__typename": "Video"
+              },
+              "__typename": "VideoEdge"
+            }
+          ],
+          "pageInfo": {
+            "hasNextPage": true,
+            "__typename": "PageInfo"
+          },
+          "__typename": "VideoConnection"
+        },
+        "__typename": "User"
+      }
+    },
+    "extensions": {
+      "durationMilliseconds": 89,
+      "operationName": "FilterableVideoTower_Videos",
+      "requestID": "01GF9YS0Q7AMEBCYC1PMJX5T35"
+    }
+  }
+]

@@ -1,5 +1,4 @@
 ﻿using Shouldly;
-using System;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
@@ -7,7 +6,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Wilgysef.HttpClientInterception;
-using Wilgysef.Stalk.Core.DateTimeProviders;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Extractors.TestBase;
@@ -74,13 +72,13 @@ public class YouTubeExtractorTest : BaseTest
             .AddUri(BrowseRegex, async (request, cancellationToken) =>
             {
                 var json = JsonSerializer.Deserialize<JsonNode>(await request.Content!.ReadAsStringAsync(cancellationToken));
-                var originalUrl = new Uri(json["context"]["client"]["originalUrl"].ToString());
+                var originalUrl = new Uri(json["context"]!["client"]!["originalUrl"]!.ToString());
 
                 if (originalUrl.AbsolutePath.Contains("playlist"))
                 {
                     var query = originalUrl.GetQueryParameters();
                     var playlistId = query["list"];
-                    var continuationToken = json["continuation"].ToString();
+                    var continuationToken = json["continuation"]!.ToString();
                     var continuationHash = MD5.HashData(Encoding.UTF8.GetBytes(continuationToken)).ToHexString();
                     return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Playlist.{playlistId}.{continuationHash}.json");
                 }
@@ -88,7 +86,7 @@ public class YouTubeExtractorTest : BaseTest
                 {
                     var match = Consts.CommunityRegex.Match(originalUrl.AbsoluteUri);
                     var channelId = match.Groups["channel"].Value;
-                    var continuationToken = json["continuation"].ToString();
+                    var continuationToken = json["continuation"]!.ToString();
                     var continuationHash = MD5.HashData(Encoding.UTF8.GetBytes(continuationToken)).ToHexString();
                     return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Community.{channelId}.{continuationHash}.json");
                 }
@@ -99,7 +97,7 @@ public class YouTubeExtractorTest : BaseTest
             });
 
         _dateTimeProvider = new();
-        _youTubeExtractor = new YouTubeExtractor(new HttpClient(_httpInterceptor), _dateTimeProvider);
+        _youTubeExtractor = new(new HttpClient(_httpInterceptor), _dateTimeProvider);
     }
 
     [Theory]

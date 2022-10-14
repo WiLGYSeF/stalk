@@ -65,7 +65,14 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.HttpClientIntercep
 		{5ADE3567-5446-491C-AC8F-1A50265F7EE3} = {5ADE3567-5446-491C-AC8F-1A50265F7EE3}
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wilgysef.Stalk.Extractors.YoutubeDl.Core", "Infrastructure\Extractors\Wilgysef.Stalk.Extractors.YoutubeDl.Core\Wilgysef.Stalk.Extractors.YoutubeDl.Core.csproj", "{9F941D77-BFB9-41BC-9A19-D5D7162D9094}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.Stalk.Extractors.YoutubeDl.Core", "Infrastructure\Extractors\Wilgysef.Stalk.Extractors.YoutubeDl.Core\Wilgysef.Stalk.Extractors.YoutubeDl.Core.csproj", "{9F941D77-BFB9-41BC-9A19-D5D7162D9094}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.Stalk.Extractors.Twitch", "Infrastructure\Extractors\Wilgysef.Stalk.Extractors.Twitch\Wilgysef.Stalk.Extractors.Twitch.csproj", "{41B0A633-326B-4B93-9A79-483349ED2930}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wilgysef.Stalk.Extractors.Twitch.Tests", "Infrastructure\Extractors\Tests\Wilgysef.Stalk.Extractors.Twitch.Tests\Wilgysef.Stalk.Extractors.Twitch.Tests.csproj", "{8FA61D07-7508-4F54-9FE6-21E2C87D0C7F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{23FE9ED6-27DC-4AD5-B689-18902DEA8C4A} = {23FE9ED6-27DC-4AD5-B689-18902DEA8C4A}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -149,6 +156,14 @@ Global
 		{9F941D77-BFB9-41BC-9A19-D5D7162D9094}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{9F941D77-BFB9-41BC-9A19-D5D7162D9094}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{9F941D77-BFB9-41BC-9A19-D5D7162D9094}.Release|Any CPU.Build.0 = Release|Any CPU
+		{41B0A633-326B-4B93-9A79-483349ED2930}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41B0A633-326B-4B93-9A79-483349ED2930}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41B0A633-326B-4B93-9A79-483349ED2930}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41B0A633-326B-4B93-9A79-483349ED2930}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8FA61D07-7508-4F54-9FE6-21E2C87D0C7F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8FA61D07-7508-4F54-9FE6-21E2C87D0C7F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8FA61D07-7508-4F54-9FE6-21E2C87D0C7F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8FA61D07-7508-4F54-9FE6-21E2C87D0C7F}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -170,6 +185,8 @@ Global
 		{5ADE3567-5446-491C-AC8F-1A50265F7EE3} = {EAE7F40A-3A86-4E78-9CB8-F06284A3E677}
 		{C37502D7-5F4C-444D-A8F5-E658006B09A7} = {EAE7F40A-3A86-4E78-9CB8-F06284A3E677}
 		{9F941D77-BFB9-41BC-9A19-D5D7162D9094} = {2647EF06-050B-45D1-BD89-1BE03F335941}
+		{41B0A633-326B-4B93-9A79-483349ED2930} = {2647EF06-050B-45D1-BD89-1BE03F335941}
+		{8FA61D07-7508-4F54-9FE6-21E2C87D0C7F} = {23D9EB93-071E-4BB1-96DC-90D8D9EFA98B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {975B6EDC-28CD-42DA-AE1B-C8FBD1666827}
