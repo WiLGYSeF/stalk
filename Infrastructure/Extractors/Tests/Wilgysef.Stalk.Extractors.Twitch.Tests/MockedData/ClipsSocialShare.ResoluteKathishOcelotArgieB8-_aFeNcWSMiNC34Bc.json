@@ -1,0 +1,28 @@
+﻿[
+  {
+    "data": {
+      "clip": {
+        "id": "1796802747",
+        "url": "https://clips.twitch.tv/ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc",
+        "embedURL": "https://clips.twitch.tv/embed?clip=ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc",
+        "title": "Uto vibing",
+        "game": {
+          "id": "518006",
+          "name": "Stray",
+          "__typename": "Game"
+        },
+        "broadcaster": {
+          "id": "662849096",
+          "login": "utonyan",
+          "__typename": "User"
+        },
+        "__typename": "Clip"
+      }
+    },
+    "extensions": {
+      "durationMilliseconds": 48,
+      "operationName": "ClipsSocialShare",
+      "requestID": "01GFCH6PV57ARYH4PFR077H0Q1"
+    }
+  }
+]
