@@ -104,6 +104,12 @@ public class TwitchExtractor : IExtractor
             return match.Groups["clip"].Value;
         }
 
+        match = ClipAltRegex.Match(absoluteUri);
+        if (match.Success)
+        {
+            return match.Groups["clip"].Value;
+        }
+
         return null;
     }
 
@@ -158,7 +164,7 @@ public class TwitchExtractor : IExtractor
         var videoMetadata = await GetVideoMetadataAsync(channelName, videoId, cancellationToken);
         var video = videoMetadata.SelectToken("$..video");
 
-        foreach (var result in ExtractVideo(video!, metadata))
+        foreach (var result in ExtractVideo(video!, metadata.Copy()))
         {
             yield return result;
         }
@@ -313,14 +319,6 @@ public class TwitchExtractor : IExtractor
         metadata.SetByParts(gameId, MetadataClipGameIdKeys);
         metadata.SetByParts(gameName, MetadataClipGameNameKeys);
 
-        var channelId = clipsSocialShare.SelectToken("$..broadcaster.id")?.ToString();
-        var channelLogin = clipsSocialShare.SelectToken("$..broadcaster.login")?.ToString();
-        //var channelName = clipsSocialShare.SelectToken("$..broadcaster.displayName")?.ToString();
-
-        metadata.SetByParts(channelId, MetadataUserIdKeys);
-        //metadata.SetByParts(channelName, MetadataUserNameKeys);
-        metadata.SetByParts(channelLogin, MetadataUserLoginKeys);
-
         var comscoreStreamingQuery = responses.Single(r => r.Operation == "ComscoreStreamingQuery").Data;
 
         DateTime? createdAt = null;
@@ -333,6 +331,16 @@ public class TwitchExtractor : IExtractor
         metadata.SetByParts(createdAt?.ToString("yyyyMMdd"), MetadataClipCreatedAtKeys);
         metadata.SetByParts(TimeSpanToString(duration.HasValue ? TimeSpan.FromSeconds(duration.Value) : null), MetadataClipDurationKeys);
         metadata.SetByParts(duration, MetadataClipDurationSecondsKeys);
+
+        var clipsBroadcasterInfo = responses.Single(r => r.Operation == "ClipsBroadcasterInfo").Data;
+
+        var channelId = clipsBroadcasterInfo.SelectToken("$..broadcaster.id")?.ToString();
+        var channelLogin = clipsBroadcasterInfo.SelectToken("$..broadcaster.login")?.ToString();
+        var channelName = clipsBroadcasterInfo.SelectToken("$..broadcaster.displayName")?.ToString();
+
+        metadata.SetByParts(channelId, MetadataUserIdKeys);
+        metadata.SetByParts(channelName, MetadataUserNameKeys);
+        metadata.SetByParts(channelLogin, MetadataUserLoginKeys);
 
         var clipsViewCount = responses.Single(r => r.Operation == "ClipsViewCount").Data;
 
@@ -453,20 +461,6 @@ public class TwitchExtractor : IExtractor
             cancellationToken: cancellationToken);
     }
 
-    private async Task<JToken> GetClipVideoAccessTokenAsync(
-        string slug,
-        CancellationToken cancellationToken)
-    {
-        return await GetGraphQlDataAsync(
-            "VideoAccessToken_Clip",
-            "36b89d2507fce29e5ca551df756d27c1cfe079e2609642b4390aa4c35796eb11",
-            new
-            {
-                slug,
-            },
-            cancellationToken: cancellationToken);
-    }
-
     private async Task<List<GraphQlResponse>> GetClipDataAsync(
         string slug,
         CancellationToken cancellationToken)
@@ -495,6 +489,10 @@ public class TwitchExtractor : IExtractor
                         vodID = ""
                     },
                     "e1edae8122517d013405f237ffcc124515dc6ded82480a88daef69c83b53ac01"),
+                new GraphQlRequest(
+                    "ClipsBroadcasterInfo",
+                    slugData,
+                    "ce258d9536360736605b42db697b3636e750fdb14ff0a7da8c7225bdc2c07e8a"),
                 new GraphQlRequest(
                     "ClipsViewCount",
                     slugData,
@@ -590,13 +588,13 @@ public class TwitchExtractor : IExtractor
         {
             return ExtractType.Video;
         }
-        if (ClipsRegex.IsMatch(absoluteUri))
-        {
-            return ExtractType.Clips;
-        }
         if (ClipRegex.IsMatch(absoluteUri) || ClipAltRegex.IsMatch(absoluteUri))
         {
             return ExtractType.Clip;
+        }
+        if (ClipsRegex.IsMatch(absoluteUri))
+        {
+            return ExtractType.Clips;
         }
         if (VideosRegex.IsMatch(absoluteUri))
         {

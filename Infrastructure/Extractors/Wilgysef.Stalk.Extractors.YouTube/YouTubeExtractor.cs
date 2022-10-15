@@ -256,7 +256,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
         if (published != null)
         {
-            metadata.SetByParts($"{channelId}#video#{published}_{videoId}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+            metadata.SetByParts($"{channelId}#{published}_{videoId}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
         }
 
         metadata.SetByParts(YoutubeDlFileExtensionTemplate, MetadataObjectConsts.File.ExtensionKeys);
@@ -297,7 +297,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
                 if (published != null)
                 {
-                    metadata.SetByParts($"{channelId}#video#{published}_{videoId}_thumb", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+                    metadata.SetByParts($"{channelId}#{published}_{videoId}#thumb", MetadataObjectConsts.Origin.ItemIdSeqKeys);
                 }
 
                 var uri = new Uri(uriString);

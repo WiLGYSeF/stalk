@@ -141,7 +141,7 @@ public class TwitchExtractorTest
     }
 
     [Theory]
-    [InlineData("https://www.twitch.tv/utonyan/clips/ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc")]
+    [InlineData("https://www.twitch.tv/utonyan/clip/ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc")]
     [InlineData("https://clips.twitch.tv/ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc")]
     public async Task Get_Clip(string uri)
     {
@@ -171,6 +171,7 @@ public class TwitchExtractorTest
         result.Metadata["origin.uri"].ShouldBe("https://clips.twitch.tv/ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc");
         result.Metadata["user.id"].ShouldBe("662849096");
         result.Metadata["user.login"].ShouldBe("utonyan");
+        result.Metadata["user.name"].ShouldBe("utonyan");
         result.Type.ShouldBe(JobTaskType.Download);
     }
 
@@ -231,6 +232,11 @@ public class TwitchExtractorTest
         else if (operation == "ComscoreStreamingQuery")
         {
             var slug = variables["clipSlug"].ToString();
+            return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{slug}.json");
+        }
+        else if (operation == "ClipsBroadcasterInfo")
+        {
+            var slug = variables["slug"].ToString();
             return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{slug}.json");
         }
         else if (operation == "ClipsViewCount")
