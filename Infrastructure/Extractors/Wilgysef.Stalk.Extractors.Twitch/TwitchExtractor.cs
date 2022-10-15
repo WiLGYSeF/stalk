@@ -24,12 +24,10 @@ public class TwitchExtractor : IExtractor
 
     public IDictionary<string, object?> Config { get; set; } = new Dictionary<string, object?>();
 
-    private const string UriPrefixRegex = @"(?:https?://)?(?:www\.)?twitch\.tv";
     private const string ChannelRegex = @"(?<channel>[A-Za-z0-9_-]+)";
-    private static readonly Regex VideosRegex = new(UriPrefixRegex + $@"/{ChannelRegex}(?:/(?:videos)?|$)", RegexOptions.Compiled);
-    private static readonly Regex VideoRegex = new(UriPrefixRegex + @"/videos/(?<video>[0-9]+)", RegexOptions.Compiled);
-    private static readonly Regex ClipsRegex = new(UriPrefixRegex + $@"/{ChannelRegex}/clips", RegexOptions.Compiled);
-    private static readonly Regex ClipRegex = new(UriPrefixRegex + $@"/{ChannelRegex}/clip/(?<clip>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
+    private static readonly Regex VideosRegex = new(Consts.UriPrefixRegex + $@"/{ChannelRegex}(?:/(?:videos)?|$)", RegexOptions.Compiled);
+    private static readonly Regex ClipsRegex = new(Consts.UriPrefixRegex + $@"/{ChannelRegex}/clips", RegexOptions.Compiled);
+    private static readonly Regex ClipRegex = new(Consts.UriPrefixRegex + $@"/{ChannelRegex}/clip/(?<clip>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
     private static readonly Regex ClipAltRegex = new(@"(?:https?://)?clips\.twitch\.tv/(?<clip>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
 
     private static readonly string[] MetadataVideoIdKeys = new[] { "video", "id" };
@@ -92,7 +90,7 @@ public class TwitchExtractor : IExtractor
     {
         var absoluteUri = uri.AbsoluteUri;
 
-        var match = VideoRegex.Match(absoluteUri);
+        var match = Consts.VideoRegex.Match(absoluteUri);
         if (match.Success)
         {
             return match.Groups["video"].Value;
@@ -155,7 +153,7 @@ public class TwitchExtractor : IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var match = VideoRegex.Match(uri.AbsoluteUri);
+        var match = Consts.VideoRegex.Match(uri.AbsoluteUri);
         var videoId = match.Groups["video"].Value;
 
         var channelVideoCore = await GetChannelVideoCoreAsync(videoId, cancellationToken);

@@ -5,14 +5,11 @@ using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Xml.Linq;
 using Wilgysef.HttpClientInterception;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
-using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.Core.Utilities;
 using Wilgysef.Stalk.Extractors.TestBase;
-using Wilgysef.Stalk.TestBase.Shared;
 
 namespace Wilgysef.Stalk.Extractors.Twitch.Tests;
 
