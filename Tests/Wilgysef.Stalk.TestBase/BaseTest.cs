@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Debug;
+using System.Diagnostics;
 using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using System.Net;
@@ -288,9 +289,9 @@ public abstract class BaseTest
     public static bool WaitUntil(Func<bool> condition, TimeSpan timeout)
     {
         var spin = new SpinWait();
-        var startTime = DateTime.Now;
+        var stopwatch = Stopwatch.StartNew();
 
-        while (DateTime.Now - startTime < timeout)
+        while (stopwatch.Elapsed < timeout)
         {
             if (condition())
             {
@@ -311,9 +312,9 @@ public abstract class BaseTest
     /// <returns><see langword="true"/> if the condition was met, <see langword="false"/> if the timeout occurred.</returns>
     public static bool WaitUntil(Func<bool> condition, TimeSpan timeout, TimeSpan interval)
     {
-        var startTime = DateTime.Now;
+        var stopwatch = Stopwatch.StartNew();
 
-        while (DateTime.Now - startTime < timeout)
+        while (stopwatch.Elapsed < timeout)
         {
             if (condition())
             {
@@ -334,9 +335,9 @@ public abstract class BaseTest
     public static async Task<bool> WaitUntilAsync(Func<Task<bool>> condition, TimeSpan timeout)
     {
         var spin = new SpinWait();
-        var startTime = DateTime.Now;
+        var stopwatch = Stopwatch.StartNew();
 
-        while (DateTime.Now - startTime < timeout)
+        while (stopwatch.Elapsed < timeout)
         {
             if (await condition())
             {
@@ -362,9 +363,9 @@ public abstract class BaseTest
             return await WaitUntilAsync(condition, timeout);
         }
 
-        var startTime = DateTime.Now;
+        var stopwatch = Stopwatch.StartNew();
 
-        while (DateTime.Now - startTime < timeout)
+        while (stopwatch.Elapsed < timeout)
         {
             if (await condition())
             {

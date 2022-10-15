@@ -1,0 +1,41 @@
+﻿[
+  {
+    "data": {
+      "userOrError": {
+        "id": "662849096",
+        "login": "utonyan",
+        "displayName": "utonyan",
+        "primaryColorHex": "FFFFFF",
+        "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-70x70.png",
+        "stream": null,
+        "__typename": "User",
+        "bannerImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/9aeaf54f-9a5e-4f1b-bfb5-d30f20adaac1-profile_banner-480.png",
+        "channel": {
+          "id": "662849096",
+          "self": {
+            "isAuthorized": true,
+            "restrictionType": null,
+            "__typename": "ChannelSelfEdge"
+          },
+          "trailer": {
+            "video": null,
+            "__typename": "Trailer"
+          },
+          "home": {
+            "preferences": {
+              "heroPreset": "PRESET_2",
+              "__typename": "ChannelHomePreferences"
+            },
+            "__typename": "ChannelHome"
+          },
+          "__typename": "Channel"
+        }
+      }
+    },
+    "extensions": {
+      "durationMilliseconds": 39,
+      "operationName": "ChannelShell",
+      "requestID": "01GFECC585SJD277JGF5SVAB2W"
+    }
+  }
+]

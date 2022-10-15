@@ -1,0 +1,28 @@
+﻿[
+  {
+    "data": {
+      "clip": {
+        "id": "1796802747",
+        "broadcaster": {
+          "id": "662849096",
+          "displayName": "utonyan",
+          "__typename": "User"
+        },
+        "createdAt": "2022-07-28T07:39:31Z",
+        "durationSeconds": 49,
+        "title": "Uto vibing",
+        "game": {
+          "id": "518006",
+          "name": "Stray",
+          "__typename": "Game"
+        },
+        "__typename": "Clip"
+      }
+    },
+    "extensions": {
+      "durationMilliseconds": 48,
+      "operationName": "ComscoreStreamingQuery",
+      "requestID": "01GFCH6PV57ARYH4PFR077H0Q1"
+    }
+  }
+]

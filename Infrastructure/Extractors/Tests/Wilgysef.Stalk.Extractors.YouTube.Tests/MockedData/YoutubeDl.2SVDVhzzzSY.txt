@@ -2,14 +2,14 @@
 [youtube] 2SVDVhzzzSY: Downloading android player API JSON
 [info] 2SVDVhzzzSY: Downloading subtitles: ja
 [info] 2SVDVhzzzSY: Downloading 1 format(s): 303+251
-[info] Writing video subtitles to: output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.ja.vtt
-[download] Destination: output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.ja.vtt
+[info] Writing video subtitles to: UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.ja.vtt
+[download] Destination: UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.ja.vtt
 [download] 1.00KiB at  Unknown B/s (00:00)
 [download] 3.00KiB at    1.94MiB/s (00:00)
 [download] 3.88KiB at    1.81MiB/s (00:00)
 [download] 100% of 3.88KiB in 00:00 at 67.02KiB/s
-[info] Writing video metadata as JSON to: output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.info.json
-[download] Destination: output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.f303.webm
+[info] Writing video metadata as JSON to: UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.info.json
+[download] Destination: UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.f303.webm
 [download]   0.0% of 57.42MiB at  332.30KiB/s ETA 02:56
 [download]   0.0% of 57.42MiB at  996.90KiB/s ETA 00:58
 [download]   0.0% of 57.42MiB at    2.27MiB/s ETA 00:25
@@ -95,7 +95,7 @@
 [download]  99.0% of 57.42MiB at   18.79MiB/s ETA 00:00
 [download] 100.0% of 57.42MiB at   19.11MiB/s ETA 00:00
 [download] 100% of 57.42MiB in 00:03 at 17.33MiB/s
-[download] Destination: output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.f251.webm
+[download] Destination: UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.f251.webm
 [download]   0.0% of 3.88MiB at  169.65KiB/s ETA 00:23
 [download]   0.1% of 3.88MiB at  453.23KiB/s ETA 00:08
 [download]   0.2% of 3.88MiB at    1.01MiB/s ETA 00:03
@@ -109,6 +109,6 @@
 [download]  51.5% of 3.88MiB at   16.26MiB/s ETA 00:00
 [download] 100.0% of 3.88MiB at   15.99MiB/s ETA 00:00
 [download] 100% of 3.88MiB in 00:00 at 14.49MiB/s
-[Merger] Merging formats into "output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.webm"
-Deleting original file output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.f303.webm (pass -k to keep)
-Deleting original file output\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.f251.webm (pass -k to keep)
+[Merger] Merging formats into "UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.webm"
+Deleting original file UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.f303.webm (pass -k to keep)
+Deleting original file UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.f251.webm (pass -k to keep)

@@ -27,7 +27,7 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
 
         public ExtractResult(
             string uri,
-            string itemId,
+            string? itemId,
             JobTaskType type,
             string? name = null,
             int priority = 0,
@@ -47,7 +47,7 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
 
         public ExtractResult(
             byte[] data,
-            string itemId,
+            string? itemId,
             string? name = null,
             int priority = 0,
             string? itemData = null,
@@ -66,7 +66,7 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
         public ExtractResult(
             byte[] data,
             string mediaType,
-            string itemId,
+            string? itemId,
             string? name = null,
             int priority = 0,
             string? itemData = null,
@@ -85,7 +85,7 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
 
         private static string CreateDataUri(byte[] data, string? mediaType = null)
         {
-            var expectedLength = DivideRoundUp(data.Length, 3) * 4 + (mediaType?.Length ?? 0) + 13;
+            var expectedLength = GetBase64Length(data.Length) + (mediaType?.Length ?? 0) + 13;
             var builder = new StringBuilder(expectedLength);
             var addSseparator = true;
 
@@ -106,6 +106,11 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
             builder.Append(Convert.ToBase64String(data));
 
             return builder.ToString();
+        }
+
+        private static int GetBase64Length(int length)
+        {
+            return DivideRoundUp(length, 3) * 4;
         }
 
         private static int DivideRoundUp(int dividend, int divisor)

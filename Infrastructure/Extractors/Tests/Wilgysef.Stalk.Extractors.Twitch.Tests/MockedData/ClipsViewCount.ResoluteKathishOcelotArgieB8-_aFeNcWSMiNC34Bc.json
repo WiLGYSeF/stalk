@@ -1,0 +1,16 @@
+﻿[
+  {
+    "data": {
+      "clip": {
+        "id": "1796802747",
+        "viewCount": 1691,
+        "__typename": "Clip"
+      }
+    },
+    "extensions": {
+      "durationMilliseconds": 29,
+      "operationName": "ClipsViewCount",
+      "requestID": "01GFCH6PV57ARYH4PFR077H0Q1"
+    }
+  }
+]

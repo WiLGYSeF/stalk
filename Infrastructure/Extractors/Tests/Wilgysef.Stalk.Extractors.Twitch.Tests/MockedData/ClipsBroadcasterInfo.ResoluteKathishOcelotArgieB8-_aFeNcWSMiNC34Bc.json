@@ -1,0 +1,29 @@
+﻿[
+  {
+    "data": {
+      "clip": {
+        "id": "1796802747",
+        "game": {
+          "id": "518006",
+          "name": "Stray",
+          "displayName": "Stray",
+          "__typename": "Game"
+        },
+        "broadcaster": {
+          "id": "662849096",
+          "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-28x28.png",
+          "displayName": "utonyan",
+          "login": "utonyan",
+          "stream": null,
+          "__typename": "User"
+        },
+        "__typename": "Clip"
+      }
+    },
+    "extensions": {
+      "durationMilliseconds": 69,
+      "operationName": "ClipsBroadcasterInfo",
+      "requestID": "01GFCH6PV57ARYH4PFR077H0Q1"
+    }
+  }
+]

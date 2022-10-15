@@ -1,0 +1,22 @@
+﻿[
+  {
+    "data": {
+      "clip": {
+        "id": "1796802747",
+        "curator": {
+          "id": "442539197",
+          "displayName": "renanamiya",
+          "login": "renanamiya",
+          "__typename": "User"
+        },
+        "champBadge": null,
+        "__typename": "Clip"
+      }
+    },
+    "extensions": {
+      "durationMilliseconds": 48,
+      "operationName": "ClipsCurator",
+      "requestID": "01GFCH6PV57ARYH4PFR077H0Q1"
+    }
+  }
+]

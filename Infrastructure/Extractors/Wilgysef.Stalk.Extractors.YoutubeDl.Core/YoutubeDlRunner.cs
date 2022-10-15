@@ -1,12 +1,33 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Globalization;
+using System.Linq;
+using System.Text.RegularExpressions;
+using Wilgysef.Stalk.Core.Shared.Extensions;
 using Wilgysef.Stalk.Core.Shared.ProcessServices;
 
 namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
 {
     public class YoutubeDlRunner
     {
+        public static string OutputOutputRegexGroup = "output";
+
+        private static readonly string OutputMetadataPrefix = "[info] Writing video metadata as JSON to: ";
+        private static readonly string OutputSubtitlesPrefix = "[info] Writing video subtitles to: ";
+        private static readonly string OutputDownloadDestination = "[download] Destination: ";
+        private static readonly Regex OutputDownloadProgressShort = new Regex(@"^\[download\]\s+(?<size>[0-9.]+(?:[KMG]i?)?B) at \s+(?<rate>Unknown B/s|[0-9.]+(?:[KMG]i?)?B/s)\s+\([0-9:]+\)", RegexOptions.Compiled);
+        private static readonly Regex OutputDownloadProgress = new Regex(@"^\[download\]\s+(?<percent>[0-9.]+)% of (?<size>[0-9.]+(?:[KMG]i?)?B) at \s+(?<rate>Unknown B/s|[0-9.]+(?:[KMG]i?)?B/s) ETA\s+(?<eta>Unknown|[0-9:]+)", RegexOptions.Compiled);
+        private static readonly Regex SizeRegex = new Regex(@"^(?<amount>[0-9.]+)(?<size>(?:[KMG]i?)?B)(?:/s)?$", RegexOptions.Compiled);
+
+        private readonly ConcurrentDictionary<int, IDownloadStatus> _downloadStatuses = new ConcurrentDictionary<int, IDownloadStatus>();
+        private readonly ConcurrentDictionary<int, Func<string, IDownloadStatus, bool>> _outputCallbacks = new ConcurrentDictionary<int, Func<string, IDownloadStatus, bool>>();
+        private readonly ConcurrentDictionary<int, Func<string, IDownloadStatus, bool>> _errorCallbacks = new ConcurrentDictionary<int, Func<string, IDownloadStatus, bool>>();
+
+        private readonly ConcurrentDictionary<object, int> _processIds = new ConcurrentDictionary<object, int>();
+
         public readonly string[] YouTubeDlDefaultExeNames = new string[]
         {
             "youtube-dl.exe",
@@ -17,17 +38,24 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
 
         public YoutubeDlConfig Config { get; set; } = new YoutubeDlConfig();
 
-        private readonly IProcessService _processService;
+        public ILogger? Logger { get; set; }
 
-        public YoutubeDlRunner(IProcessService processService)
+        private readonly IProcessService _processService;
+        private readonly Regex _outputOutputRegex;
+
+        public YoutubeDlRunner(IProcessService processService, Regex outputOutputRegex)
         {
             _processService = processService;
+            _outputOutputRegex = outputOutputRegex;
         }
 
         public virtual IProcess FindAndStartProcess(
             Uri uri,
             string filename,
-            Action<ProcessStartInfo>? configure = null)
+            IDownloadStatus downloadStatus,
+            Action<ProcessStartInfo>? configure = null,
+            Func<string, IDownloadStatus, bool>? outputCallback = null,
+            Func<string, IDownloadStatus, bool>? errorCallback = null)
         {
             var startInfo = new ProcessStartInfo()
             {
@@ -81,7 +109,135 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
 
             configure?.Invoke(startInfo);
 
-            return FindAndStartProcess(startInfo);
+            var process = FindAndStartProcess(startInfo);
+
+            _downloadStatuses[process.Id] = downloadStatus;
+            if (outputCallback != null)
+            {
+                _outputCallbacks[process.Id] = outputCallback;
+            }
+            if (errorCallback != null)
+            {
+                _errorCallbacks[process.Id] = errorCallback;
+            }
+
+            process.OutputDataReceived += Process_OutputDataReceived;
+            process.ErrorDataReceived += Process_ErrorDataReceived;
+            process.BeginOutputReadLine();
+            process.BeginErrorReadLine();
+
+            return process;
+        }
+
+        protected virtual void Process_OutputDataReceived(object sender, DataReceivedEventArgs args)
+        {
+            if (args.Data == null)
+            {
+                return;
+            }
+
+            Logger?.LogDebug("YoutubeDl: {Output}", args.Data);
+
+            int processId;
+            try
+            {
+                processId = GetProcessIdBySender(sender);
+            }
+            catch (Exception exception)
+            {
+                Logger?.LogError(exception, "YoutubeDl: Could not get process Id.");
+                return;
+            }
+
+            if (!_downloadStatuses.TryGetValue(processId, out var downloadStatus))
+            {
+                Logger?.LogError("YoutubeDl: Could not get download status object from process Id {ProcessId}.", processId);
+                return;
+            }
+
+            downloadStatus.Percentage = null;
+            downloadStatus.TotalSize = null;
+            downloadStatus.AverageBytesPerSecond = null;
+            downloadStatus.EstimatedCompletionTime = null;
+
+            if (_outputCallbacks.TryGetValue(processId, out var callback)
+                && callback(args.Data, downloadStatus))
+            {
+                return;
+            }
+
+            if (args.Data.StartsWith(OutputSubtitlesPrefix))
+            {
+                downloadStatus.SubtitlesFilename = args.Data[OutputSubtitlesPrefix.Length..];
+                downloadStatus.DestinationFilename = downloadStatus.SubtitlesFilename;
+            }
+            else if (args.Data.StartsWith(OutputMetadataPrefix))
+            {
+                downloadStatus.MetadataFilename = args.Data[OutputMetadataPrefix.Length..];
+                downloadStatus.DestinationFilename = downloadStatus.MetadataFilename;
+            }
+            else if (_outputOutputRegex.TryMatch(args.Data, out var outputMatch))
+            {
+                downloadStatus.OutputFilename = outputMatch.Groups[OutputOutputRegexGroup].Value;
+                downloadStatus.DestinationFilename = downloadStatus.OutputFilename;
+            }
+            else if (args.Data.StartsWith(OutputDownloadDestination))
+            {
+                downloadStatus.DestinationFilename = args.Data[OutputDownloadDestination.Length..];
+            }
+            else if (OutputDownloadProgressShort.TryMatch(args.Data, out var progressShortMatch))
+            {
+                downloadStatus.AverageBytesPerSecond = SizeToBytes(progressShortMatch.Groups["rate"].Value);
+            }
+            else if (OutputDownloadProgress.TryMatch(args.Data, out var progressMatch))
+            {
+                downloadStatus.Percentage = double.Parse(progressMatch.Groups["percent"].Value) / 100;
+                downloadStatus.TotalSize = SizeToBytes(progressMatch.Groups["size"].Value);
+                downloadStatus.AverageBytesPerSecond = SizeToBytes(progressMatch.Groups["rate"].Value);
+
+                var eta = progressMatch.Groups["eta"].Value;
+                if (eta != "Unknown")
+                {
+                    downloadStatus.EstimatedCompletionTime = ParseTimeSpan(eta);
+                }
+                else
+                {
+                    downloadStatus.EstimatedCompletionTime = null;
+                }
+            }
+        }
+
+        protected virtual void Process_ErrorDataReceived(object sender, DataReceivedEventArgs args)
+        {
+            if (args.Data == null)
+            {
+                return;
+            }
+
+            Logger?.LogError("YouTube: error: {Error}", args.Data);
+
+            int processId;
+            try
+            {
+                processId = GetProcessIdBySender(sender);
+            }
+            catch (Exception exception)
+            {
+                Logger?.LogError(exception, "YoutubeDl: Could not get process Id.");
+                return;
+            }
+
+            if (!_downloadStatuses.TryGetValue(processId, out var downloadStatus))
+            {
+                Logger?.LogError("YoutubeDl: Could not get download status object from process Id {ProcessId}.", processId);
+                return;
+            }
+
+            if (_errorCallbacks.TryGetValue(processId, out var callback)
+                && callback(args.Data, downloadStatus))
+            {
+                return;
+            }
         }
 
         protected virtual IProcess FindAndStartProcess(ProcessStartInfo startInfo)
@@ -108,6 +264,42 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
                 return _processService.Start(startInfo)
                     ?? throw new InvalidOperationException($"Could not start process: {startInfo.FileName}");
             }
+        }
+
+        protected virtual int GetProcessIdBySender(object sender)
+        {
+            if (!_processIds.TryGetValue(sender, out var processId))
+            {
+                // sender could either be a Process or IProcess :(
+                processId = (int)sender.GetType().GetProperty("Id").GetValue(sender);
+                _processIds[sender] = processId;
+            }
+            return processId;
+        }
+
+        protected virtual long? SizeToBytes(string size)
+        {
+            if (size.StartsWith("Unknown"))
+            {
+                return null;
+            }
+
+            var match = SizeRegex.Match(size);
+            return (long)(double.Parse(match.Groups["amount"].Value)
+                * match.Groups["size"].Value[0] switch
+                {
+                    'B' => 1,
+                    'K' => 1024,
+                    'M' => 1024 * 1024,
+                    'G' => 1024 * 1024 * 1024,
+                });
+        }
+
+        protected virtual TimeSpan ParseTimeSpan(string timeSpan)
+        {
+            return timeSpan.Count(c => c == ':') == 1
+                ? TimeSpan.ParseExact(timeSpan, "mm':'ss", CultureInfo.InvariantCulture)
+                : TimeSpan.Parse(timeSpan);
         }
     }
 }

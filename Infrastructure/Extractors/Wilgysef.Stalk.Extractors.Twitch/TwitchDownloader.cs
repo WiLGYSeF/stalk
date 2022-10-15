@@ -16,15 +16,15 @@ using Wilgysef.Stalk.Extractors.YoutubeDl.Core;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
-namespace Wilgysef.Stalk.Extractors.YouTube;
+namespace Wilgysef.Stalk.Extractors.Twitch;
 
-public class YouTubeDownloader : DownloaderBase
+public class TwitchDownloader : DownloaderBase
 {
-    public override string Name => "YouTube";
+    public override string Name => "Twitch";
 
-    private static readonly Regex OutputOutputRegex = new($@"\[Merger\] Merging formats into \""(?<{YoutubeDlRunner.OutputOutputRegexGroup}>.*)\""$", RegexOptions.Compiled);
+    private static readonly Regex OutputOutputRegex = new($@"\[download\] Destination: (?<{YoutubeDlRunner.OutputOutputRegexGroup}>.*\.mp4)$", RegexOptions.Compiled);
 
-    private YouTubeDownloaderConfig _config = new();
+    private TwitchDownloaderConfig _config = new();
 
     private readonly IFileSystem _fileSystem;
     private readonly IStringFormatter _stringFormatter;
@@ -32,7 +32,7 @@ public class YouTubeDownloader : DownloaderBase
     private readonly ExternalBinariesOptions _externalBinariesOptions;
     private readonly IProcessService _processService;
 
-    public YouTubeDownloader(
+    public TwitchDownloader(
         IFileSystem fileSystem,
         IStringFormatter stringFormatter,
         IFilenameSlugSelector filenameSlugSelector,
@@ -89,7 +89,7 @@ public class YouTubeDownloader : DownloaderBase
         }
         catch (Exception exception)
         {
-            Logger?.LogError(exception, "YouTube: Failed to run youtube-dl: {ExitCode}", process.ExitCode);
+            Logger?.LogError(exception, "Twitch: Failed to run youtube-dl: {ExitCode}", process.ExitCode);
             throw;
         }
 
@@ -138,7 +138,7 @@ public class YouTubeDownloader : DownloaderBase
                 }
                 catch (Exception exception)
                 {
-                    Logger?.LogError(exception, "YouTube: Could not get YouTube metadata.");
+                    Logger?.LogError(exception, "Twitch: Could not get Twitch metadata.");
                 }
             }
             else

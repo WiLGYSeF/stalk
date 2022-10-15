@@ -79,7 +79,9 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
     public string? GetItemId(Uri uri)
     {
-        if (Consts.VideoRegex.IsMatch(uri.AbsoluteUri))
+        var absoluteUri = uri.AbsoluteUri;
+
+        if (Consts.VideoRegex.IsMatch(absoluteUri))
         {
             var query = HttpUtility.ParseQueryString(uri.Query);
             if (query.TryGetValue("v", out var videoId))
@@ -88,7 +90,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
             }
         }
 
-        if (Consts.CommunityRegex.IsMatch(uri.AbsoluteUri))
+        if (Consts.CommunityRegex.IsMatch(absoluteUri))
         {
             var query = HttpUtility.ParseQueryString(uri.Query);
             if (query.TryGetValue("lb", out var postId))
@@ -97,7 +99,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
             }
         }
 
-        var match = Consts.CommunityPostRegex.Match(uri.AbsoluteUri);
+        var match = Consts.CommunityPostRegex.Match(absoluteUri);
         if (match.Success)
         {
             return match.Groups[Consts.CommunityPostRegexPostGroup].Value;
@@ -295,7 +297,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
                 if (published != null)
                 {
-                    metadata.SetByParts($"{channelId}#video#{published}_{videoId}_thumb", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+                    metadata.SetByParts($"{channelId}#video#{published}_{videoId}#thumb", MetadataObjectConsts.Origin.ItemIdSeqKeys);
                 }
 
                 var uri = new Uri(uriString);

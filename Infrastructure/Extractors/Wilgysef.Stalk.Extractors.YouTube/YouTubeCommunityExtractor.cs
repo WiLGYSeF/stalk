@@ -243,7 +243,7 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
 
         if (relativeDateTime != null)
         {
-            metadata.SetByParts($"{channelId}#community#{relativeDateTime}_{postId}_image", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+            metadata.SetByParts($"{channelId}#community#{relativeDateTime}_{postId}#image", MetadataObjectConsts.Origin.ItemIdSeqKeys);
         }
 
         imageUrl = GetCommunityImageUrlFromThumbnail(imageUrl);
