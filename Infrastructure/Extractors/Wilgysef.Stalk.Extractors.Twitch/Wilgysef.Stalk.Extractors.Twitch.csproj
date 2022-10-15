@@ -8,10 +8,12 @@
 
   <ItemGroup>
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+    <PackageReference Include="YamlDotNet" Version="12.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\Wilgysef.Stalk.Core.Shared\Wilgysef.Stalk.Core.Shared.csproj" />
+    <ProjectReference Include="..\Wilgysef.Stalk.Extractors.YoutubeDl.Core\Wilgysef.Stalk.Extractors.YoutubeDl.Core.csproj" />
   </ItemGroup>
 
 </Project>

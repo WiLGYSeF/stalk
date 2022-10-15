@@ -68,6 +68,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.Stalk.Extractors.YoutubeDl.Core", "Infrastructure\Extractors\Wilgysef.Stalk.Extractors.YoutubeDl.Core\Wilgysef.Stalk.Extractors.YoutubeDl.Core.csproj", "{9F941D77-BFB9-41BC-9A19-D5D7162D9094}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Wilgysef.Stalk.Extractors.Twitch", "Infrastructure\Extractors\Wilgysef.Stalk.Extractors.Twitch\Wilgysef.Stalk.Extractors.Twitch.csproj", "{41B0A633-326B-4B93-9A79-483349ED2930}"
+	ProjectSection(ProjectDependencies) = postProject
+		{9F941D77-BFB9-41BC-9A19-D5D7162D9094} = {9F941D77-BFB9-41BC-9A19-D5D7162D9094}
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Wilgysef.Stalk.Extractors.Twitch.Tests", "Infrastructure\Extractors\Tests\Wilgysef.Stalk.Extractors.Twitch.Tests\Wilgysef.Stalk.Extractors.Twitch.Tests.csproj", "{8FA61D07-7508-4F54-9FE6-21E2C87D0C7F}"
 	ProjectSection(ProjectDependencies) = postProject

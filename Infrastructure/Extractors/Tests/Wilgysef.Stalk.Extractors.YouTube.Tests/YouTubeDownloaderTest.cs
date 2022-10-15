@@ -31,7 +31,7 @@ public class YouTubeDownloaderTest : BaseTest
 
         var fileSystem = new MockFileSystem();
         fileSystem.AddFileFromEmbeddedResource(
-            Path.Combine(Directory.GetCurrentDirectory(), "output\\UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.info.json"),
+            Path.Combine(Directory.GetCurrentDirectory(), "UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.info.json"),
             assembly,
             $"{MockedDataResourcePrefix}.Video.2SVDVhzzzSY.info.json");
 
@@ -61,41 +61,41 @@ public class YouTubeDownloaderTest : BaseTest
             new HttpClient(interceptor));
     }
 
-    [Fact]
-    public async Task Download_With_Subtitle_Combined_InfoMetaData()
+    [Theory]
+    [InlineData("https://www.youtube.com/watch?v=2SVDVhzzzSY", true)]
+    [InlineData("https://youtube.com/watch?v=2SVDVhzzzSY", true)]
+    public void Can_Download(string uri, bool expected)
     {
-        _youTubeDownloader.Config[YouTubeDownloaderConfig.MoveInfoJsonToMetadataKey] = true;
-
-        var results = await _youTubeDownloader.DownloadAsync(
-            new Uri("https://www.youtube.com/watch?v=2SVDVhzzzSY"),
-            "test.%(ext)s",
-            "itemId",
-            "meta.txt",
-            new MetadataObject('.')).ToListAsync();
-
-        results.Count.ShouldBe(2);
-        var subtitlesResult = results.Single(r => r.Path.EndsWith(".vtt"));
-        var videoResult = results.Single(r => r.Path.EndsWith(".webm"));
-        ((IDictionary<object, object>)(videoResult.Metadata["youtube"]!)).Count.ShouldBe(56);
+        _youTubeDownloader.CanDownload(new Uri(uri)).ShouldBe(expected);
     }
 
-    [Fact]
-    public async Task Download_With_Subtitle_Separate_InfoMetadata()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Download_With_Subtitle_InfoJson(bool moveInfoJson)
     {
-        _youTubeDownloader.Config[YouTubeDownloaderConfig.MoveInfoJsonToMetadataKey] = false;
+        _youTubeDownloader.Config[YouTubeDownloaderConfig.MoveInfoJsonToMetadataKey] = moveInfoJson;
 
         var results = await _youTubeDownloader.DownloadAsync(
             new Uri("https://www.youtube.com/watch?v=2SVDVhzzzSY"),
-            "test.%(ext)s",
-            "itemId",
+            "UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.%(ext)s",
+            "2SVDVhzzzSY",
             "meta.txt",
             new MetadataObject('.')).ToListAsync();
 
-        results.Count.ShouldBe(3);
-        var subtitlesResult = results.Single(r => r.Path.EndsWith(".vtt"));
-        var metadataResult = results.Single(r => r.Path.EndsWith(".info.json"));
-        var videoResult = results.Single(r => r.Path.EndsWith(".webm"));
-        videoResult.Metadata!.Contains("youtube").ShouldBeFalse();
+        results.Count.ShouldBe(moveInfoJson ? 2 : 3);
+        var subtitlesResult = results.Single(r => r.Path.EndsWith("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.ja.vtt"));
+        var videoResult = results.Single(r => r.Path.EndsWith("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.webm"));
+
+        if (moveInfoJson)
+        {
+            ((IDictionary<object, object>)(videoResult.Metadata!["youtube_dl"]!)).Count.ShouldBe(56);
+        }
+        else
+        {
+            var metadataResult = results.Single(r => r.Path.EndsWith(".info.json"));
+            videoResult.Metadata!.Contains("youtube_dl").ShouldBeFalse();
+        }
     }
 
     [Theory]
@@ -139,13 +139,5 @@ public class YouTubeDownloaderTest : BaseTest
         }
 
         cookieHeader.ShouldBe("Cookie:" + string.Join("; ", cookies.Select(p => $"{p.Key}={p.Value}")));
-    }
-
-    [Theory]
-    [InlineData("https://www.youtube.com/watch?v=2SVDVhzzzSY", true)]
-    [InlineData("https://youtube.com/watch?v=2SVDVhzzzSY", true)]
-    public void Can_Download(string uri, bool expected)
-    {
-        _youTubeDownloader.CanDownload(new Uri(uri)).ShouldBe(expected);
     }
 }

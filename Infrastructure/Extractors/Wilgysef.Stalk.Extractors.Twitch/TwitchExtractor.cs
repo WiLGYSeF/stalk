@@ -582,7 +582,7 @@ public class TwitchExtractor : IExtractor
     private static ExtractType? GetExtractType(Uri uri)
     {
         var absoluteUri = uri.AbsoluteUri;
-        if (VideoRegex.IsMatch(absoluteUri))
+        if (Consts.VideoRegex.IsMatch(absoluteUri))
         {
             return ExtractType.Video;
         }

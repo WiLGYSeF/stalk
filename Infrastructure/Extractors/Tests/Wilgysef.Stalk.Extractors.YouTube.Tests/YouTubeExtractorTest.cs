@@ -178,7 +178,7 @@ public class YouTubeExtractorTest : BaseTest
         thumbnailResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
         thumbnailResult.Metadata["file.extension"].ShouldBe("webp");
         thumbnailResult.Metadata["published"].ShouldBe("20210407");
-        thumbnailResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20210407__BSSJi-sHh8_thumb");
+        thumbnailResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20210407__BSSJi-sHh8#thumb");
         thumbnailResult.Metadata["video.id"].ShouldBe("_BSSJi-sHh8");
         thumbnailResult.Metadata["video.title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
         thumbnailResult.Metadata["video.duration"].ShouldBe("03:45");
@@ -254,7 +254,7 @@ public class YouTubeExtractorTest : BaseTest
         imageResult.Uri.ShouldBe("https://yt3.ggpht.com/BRWDFVKhADpFgyxc1iZgYop1k3QJGR67yoYoFulEYm35Jrvb7A2gLjpodlKVhmGtlBuUvx0VkQLD1Q=s1920-nd-v1");
         imageResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
         imageResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
-        imageResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#20211201_UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP_image");
+        imageResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#20211201_UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP#image");
         imageResult.Metadata["post_id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         imageResult.Metadata["published"].ShouldBe("20211201");
         imageResult.Metadata["published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");

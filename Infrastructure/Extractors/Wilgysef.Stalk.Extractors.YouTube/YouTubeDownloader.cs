@@ -22,15 +22,7 @@ public class YouTubeDownloader : DownloaderBase
 {
     public override string Name => "YouTube";
 
-    private static readonly string OutputMetadataPrefix = "[info] Writing video metadata as JSON to: ";
-    private static readonly string OutputSubtitlesPrefix = "[info] Writing video subtitles to: ";
-    private static readonly string OutputOutputPrefix = "[Merger] Merging formats into \"";
-    private static readonly string OutputDownloadDestination = "[download] Destination: ";
-    private static readonly Regex OutputDownloadProgressShort = new(@"^\[download\]\s+(?<size>[0-9.]+(?:[KMG]i?)?B) at \s+(?<rate>Unknown B/s|[0-9.]+(?:[KMG]i?)?B/s)\s+\([0-9:]+\)", RegexOptions.Compiled);
-    private static readonly Regex OutputDownloadProgress = new(@"^\[download\]\s+(?<percent>[0-9.]+)% of (?<size>[0-9.]+(?:[KMG]i?)?B) at \s+(?<rate>Unknown B/s|[0-9.]+(?:[KMG]i?)?B/s) ETA\s+(?<eta>Unknown|[0-9:]+)", RegexOptions.Compiled);
-    private static readonly Regex SizeRegex = new(@"^(?<amount>[0-9.]+)(?<size>(?:[KMG]i?)?B)(?:/s)?$", RegexOptions.Compiled);
-
-    private readonly ConcurrentDictionary<int, DownloadStatus> _downloadStatuses = new();
+    private static readonly Regex OutputOutputRegex = new($@"\[Merger\] Merging formats into \""(?<{YoutubeDlRunner.OutputOutputRegexGroup}>.*)\""$", RegexOptions.Compiled);
 
     private YouTubeDownloaderConfig _config = new();
 
@@ -76,9 +68,10 @@ public class YouTubeDownloader : DownloaderBase
     {
         _config = new(Config);
 
-        var youtubeDl = new YoutubeDlRunner(_processService)
+        var youtubeDl = new YoutubeDlRunner(_processService, OutputOutputRegex)
         {
             Config = _config.ToYoutubeDlConfig(),
+            Logger = Logger,
         };
 
         var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
@@ -87,15 +80,8 @@ public class YouTubeDownloader : DownloaderBase
 
         CreateDirectoriesFromFilename(filename);
 
-        var process = youtubeDl.FindAndStartProcess(uri, filename);
-
         var status = new DownloadStatus();
-        _downloadStatuses[process.Id] = status;
-
-        process.OutputDataReceived += OutputReceivedHandler;
-        process.ErrorDataReceived += ErrorReceivedHandler;
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
+        var process = youtubeDl.FindAndStartProcess(uri, filename, status);
 
         try
         {
@@ -145,7 +131,7 @@ public class YouTubeDownloader : DownloaderBase
                             .WithNamingConvention(CamelCaseNamingConvention.Instance)
                             .Build();
                         var youtubeMetadata = deserializer.Deserialize(reader);
-                        metadata["youtube"] = youtubeMetadata;
+                        metadata["youtube_dl"] = youtubeMetadata;
                     }
 
                     _fileSystem.File.Delete(status.MetadataFilename);
@@ -175,90 +161,6 @@ public class YouTubeDownloader : DownloaderBase
             createMetadata: true);
     }
 
-    private void OutputReceivedHandler(object sender, DataReceivedEventArgs args)
-    {
-        if (args.Data == null)
-        {
-            return;
-        }
-
-        Logger?.LogDebug("YouTube: {Output}", args.Data);
-
-        DownloadStatus downloadStatus;
-        try
-        {
-            // sender could either be a Process or IProcess :(
-            dynamic senderProcess = sender;
-            int processId = senderProcess.Id;
-            if (!_downloadStatuses.TryGetValue(processId, out downloadStatus!))
-            {
-                Logger?.LogError("YouTube: Could not get download status object from process Id {ProcessId}.", processId);
-                return;
-            }
-        }
-        catch (Exception exception)
-        {
-            Logger?.LogError(exception, "YouTube: Could not get process Id.");
-            return;
-        }
-
-        downloadStatus.Percentage = null;
-        downloadStatus.TotalSize = null;
-        downloadStatus.AverageBytesPerSecond = null;
-        downloadStatus.EstimatedCompletionTime = null;
-
-        if (args.Data.StartsWith(OutputSubtitlesPrefix))
-        {
-            downloadStatus.SubtitlesFilename = args.Data[OutputSubtitlesPrefix.Length..];
-            downloadStatus.DestinationFilename = downloadStatus.SubtitlesFilename;
-        }
-        else if (args.Data.StartsWith(OutputMetadataPrefix))
-        {
-            downloadStatus.MetadataFilename = args.Data[OutputMetadataPrefix.Length..];
-            downloadStatus.DestinationFilename = downloadStatus.MetadataFilename;
-        }
-        else if (args.Data.StartsWith(OutputOutputPrefix))
-        {
-            downloadStatus.OutputFilename = args.Data[OutputOutputPrefix.Length..^1];
-            downloadStatus.DestinationFilename = downloadStatus.OutputFilename;
-        }
-        else if (args.Data.StartsWith(OutputDownloadDestination))
-        {
-            downloadStatus.DestinationFilename = args.Data[OutputDownloadDestination.Length..];
-        }
-        else
-        {
-            var match = OutputDownloadProgressShort.Match(args.Data);
-            if (match.Success)
-            {
-                downloadStatus.AverageBytesPerSecond = SizeToBytes(match.Groups["rate"].Value);
-            }
-            else
-            {
-                match = OutputDownloadProgress.Match(args.Data);
-                if (match.Success)
-                {
-                    downloadStatus.Percentage = double.Parse(match.Groups["percent"].Value) / 100;
-                    downloadStatus.TotalSize = SizeToBytes(match.Groups["size"].Value);
-                    downloadStatus.AverageBytesPerSecond = SizeToBytes(match.Groups["rate"].Value);
-
-                    var eta = match.Groups["eta"].Value;
-                    downloadStatus.EstimatedCompletionTime = eta != "Unknown"
-                        ? ParseTimeSpan(eta)
-                        : null;
-                }
-            }
-        }
-    }
-
-    private void ErrorReceivedHandler(object sender, DataReceivedEventArgs args)
-    {
-        if (args.Data != null)
-        {
-            Logger?.LogError("YouTube: error: {Error}", args.Data);
-        }
-    }
-
     private string GetFullPath(IProcess process, string path)
     {
         return Path.GetFullPath(Path.Combine(process.StartInfo.WorkingDirectory, path));
@@ -271,49 +173,5 @@ public class YouTubeDownloader : DownloaderBase
         {
             _fileSystem.Directory.CreateDirectory(dirname);
         }
-    }
-
-    private static long? SizeToBytes(string size)
-    {
-        if (size.StartsWith("Unknown"))
-        {
-            return null;
-        }
-
-        var match = SizeRegex.Match(size);
-        return (long)(double.Parse(match.Groups["amount"].Value)
-            * match.Groups["size"].Value[0] switch
-            {
-                'B' => 1,
-                'K' => 1024,
-                'M' => 1024 * 1024,
-                'G' => 1024 * 1024 * 1024,
-            });
-    }
-
-    private static TimeSpan ParseTimeSpan(string timeSpan)
-    {
-        return timeSpan.Count(c => c == ':') == 1
-            ? TimeSpan.ParseExact(timeSpan, "mm':'ss", CultureInfo.InvariantCulture)
-            : TimeSpan.Parse(timeSpan);
-    }
-
-    private class DownloadStatus
-    {
-        public string? OutputFilename { get; set; }
-
-        public string? MetadataFilename { get; set; }
-
-        public string? SubtitlesFilename { get; set; }
-
-        public string? DestinationFilename { get; set; }
-
-        public double? Percentage { get; set; }
-
-        public long? TotalSize { get; set; }
-
-        public long? AverageBytesPerSecond { get; set; }
-
-        public TimeSpan? EstimatedCompletionTime { get; set; }
     }
 }
