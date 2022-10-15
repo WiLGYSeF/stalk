@@ -69,10 +69,24 @@ public class TwitchExtractorTest
     }
 
     [Fact]
-    public async Task Get_Videos()
+    public async Task Get_Channel()
     {
         var results = await _twitchExtractor.ExtractAsync(
             new Uri("https://www.twitch.tv/utonyan"),
+            null,
+            new MetadataObject('.')).ToListAsync();
+
+        results.Count.ShouldBe(3);
+        var videosResult = results.Single(r => r.Uri == "https://www.twitch.tv/utonyan/videos");
+        var clipsResult = results.Single(r => r.Uri == "https://www.twitch.tv/utonyan/clips");
+        var aboutResult = results.Single(r => r.Uri == "https://www.twitch.tv/utonyan/about");
+    }
+
+    [Fact]
+    public async Task Get_Videos()
+    {
+        var results = await _twitchExtractor.ExtractAsync(
+            new Uri("https://www.twitch.tv/utonyan/videos"),
             null,
             new MetadataObject('.')).ToListAsync();
 

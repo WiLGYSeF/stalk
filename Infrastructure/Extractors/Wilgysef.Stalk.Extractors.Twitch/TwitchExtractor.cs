@@ -1,10 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using System;
 using System.Dynamic;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
-using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Web;
 using Wilgysef.Stalk.Core.Shared.CacheObjects;
@@ -25,7 +23,8 @@ public class TwitchExtractor : IExtractor
     public IDictionary<string, object?> Config { get; set; } = new Dictionary<string, object?>();
 
     private const string ChannelRegex = @"(?<channel>[A-Za-z0-9_-]+)";
-    private static readonly Regex VideosRegex = new(Consts.UriPrefixRegex + $@"/{ChannelRegex}(?:/(?:videos)?|$)", RegexOptions.Compiled);
+    private static readonly Regex ChannelUriRegex = new(Consts.UriPrefixRegex + $@"/{ChannelRegex}/?", RegexOptions.Compiled);
+    private static readonly Regex VideosRegex = new(Consts.UriPrefixRegex + $@"/{ChannelRegex}/videos", RegexOptions.Compiled);
     private static readonly Regex ClipsRegex = new(Consts.UriPrefixRegex + $@"/{ChannelRegex}/clips", RegexOptions.Compiled);
     private static readonly Regex ClipRegex = new(Consts.UriPrefixRegex + $@"/{ChannelRegex}/clip/(?<clip>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
     private static readonly Regex ClipAltRegex = new(@"(?:https?://)?clips\.twitch\.tv/(?<clip>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
@@ -71,7 +70,7 @@ public class TwitchExtractor : IExtractor
     private const string YoutubeDlFileExtensionTemplate = "%(ext)s";
 
     private HttpClient _httpClient;
-    
+
     public TwitchExtractor(HttpClient httpClient)
     {
         _httpClient = httpClient;
@@ -131,22 +130,26 @@ public class TwitchExtractor : IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        // TODO: use ExtractResults instead?
+        var match = ChannelUriRegex.Match(uri.AbsoluteUri);
+        var channelName = match.Groups["channel"].Value;
 
-        await foreach (var result in ExtractVideosAsync(uri, metadata, cancellationToken))
-        {
-            yield return result;
-        }
+        yield return new ExtractResult(
+            $"https://www.twitch.tv/{channelName}/videos",
+            null,
+            JobTaskType.Extract,
+            metadata: metadata);
 
-        await foreach (var result in ExtractClipsAsync(uri, metadata, cancellationToken))
-        {
-            yield return result;
-        }
+        yield return new ExtractResult(
+            $"https://www.twitch.tv/{channelName}/clips",
+            null,
+            JobTaskType.Extract,
+            metadata: metadata);
 
-        await foreach (var result in ExtractAboutAsync(uri, metadata, cancellationToken))
-        {
-            yield return result;
-        }
+        yield return new ExtractResult(
+            $"https://www.twitch.tv/{channelName}/about",
+            null,
+            JobTaskType.Extract,
+            metadata: metadata);
     }
 
     private async IAsyncEnumerable<ExtractResult> ExtractVideosAsync(
@@ -255,7 +258,7 @@ public class TwitchExtractor : IExtractor
         if (thumbnailUrl != null)
         {
             var thumbnailMetadata = metadata.Copy();
-            
+
             if (publishedAt.HasValue)
             {
                 thumbnailMetadata.SetByParts($"{channelId}#{publishedAt.Value:yyyyMMdd}_{videoId}#thumb", MetadataObjectConsts.Origin.ItemIdSeqKeys);
@@ -346,7 +349,7 @@ public class TwitchExtractor : IExtractor
 
         var gameId = clipsSocialShare.SelectToken("$..game.id")?.ToString();
         var gameName = clipsSocialShare.SelectToken("$..game.name")?.ToString();
-        
+
         metadata.SetByParts(gameId, MetadataClipGameIdKeys);
         metadata.SetByParts(gameName, MetadataClipGameNameKeys);
 
@@ -739,6 +742,10 @@ public class TwitchExtractor : IExtractor
         if (VideosRegex.IsMatch(absoluteUri))
         {
             return ExtractType.Videos;
+        }
+        if (ChannelUriRegex.IsMatch(absoluteUri))
+        {
+            return ExtractType.Channel;
         }
         return null;
     }
