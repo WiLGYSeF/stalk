@@ -1,4 +1,5 @@
 using Shouldly;
+using System;
 using System.Net;
 using System.Net.Http.Json;
 using System.Reflection;
@@ -49,6 +50,7 @@ public class TwitchExtractorTest
     [InlineData("https://www.twitch.tv/utonyan/clips/", true)]
     [InlineData("https://www.twitch.tv/utonyan/clip/SilkyTrappedLousePanicBasket-rIzy-DnZdAQTfq_V", true)]
     [InlineData("https://clips.twitch.tv/ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc", true)]
+    [InlineData("https://www.twitch.tv/utonyan/about", true)]
     public void Can_Extract(string uri, bool expected)
     {
         _twitchExtractor.CanExtract(new Uri(uri)).ShouldBe(expected);
@@ -172,6 +174,40 @@ public class TwitchExtractorTest
         result.Type.ShouldBe(JobTaskType.Download);
     }
 
+    [Fact]
+    public async Task Get_About()
+    {
+        var results = await _twitchExtractor.ExtractAsync(
+            new Uri("https://www.twitch.tv/utonyan/about"),
+            null,
+            new MetadataObject('.')).ToListAsync();
+
+        results.Count.ShouldBe(18);
+        results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
+        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(results.Count);
+        results.All(r => r.Type == JobTaskType.Download).ShouldBeTrue();
+
+        var gifResult = results.Single(r => r.ItemId == "emotesv2_9e8516dacaa44f6181451f6e99666a9e");
+        gifResult.Uri.ShouldBe("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_9e8516dacaa44f6181451f6e99666a9e/default/dark/1.0");
+        gifResult.Metadata!["emote.price"].ShouldBe("$4.99");
+        gifResult.Metadata["emote.tier"].ShouldBe("1000");
+        gifResult.Metadata["emote.id"].ShouldBe("emotesv2_9e8516dacaa44f6181451f6e99666a9e");
+        gifResult.Metadata["emote.set_id"].ShouldBe("311162030");
+        gifResult.Metadata["emote.token"].ShouldBe("utonyaUtopad");
+        gifResult.Metadata["emote.asset_type"].ShouldBe("ANIMATED");
+        gifResult.Metadata["file.extension"].ShouldBe("gif");
+
+        var pngResult = results.Single(r => r.ItemId == "emotesv2_710f769a1dfd41b7ba0358a1f02037eb");
+        pngResult.Uri.ShouldBe("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_710f769a1dfd41b7ba0358a1f02037eb/default/dark/1.0");
+        pngResult.Metadata!["emote.price"].ShouldBe("$4.99");
+        pngResult.Metadata["emote.tier"].ShouldBe("1000");
+        pngResult.Metadata["emote.id"].ShouldBe("emotesv2_710f769a1dfd41b7ba0358a1f02037eb");
+        pngResult.Metadata["emote.set_id"].ShouldBe("496027315");
+        pngResult.Metadata["emote.token"].ShouldBe("utonyaHeart");
+        pngResult.Metadata["emote.asset_type"].ShouldBe("STATIC");
+        pngResult.Metadata["file.extension"].ShouldBe("png");
+    }
+
     private static object GetGraphQlResponse(JsonElement element)
     {
         var request = (Dictionary<string, object>)JsonUtils.GetJsonElementValue(element, out _)!;
@@ -245,6 +281,16 @@ public class TwitchExtractorTest
         {
             var slug = variables["slug"].ToString();
             return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{slug}.json");
+        }
+        else if (operation == "ChannelShell")
+        {
+            var channelName = variables["login"].ToString();
+            return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{channelName}.json");
+        }
+        else if (operation == "EmotePicker_EmotePicker_UserSubscriptionProducts")
+        {
+            var channelId = variables["channelOwnerID"].ToString();
+            return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{channelId}.json");
         }
         else
         {

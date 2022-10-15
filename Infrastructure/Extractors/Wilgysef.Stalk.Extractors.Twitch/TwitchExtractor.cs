@@ -29,6 +29,7 @@ public class TwitchExtractor : IExtractor
     private static readonly Regex ClipsRegex = new(Consts.UriPrefixRegex + $@"/{ChannelRegex}/clips", RegexOptions.Compiled);
     private static readonly Regex ClipRegex = new(Consts.UriPrefixRegex + $@"/{ChannelRegex}/clip/(?<clip>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
     private static readonly Regex ClipAltRegex = new(@"(?:https?://)?clips\.twitch\.tv/(?<clip>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
+    private static readonly Regex AboutRegex = new(Consts.UriPrefixRegex + $@"/{ChannelRegex}/about/?", RegexOptions.Compiled);
 
     private static readonly string[] MetadataVideoIdKeys = new[] { "video", "id" };
     private static readonly string[] MetadataVideoLengthSecondsKeys = new[] { "video", "length_seconds" };
@@ -57,6 +58,13 @@ public class TwitchExtractor : IExtractor
     private static readonly string[] MetadataClipGameIdKeys = new[] { "clip", "game", "id" };
     private static readonly string[] MetadataClipGameNameKeys = new[] { "clip", "game", "name" };
 
+    private static readonly string[] MetadataEmotePriceKeys = new[] { "emote", "price" };
+    private static readonly string[] MetadataEmoteTierKeys = new[] { "emote", "tier" };
+    private static readonly string[] MetadataEmoteIdKeys = new[] { "emote", "id" };
+    private static readonly string[] MetadataEmoteSetIdKeys = new[] { "emote", "set_id" };
+    private static readonly string[] MetadataEmoteTokenKeys = new[] { "emote", "token" };
+    private static readonly string[] MetadataEmoteAssetTypeKeys = new[] { "emote", "asset_type" };
+
     /// <summary>
     /// Template string for file extension with youtube-dl.
     /// </summary>
@@ -78,10 +86,12 @@ public class TwitchExtractor : IExtractor
     {
         return GetExtractType(uri) switch
         {
+            ExtractType.Channel => ExtractChannelAsync(uri, metadata, cancellationToken),
             ExtractType.Videos => ExtractVideosAsync(uri, metadata, cancellationToken),
             ExtractType.Video => ExtractVideoAsync(uri, metadata, cancellationToken),
             ExtractType.Clips => ExtractClipsAsync(uri, metadata, cancellationToken),
             ExtractType.Clip => ExtractClipAsync(uri, metadata, cancellationToken),
+            ExtractType.About => ExtractAboutAsync(uri, metadata, cancellationToken),
             _ => throw new NotImplementedException(),
         };
     }
@@ -114,6 +124,29 @@ public class TwitchExtractor : IExtractor
     public void SetHttpClient(HttpClient client)
     {
         _httpClient = client;
+    }
+
+    private async IAsyncEnumerable<ExtractResult> ExtractChannelAsync(
+        Uri uri,
+        IMetadataObject metadata,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        // TODO: use ExtractResults instead?
+
+        await foreach (var result in ExtractVideosAsync(uri, metadata, cancellationToken))
+        {
+            yield return result;
+        }
+
+        await foreach (var result in ExtractClipsAsync(uri, metadata, cancellationToken))
+        {
+            yield return result;
+        }
+
+        await foreach (var result in ExtractAboutAsync(uri, metadata, cancellationToken))
+        {
+            yield return result;
+        }
     }
 
     private async IAsyncEnumerable<ExtractResult> ExtractVideosAsync(
@@ -377,6 +410,83 @@ public class TwitchExtractor : IExtractor
             metadata: metadata);
     }
 
+    private async IAsyncEnumerable<ExtractResult> ExtractAboutAsync(
+        Uri uri,
+        IMetadataObject metadata,
+        CancellationToken cancellationToken)
+    {
+        var match = AboutRegex.Match(uri.AbsoluteUri);
+        var channelName = match.Groups["channel"].Value;
+
+        var json = await GetChannelShellAsync(channelName, cancellationToken);
+        var channelId = json.SelectToken("$..userOrError.id")?.ToString();
+
+        if (channelId != null)
+        {
+            await foreach (var result in ExtractEmotesAsync(channelId, metadata, cancellationToken))
+            {
+                yield return result;
+            }
+        }
+    }
+
+    private async IAsyncEnumerable<ExtractResult> ExtractEmotesAsync(
+        string channelId,
+        IMetadataObject metadata,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var json = await GetEmotePickerUserSubscriptionProductsAsync(channelId, cancellationToken);
+        var subscriptionProducts = json.SelectTokens("$..subscriptionProducts[*]");
+
+        foreach (var subscriptionProduct in subscriptionProducts)
+        {
+            foreach (var result in ExtractSubscriptionProduct(subscriptionProduct, metadata.Copy()))
+            {
+                yield return result;
+            }
+        }
+    }
+
+    private IEnumerable<ExtractResult> ExtractSubscriptionProduct(JToken subscriptionProduct, IMetadataObject metadata)
+    {
+        var price = subscriptionProduct.SelectToken("$.price")?.ToString();
+        var tier = subscriptionProduct.SelectToken("$.tier")?.ToString();
+
+        metadata.SetByParts(price, MetadataEmotePriceKeys);
+        metadata.SetByParts(tier, MetadataEmoteTierKeys);
+
+        var emotes = subscriptionProduct.SelectTokens("$.emotes[*]");
+        foreach (var emote in emotes)
+        {
+            var emoteMetadata = metadata.Copy();
+
+            var emoteId = emote.SelectToken("$.id")!.ToString();
+            var setId = emote.SelectToken("$.setID")?.ToString();
+            var token = emote.SelectToken("$.token")?.ToString();
+            var assetType = emote.SelectToken("$.assetType")?.ToString();
+
+            emoteMetadata.SetByParts(emoteId, MetadataEmoteIdKeys);
+            emoteMetadata.SetByParts(setId, MetadataEmoteSetIdKeys);
+            emoteMetadata.SetByParts(token, MetadataEmoteTokenKeys);
+            emoteMetadata.SetByParts(assetType, MetadataEmoteAssetTypeKeys);
+
+            if (assetType == "ANIMATED")
+            {
+                emoteMetadata.SetByParts("gif", MetadataObjectConsts.File.ExtensionKeys);
+            }
+            else
+            {
+                emoteMetadata.SetByParts("png", MetadataObjectConsts.File.ExtensionKeys);
+            }
+
+            yield return new ExtractResult(
+                $"https://static-cdn.jtvnw.net/emoticons/v2/{emoteId}/default/dark/1.0",
+                emoteId,
+                JobTaskType.Download,
+                metadata: emoteMetadata);
+        }
+    }
+
     private async Task<JToken> GetVideosAsync(
         string channelName,
         string? cursor,
@@ -455,6 +565,34 @@ public class TwitchExtractor : IExtractor
         return await GetGraphQlDataAsync(
             "ClipsCards__User",
             "b73ad2bfaecfd30a9e6c28fada15bd97032c83ec77a0440766a56fe0bd632777",
+            variables,
+            cancellationToken: cancellationToken);
+    }
+
+    private async Task<JToken> GetChannelShellAsync(string channelName, CancellationToken cancellationToken)
+    {
+        var variables = new
+        {
+            login = channelName
+        };
+
+        return await GetGraphQlDataAsync(
+            "ChannelShell",
+            "580ab410bcd0c1ad194224957ae2241e5d252b2c5173d8e0cce9d32d5bb14efe",
+            variables,
+            cancellationToken: cancellationToken);
+    }
+
+    private async Task<JToken> GetEmotePickerUserSubscriptionProductsAsync(string channelId, CancellationToken cancellationToken)
+    {
+        var variables = new
+        {
+            channelOwnerID = channelId,
+        };
+
+        return await GetGraphQlDataAsync(
+            "EmotePicker_EmotePicker_UserSubscriptionProducts",
+            "71b5f829a4576d53b714c01d3176f192cbd0b14973eb1c3d0ee23d5d1b78fd7e",
             variables,
             cancellationToken: cancellationToken);
     }
@@ -594,6 +732,10 @@ public class TwitchExtractor : IExtractor
         {
             return ExtractType.Clips;
         }
+        if (AboutRegex.IsMatch(absoluteUri))
+        {
+            return ExtractType.About;
+        }
         if (VideosRegex.IsMatch(absoluteUri))
         {
             return ExtractType.Videos;
@@ -673,9 +815,11 @@ public class TwitchExtractor : IExtractor
 
     private enum ExtractType
     {
+        Channel,
         Videos,
         Video,
         Clips,
         Clip,
+        About,
     }
 }
