@@ -93,11 +93,11 @@ public class TwitchExtractorTest
         results.Count.ShouldBe(2);
         var thumbnailResult = results.Single(r => r.ItemId == "1586110158#thumb");
         thumbnailResult.Uri.ShouldBe("https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/a2197cb3f8db6cc072b2_utonyan_39655744983_1662723806//thumb/thumb0-90x60.jpg");
-        thumbnailResult.Metadata!["file.extension"].ShouldBe("jpg");
+        thumbnailResult.Metadata!["channel.id"].ShouldBe("662849096");
+        thumbnailResult.Metadata["channel.login"].ShouldBe("utonyan");
+        thumbnailResult.Metadata["channel.name"].ShouldBe("utonyan");
+        thumbnailResult.Metadata["file.extension"].ShouldBe("jpg");
         thumbnailResult.Metadata["origin.item_id_seq"].ShouldBe("662849096#20220909_1586110158#thumb");
-        thumbnailResult.Metadata["user.id"].ShouldBe("662849096");
-        thumbnailResult.Metadata["user.login"].ShouldBe("utonyan");
-        thumbnailResult.Metadata["user.name"].ShouldBe("utonyan");
         thumbnailResult.Metadata["video.id"].ShouldBe("1586110158");
         thumbnailResult.Metadata["video.length_seconds"].ShouldBe(9178);
         thumbnailResult.Metadata["video.length"].ShouldBe("02:32:58");
@@ -110,11 +110,11 @@ public class TwitchExtractorTest
 
         var videoResult = results.Single(r => r.ItemId == "1586110158");
         videoResult.Uri.ShouldBe("https://www.twitch.tv/videos/1586110158");
-        videoResult.Metadata!["file.extension"].ShouldBe("%(ext)s");
+        videoResult.Metadata!["channel.id"].ShouldBe("662849096");
+        videoResult.Metadata["channel.login"].ShouldBe("utonyan");
+        videoResult.Metadata["channel.name"].ShouldBe("utonyan");
+        videoResult.Metadata["file.extension"].ShouldBe("%(ext)s");
         videoResult.Metadata["origin.item_id_seq"].ShouldBe("662849096#20220909_1586110158");
-        videoResult.Metadata["user.id"].ShouldBe("662849096");
-        videoResult.Metadata["user.login"].ShouldBe("utonyan");
-        videoResult.Metadata["user.name"].ShouldBe("utonyan");
         videoResult.Metadata["video.id"].ShouldBe("1586110158");
         videoResult.Metadata["video.length_seconds"].ShouldBe(9178);
         videoResult.Metadata["video.length"].ShouldBe("02:32:58");
@@ -153,7 +153,10 @@ public class TwitchExtractorTest
         var result = results.Single();
         result.ItemId.ShouldBe("ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc");
         result.Uri.ShouldBe("https://production.assets.clips.twitchcdn.net/9m6CDf2hXjXFkjIjQt-AXA/AT-cm%7C9m6CDf2hXjXFkjIjQt-AXA.mp4?sig=f516d2c7571b32c122cd8baab8bb69520827a565&token=%7b%22authorization%22%3a%7b%22forbidden%22%3afalse%2c%22reason%22%3a%22%22%7d%2c%22clip_uri%22%3a%22https%3a%2f%2fproduction.assets.clips.twitchcdn.net%2f9m6CDf2hXjXFkjIjQt-AXA%2fAT-cm%257C9m6CDf2hXjXFkjIjQt-AXA.mp4%22%2c%22device_id%22%3a%22oopGMf8bQJZyCGecMGjPM8M2zaPhdHBS%22%2c%22expires%22%3a1665866268%2c%22user_id%22%3a%22%22%2c%22version%22%3a2%7d");
-        result.Metadata!["clip.created_at"].ShouldBe("20220728");
+        result.Metadata!["channel.id"].ShouldBe("662849096");
+        result.Metadata["channel.login"].ShouldBe("utonyan");
+        result.Metadata["channel.name"].ShouldBe("utonyan");
+        result.Metadata["clip.created_at"].ShouldBe("20220728");
         result.Metadata["clip.curator.id"].ShouldBe("442539197");
         result.Metadata["clip.curator.login"].ShouldBe("renanamiya");
         result.Metadata["clip.curator.name"].ShouldBe("renanamiya");
@@ -169,9 +172,6 @@ public class TwitchExtractorTest
         result.Metadata["file.extension"].ShouldBe("mp4");
         result.Metadata["origin.item_id_seq"].ShouldBe("662849096#20220728_ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc");
         result.Metadata["origin.uri"].ShouldBe("https://clips.twitch.tv/ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc");
-        result.Metadata["user.id"].ShouldBe("662849096");
-        result.Metadata["user.login"].ShouldBe("utonyan");
-        result.Metadata["user.name"].ShouldBe("utonyan");
         result.Type.ShouldBe(JobTaskType.Download);
     }
 
@@ -183,16 +183,16 @@ public class TwitchExtractorTest
 
         if (operation == "FilterableVideoTower_Videos")
         {
-            var username = variables["channelOwnerLogin"].ToString();
+            var channelName = variables["channelOwnerLogin"].ToString();
 
             if (variables.TryGetValue("cursor", out var cursor))
             {
                 var cursorHash = MD5.HashData(Encoding.UTF8.GetBytes(cursor.ToString()!)).ToHexString();
-                return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{username}.{cursorHash}.json");
+                return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{channelName}.{cursorHash}.json");
             }
             else
             {
-                return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{username}.json");
+                return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{channelName}.json");
             }
         }
         else if (operation == "ChannelVideoCore")
@@ -202,21 +202,21 @@ public class TwitchExtractorTest
         }
         else if (operation == "VideoMetadata")
         {
-            var username = variables["channelLogin"].ToString();
+            var channelName = variables["channelLogin"].ToString();
             var videoId = variables["videoID"].ToString();
-            return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{username}.{videoId}.json");
+            return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{channelName}.{videoId}.json");
         }
         else if (operation == "ClipsCards__User")
         {
-            var username = variables["login"].ToString();
+            var channelName = variables["login"].ToString();
 
             if (variables.TryGetValue("cursor", out var cursor))
             {
-                return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{username}.{cursor}.json");
+                return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{channelName}.{cursor}.json");
             }
             else
             {
-                return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{username}.json");
+                return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{channelName}.json");
             }
         }
         else if (operation == "VideoAccessToken_Clip")

@@ -25,19 +25,19 @@ public class TwitchExtractor : IExtractor
     public IDictionary<string, object?> Config { get; set; } = new Dictionary<string, object?>();
 
     private const string UriPrefixRegex = @"(?:https?://)?(?:www\.)?twitch\.tv";
-    private const string UsernameRegex = @"(?<user>[A-Za-z0-9_-]+)";
-    private static readonly Regex VideosRegex = new(UriPrefixRegex + $@"/{UsernameRegex}(?:/(?:videos)?|$)", RegexOptions.Compiled);
+    private const string ChannelRegex = @"(?<channel>[A-Za-z0-9_-]+)";
+    private static readonly Regex VideosRegex = new(UriPrefixRegex + $@"/{ChannelRegex}(?:/(?:videos)?|$)", RegexOptions.Compiled);
     private static readonly Regex VideoRegex = new(UriPrefixRegex + @"/videos/(?<video>[0-9]+)", RegexOptions.Compiled);
-    private static readonly Regex ClipsRegex = new(UriPrefixRegex + $@"/{UsernameRegex}/clips", RegexOptions.Compiled);
-    private static readonly Regex ClipRegex = new(UriPrefixRegex + $@"/{UsernameRegex}/clip/(?<clip>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
+    private static readonly Regex ClipsRegex = new(UriPrefixRegex + $@"/{ChannelRegex}/clips", RegexOptions.Compiled);
+    private static readonly Regex ClipRegex = new(UriPrefixRegex + $@"/{ChannelRegex}/clip/(?<clip>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
     private static readonly Regex ClipAltRegex = new(@"(?:https?://)?clips\.twitch\.tv/(?<clip>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
 
     private static readonly string[] MetadataVideoIdKeys = new[] { "video", "id" };
     private static readonly string[] MetadataVideoLengthSecondsKeys = new[] { "video", "length_seconds" };
     private static readonly string[] MetadataVideoLengthKeys = new[] { "video", "length" };
-    private static readonly string[] MetadataUserIdKeys = new[] { "user", "id" };
-    private static readonly string[] MetadataUserNameKeys = new[] { "user", "name" };
-    private static readonly string[] MetadataUserLoginKeys = new[] { "user", "login" };
+    private static readonly string[] MetadataChannelIdKeys = new[] { "channel", "id" };
+    private static readonly string[] MetadataChannelNameKeys = new[] { "channel", "name" };
+    private static readonly string[] MetadataChannelLoginKeys = new[] { "channel", "login" };
     private static readonly string[] MetadataVideoTitleKeys = new[] { "video", "title" };
     private static readonly string[] MetadataVideoViewCountKeys = new[] { "video", "view_count" };
     private static readonly string[] MetadataVideoTagsKeys = new[] { "video", "tags" };
@@ -124,12 +124,12 @@ public class TwitchExtractor : IExtractor
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var match = VideosRegex.Match(uri.AbsoluteUri);
-        var username = match.Groups["user"].Value;
+        var channelName = match.Groups["channel"].Value;
         string? cursor = null;
 
         while (true)
         {
-            var json = await GetVideosAsync(username, cursor, cancellationToken);
+            var json = await GetVideosAsync(channelName, cursor, cancellationToken);
             var videos = json.SelectTokens("$..videos.edges[*].node");
 
             foreach (var video in videos)
@@ -175,9 +175,9 @@ public class TwitchExtractor : IExtractor
         var videoId = video.SelectToken("$.id")!.ToString();
         var videoLengthSeconds = video.SelectToken("$.lengthSeconds")?.Value<int>();
 
-        var userId = video.SelectToken("$..owner.id")?.ToString();
-        var userName = video.SelectToken("$..owner.displayName")?.ToString();
-        var userLogin = video.SelectToken("$..owner.login")?.ToString();
+        var channelId = video.SelectToken("$..owner.id")?.ToString();
+        var channelName = video.SelectToken("$..owner.displayName")?.ToString();
+        var channelLogin = video.SelectToken("$..owner.login")?.ToString();
 
         var thumbnailUrl = video.SelectToken("$..previewThumbnailURL")?.ToString();
 
@@ -201,9 +201,9 @@ public class TwitchExtractor : IExtractor
             metadata.SetByParts(TimeSpanToString(TimeSpan.FromSeconds(videoLengthSeconds.Value)), MetadataVideoLengthKeys);
         }
 
-        metadata.SetByParts(userId, MetadataUserIdKeys);
-        metadata.SetByParts(userName, MetadataUserNameKeys);
-        metadata.SetByParts(userLogin, MetadataUserLoginKeys);
+        metadata.SetByParts(channelId, MetadataChannelIdKeys);
+        metadata.SetByParts(channelName, MetadataChannelNameKeys);
+        metadata.SetByParts(channelLogin, MetadataChannelLoginKeys);
 
         metadata.SetByParts(title, MetadataVideoTitleKeys);
         metadata.SetByParts(viewCount, MetadataVideoViewCountKeys);
@@ -227,7 +227,7 @@ public class TwitchExtractor : IExtractor
             
             if (publishedAt.HasValue)
             {
-                thumbnailMetadata.SetByParts($"{userId}#{publishedAt.Value:yyyyMMdd}_{videoId}#thumb", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+                thumbnailMetadata.SetByParts($"{channelId}#{publishedAt.Value:yyyyMMdd}_{videoId}#thumb", MetadataObjectConsts.Origin.ItemIdSeqKeys);
             }
 
             thumbnailMetadata.SetByParts(GetExtensionFromUri(new Uri(thumbnailUrl)), MetadataObjectConsts.File.ExtensionKeys);
@@ -241,7 +241,7 @@ public class TwitchExtractor : IExtractor
 
         if (publishedAt.HasValue)
         {
-            metadata.SetByParts($"{userId}#{publishedAt.Value:yyyyMMdd}_{videoId}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+            metadata.SetByParts($"{channelId}#{publishedAt.Value:yyyyMMdd}_{videoId}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
         }
 
         metadata.SetByParts(YoutubeDlFileExtensionTemplate, MetadataObjectConsts.File.ExtensionKeys);
@@ -259,12 +259,12 @@ public class TwitchExtractor : IExtractor
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var match = ClipsRegex.Match(uri.AbsoluteUri);
-        var username = match.Groups["user"].Value;
+        var channelName = match.Groups["channel"].Value;
         string? cursor = null;
 
         while (true)
         {
-            var json = await GetClipsCardsAsync(username, cursor, cancellationToken);
+            var json = await GetClipsCardsAsync(channelName, cursor, cancellationToken);
             var clips = json.SelectTokens("$..clips.edges[*].node");
 
             foreach (var clip in clips)
@@ -338,9 +338,9 @@ public class TwitchExtractor : IExtractor
         var channelLogin = clipsBroadcasterInfo.SelectToken("$..broadcaster.login")?.ToString();
         var channelName = clipsBroadcasterInfo.SelectToken("$..broadcaster.displayName")?.ToString();
 
-        metadata.SetByParts(channelId, MetadataUserIdKeys);
-        metadata.SetByParts(channelName, MetadataUserNameKeys);
-        metadata.SetByParts(channelLogin, MetadataUserLoginKeys);
+        metadata.SetByParts(channelId, MetadataChannelIdKeys);
+        metadata.SetByParts(channelName, MetadataChannelNameKeys);
+        metadata.SetByParts(channelLogin, MetadataChannelLoginKeys);
 
         var clipsViewCount = responses.Single(r => r.Operation == "ClipsViewCount").Data;
 
