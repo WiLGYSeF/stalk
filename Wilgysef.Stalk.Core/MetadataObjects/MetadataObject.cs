@@ -1,9 +1,11 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.Core.Tries;
 
 namespace Wilgysef.Stalk.Core.MetadataObjects;
 
+[DebuggerTypeProxy(typeof(MetadataDebugView))]
 public class MetadataObject : IMetadataObject
 {
     public char KeySeparator { get; set; }
@@ -11,12 +13,6 @@ public class MetadataObject : IMetadataObject
     public bool HasValues => _root.Count > 0;
 
     private readonly Trie<string, object?> _root = new(null!, null);
-
-    #if DEBUG
-
-    private IDictionary<string, object?> Dictionary => GetDictionary();
-
-    #endif
 
     public object? this[string key]
     {
@@ -327,5 +323,43 @@ public class MetadataObject : IMetadataObject
     private string[] GetKeyParts(string key)
     {
         return key.Split(KeySeparator);
+    }
+
+    private class MetadataDebugView
+    {
+        private readonly MetadataObject _metadata;
+
+        public List<KeyValuePair<string, object?>> Metadata
+        {
+            get
+            {
+                var pairs = new List<KeyValuePair<string, object?>>();
+                var nodes = new Queue<(ITrie<string, object?> Trie, string Key)>(_metadata._root.Children.Select(t => (t, t.Key)));
+
+                while (nodes.Count > 0)
+                {
+                    var (trie, key) = nodes.Dequeue();
+
+                    if (trie.Count > 0)
+                    {
+                        foreach (var child in trie.Children)
+                        {
+                            nodes.Enqueue((child, key + _metadata.KeySeparator + child.Key));
+                        }
+                    }
+                    else
+                    {
+                        pairs.Add(new KeyValuePair<string, object?>(key, trie.Value));
+                    }
+                }
+
+                return pairs.OrderBy(p => p.Key).ToList();
+            }
+        }
+
+        public MetadataDebugView(MetadataObject metadata)
+        {
+            _metadata = metadata;
+        }
     }
 }

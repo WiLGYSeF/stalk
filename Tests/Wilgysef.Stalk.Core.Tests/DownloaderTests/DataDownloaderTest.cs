@@ -27,14 +27,16 @@ public class DataDownloaderTest : BaseTest
 
     [Theory]
     [InlineData("data:text/plain;base64,aGVsbG8gdGhlcmU=", true)]
+    [InlineData("data:;base64,aGVsbG8gdGhlcmU=", true)]
+    [InlineData("data:,test", true)]
     [InlineData("https://example.com", false)]
-    public void Can_Download(string uri, bool downloadable)
+    public void Can_Download(string uri, bool expected)
     {
-        _downloader.CanDownload(new Uri(uri)).ShouldBe(downloadable);
+        _downloader.CanDownload(new Uri(uri)).ShouldBe(expected);
     }
 
     [Fact]
-    public async Task Download_File_And_Save_Metadata()
+    public async Task Download_Data_Mediatype_Base64()
     {
         var data = Encoding.UTF8.GetBytes("this is a test");
         var uri = new Uri($"data:text/plain;base64,{Convert.ToBase64String(data)}");

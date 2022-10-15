@@ -8,6 +8,9 @@ namespace Wilgysef.Stalk.Core.BackgroundJobs;
 
 public class BackgroundJob : Entity
 {
+    /// <summary>
+    /// Background job Id.
+    /// </summary>
     [Key, DatabaseGenerated(DatabaseGeneratedOption.None)]
     public virtual long Id { get; protected set; }
 

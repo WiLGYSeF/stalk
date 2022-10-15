@@ -201,7 +201,10 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// <param name="stream">Download stream.</param>
         /// <param name="output">Output stream.</param>
         /// <param name="filename">Filename, only passed to return value.</param>
-        /// <param name="buffer">Buffer to use for writing to output stream and computing hash. If <see langword="null"/>, creates a new <see langword="byte"/>[] with size of <see cref="DownloadBufferSize"/>.</param>
+        /// <param name="buffer">
+        /// Buffer to use for writing to output stream and computing hash.
+        /// If <see langword="null"/>, creates a new <see langword="byte"/>[] with size of <see cref="DownloadBufferSize"/>.
+        /// </param>
         /// <param name="hashAlgorithm">Hash algorithm for computing hash.</param>
         /// <param name="hashName">Hash name, only passed to return value.</param>
         /// <param name="cancellationToken"></param>
@@ -227,10 +230,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
                 cancellationToken.ThrowIfCancellationRequested();
                 await output.WriteAsync(buffer, 0, bytesRead, cancellationToken);
 
-                if (hashAlgorithm != null)
-                {
-                    hashAlgorithm.TransformBlock(buffer, 0, bytesRead, null, 0);
-                }
+                hashAlgorithm?.TransformBlock(buffer, 0, bytesRead, null, 0);
 
                 if (bytesRead == 0)
                 {
@@ -238,10 +238,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
                 }
             }
 
-            if (hashAlgorithm != null)
-            {
-                hashAlgorithm.TransformFinalBlock(buffer, 0, 0);
-            }
+            hashAlgorithm?.TransformFinalBlock(buffer, 0, 0);
 
             return new DownloadFileResult(
                 filename,

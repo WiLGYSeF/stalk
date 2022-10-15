@@ -8,23 +8,58 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
 {
     public class ExtractResult
     {
+        /// <summary>
+        /// Extract name.
+        /// </summary>
         public string? Name { get; }
 
+        /// <summary>
+        /// Extract priority.
+        /// </summary>
         public int Priority { get; }
 
         // Can't use Uri because data URI schemes may exceed the Uri length limit
+        /// <summary>
+        /// Extract URI.
+        /// </summary>
         public string Uri { get; }
 
+        /// <summary>
+        /// Extract item Id.
+        /// </summary>
         public string? ItemId { get; }
 
+        /// <summary>
+        /// Extract item data.
+        /// </summary>
         public string? ItemData { get; }
 
+        /// <summary>
+        /// Extract metadata.
+        /// </summary>
         public IMetadataObject? Metadata { get; }
 
+        /// <summary>
+        /// Extraction type that should be performed on the URI.
+        /// </summary>
         public JobTaskType Type { get; }
 
+        /// <summary>
+        /// Download request data.
+        /// </summary>
         public DownloadRequestData? DownloadRequestData { get; }
 
+        /// <summary>
+        /// Extract result.
+        /// </summary>
+        /// <param name="uri">Extract URI.</param>
+        /// <param name="itemId">Extract item Id.</param>
+        /// <param name="type">Extraction type that should be performed on the URI.</param>
+        /// <param name="name">Extract name.</param>
+        /// <param name="priority">Extract priority.</param>
+        /// <param name="itemData">Extract item data.</param>
+        /// <param name="metadata">Extract metadata.</param>
+        /// <param name="downloadRequestData">Download request data.</param>
         public ExtractResult(
             string uri,
             string? itemId,
@@ -45,6 +80,16 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
             DownloadRequestData = downloadRequestData;
         }
 
+        /// <summary>
+        /// Extract result.
+        /// </summary>
+        /// <param name="data">Extract data.</param>
+        /// <param name="itemId">Extract item Id.</param>
+        /// <param name="name">Extract name.</param>
+        /// <param name="priority">Extract priority.</param>
+        /// <param name="itemData">Extract item data.</param>
+        /// <param name="metadata">Extract metadata.</param>
+        /// <param name="downloadRequestData">Download request data.</param>
         public ExtractResult(
             byte[] data,
             string? itemId,
@@ -63,6 +108,17 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
                   metadata,
                   downloadRequestData) { }
 
+        /// <summary>
+        /// Extract result.
+        /// </summary>
+        /// <param name="data">Extract data.</param>
+        /// <param name="mediaType">Extract data media type.</param>
+        /// <param name="itemId">Extract item Id.</param>
+        /// <param name="name">Extract name.</param>
+        /// <param name="priority">Extract priority.</param>
+        /// <param name="itemData">Extract item data.</param>
+        /// <param name="metadata">Extract metadata.</param>
+        /// <param name="downloadRequestData">Download request data.</param>
         public ExtractResult(
             byte[] data,
             string mediaType,
@@ -87,7 +143,7 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
         {
             var expectedLength = GetBase64Length(data.Length) + (mediaType?.Length ?? 0) + 13;
             var builder = new StringBuilder(expectedLength);
-            var addSseparator = true;
+            var addSeparator = true;
 
             builder.Append("data:");
             if (!string.IsNullOrEmpty(mediaType))
@@ -95,10 +151,10 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
                 builder.Append(mediaType);
                 if (mediaType[^1] == ';')
                 {
-                    addSseparator = false;
+                    addSeparator = false;
                 }
             }
-            if (addSseparator)
+            if (addSeparator)
             {
                 builder.Append(';');
             }
