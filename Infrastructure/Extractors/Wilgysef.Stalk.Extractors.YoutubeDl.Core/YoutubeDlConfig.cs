@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text;
 
 namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
 {
@@ -52,10 +53,36 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
         /// </summary>
         public bool WriteSubs { get; set; } = true;
 
+        /// <summary>
+        /// Whether <c>*.info.json</c> file contents be moved to the metadata file.
+        /// </summary>
         public bool MoveInfoJsonToMetadata { get; set; } = false;
 
+        /// <summary>
+        /// <c>youtube-dl</c> executable path.
+        /// </summary>
         public string? ExecutableName { get; set; }
 
+        /// <summary>
+        /// Cookie string.
+        /// </summary>
         public string? CookieString { get; set; }
+
+        public static string GetCookieString(IEnumerable<string> cookies)
+        {
+            var builder = new StringBuilder();
+
+            foreach (var cookie in cookies)
+            {
+                builder.Append(cookie.TrimEnd(';', ' '));
+                builder.Append("; ");
+            }
+
+            if (builder.Length != 0)
+            {
+                builder.Remove(builder.Length - 2, 2);
+            }
+            return builder.ToString();
+        }
     }
 }

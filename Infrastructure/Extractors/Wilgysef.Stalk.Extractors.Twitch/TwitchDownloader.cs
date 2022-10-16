@@ -1,9 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
-using System.Diagnostics;
-using System.Globalization;
 using System.IO.Abstractions;
 using System.Runtime.CompilerServices;
+using System.Text.Json;
 using System.Text.RegularExpressions;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.FilenameSlugs;
@@ -13,8 +11,6 @@ using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.Core.Shared.ProcessServices;
 using Wilgysef.Stalk.Core.Shared.StringFormatters;
 using Wilgysef.Stalk.Extractors.YoutubeDl.Core;
-using YamlDotNet.Serialization;
-using YamlDotNet.Serialization.NamingConventions;
 
 namespace Wilgysef.Stalk.Extractors.Twitch;
 
@@ -123,18 +119,7 @@ public class TwitchDownloader : DownloaderBase
             {
                 try
                 {
-                    using (var stream = _fileSystem.File.Open(status.MetadataFilename, FileMode.Open))
-                    {
-                        using var reader = new StreamReader(stream);
-
-                        var deserializer = new DeserializerBuilder()
-                            .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                            .Build();
-                        var youtubeMetadata = deserializer.Deserialize(reader);
-                        metadata["youtube_dl"] = youtubeMetadata;
-                    }
-
-                    _fileSystem.File.Delete(status.MetadataFilename);
+                    await MoveInfoJsonToMetadataAsync(status.MetadataFilename, metadata);
                 }
                 catch (Exception exception)
                 {
@@ -161,7 +146,19 @@ public class TwitchDownloader : DownloaderBase
             createMetadata: true);
     }
 
-    private string GetFullPath(IProcess process, string path)
+    private async Task MoveInfoJsonToMetadataAsync(string metadataFilename, IMetadataObject metadata)
+    {
+        using (var stream = _fileSystem.File.Open(metadataFilename, FileMode.Open))
+        {
+            using var reader = new StreamReader(stream);
+            var youtubeMetadata = JsonSerializer.Deserialize<IDictionary<string, object>>(await reader.ReadToEndAsync());
+            metadata["youtube_dl"] = youtubeMetadata;
+        }
+
+        _fileSystem.File.Delete(metadataFilename);
+    }
+
+    private static string GetFullPath(IProcess process, string path)
     {
         return Path.GetFullPath(Path.Combine(process.StartInfo.WorkingDirectory, path));
     }

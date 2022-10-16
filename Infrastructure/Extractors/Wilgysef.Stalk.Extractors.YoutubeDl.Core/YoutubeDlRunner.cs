@@ -13,6 +13,9 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
 {
     public class YoutubeDlRunner
     {
+        /// <summary>
+        /// Regex group name of the output file.
+        /// </summary>
         public static string OutputOutputRegexGroup = "output";
 
         private static readonly string OutputMetadataPrefix = "[info] Writing video metadata as JSON to: ";
@@ -28,7 +31,7 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
 
         private readonly ConcurrentDictionary<object, int> _processIds = new ConcurrentDictionary<object, int>();
 
-        public readonly string[] YouTubeDlDefaultExeNames = new string[]
+        private readonly string[] YouTubeDlDefaultExeNames = new string[]
         {
             "youtube-dl.exe",
             "youtube-dl",
@@ -49,6 +52,22 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
             _outputOutputRegex = outputOutputRegex;
         }
 
+        /// <summary>
+        /// Finds and starts the <c>youtube-dl</c> process.
+        /// </summary>
+        /// <param name="uri">URI to download from.</param>
+        /// <param name="filename">Output filename.</param>
+        /// <param name="downloadStatus">Download status.</param>
+        /// <param name="configure">Configuration action.</param>
+        /// <param name="outputCallback">
+        /// Callback on output received.
+        /// If it returns <see langword="true"/>, do not do default output processing for that data.
+        /// </param>
+        /// <param name="errorCallback">
+        /// Callback on error received.
+        /// If it returns <see langword="true"/>, do not do default error processing for that data.
+        /// </param>
+        /// <returns>Process.</returns>
         public virtual IProcess FindAndStartProcess(
             string uri,
             string filename,
@@ -285,14 +304,22 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
             }
 
             var match = SizeRegex.Match(size);
-            return (long)(double.Parse(match.Groups["amount"].Value)
-                * match.Groups["size"].Value[0] switch
-                {
-                    'B' => 1,
-                    'K' => 1024,
-                    'M' => 1024 * 1024,
-                    'G' => 1024 * 1024 * 1024,
-                });
+
+            int? multiplier = match.Groups["size"].Value[0] switch
+            {
+                'B' => 1,
+                'K' => 1024,
+                'M' => 1024 * 1024,
+                'G' => 1024 * 1024 * 1024,
+                _ => null,
+            };
+
+            if (!multiplier.HasValue)
+            {
+                return null;
+            }
+
+            return (long)(double.Parse(match.Groups["amount"].Value) * multiplier.Value);
         }
 
         protected virtual TimeSpan ParseTimeSpan(string timeSpan)

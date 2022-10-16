@@ -110,7 +110,7 @@ public class TwitchExtractorTest
         thumbnailResult.Metadata["channel.login"].ShouldBe("utonyan");
         thumbnailResult.Metadata["channel.name"].ShouldBe("utonyan");
         thumbnailResult.Metadata["file.extension"].ShouldBe("jpg");
-        thumbnailResult.Metadata["origin.item_id_seq"].ShouldBe("662849096#20220909_1586110158#thumb");
+        thumbnailResult.Metadata["origin.item_id_seq"].ShouldBe("662849096#video#20220909_1586110158#thumb");
         thumbnailResult.Metadata["video.id"].ShouldBe("1586110158");
         thumbnailResult.Metadata["video.length_seconds"].ShouldBe(9178);
         thumbnailResult.Metadata["video.length"].ShouldBe("02:32:58");
@@ -127,7 +127,7 @@ public class TwitchExtractorTest
         videoResult.Metadata["channel.login"].ShouldBe("utonyan");
         videoResult.Metadata["channel.name"].ShouldBe("utonyan");
         videoResult.Metadata["file.extension"].ShouldBe("%(ext)s");
-        videoResult.Metadata["origin.item_id_seq"].ShouldBe("662849096#20220909_1586110158");
+        videoResult.Metadata["origin.item_id_seq"].ShouldBe("662849096#video#20220909_1586110158");
         videoResult.Metadata["video.id"].ShouldBe("1586110158");
         videoResult.Metadata["video.length_seconds"].ShouldBe(9178);
         videoResult.Metadata["video.length"].ShouldBe("02:32:58");
@@ -183,7 +183,7 @@ public class TwitchExtractorTest
         result.Metadata["clip.url"].ShouldBe("https://clips.twitch.tv/ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc");
         result.Metadata["clip.view_count"].ShouldBe(1691);
         result.Metadata["file.extension"].ShouldBe("mp4");
-        result.Metadata["origin.item_id_seq"].ShouldBe("662849096#20220728_ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc");
+        result.Metadata["origin.item_id_seq"].ShouldBe("662849096#clip#20220728_ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc");
         result.Metadata["origin.uri"].ShouldBe("https://clips.twitch.tv/ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc");
         result.Type.ShouldBe(JobTaskType.Download);
     }

@@ -1,4 +1,5 @@
-﻿using Wilgysef.Stalk.Core.Shared.Extensions;
+﻿using System.Linq.Expressions;
+using Wilgysef.Stalk.Core.Shared.Extensions;
 using Wilgysef.Stalk.Extractors.YoutubeDl.Core;
 
 namespace Wilgysef.Stalk.Extractors.Twitch;
@@ -14,6 +15,7 @@ public class TwitchDownloaderConfig
     public static readonly string WriteSubsKey = "writeSubs";
     public static readonly string MoveInfoJsonToMetadataKey = "moveInfoJsonToMetadata";
     public static readonly string ExecutableNameKey = "executableName";
+    public static readonly string CookiesKey = "cookies";
 
     /// <summary>
     /// <c>-R</c>, <c>--retries</c>
@@ -62,49 +64,47 @@ public class TwitchDownloaderConfig
     /// </summary>
     public bool WriteSubs { get; set; } = true;
 
+    /// <summary>
+    /// Whether <c>*.info.json</c> file contents be moved to the metadata file.
+    /// </summary>
     public bool MoveInfoJsonToMetadata { get; set; } = false;
 
+    /// <summary>
+    /// <c>youtube-dl</c> executable path.
+    /// </summary>
     public string? ExecutableName { get; set; }
+
+    /// <summary>
+    /// Cookie string.
+    /// </summary>
+    public string? CookieString { get; set; }
 
     public TwitchDownloaderConfig() { }
 
     public TwitchDownloaderConfig(IDictionary<string, object?>? config)
     {
-        if (config?.TryGetValueAs<int, string, object?>(RetriesKey, out var retries) ?? false)
-        {
-            Retries = retries;
-        }
-        if (config?.TryGetValueAs<int, string, object?>(FileAccessRetriesKey, out var fileAccessRetries) ?? false)
-        {
-            FileAccessRetries = fileAccessRetries;
-        }
-        if (config?.TryGetValueAs<int, string, object?>(FragmentRetriesKey, out var fragmentRetries) ?? false)
-        {
-            FragmentRetries = fragmentRetries;
-        }
+        TrySetValue(() => Retries, config, RetriesKey);
+        TrySetValue(() => FileAccessRetries, config, FileAccessRetriesKey);
+        TrySetValue(() => FragmentRetries, config, FragmentRetriesKey);
+
         if (config?.TryGetValueAs<IEnumerable<string>, string, object?>(RetrySleepKey, out var retrySleep) ?? false)
         {
             RetrySleep.AddRange(retrySleep);
         }
-        if (config?.TryGetValueAs<int, string, object?>(BufferSizeKey, out var bufferSize) ?? false)
+
+        TrySetValue(() => BufferSize, config, BufferSizeKey);
+        TrySetValue(() => WriteInfoJson, config, WriteInfoJsonKey);
+        TrySetValue(() => WriteSubs, config, WriteSubsKey);
+        TrySetValue(() => MoveInfoJsonToMetadata, config, MoveInfoJsonToMetadataKey);
+        TrySetValue(() => ExecutableName, config, ExecutableNameKey);
+
+        if (config?.TryGetValueAs<IEnumerable<string>, string, object?>(CookiesKey, out var cookies) ?? false)
         {
-            BufferSize = bufferSize;
+            CookieString = YoutubeDlConfig.GetCookieString(cookies);
         }
-        if (config?.TryGetValueAs<bool, string, object?>(WriteInfoJsonKey, out var writeInfoJson) ?? false)
+        else if (config?.TryGetValueAs<string, string, object?>(CookiesKey, out var cookie) ?? false)
         {
-            WriteInfoJson = writeInfoJson;
-        }
-        if (config?.TryGetValueAs<bool, string, object?>(WriteSubsKey, out var writeSubs) ?? false)
-        {
-            WriteSubs = writeSubs;
-        }
-        if (config?.TryGetValueAs<bool, string, object?>(MoveInfoJsonToMetadataKey, out var moveInfoJsonToMetadata) ?? false)
-        {
-            MoveInfoJsonToMetadata = moveInfoJsonToMetadata;
-        }
-        if (config?.TryGetValueAs<string, string, object?>(ExecutableNameKey, out var executableName) ?? false)
-        {
-            ExecutableName = executableName;
+            CookieString = YoutubeDlConfig.GetCookieString(new[] { cookie });
         }
     }
 
@@ -121,6 +121,21 @@ public class TwitchDownloaderConfig
             WriteSubs = WriteSubs,
             MoveInfoJsonToMetadata = MoveInfoJsonToMetadata,
             ExecutableName = ExecutableName,
+            CookieString = CookieString,
         };
+    }
+
+    // TODO: move to shared
+    private static bool TrySetValue<T>(Expression<Func<T>> property, IDictionary<string, object?>? config, string key)
+    {
+        if (!(config?.TryGetValueAs<T, string, object?>(key, out var value) ?? false))
+        {
+            return false;
+        }
+
+        Expression.Lambda(Expression.Assign(property.Body, Expression.Constant(value)))
+            .Compile()
+            .DynamicInvoke();
+        return true;
     }
 }

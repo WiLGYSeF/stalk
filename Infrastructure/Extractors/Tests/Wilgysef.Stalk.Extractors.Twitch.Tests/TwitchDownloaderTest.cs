@@ -88,7 +88,7 @@ public class TwitchDownloaderTest : BaseTest
 
         if (moveInfoJson)
         {
-            ((IDictionary<object, object>)(videoResult.Metadata!["youtube_dl"]!)).Count.ShouldBe(49);
+            ((IDictionary<string, object>)(videoResult.Metadata!["youtube_dl"]!)).Count.ShouldBe(49);
         }
         else
         {

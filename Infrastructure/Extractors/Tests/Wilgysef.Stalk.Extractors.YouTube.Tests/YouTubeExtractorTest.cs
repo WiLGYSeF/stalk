@@ -34,13 +34,13 @@ public class YouTubeExtractorTest : BaseTest
             .AddUri(Consts.PlaylistRegex, request =>
             {
                 var query = request.RequestUri!.GetQueryParameters();
-                var playlistId = query["list"];
+                var playlistId = query!["list"];
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Playlist.{playlistId}.html");
             })
             .AddUri(Consts.VideoRegex, request =>
             {
                 var query = request.RequestUri!.GetQueryParameters();
-                var videoId = query["v"];
+                var videoId = query!["v"];
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Video.{videoId}.html");
             })
             .AddUri(ThumbnailRegex, request =>
@@ -57,7 +57,7 @@ public class YouTubeExtractorTest : BaseTest
                 if (request.RequestUri.Query.Length > 0)
                 {
                     var query = request.RequestUri.GetQueryParameters();
-                    var postId = query["lb"];
+                    var postId = query!["lb"];
                     return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Community.{channelId}.{postId}.html");
                 }
 
@@ -72,12 +72,12 @@ public class YouTubeExtractorTest : BaseTest
             .AddUri(BrowseRegex, async (request, cancellationToken) =>
             {
                 var json = JsonSerializer.Deserialize<JsonNode>(await request.Content!.ReadAsStringAsync(cancellationToken));
-                var originalUrl = new Uri(json["context"]!["client"]!["originalUrl"]!.ToString());
+                var originalUrl = new Uri(json!["context"]!["client"]!["originalUrl"]!.ToString());
 
                 if (originalUrl.AbsolutePath.Contains("playlist"))
                 {
                     var query = originalUrl.GetQueryParameters();
-                    var playlistId = query["list"];
+                    var playlistId = query!["list"];
                     var continuationToken = json["continuation"]!.ToString();
                     var continuationHash = MD5.HashData(Encoding.UTF8.GetBytes(continuationToken)).ToHexString();
                     return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Playlist.{playlistId}.{continuationHash}.json");

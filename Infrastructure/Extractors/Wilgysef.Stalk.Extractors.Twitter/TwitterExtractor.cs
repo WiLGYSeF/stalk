@@ -70,7 +70,6 @@ public class TwitterExtractor : IExtractor
         return UriRegex.IsMatch(uri.AbsoluteUri);
     }
 
-    // TODO: should this be async?
     public IAsyncEnumerable<ExtractResult> ExtractAsync(
        Uri uri,
        string? itemData,
@@ -79,9 +78,9 @@ public class TwitterExtractor : IExtractor
     {
         return GetExtractType(uri) switch
         {
-            ExtractType.User => ExtractUserAsync(uri, itemData, metadata, cancellationToken),
-            ExtractType.Tweet => ExtractTweetAsync(uri, itemData, metadata, cancellationToken),
-            _ => throw new ArgumentException("Cannot extract URI.", nameof(uri)),
+            ExtractType.User => ExtractUserAsync(uri, metadata, cancellationToken),
+            ExtractType.Tweet => ExtractTweetAsync(uri, metadata, cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(uri)),
         };
     }
 
@@ -111,7 +110,6 @@ public class TwitterExtractor : IExtractor
 
     private async IAsyncEnumerable<ExtractResult> ExtractUserAsync(
         Uri uri,
-        string? itemData,
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -126,12 +124,9 @@ public class TwitterExtractor : IExtractor
             cancellationToken.ThrowIfCancellationRequested();
 
             var userTweetsUri = GetUserTweetsApiUri(userId, cursor);
-            var response = await GetAsync(userTweetsUri, cancellationToken);
+            var json = await GetJsonAsync(userTweetsUri, cancellationToken);
 
-            var data = await response.Content.ReadAsStringAsync(cancellationToken);
-            var jObject = JObject.Parse(data);
-
-            var tweets = jObject.SelectTokens(@"$.data.user.result.timeline_v2.timeline.instructions[?(@.type=='TimelineAddEntries')].entries[*].content.itemContent.tweet_results.result");
+            var tweets = json.SelectTokens(@"$.data.user.result.timeline_v2.timeline.instructions[?(@.type=='TimelineAddEntries')].entries[*].content.itemContent.tweet_results.result");
             if (!tweets.Any())
             {
                 break;
@@ -139,13 +134,13 @@ public class TwitterExtractor : IExtractor
 
             foreach (var tweet in tweets)
             {
-                foreach (var result in ExtractTweet(tweet, metadata.Copy()))
+                foreach (var result in ExtractTweet(tweet, metadata))
                 {
                     yield return result;
                 }
             }
 
-            cursor = jObject.SelectTokens(@"$.data.user.result.timeline_v2.timeline.instructions[?(@.type=='TimelineAddEntries')].entries[*].content")
+            cursor = json.SelectTokens(@"$.data.user.result.timeline_v2.timeline.instructions[?(@.type=='TimelineAddEntries')].entries[*].content")
                 .FirstOrDefault(t => t["cursorType"]?.ToString() == "Bottom")
                 ?["value"]?.ToString()
                 ?? "";
@@ -158,7 +153,6 @@ public class TwitterExtractor : IExtractor
 
     private async IAsyncEnumerable<ExtractResult> ExtractTweetAsync(
         Uri uri,
-        string? itemData,
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -166,12 +160,9 @@ public class TwitterExtractor : IExtractor
         var tweetId = match.Groups["tweet"].Value;
 
         var tweetUri = GetTweetApiUri(tweetId);
-        var response = await GetAsync(tweetUri, cancellationToken);
+        var json = await GetJsonAsync(tweetUri, cancellationToken);
 
-        var data = await response.Content.ReadAsStringAsync(cancellationToken);
-        var jObject = JObject.Parse(data);
-
-        var tweet = jObject.SelectToken($"$.data.threaded_conversation_with_injections_v2.instructions[?(@.type=='TimelineAddEntries')].entries..[?(@.rest_id=='{tweetId}')]");
+        var tweet = json.SelectToken($"$.data.threaded_conversation_with_injections_v2.instructions[?(@.type=='TimelineAddEntries')].entries..[?(@.rest_id=='{tweetId}')]")!;
 
         foreach (var result in ExtractTweet(tweet, metadata))
         {
@@ -179,14 +170,18 @@ public class TwitterExtractor : IExtractor
         }
     }
 
-    private IEnumerable<ExtractResult> ExtractTweet(JToken tweet, IMetadataObject metadata)
+    private static IEnumerable<ExtractResult> ExtractTweet(JToken tweet, IMetadataObject metadata)
     {
+        metadata = metadata.Copy();
+
         var userScreenName = GetUserScreenName(tweet)!;
         var userId = GetUserId(tweet);
         var legacy = tweet["legacy"]!;
         var tweetId = tweet["rest_id"]!.ToString();
 
-        metadata["created_at"] = TryParseDateTime(legacy["created_at"]?.ToString() ?? "", out _);
+        var createdAtString = legacy["created_at"]?.ToString();
+        var createdAt = ParseDateTime(createdAtString ?? "");
+        metadata["created_at"] = createdAt.ToString() ?? createdAtString;
         metadata["favorite_count"] = legacy["favorite_count"]?.Value<int>();
         metadata["is_quote_status"] = legacy["is_quote_status"]?.Value<bool>();
         metadata["lang"] = legacy["lang"]?.ToString();
@@ -239,7 +234,7 @@ public class TwitterExtractor : IExtractor
         }
     }
 
-    private IEnumerable<ExtractResult> ExtractTweetMedia(JToken tweet, IMetadataObject metadata, bool largestSize)
+    private static IEnumerable<ExtractResult> ExtractTweetMedia(JToken tweet, IMetadataObject metadata, bool largestSize)
     {
         foreach (var media in GetEntitiesMedia(tweet, metadata, largestSize))
         {
@@ -252,7 +247,7 @@ public class TwitterExtractor : IExtractor
         }
     }
 
-    private IEnumerable<ExtractResult> GetEntitiesMedia(JToken tweet, IMetadataObject metadata, bool largestSize)
+    private static IEnumerable<ExtractResult> GetEntitiesMedia(JToken tweet, IMetadataObject metadata, bool largestSize)
     {
         var userId = GetUserId(tweet);
         var legacy = tweet["legacy"]!;
@@ -289,7 +284,7 @@ public class TwitterExtractor : IExtractor
         }
     }
 
-    private IEnumerable<ExtractResult> GetExtendedEntitiesMedia(JToken tweet, IMetadataObject metadata)
+    private static IEnumerable<ExtractResult> GetExtendedEntitiesMedia(JToken tweet, IMetadataObject metadata)
     {
         var userId = GetUserId(tweet);
         var legacy = tweet["legacy"]!;
@@ -309,9 +304,9 @@ public class TwitterExtractor : IExtractor
                 continue;
             }
 
-            var variants = videoInfo["variants"].Children().ToList();
+            var variants = videoInfo["variants"]!.Children().ToList();
             var bestVariant = variants.OrderByDescending(v => v["bitrate"]).First();
-            var videoUri = new Uri(bestVariant["url"].ToString());
+            var videoUri = new Uri(bestVariant["url"]!.ToString());
 
             var mediaMetadata = metadata.Copy();
             mediaMetadata["media_id"] = mediaId;
@@ -328,12 +323,12 @@ public class TwitterExtractor : IExtractor
         }
     }
 
-    private List<string> GetEntityUrls(JToken tweet)
+    private static List<string> GetEntityUrls(JToken tweet)
     {
         var entityUrls = new List<string>();
 
         var legacy = tweet["legacy"];
-        var urls = legacy["entities"]?["urls"];
+        var urls = legacy!["entities"]?["urls"];
         if (urls == null)
         {
             return entityUrls;
@@ -341,21 +336,22 @@ public class TwitterExtractor : IExtractor
 
         foreach (var url in urls)
         {
-            if (url["expanded_url"] != null)
+            var expandedUrl = url["expanded_url"]?.ToString();
+            if (expandedUrl != null)
             {
-                entityUrls.Add(url["expanded_url"]!.ToString());
+                entityUrls.Add(expandedUrl);
             }
         }
         return entityUrls;
     }
 
-    private string GetUserId(JToken tweet)
+    private static string GetUserId(JToken tweet)
     {
         return tweet.SelectToken(@"$.core.user_results.result.rest_id")?.ToString()
             ?? throw new ArgumentException("Could not get user Id from tweet.", nameof(tweet));
     }
 
-    private string? GetUserScreenName(JToken tweet)
+    private static string? GetUserScreenName(JToken tweet)
     {
         return tweet.SelectToken(@"$.core.user_results.result.legacy.screen_name")?.ToString();
     }
@@ -369,11 +365,11 @@ public class TwitterExtractor : IExtractor
 
         var match = MediaUrlRegex.Match(uri);
         return match.Success
-            ? $"https://pbs.twimg.com/media/{match.Groups["id"]}?format={match.Groups["extension"]}&name=large"
+            ? $"https://pbs.twimg.com/media/{match.Groups["id"].Value}?format={match.Groups["extension"].Value}&name=large"
             : uri;
     }
 
-    private bool SetRetweetMetadata(JToken tweet, IMetadataObject metadata)
+    private static bool SetRetweetMetadata(JToken tweet, IMetadataObject metadata)
     {
         var legacy = tweet["legacy"]!;
         var retweetedTweet = legacy["retweeted_status_result"]?["result"];
@@ -419,13 +415,13 @@ public class TwitterExtractor : IExtractor
             responsive_web_graphql_timeline_navigation_enabled = false,
         });
 
-        var uri = new Uri($"{UserByScreenNameEndpoint}?variables={variables}&features={features}");
-        var response = await GetAsync(uri, cancellationToken);
+        Logger?.LogDebug("Twitter: Getting user Id for {UserScreenName}.", userScreenName);
 
-        var data = await response.Content.ReadAsStringAsync(cancellationToken);
-        var jObject = JObject.Parse(data);
+        var json = await GetJsonAsync(
+            new Uri($"{UserByScreenNameEndpoint}?variables={variables}&features={features}"),
+            cancellationToken);
 
-        var userId = jObject.SelectToken("$.data.user.result.rest_id")!.ToString();
+        var userId = json.SelectToken("$.data.user.result.rest_id")!.ToString();
         if (userIds != null)
         {
             userIds[userScreenName] = userId;
@@ -457,7 +453,7 @@ public class TwitterExtractor : IExtractor
         using var request = new HttpRequestMessage(HttpMethod.Post, GuestTokenEndpoint);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", DefaultAuthenticationBearerToken);
 
-        var response = await _httpClient.SendAsync(request, cancellationToken);
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var data = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -473,19 +469,17 @@ public class TwitterExtractor : IExtractor
         return guestToken;
     }
 
-    private async Task<HttpResponseMessage> GetAsync(Uri uri, CancellationToken cancellationToken)
+    private async Task<JObject> GetJsonAsync(Uri uri, CancellationToken cancellationToken)
     {
         using var request = new HttpRequestMessage(HttpMethod.Get, uri);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", DefaultAuthenticationBearerToken);
         request.Headers.Add("x-guest-token", await GetGuestTokenAsync(cancellationToken));
-        return await GetAsync(request, cancellationToken);
-    }
 
-    private async Task<HttpResponseMessage> GetAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-    {
-        var response = await _httpClient.SendAsync(request, cancellationToken);
+        using var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
-        return response;
+
+        var data = await response.Content.ReadAsStringAsync(cancellationToken);
+        return JObject.Parse(data);
     }
 
     private static Uri GetUserTweetsApiUri(string userId, string? cursor)
@@ -594,13 +588,6 @@ public class TwitterExtractor : IExtractor
         return extension.Length > 0 && extension[0] == '.'
             ? extension[1..]
             : extension;
-    }
-
-    private static object TryParseDateTime(string datetime, out bool success)
-    {
-        var result = ParseDateTime(datetime);
-        success = result.HasValue;
-        return result.HasValue ? result.Value : datetime;
     }
 
     private static DateTime? ParseDateTime(string datetime)

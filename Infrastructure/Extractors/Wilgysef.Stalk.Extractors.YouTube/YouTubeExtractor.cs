@@ -50,7 +50,6 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         return GetExtractType(uri) != null;
     }
 
-    // TODO: should this be async?
     public IAsyncEnumerable<ExtractResult> ExtractAsync(
         Uri uri,
         string? itemData,
@@ -73,7 +72,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
                 var communityExtractor = CreateCommunityExtractor();
                 return communityExtractor.ExtractCommunityAsync(uri, metadata, cancellationToken);
             default:
-                throw new ArgumentException("Cannot extract URI.", nameof(uri));
+                throw new ArgumentOutOfRangeException(nameof(uri));
         }
     }
 
@@ -208,6 +207,8 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        metadata = metadata.Copy();
+
         var doc = await GetHtmlDocument(uri, cancellationToken);
         var initialData = GetYtInitialData(doc);
         var playerResponse = GetYtInitialPlayerResponse(doc);
@@ -247,7 +248,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
             channelId,
             videoId,
             published,
-            metadata.Copy(),
+            metadata,
             cancellationToken);
         if (thumbnailResult != null)
         {
@@ -275,6 +276,8 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         IMetadataObject metadata,
         CancellationToken cancellationToken)
     {
+        metadata = metadata.Copy();
+
         ExtractResult? result = null;
 
         foreach (var uriFormat in ThumbnailUris)
@@ -370,7 +373,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
     private YouTubeCommunityExtractor CreateCommunityExtractor()
     {
-        return new YouTubeCommunityExtractor(HttpClient, DateTimeProvider, ExtractorConfig, Logger, Cache);
+        return new YouTubeCommunityExtractor(HttpClient, DateTimeProvider, ExtractorConfig);
     }
 
     private static Uri GetVideosUri(string channel, bool shortChannel = false)

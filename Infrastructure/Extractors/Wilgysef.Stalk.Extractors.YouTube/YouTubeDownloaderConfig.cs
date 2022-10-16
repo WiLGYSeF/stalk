@@ -1,9 +1,10 @@
-﻿using Wilgysef.Stalk.Core.Shared.Extensions;
+﻿using System.Linq.Expressions;
+using Wilgysef.Stalk.Core.Shared.Extensions;
 using Wilgysef.Stalk.Extractors.YoutubeDl.Core;
 
 namespace Wilgysef.Stalk.Extractors.YouTube;
 
-public class YouTubeDownloaderConfig : YouTubeConfig
+public class YouTubeDownloaderConfig
 {
     public static readonly string RetriesKey = "retries";
     public static readonly string FileAccessRetriesKey = "fileAccessRetries";
@@ -73,50 +74,28 @@ public class YouTubeDownloaderConfig : YouTubeConfig
 
     public YouTubeDownloaderConfig(IDictionary<string, object?>? config)
     {
-        if (config?.TryGetValueAs<int, string, object?>(RetriesKey, out var retries) ?? false)
-        {
-            Retries = retries;
-        }
-        if (config?.TryGetValueAs<int, string, object?>(FileAccessRetriesKey, out var fileAccessRetries) ?? false)
-        {
-            FileAccessRetries = fileAccessRetries;
-        }
-        if (config?.TryGetValueAs<int, string, object?>(FragmentRetriesKey, out var fragmentRetries) ?? false)
-        {
-            FragmentRetries = fragmentRetries;
-        }
+        TrySetValue(() => Retries, config, RetriesKey);
+        TrySetValue(() => FileAccessRetries, config, FileAccessRetriesKey);
+        TrySetValue(() => FragmentRetries, config, FragmentRetriesKey);
+
         if (config?.TryGetValueAs<IEnumerable<string>, string, object?>(RetrySleepKey, out var retrySleep) ?? false)
         {
             RetrySleep.AddRange(retrySleep);
         }
-        if (config?.TryGetValueAs<int, string, object?>(BufferSizeKey, out var bufferSize) ?? false)
-        {
-            BufferSize = bufferSize;
-        }
-        if (config?.TryGetValueAs<bool, string, object?>(WriteInfoJsonKey, out var writeInfoJson) ?? false)
-        {
-            WriteInfoJson = writeInfoJson;
-        }
-        if (config?.TryGetValueAs<bool, string, object?>(WriteSubsKey, out var writeSubs) ?? false)
-        {
-            WriteSubs = writeSubs;
-        }
-        if (config?.TryGetValueAs<bool, string, object?>(MoveInfoJsonToMetadataKey, out var moveInfoJsonToMetadata) ?? false)
-        {
-            MoveInfoJsonToMetadata = moveInfoJsonToMetadata;
-        }
-        if (config?.TryGetValueAs<string, string, object?>(ExecutableNameKey, out var executableName) ?? false)
-        {
-            ExecutableName = executableName;
-        }
+
+        TrySetValue(() => BufferSize, config, BufferSizeKey);
+        TrySetValue(() => WriteInfoJson, config, WriteInfoJsonKey);
+        TrySetValue(() => WriteSubs, config, WriteSubsKey);
+        TrySetValue(() => MoveInfoJsonToMetadata, config, MoveInfoJsonToMetadataKey);
+        TrySetValue(() => ExecutableName, config, ExecutableNameKey);
 
         if (config?.TryGetValueAs<IEnumerable<string>, string, object?>(CookiesKey, out var cookies) ?? false)
         {
-            CookieString = GetCookieString(cookies);
+            CookieString = YoutubeDlConfig.GetCookieString(cookies);
         }
         else if (config?.TryGetValueAs<string, string, object?>(CookiesKey, out var cookie) ?? false)
         {
-            CookieString = GetCookieString(new[] { cookie });
+            CookieString = YoutubeDlConfig.GetCookieString(new[] { cookie });
         }
     }
 
@@ -135,5 +114,19 @@ public class YouTubeDownloaderConfig : YouTubeConfig
             ExecutableName = ExecutableName,
             CookieString = CookieString,
         };
+    }
+
+    // TODO: move to shared
+    private static bool TrySetValue<T>(Expression<Func<T>> property, IDictionary<string, object?>? config, string key)
+    {
+        if (!(config?.TryGetValueAs<T, string, object?>(key, out var value) ?? false))
+        {
+            return false;
+        }
+
+        Expression.Lambda(Expression.Assign(property.Body, Expression.Constant(value)))
+            .Compile()
+            .DynamicInvoke();
+        return true;
     }
 }

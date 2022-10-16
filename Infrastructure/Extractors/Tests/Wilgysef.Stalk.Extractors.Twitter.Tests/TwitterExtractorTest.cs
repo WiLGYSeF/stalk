@@ -100,7 +100,7 @@ public class TwitterExtractorTest : BaseTest
         var result = results.Single();
         result.ItemId.ShouldBe("1308334634745249793#1560187874460733440#1560187870648082433");
         result.Uri.AbsoluteUri.ShouldBe("https://pbs.twimg.com/media/FabmmiTaIAEO4zM?format=jpg&name=large");
-        result.Metadata!["created_at"].ShouldBe(new DateTime(2022, 8, 18, 8, 52, 30));
+        result.Metadata!["created_at"].ShouldBe("2022-08-18 08:52:30");
         result.Metadata["favorite_count"].ShouldBe(17340);
         result.Metadata["file.extension"].ShouldBe("jpg");
         result.Metadata["is_quote_status"].ShouldBe(false);
@@ -128,7 +128,7 @@ public class TwitterExtractorTest : BaseTest
         var result = results.Single();
         result.ItemId.ShouldBe("1308334634745249793#1554680837861683200");
         result.Uri.AbsoluteUri.ShouldBe("data:text/plain;charset=UTF-8;base64,U3BsYXRvb24yIOOBj+OCszrlvaEgaHR0cHM6Ly90LmNvL0VXYkJQVG1FNEwKaHR0cHM6Ly93d3cudHdpdGNoLnR2L3V0b255YW4=");
-        result.Metadata!["created_at"].ShouldBe(new DateTime(2022, 8, 3, 4, 9, 30));
+        result.Metadata!["created_at"].ShouldBe("2022-08-03 04:09:30");
         result.Metadata["favorite_count"].ShouldBe(2022);
         result.Metadata["file.extension"].ShouldBe("txt");
         result.Metadata["is_quote_status"].ShouldBe(false);
@@ -156,7 +156,7 @@ public class TwitterExtractorTest : BaseTest
         var textResult = results.Single(r => r.Uri.AbsoluteUri.StartsWith("data:"));
         textResult.ItemId.ShouldBe("1308334634745249793#1523276529123397632");
         textResult.Uri.AbsoluteUri.ShouldBe("data:text/plain;charset=UTF-8;base64,5paw44GX44GE44Kr44OQ44O844KS5oqV56i/44GX44G+44GX44Gf4p2VCuOBi+OBo+OBk+OBhOOBhOOBruOBp+OBn+OBj+OBleOCk+iBnuOBhOOBpuOBj+OBoOOBleOBhOODvO+8geKZoQpmdWxs77yaaHR0cHM6Ly90LmNvL25sTE9ZbENtbE0KClZvY2Fs77ya44OK44OK44Kr44Kw44OpLCDlpKnkvb/jgYbjgagKSWxsdXN077yaSmFueWhlcm8gICDmp5gKTWl477yaUGQuNDbjgIDmp5gKTW92aWXvvJpSaWVzeiAg5qeYCmh0dHBzOi8veW91dHUuYmUvSEJrdExUeUxMOVU=");
-        textResult.Metadata!["created_at"].ShouldBe(new DateTime(2022, 5, 8, 12, 20, 0));
+        textResult.Metadata!["created_at"].ShouldBe("2022-05-08 12:20:00");
         textResult.Metadata["favorite_count"].ShouldBe(5823);
         textResult.Metadata["file.extension"].ShouldBe("txt");
         textResult.Metadata["is_quote_status"].ShouldBe(false);
@@ -173,7 +173,7 @@ public class TwitterExtractorTest : BaseTest
         var thumbnailResult = results.Single(r => r.Uri.AbsoluteUri.StartsWith("https://pbs.twimg.com/ext_tw_video_thumb"));
         thumbnailResult.ItemId.ShouldBe("1308334634745249793#1523276529123397632#1523196911448035328");
         thumbnailResult.Uri.AbsoluteUri.ShouldBe("https://pbs.twimg.com/ext_tw_video_thumb/1523196911448035328/pu/img/IjK77EYau0_-qDCu.jpg");
-        thumbnailResult.Metadata!["created_at"].ShouldBe(new DateTime(2022, 5, 8, 12, 20, 0));
+        thumbnailResult.Metadata!["created_at"].ShouldBe("2022-05-08 12:20:00");
         thumbnailResult.Metadata["favorite_count"].ShouldBe(5823);
         thumbnailResult.Metadata["file.extension"].ShouldBe("jpg");
         thumbnailResult.Metadata["is_quote_status"].ShouldBe(false);
@@ -191,7 +191,7 @@ public class TwitterExtractorTest : BaseTest
         var videoResult = results.Single(r => r.Uri.AbsoluteUri.StartsWith("https://video.twimg.com/ext_tw_video/"));
         videoResult.ItemId.ShouldBe("1308334634745249793#1523276529123397632#1523196911448035328");
         videoResult.Uri.AbsoluteUri.ShouldBe("https://video.twimg.com/ext_tw_video/1523196911448035328/pu/vid/1280x720/r-Ybk23JsBkJIy9b.mp4?tag=12");
-        videoResult.Metadata!["created_at"].ShouldBe(new DateTime(2022, 5, 8, 12, 20, 0));
+        videoResult.Metadata!["created_at"].ShouldBe("2022-05-08 12:20:00");
         videoResult.Metadata["favorite_count"].ShouldBe(5823);
         videoResult.Metadata["file.extension"].ShouldBe("mp4");
         videoResult.Metadata["is_quote_status"].ShouldBe(false);
@@ -222,7 +222,7 @@ public class TwitterExtractorTest : BaseTest
         var result = results.Single(r => r.Uri.AbsoluteUri.StartsWith("data:"));
         result.ItemId.ShouldBe("1308334634745249793#1567680068113285121");
         result.Uri.AbsoluteUri.ShouldBe("data:text/plain;charset=UTF-8;base64,UlQgQEFzdGVyQXJjYWRpYTogRElWSU5FIERVTyBUQUtJTkcgT1ZFUiBBUEVYIExFR0VORFMhCkdhbWluZyB3LyDimIHvuI9AYW1hdHN1a2F1dG8gCgrwn5KraHR0cHM6Ly90LmNvL0NXZnhtMFlVTXggaHR0cHM6Ly90LmNvL0tYTnB5THhQeQpodHRwOi8veW91dHUuYmUvM0Vobm1rWjhPQlE=");
-        result.Metadata!["created_at"].ShouldBe(new DateTime(2022, 9, 8, 1, 3, 48));
+        result.Metadata!["created_at"].ShouldBe("2022-09-08 01:03:48");
         result.Metadata["favorite_count"].ShouldBe(0);
         result.Metadata["file.extension"].ShouldBe("txt");
         result.Metadata["is_quote_status"].ShouldBe(false);
@@ -243,6 +243,6 @@ public class TwitterExtractorTest : BaseTest
     private static JsonNode GetUriQueryVariables(Uri uri)
     {
         var query = uri.GetQueryParameters();
-        return JsonSerializer.Deserialize<JsonNode>(query["variables"]!)!;
+        return JsonSerializer.Deserialize<JsonNode>(query!["variables"]!)!;
     }
 }

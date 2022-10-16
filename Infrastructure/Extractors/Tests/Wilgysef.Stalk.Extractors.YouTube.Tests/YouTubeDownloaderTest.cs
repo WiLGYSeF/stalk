@@ -89,7 +89,7 @@ public class YouTubeDownloaderTest : BaseTest
 
         if (moveInfoJson)
         {
-            ((IDictionary<object, object>)(videoResult.Metadata!["youtube_dl"]!)).Count.ShouldBe(56);
+            ((IDictionary<string, object>)(videoResult.Metadata!["youtube_dl"]!)).Count.ShouldBe(56);
         }
         else
         {

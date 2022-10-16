@@ -124,17 +124,17 @@ public class MetadataObject : IMetadataObject
     public IMetadataObject Copy()
     {
         var metadata = new MetadataObject(KeySeparator);
-        var nodes = new Queue<(string Key, ITrie<string, object?> Trie)>(_root.Children.Select(t => (t.Key, t)));
+        var nodes = new Queue<(ITrie<string, object?> Trie, string Key)>(_root.Children.Select(t => (t, t.Key)));
 
         while (nodes.Count > 0)
         {
-            var (key, trie) = nodes.Dequeue();
+            var (trie, key) = nodes.Dequeue();
 
             if (trie.Count > 0)
             {
                 foreach (var child in trie.Children)
                 {
-                    nodes.Enqueue((key + KeySeparator + child.Key, child));
+                    nodes.Enqueue((child, key + KeySeparator + child.Key));
                 }
             }
             else
@@ -333,27 +333,9 @@ public class MetadataObject : IMetadataObject
         {
             get
             {
-                var pairs = new List<KeyValuePair<string, object?>>();
-                var nodes = new Queue<(ITrie<string, object?> Trie, string Key)>(_metadata._root.Children.Select(t => (t, t.Key)));
-
-                while (nodes.Count > 0)
-                {
-                    var (trie, key) = nodes.Dequeue();
-
-                    if (trie.Count > 0)
-                    {
-                        foreach (var child in trie.Children)
-                        {
-                            nodes.Enqueue((child, key + _metadata.KeySeparator + child.Key));
-                        }
-                    }
-                    else
-                    {
-                        pairs.Add(new KeyValuePair<string, object?>(key, trie.Value));
-                    }
-                }
-
-                return pairs.OrderBy(p => p.Key).ToList();
+                return _metadata.GetFlattenedDictionary()
+                    .OrderBy(p => p.Key)
+                    .ToList();
             }
         }
 
