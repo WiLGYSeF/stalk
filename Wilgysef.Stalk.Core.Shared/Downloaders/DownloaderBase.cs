@@ -89,7 +89,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
             metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdKeys);
             metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdSeqKeys);
-            metadata.TryAddValueByParts(uri.ToString(), MetadataObjectConsts.Origin.UriKeys);
+            metadata.TryAddValueByParts(uri.AbsoluteUri, MetadataObjectConsts.Origin.UriKeys);
 
             await foreach (var downloadFileResult in SaveFileAsync(
                 uri,

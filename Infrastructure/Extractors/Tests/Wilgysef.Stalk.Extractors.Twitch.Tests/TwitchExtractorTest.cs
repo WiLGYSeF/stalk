@@ -77,9 +77,9 @@ public class TwitchExtractorTest
             new MetadataObject('.')).ToListAsync();
 
         results.Count.ShouldBe(3);
-        var videosResult = results.Single(r => r.Uri == "https://www.twitch.tv/utonyan/videos");
-        var clipsResult = results.Single(r => r.Uri == "https://www.twitch.tv/utonyan/clips");
-        var aboutResult = results.Single(r => r.Uri == "https://www.twitch.tv/utonyan/about");
+        var videosResult = results.Single(r => r.Uri.AbsoluteUri == "https://www.twitch.tv/utonyan/videos");
+        var clipsResult = results.Single(r => r.Uri.AbsoluteUri == "https://www.twitch.tv/utonyan/clips");
+        var aboutResult = results.Single(r => r.Uri.AbsoluteUri == "https://www.twitch.tv/utonyan/about");
     }
 
     [Fact]
@@ -105,7 +105,7 @@ public class TwitchExtractorTest
 
         results.Count.ShouldBe(2);
         var thumbnailResult = results.Single(r => r.ItemId == "1586110158#thumb");
-        thumbnailResult.Uri.ShouldBe("https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/a2197cb3f8db6cc072b2_utonyan_39655744983_1662723806//thumb/thumb0-90x60.jpg");
+        thumbnailResult.Uri.AbsoluteUri.ShouldBe("https://static-cdn.jtvnw.net/cf_vods/d3vd9lfkzbru3h/a2197cb3f8db6cc072b2_utonyan_39655744983_1662723806//thumb/thumb0-90x60.jpg");
         thumbnailResult.Metadata!["channel.id"].ShouldBe("662849096");
         thumbnailResult.Metadata["channel.login"].ShouldBe("utonyan");
         thumbnailResult.Metadata["channel.name"].ShouldBe("utonyan");
@@ -122,7 +122,7 @@ public class TwitchExtractorTest
         thumbnailResult.Type.ShouldBe(JobTaskType.Download);
 
         var videoResult = results.Single(r => r.ItemId == "1586110158");
-        videoResult.Uri.ShouldBe("https://www.twitch.tv/videos/1586110158");
+        videoResult.Uri.AbsoluteUri.ShouldBe("https://www.twitch.tv/videos/1586110158");
         videoResult.Metadata!["channel.id"].ShouldBe("662849096");
         videoResult.Metadata["channel.login"].ShouldBe("utonyan");
         videoResult.Metadata["channel.name"].ShouldBe("utonyan");
@@ -165,7 +165,7 @@ public class TwitchExtractorTest
 
         var result = results.Single();
         result.ItemId.ShouldBe("ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc");
-        result.Uri.ShouldBe("https://production.assets.clips.twitchcdn.net/9m6CDf2hXjXFkjIjQt-AXA/AT-cm%7C9m6CDf2hXjXFkjIjQt-AXA.mp4?sig=f516d2c7571b32c122cd8baab8bb69520827a565&token=%7b%22authorization%22%3a%7b%22forbidden%22%3afalse%2c%22reason%22%3a%22%22%7d%2c%22clip_uri%22%3a%22https%3a%2f%2fproduction.assets.clips.twitchcdn.net%2f9m6CDf2hXjXFkjIjQt-AXA%2fAT-cm%257C9m6CDf2hXjXFkjIjQt-AXA.mp4%22%2c%22device_id%22%3a%22oopGMf8bQJZyCGecMGjPM8M2zaPhdHBS%22%2c%22expires%22%3a1665866268%2c%22user_id%22%3a%22%22%2c%22version%22%3a2%7d");
+        result.Uri.AbsoluteUri.ShouldBe("https://production.assets.clips.twitchcdn.net/9m6CDf2hXjXFkjIjQt-AXA/AT-cm%7C9m6CDf2hXjXFkjIjQt-AXA.mp4?sig=f516d2c7571b32c122cd8baab8bb69520827a565&token=%7b%22authorization%22%3a%7b%22forbidden%22%3afalse%2c%22reason%22%3a%22%22%7d%2c%22clip_uri%22%3a%22https%3a%2f%2fproduction.assets.clips.twitchcdn.net%2f9m6CDf2hXjXFkjIjQt-AXA%2fAT-cm%257C9m6CDf2hXjXFkjIjQt-AXA.mp4%22%2c%22device_id%22%3a%22oopGMf8bQJZyCGecMGjPM8M2zaPhdHBS%22%2c%22expires%22%3a1665866268%2c%22user_id%22%3a%22%22%2c%22version%22%3a2%7d");
         result.Metadata!["channel.id"].ShouldBe("662849096");
         result.Metadata["channel.login"].ShouldBe("utonyan");
         result.Metadata["channel.name"].ShouldBe("utonyan");
@@ -202,7 +202,7 @@ public class TwitchExtractorTest
         results.All(r => r.Type == JobTaskType.Download).ShouldBeTrue();
 
         var gifResult = results.Single(r => r.ItemId == "emotesv2_9e8516dacaa44f6181451f6e99666a9e");
-        gifResult.Uri.ShouldBe("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_9e8516dacaa44f6181451f6e99666a9e/default/dark/1.0");
+        gifResult.Uri.AbsoluteUri.ShouldBe("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_9e8516dacaa44f6181451f6e99666a9e/default/dark/1.0");
         gifResult.Metadata!["emote.price"].ShouldBe("$4.99");
         gifResult.Metadata["emote.tier"].ShouldBe("1000");
         gifResult.Metadata["emote.id"].ShouldBe("emotesv2_9e8516dacaa44f6181451f6e99666a9e");
@@ -212,7 +212,7 @@ public class TwitchExtractorTest
         gifResult.Metadata["file.extension"].ShouldBe("gif");
 
         var pngResult = results.Single(r => r.ItemId == "emotesv2_710f769a1dfd41b7ba0358a1f02037eb");
-        pngResult.Uri.ShouldBe("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_710f769a1dfd41b7ba0358a1f02037eb/default/dark/1.0");
+        pngResult.Uri.AbsoluteUri.ShouldBe("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_710f769a1dfd41b7ba0358a1f02037eb/default/dark/1.0");
         pngResult.Metadata!["emote.price"].ShouldBe("$4.99");
         pngResult.Metadata["emote.tier"].ShouldBe("1000");
         pngResult.Metadata["emote.id"].ShouldBe("emotesv2_710f769a1dfd41b7ba0358a1f02037eb");

@@ -173,7 +173,7 @@ public class YouTubeExtractorTest : BaseTest
 
         results.Count.ShouldBe(2);
         var thumbnailResult = results.Single(r => r.ItemId == "_BSSJi-sHh8#thumb");
-        thumbnailResult.Uri.StartsWith("https://img.youtube.com/vi_webp/_BSSJi-sHh8/maxresdefault.webp");
+        thumbnailResult.Uri.AbsoluteUri.StartsWith("https://img.youtube.com/vi_webp/_BSSJi-sHh8/maxresdefault.webp");
         thumbnailResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
         thumbnailResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
         thumbnailResult.Metadata["file.extension"].ShouldBe("webp");
@@ -190,7 +190,7 @@ public class YouTubeExtractorTest : BaseTest
         thumbnailResult.Type.ShouldBe(JobTaskType.Download);
 
         var videoResult = results.Single(r => r.ItemId == "_BSSJi-sHh8");
-        videoResult.Uri.ShouldBe("https://www.youtube.com/watch?v=_BSSJi-sHh8");
+        videoResult.Uri.AbsoluteUri.ShouldBe("https://www.youtube.com/watch?v=_BSSJi-sHh8");
         videoResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
         videoResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
         videoResult.Metadata["file.extension"].ShouldBe("%(ext)s");
@@ -238,7 +238,7 @@ public class YouTubeExtractorTest : BaseTest
         results.Where(r => r.ItemId!.Contains("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")).Count().ShouldBe(2);
 
         var textResult = results.Single(r => r.ItemId == "UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
-        textResult.Uri.ShouldBe("data:text/plain;charset=UTF-8;base64,44K544Kx44K444Ol44O844Or44KS5b6p5rS744GV44Gb44G+44GX44Gf77yB4pypLirLmg0K44GT44KM44KS57aa44GR44Gm44GE44GP44Gu44GM55uu5qiZ44Gt44CC44CCDQrjgYLjgIHjgZ3jgYbjgYTjgYjjgbBUd2l0Y2jjgpLlp4vjgoHjgZ/jgojvvZ7vvIHvvIENCuOBn+OBvuOBq+aBr+aKnOOBjeOBq+S9v+OBhuS6iOWumuOBoOOBi+OCieaah+OBquS6uuOBr+imi+OBq+adpeOBpuOBre+9nuKZoQrjgrnjgrHjgrjjg6Xjg7zjg6vjga/ml6XmnKzmmYLplpPjgaDjgojvvZ4KCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQoKSSBoYXZlIG15IHNjaGVkdWxlIGJhY2sh4pypLirLmg0KTXkgZ29hbCBpcyB0byBrZWVwIHRoaXMgZ29pbmcuDQpPaCwgYnkgdGhlIHdheSwgSSd2ZSBzdGFydGVkIFR3aXRjaC4NCiBJJ20gZ29pbmcgdG8gdXNlIGl0IHRvIHJlbGF4IG9uY2UgaW4gYSB3aGlsZSwgc28gaWYgeW91J3JlIGZyZWUsIGNvbWUgY2hlY2sgaXQgb3V0fuKZoQoK4oC7VGhpcyBzY2hlZHVsZSBpcyBpbiBKYXBhbiB0aW1lIQoKCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQoKCg0KVXRv4oCZ772TIFR3aXRjaCAgaHR0cHM6Ly93d3cudHdpdGNoLnR2L3V0b19fXwoKCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQ==");
+        textResult.Uri.AbsoluteUri.ShouldBe("data:text/plain;charset=UTF-8;base64,44K544Kx44K444Ol44O844Or44KS5b6p5rS744GV44Gb44G+44GX44Gf77yB4pypLirLmg0K44GT44KM44KS57aa44GR44Gm44GE44GP44Gu44GM55uu5qiZ44Gt44CC44CCDQrjgYLjgIHjgZ3jgYbjgYTjgYjjgbBUd2l0Y2jjgpLlp4vjgoHjgZ/jgojvvZ7vvIHvvIENCuOBn+OBvuOBq+aBr+aKnOOBjeOBq+S9v+OBhuS6iOWumuOBoOOBi+OCieaah+OBquS6uuOBr+imi+OBq+adpeOBpuOBre+9nuKZoQrjgrnjgrHjgrjjg6Xjg7zjg6vjga/ml6XmnKzmmYLplpPjgaDjgojvvZ4KCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQoKSSBoYXZlIG15IHNjaGVkdWxlIGJhY2sh4pypLirLmg0KTXkgZ29hbCBpcyB0byBrZWVwIHRoaXMgZ29pbmcuDQpPaCwgYnkgdGhlIHdheSwgSSd2ZSBzdGFydGVkIFR3aXRjaC4NCiBJJ20gZ29pbmcgdG8gdXNlIGl0IHRvIHJlbGF4IG9uY2UgaW4gYSB3aGlsZSwgc28gaWYgeW91J3JlIGZyZWUsIGNvbWUgY2hlY2sgaXQgb3V0fuKZoQoK4oC7VGhpcyBzY2hlZHVsZSBpcyBpbiBKYXBhbiB0aW1lIQoKCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQoKCg0KVXRv4oCZ772TIFR3aXRjaCAgaHR0cHM6Ly93d3cudHdpdGNoLnR2L3V0b19fXwoKCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQ==");
         textResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
         textResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
         textResult.Metadata["file.extension"].ShouldBe("txt");
@@ -251,7 +251,7 @@ public class YouTubeExtractorTest : BaseTest
         textResult.Type.ShouldBe(JobTaskType.Download);
 
         var imageResult = results.Single(r => r.ItemId == "UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP#image");
-        imageResult.Uri.ShouldBe("https://yt3.ggpht.com/BRWDFVKhADpFgyxc1iZgYop1k3QJGR67yoYoFulEYm35Jrvb7A2gLjpodlKVhmGtlBuUvx0VkQLD1Q=s1920-nd-v1");
+        imageResult.Uri.AbsoluteUri.ShouldBe("https://yt3.ggpht.com/BRWDFVKhADpFgyxc1iZgYop1k3QJGR67yoYoFulEYm35Jrvb7A2gLjpodlKVhmGtlBuUvx0VkQLD1Q=s1920-nd-v1");
         imageResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
         imageResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
         imageResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#20211201_UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP#image");
@@ -263,7 +263,7 @@ public class YouTubeExtractorTest : BaseTest
 
         var emojiResult = results.First(r => r.ItemId!.Contains("#emoji#"));
         emojiResult.ItemId.ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#emoji#YjYIYfvYAamL8gT4576oCA");
-        emojiResult.Uri.ShouldBe("https://yt3.ggpht.com/aI7NJRY3Q0B5jo-3nISoXGjmgXBNbB8ClpJaJNP5IhTLbGNWDea_m_XbTx5cIU5GKmZwEMKQoA=w512-h512-c-k-nd");
+        emojiResult.Uri.AbsoluteUri.ShouldBe("https://yt3.ggpht.com/aI7NJRY3Q0B5jo-3nISoXGjmgXBNbB8ClpJaJNP5IhTLbGNWDea_m_XbTx5cIU5GKmZwEMKQoA=w512-h512-c-k-nd");
         emojiResult.Metadata!["file.extension"].ShouldBe("png");
         emojiResult.Metadata["emoji_name"].ShouldBe("konuto");
         emojiResult.Type.ShouldBe(JobTaskType.Download);
@@ -332,6 +332,6 @@ public class YouTubeExtractorTest : BaseTest
             null,
             new MetadataObject('.')).ToListAsync();
         var thumbnailResult = results.Single(r => r.ItemId == "_BSSJi-sHh8#thumb");
-        thumbnailResult.Uri.EndsWith(".jpg").ShouldBeTrue();
+        thumbnailResult.Uri.AbsoluteUri.EndsWith(".jpg").ShouldBeTrue();
     }
 }

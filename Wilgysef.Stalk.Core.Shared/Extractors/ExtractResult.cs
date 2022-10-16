@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Text;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;
@@ -8,6 +9,8 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
 {
     public class ExtractResult
     {
+        public static readonly int DataUriMaxLength = 2048;
+
         /// <summary>
         /// Extract name.
         /// </summary>
@@ -18,11 +21,10 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
         /// </summary>
         public int Priority { get; }
 
-        // Can't use Uri because data URI schemes may exceed the Uri length limit
         /// <summary>
         /// Extract URI.
         /// </summary>
-        public string Uri { get; }
+        public Uri Uri { get; }
 
         /// <summary>
         /// Extract item Id.
@@ -61,7 +63,7 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
         /// <param name="metadata">Extract metadata.</param>
         /// <param name="downloadRequestData">Download request data.</param>
         public ExtractResult(
-            string uri,
+            Uri uri,
             string? itemId,
             JobTaskType type,
             string? name = null,
@@ -83,6 +85,36 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
         /// <summary>
         /// Extract result.
         /// </summary>
+        /// <param name="uri">Extract URI.</param>
+        /// <param name="itemId">Extract item Id.</param>
+        /// <param name="type">Extraction type that should be performed on the URI.</param>
+        /// <param name="name">Extract name.</param>
+        /// <param name="priority">Extract priority.</param>
+        /// <param name="itemData">Extract item data.</param>
+        /// <param name="metadata">Extract metadata.</param>
+        /// <param name="downloadRequestData">Download request data.</param>
+        public ExtractResult(
+            string uri,
+            string? itemId,
+            JobTaskType type,
+            string? name = null,
+            int priority = 0,
+            string? itemData = null,
+            IMetadataObject? metadata = null,
+            DownloadRequestData? downloadRequestData = null)
+            : this(
+                new Uri(uri),
+                itemId,
+                type,
+                name,
+                priority,
+                itemData,
+                metadata,
+                downloadRequestData) { }
+
+        /// <summary>
+        /// Extract result.
+        /// </summary>
         /// <param name="data">Extract data.</param>
         /// <param name="itemId">Extract item Id.</param>
         /// <param name="name">Extract name.</param>
@@ -99,14 +131,14 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
             IMetadataObject? metadata = null,
             DownloadRequestData? downloadRequestData = null)
             : this(
-                  data,
-                  "",
-                  itemId,
-                  name,
-                  priority,
-                  itemData,
-                  metadata,
-                  downloadRequestData) { }
+                data,
+                "",
+                itemId,
+                name,
+                priority,
+                itemData,
+                metadata,
+                downloadRequestData) { }
 
         /// <summary>
         /// Extract result.
@@ -129,19 +161,34 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
             IMetadataObject? metadata = null,
             DownloadRequestData? downloadRequestData = null)
             : this(
-                  CreateDataUri(data, mediaType),
-                  itemId,
-                  JobTaskType.Download,
-                  name,
-                  priority,
-                  itemData,
-                  metadata,
-                  downloadRequestData)
-                { }
+                new Uri("data:"),
+                itemId,
+                JobTaskType.Download,
+                name,
+                priority,
+                itemData,
+                metadata,
+                downloadRequestData)
+        {
+            var dataUriLength = GetDataUriLength(data.Length, mediaType.Length);
+            if (dataUriLength > DataUriMaxLength)
+            {
+                DownloadRequestData ??= new DownloadRequestData();
+                if (DownloadRequestData.Data != null)
+                {
+                    throw new ArgumentException("Data URI exceeds length and download request data is not null", nameof(data));
+                }
+                DownloadRequestData.Data = data;
+            }
+            else
+            {
+                Uri = new Uri(CreateDataUri(data, mediaType));
+            }
+        }
 
         private static string CreateDataUri(byte[] data, string? mediaType = null)
         {
-            var expectedLength = GetBase64Length(data.Length) + (mediaType?.Length ?? 0) + 13;
+            var expectedLength = GetDataUriLength(data.Length, mediaType?.Length ?? 0);
             var builder = new StringBuilder(expectedLength);
             var addSeparator = true;
 
@@ -162,6 +209,11 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
             builder.Append(Convert.ToBase64String(data));
 
             return builder.ToString();
+        }
+
+        private static int GetDataUriLength(int dataLength, int mediaTypeLength)
+        {
+            return GetBase64Length(dataLength) + mediaTypeLength + 13;
         }
 
         private static int GetBase64Length(int length)

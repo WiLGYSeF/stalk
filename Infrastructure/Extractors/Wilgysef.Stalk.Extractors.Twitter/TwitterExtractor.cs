@@ -321,7 +321,7 @@ public class TwitterExtractor : IExtractor
             mediaMetadata.SetByParts(mediaItem["mediaStats"]?["viewCount"]?.Value<int>(), "video", "view_count");
 
             yield return new ExtractResult(
-                videoUri.AbsoluteUri,
+                videoUri,
                 $"{userId}#{tweetId}#{mediaId}",
                 JobTaskType.Download,
                 metadata: mediaMetadata);

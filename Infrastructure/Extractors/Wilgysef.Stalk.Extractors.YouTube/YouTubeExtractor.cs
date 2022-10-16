@@ -262,7 +262,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         metadata.SetByParts(YoutubeDlFileExtensionTemplate, MetadataObjectConsts.File.ExtensionKeys);
 
         yield return new ExtractResult(
-            uri.AbsoluteUri,
+            uri,
             videoId,
             JobTaskType.Download,
             metadata: metadata);
@@ -304,7 +304,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
                 metadata.SetByParts(GetExtensionFromUri(uri), MetadataObjectConsts.File.ExtensionKeys);
 
                 result = new ExtractResult(
-                    uri.AbsoluteUri,
+                    uri,
                     $"{videoId}#thumb",
                     JobTaskType.Download,
                     metadata: metadata);

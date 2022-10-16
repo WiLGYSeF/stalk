@@ -163,7 +163,7 @@ public class TaskDelayTest : BaseTest
             throw new HttpRequestException("Mock download exception.", null, HttpStatusCode.InternalServerError);
         }
         yield return new ExtractResult(
-            RandomValues.RandomUri().AbsoluteUri,
+            RandomValues.RandomUri(),
             RandomValues.RandomString(10),
             JobTaskType.Download);
     }

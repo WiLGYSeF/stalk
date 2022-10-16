@@ -50,7 +50,7 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
         }
 
         public virtual IProcess FindAndStartProcess(
-            Uri uri,
+            string uri,
             string filename,
             IDownloadStatus downloadStatus,
             Action<ProcessStartInfo>? configure = null,
@@ -105,7 +105,7 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
             startInfo.ArgumentList.Add("--output");
             startInfo.ArgumentList.Add(filename);
 
-            startInfo.ArgumentList.Add(uri.AbsoluteUri);
+            startInfo.ArgumentList.Add(uri);
 
             configure?.Invoke(startInfo);
 

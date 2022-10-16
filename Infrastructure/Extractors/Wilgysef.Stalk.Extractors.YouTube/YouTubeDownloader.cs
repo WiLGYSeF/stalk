@@ -81,7 +81,7 @@ public class YouTubeDownloader : DownloaderBase
         CreateDirectoriesFromFilename(filename);
 
         var status = new DownloadStatus();
-        var process = youtubeDl.FindAndStartProcess(uri, filename, status);
+        var process = youtubeDl.FindAndStartProcess(uri.AbsoluteUri, filename, status);
 
         try
         {
