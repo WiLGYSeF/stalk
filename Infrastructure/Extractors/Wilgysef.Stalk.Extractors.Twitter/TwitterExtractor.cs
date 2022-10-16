@@ -182,16 +182,16 @@ public class TwitterExtractor : IExtractor
         var createdAtString = legacy["created_at"]?.ToString();
         var createdAt = ParseDateTime(createdAtString ?? "");
         metadata["created_at"] = createdAt.ToString() ?? createdAtString;
-        metadata["favorite_count"] = legacy["favorite_count"]?.Value<int>();
-        metadata["is_quote_status"] = legacy["is_quote_status"]?.Value<bool>();
-        metadata["lang"] = legacy["lang"]?.ToString();
-        metadata["possibly_sensitive"] = legacy["possibly_sensitive"]?.Value<bool>();
-        metadata["quote_count"] = legacy["quote_count"]?.Value<int>();
-        metadata["reply_count"] = legacy["reply_count"]?.Value<int>();
-        metadata["retweet_count"] = legacy["retweet_count"]?.Value<int>();
+        GetMetadata<int>(metadata, legacy["favorite_count"], "favorite_count");
+        GetMetadata<bool>(metadata, legacy["is_quote_status"], "is_quote_status");
+        GetMetadata<string>(metadata, legacy["lang"], "lang");
+        GetMetadata<bool>(metadata, legacy["possibly_sensitive"], "possibly_sensitive");
+        GetMetadata<int>(metadata, legacy["quote_count"], "quote_count");
+        GetMetadata<int>(metadata, legacy["reply_count"], "reply_count");
+        GetMetadata<int>(metadata, legacy["retweet_count"], "retweet_count");
         metadata["tweet_id"] = tweetId;
-        metadata.SetByParts(userId, "user", "id");
-        metadata.SetByParts(userScreenName, "user", "screen_name");
+        metadata["user", "id"] = userId;
+        metadata["user", "screen_name"] = userScreenName;
 
         foreach (var result in ExtractTweetMedia(tweet, metadata, true))
         {
@@ -222,13 +222,13 @@ public class TwitterExtractor : IExtractor
         var retweetedTweet = legacy["retweeted_status_result"]?["result"];
         if (retweetedTweet != null)
         {
-            metadata.SetByParts(retweetedTweet["rest_id"]?.ToString(), "retweet", "tweet_id");
-            metadata.SetByParts(GetUserId(retweetedTweet), "retweet", "user", "id");
-            metadata.SetByParts(GetUserScreenName(retweetedTweet), "retweet", "user", "screen_name");
+            GetMetadata<string>(metadata, retweetedTweet["rest_id"], "retweet", "tweet_id");
+            metadata["retweet", "user", "id"] = GetUserId(retweetedTweet);
+            metadata["retweet", "user", "screen_name"] = GetUserScreenName(retweetedTweet);
         }
 
-        metadata.SetByParts("txt", MetadataObjectConsts.File.ExtensionKeys);
-        metadata.SetByParts(GetTweetUri(userScreenName, tweetId), MetadataObjectConsts.Origin.UriKeys);
+        metadata[MetadataObjectConsts.File.ExtensionKeys] = "txt";
+        metadata[MetadataObjectConsts.Origin.UriKeys] = GetTweetUri(userScreenName, tweetId);
 
         if (fullText.Length > 0)
         {
@@ -275,7 +275,7 @@ public class TwitterExtractor : IExtractor
 
             var mediaMetadata = metadata.Copy();
             mediaMetadata["media_id"] = mediaId;
-            mediaMetadata.SetByParts(GetExtensionFromUri(new Uri(mediaUrl)), MetadataObjectConsts.File.ExtensionKeys);
+            mediaMetadata[MetadataObjectConsts.File.ExtensionKeys] = GetExtensionFromUri(new Uri(mediaUrl));
 
             if (largestSize)
             {
@@ -316,10 +316,11 @@ public class TwitterExtractor : IExtractor
 
             var mediaMetadata = metadata.Copy();
             mediaMetadata["media_id"] = mediaId;
-            mediaMetadata.SetByParts(GetExtensionFromUri(videoUri), MetadataObjectConsts.File.ExtensionKeys);
-            mediaMetadata.SetByParts(bestVariant["bitrate"]?.Value<int>(), "video", "bitrate");
-            mediaMetadata.SetByParts(videoInfo["duration_millis"]?.Value<int>(), "video", "duration_millis");
-            mediaMetadata.SetByParts(mediaItem["mediaStats"]?["viewCount"]?.Value<int>(), "video", "view_count");
+            mediaMetadata[MetadataObjectConsts.File.ExtensionKeys] = GetExtensionFromUri(videoUri);
+
+            GetMetadata<int>(mediaMetadata, bestVariant["bitrate"], "video", "bitrate");
+            GetMetadata<int>(mediaMetadata, videoInfo["duration_millis"], "video", "duration_millis");
+            GetMetadata<int>(mediaMetadata, mediaItem["mediaStats"]?["viewCount"], "video", "view_count");
 
             yield return new ExtractResult(
                 videoUri,
@@ -571,6 +572,18 @@ public class TwitterExtractor : IExtractor
             return ExtractType.User;
         }
         return null;
+    }
+
+    private static T? GetMetadata<T>(IMetadataObject metadata, JToken? token, params string[] keys)
+    {
+        if (token == null)
+        {
+            return default;
+        }
+
+        var value = token.Value<T>();
+        metadata[keys] = value;
+        return value;
     }
 
     private static string? GetExtensionFromUri(Uri uri)

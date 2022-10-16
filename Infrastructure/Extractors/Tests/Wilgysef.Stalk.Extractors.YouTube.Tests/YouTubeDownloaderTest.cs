@@ -81,7 +81,7 @@ public class YouTubeDownloaderTest : BaseTest
             "UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.%(ext)s",
             "2SVDVhzzzSY",
             "meta.txt",
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(moveInfoJson ? 2 : 3);
         var subtitlesResult = results.Single(r => r.Path.EndsWith("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.ja.vtt"));
@@ -121,7 +121,7 @@ public class YouTubeDownloaderTest : BaseTest
             "test.%(ext)s",
             "itemId",
             "meta.txt",
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         var process = _processService.Processes.Single();
 

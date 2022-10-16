@@ -83,13 +83,13 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             if (Config.TryGetValueAs<bool, string, object?>(SaveFilenameTemplatesMetadataKey, out var saveFilenameTemplatesMetadata)
                 && saveFilenameTemplatesMetadata)
             {
-                metadata.TryAddValueByParts(filenameTemplate, MetadataObjectConsts.File.FilenameTemplateKeys);
-                metadata.TryAddValueByParts(metadataFilenameTemplate, MetadataObjectConsts.MetadataFilenameTemplateKeys);
+                metadata.TryAddValue(filenameTemplate, MetadataObjectConsts.File.FilenameTemplateKeys);
+                metadata.TryAddValue(metadataFilenameTemplate, MetadataObjectConsts.MetadataFilenameTemplateKeys);
             }
 
-            metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdKeys);
-            metadata.TryAddValueByParts(itemId, MetadataObjectConsts.Origin.ItemIdSeqKeys);
-            metadata.TryAddValueByParts(uri.AbsoluteUri, MetadataObjectConsts.Origin.UriKeys);
+            metadata.TryAddValue(itemId, MetadataObjectConsts.Origin.ItemIdKeys);
+            metadata.TryAddValue(itemId, MetadataObjectConsts.Origin.ItemIdSeqKeys);
+            metadata.TryAddValue(uri.AbsoluteUri, MetadataObjectConsts.Origin.UriKeys);
 
             await foreach (var downloadFileResult in SaveFileAsync(
                 uri,
@@ -99,16 +99,16 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
                 cancellationToken))
             {
                 var resultMetadata = metadata.Copy();
-                resultMetadata.TryAddValueByParts(DateTimeOffset.Now.ToString(), MetadataObjectConsts.RetrievedKeys);
+                resultMetadata.TryAddValue(DateTimeOffset.Now.ToString(), MetadataObjectConsts.RetrievedKeys);
 
                 if (downloadFileResult.FileSize.HasValue)
                 {
-                    resultMetadata.TryAddValueByParts(downloadFileResult.FileSize, MetadataObjectConsts.File.SizeKeys);
+                    resultMetadata.TryAddValue(downloadFileResult.FileSize, MetadataObjectConsts.File.SizeKeys);
                 }
                 if (downloadFileResult.Hash != null)
                 {
-                    resultMetadata.TryAddValueByParts(downloadFileResult.Hash, MetadataObjectConsts.File.HashKeys);
-                    resultMetadata.TryAddValueByParts(downloadFileResult.HashName, MetadataObjectConsts.File.HashAlgorithmKeys);
+                    resultMetadata.TryAddValue(downloadFileResult.Hash, MetadataObjectConsts.File.HashKeys);
+                    resultMetadata.TryAddValue(downloadFileResult.HashName, MetadataObjectConsts.File.HashAlgorithmKeys);
                 }
 
                 string? metadataFilename;
@@ -155,7 +155,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         {
             var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
             var filename = filenameSlug.SlugifyPath(
-                _stringFormatter.Format(filenameTemplate, metadata.GetFlattenedDictionary()));
+                _stringFormatter.Format(filenameTemplate, metadata.GetFlattenedDictionary(MetadataObjectConsts.Separator)));
 
             CreateDirectoriesFromFilename(filename);
 
@@ -268,7 +268,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
             var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
             var metadataFilename = filenameSlug.SlugifyPath(
-                _stringFormatter.Format(metadataFilenameTemplate, metadata.GetFlattenedDictionary()));
+                _stringFormatter.Format(metadataFilenameTemplate, metadata.GetFlattenedDictionary(MetadataObjectConsts.Separator)));
 
             CreateDirectoriesFromFilename(metadataFilename);
 

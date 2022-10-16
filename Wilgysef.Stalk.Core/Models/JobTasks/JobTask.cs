@@ -13,9 +13,6 @@ namespace Wilgysef.Stalk.Core.Models.JobTasks;
 
 public class JobTask : Entity
 {
-    [NotMapped]
-    public const char MetadataKeySeparator = '.';
-
     /// <summary>
     /// Job task Id.
     /// </summary>
@@ -319,7 +316,7 @@ public class JobTask : Entity
     {
         if (MetadataJson == null)
         {
-            return new MetadataObject(MetadataKeySeparator);
+            return new MetadataObject();
         }
 
         var metadataDictionary = JsonUtils.TryDeserializeObject(MetadataJson);
@@ -328,7 +325,7 @@ public class JobTask : Entity
             throw new InvalidOperationException("Metadata must be a dictionary.");
         }
 
-        var metadata = new MetadataObject(MetadataKeySeparator);
+        var metadata = new MetadataObject();
         metadata.From(metadataDictionary);
 
         return metadata;

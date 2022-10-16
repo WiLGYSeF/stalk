@@ -8,91 +8,91 @@ public class MetadataObjectTest
     [Fact]
     public void Add_Values()
     {
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
-        metadata.Add("abc", 1);
-        metadata.Add("def", 2);
-        metadata.Add("aaa.asdf", 3);
-        metadata.Add("aaa.abc", 4);
+        metadata.Add(1, "abc");
+        metadata.Add(2, "def");
+        metadata.Add(3, "aaa", "asdf");
+        metadata.Add(4, "aaa", "abc");
 
         metadata["abc"].ShouldBe(1);
         metadata["def"].ShouldBe(2);
-        metadata["aaa.asdf"].ShouldBe(3);
-        metadata["aaa.abc"].ShouldBe(4);
+        metadata["aaa", "asdf"].ShouldBe(3);
+        metadata["aaa", "abc"].ShouldBe(4);
     }
 
     [Fact]
     public void Add_Values_Fail()
     {
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
-        metadata.Add("abc", 1);
-        metadata.Add("asdf.aaa.abc", 1);
+        metadata.Add(1, "abc");
+        metadata.Add(1, "asdf", "aaa", "abc");
 
         Should.Throw<ArgumentException>(() =>
         {
-            metadata.Add("abc.asdf", 2);
+            metadata.Add(2, "abc", "asdf");
         });
 
         Should.Throw<ArgumentException>(() =>
         {
-            metadata.Add("abc.asdf.aaaa", 2);
+            metadata.Add(2, "abc", "asdf", "aaaa");
         });
 
         Should.Throw<ArgumentException>(() =>
         {
-            metadata.Add("asdf", 2);
+            metadata.Add(2, "asdf");
         });
 
         Should.Throw<ArgumentException>(() =>
         {
-            metadata.Add("asdf.aaa", 2);
+            metadata.Add(2, "asdf", "aaa");
         });
     }
 
     [Fact]
     public void TryAdd_Values()
     {
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
-        metadata.TryAddValue("abc", 1).ShouldBeTrue();
-        metadata.TryAddValue("abc", 2).ShouldBeFalse();
-        metadata.TryAddValue("abc.asdf", 3).ShouldBeFalse();
-        metadata.TryAddValue("aaa.asdf", 4).ShouldBeTrue();
+        metadata.TryAddValue(1, "abc").ShouldBeTrue();
+        metadata.TryAddValue(2, "abc").ShouldBeFalse();
+        metadata.TryAddValue(3, "abc", "asdf").ShouldBeFalse();
+        metadata.TryAddValue(4, "aaa", "asdf").ShouldBeTrue();
 
         metadata["abc"].ShouldBe(1);
-        metadata["aaa.asdf"].ShouldBe(4);
+        metadata["aaa", "asdf"].ShouldBe(4);
     }
 
     [Fact]
     public void Set_Values()
     {
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
         metadata["abc"] = 1;
         metadata["abc"] = 2;
 
         Should.Throw<ArgumentException>(() =>
         {
-            metadata["abc.asdf"] = 3;
+            metadata["abc", "asdf"] = 3;
         });
 
-        metadata["aaa.asdf"] = 4;
+        metadata["aaa", "asdf"] = 4;
 
         metadata["abc"].ShouldBe(2);
-        metadata["aaa.asdf"].ShouldBe(4);
+        metadata["aaa", "asdf"].ShouldBe(4);
     }
 
     [Fact]
     public void Get_Values()
     {
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
-        metadata.Add("abc", 1);
-        metadata.Add("aaa.asdf", 2);
+        metadata.Add(1, "abc");
+        metadata.Add(2, "aaa", "asdf");
 
         metadata.GetValue("abc").ShouldBe(1);
-        metadata.GetValue("aaa.asdf").ShouldBe(2);
+        metadata.GetValue("aaa", "asdf").ShouldBe(2);
 
         Should.Throw<ArgumentException>(() =>
         {
@@ -100,82 +100,82 @@ public class MetadataObjectTest
         });
         Should.Throw<ArgumentException>(() =>
         {
-            metadata.GetValue("eee.abc");
+            metadata.GetValue("eee", "abc");
         });
         Should.Throw<ArgumentException>(() =>
         {
-            metadata.GetValue("aaa.abc");
+            metadata.GetValue("aaa", "abc");
         });
     }
 
     [Fact]
     public void TryGet_Values()
     {
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
-        metadata.Add("abc", 1);
-        metadata.Add("aaa.asdf", 2);
+        metadata.Add(1, "abc");
+        metadata.Add(2, "aaa", "asdf");
 
-        metadata.TryGetValue("abc", out var value).ShouldBeTrue();
+        metadata.TryGetValue(out var value, "abc").ShouldBeTrue();
         value.ShouldBe(1);
 
-        metadata.TryGetValue("aaa.asdf", out value).ShouldBeTrue();
+        metadata.TryGetValue(out value, "aaa", "asdf").ShouldBeTrue();
         value.ShouldBe(2);
 
-        metadata.TryGetValue("aaa", out _).ShouldBeTrue();
+        metadata.TryGetValue(out _, "aaa").ShouldBeTrue();
 
-        metadata.TryGetValue("asdf", out _).ShouldBeFalse();
-        metadata.TryGetValue("eee.abc", out _).ShouldBeFalse();
-        metadata.TryGetValue("aaa.abc", out _).ShouldBeFalse();
+        metadata.TryGetValue(out _, "asdf").ShouldBeFalse();
+        metadata.TryGetValue(out _, "eee", "abc").ShouldBeFalse();
+        metadata.TryGetValue(out _, "aaa", "abc").ShouldBeFalse();
     }
 
     [Fact]
     public void Contains_Values()
     {
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
-        metadata.Add("abc", 1);
-        metadata.Add("aaa.asdf", 2);
+        metadata.Add(1, "abc");
+        metadata.Add(2, "aaa", "asdf");
 
         metadata.Contains("abc").ShouldBeTrue();
         metadata.Contains("aaa").ShouldBeTrue();
-        metadata.Contains("aaa.asdf").ShouldBeTrue();
+        metadata.Contains("aaa", "asdf").ShouldBeTrue();
 
         metadata.Contains("asdf").ShouldBeFalse();
-        metadata.Contains("aaa.abc").ShouldBeFalse();
+        metadata.Contains("aaa", "abc").ShouldBeFalse();
     }
 
     [Fact]
     public void Remove_Values()
     {
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
-        metadata.Add("abc", 1);
-        metadata.Add("aaa.asdf", 2);
+        metadata.Add(1, "abc");
+        metadata.Add(2, "aaa", "asdf");
 
         metadata.Remove("abc").ShouldBeTrue();
         metadata.Contains("abc").ShouldBeFalse();
 
-        metadata.Remove("aaa.asdf").ShouldBeTrue();
-        metadata.Contains("aaa.asdf").ShouldBeFalse();
+        metadata.Remove("aaa", "asdf").ShouldBeTrue();
+        metadata.Contains("aaa", "asdf").ShouldBeFalse();
         metadata.Contains("aaa").ShouldBeTrue();
 
         metadata.Remove("aaa").ShouldBeTrue();
         metadata.Contains("aaa").ShouldBeFalse();
 
         metadata.Remove("asdf").ShouldBeFalse();
-        metadata.Remove("aaa.abc").ShouldBeFalse();
+        metadata.Remove("aaa", "abc").ShouldBeFalse();
     }
 
     [Fact]
     public void Clear()
     {
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
-        metadata.Add("abc", 1);
-        metadata.Add("def", 2);
-        metadata.Add("aaa.asdf", 3);
-        metadata.Add("aaa.abc", 4);
+        metadata.Add(1, "abc");
+        metadata.Add(2, "def");
+        metadata.Add(3, "aaa", "asdf");
+        metadata.Add(4, "aaa", "abc");
 
         metadata.Clear();
         metadata.Contains("abc").ShouldBeFalse();
@@ -184,33 +184,33 @@ public class MetadataObjectTest
     [Fact]
     public void Copy()
     {
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
         metadata["abc"] = 1;
-        metadata["aaa.asdf.test"] = 2;
-        metadata["aaa.aaa"] = 4;
-        metadata["aaa.123"] = 99;
-        metadata["aaa.nest.value"] = 5;
-        metadata["test.key"] = 3;
+        metadata["aaa", "asdf", "test"] = 2;
+        metadata["aaa", "aaa"] = 4;
+        metadata["aaa", "123"] = 99;
+        metadata["aaa", "nest", "value"] = 5;
+        metadata["test", "key"] = 3;
 
         var copy = metadata.Copy();
         copy["abc"].ShouldBe(1);
-        copy["aaa.asdf.test"].ShouldBe(2);
-        copy["aaa.aaa"].ShouldBe(4);
-        copy["aaa.123"].ShouldBe(99);
-        copy["aaa.nest.value"].ShouldBe(5);
-        copy["test.key"].ShouldBe(3);
+        copy["aaa", "asdf", "test"].ShouldBe(2);
+        copy["aaa", "aaa"].ShouldBe(4);
+        copy["aaa", "123"].ShouldBe(99);
+        copy["aaa", "nest", "value"].ShouldBe(5);
+        copy["test", "key"].ShouldBe(3);
     }
 
     [Fact]
     public void Get_Dictionary()
     {
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
         metadata["abc"] = 1;
-        metadata["aaa.asdf.test"] = 2;
-        metadata["aaa.aaa"] = 4;
-        metadata["aaa.123"] = 99;
-        metadata["aaa.nest.value"] = 5;
-        metadata["test.key"] = 3;
+        metadata["aaa", "asdf", "test"] = 2;
+        metadata["aaa", "aaa"] = 4;
+        metadata["aaa", "123"] = 99;
+        metadata["aaa", "nest", "value"] = 5;
+        metadata["test", "key"] = 3;
 
         var dictionary = metadata.GetDictionary();
 
@@ -225,15 +225,15 @@ public class MetadataObjectTest
     [Fact]
     public void Get_Dictionary_Flattened()
     {
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
         metadata["abc"] = 1;
-        metadata["aaa.asdf.test"] = 2;
-        metadata["aaa.aaa"] = 4;
-        metadata["aaa.123"] = 99;
-        metadata["aaa.nest.value"] = 5;
-        metadata["test.key"] = 3;
+        metadata["aaa", "asdf", "test"] = 2;
+        metadata["aaa", "aaa"] = 4;
+        metadata["aaa", "123"] = 99;
+        metadata["aaa", "nest", "value"] = 5;
+        metadata["test", "key"] = 3;
 
-        var dictionary = metadata.GetFlattenedDictionary();
+        var dictionary = metadata.GetFlattenedDictionary(".");
 
         dictionary["abc"].ShouldBe(1);
         dictionary["aaa.asdf.test"].ShouldBe(2);
@@ -253,7 +253,7 @@ public class MetadataObjectTest
                 "aaa",
                 new Dictionary<object, object?>
                 {
-                    { "asdf.test", 2 },
+                    { "asdf", 2 },
                     { "aaa", 4 },
                     { 123, 99 },
                     {
@@ -265,20 +265,20 @@ public class MetadataObjectTest
                     }
                 }
             },
-            { "test.key", 3 },
+            { "test", 3 },
         };
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
         metadata.From(dict);
 
         metadata.GetValue("abc").ShouldBe(1);
-        metadata.GetValue("aaa.asdf.test").ShouldBe(2);
-        metadata.GetValue("aaa.aaa").ShouldBe(4);
-        metadata.GetValue("aaa.123").ShouldBe(99);
-        metadata.GetValue("aaa.nest.value").ShouldBe(5);
-        metadata.GetValue("test.key").ShouldBe(3);
+        metadata.GetValue("aaa", "asdf").ShouldBe(2);
+        metadata.GetValue("aaa", "aaa").ShouldBe(4);
+        metadata.GetValue("aaa", "123").ShouldBe(99);
+        metadata.GetValue("aaa", "nest", "value").ShouldBe(5);
+        metadata.GetValue("test").ShouldBe(3);
     }
 
-    private object? GetNestedValue(IDictionary<string, object?> dictionary, params string[] keys)
+    private static object? GetNestedValue(IDictionary<string, object?> dictionary, params string[] keys)
     {
         object? dict = dictionary;
         foreach (var key in keys)

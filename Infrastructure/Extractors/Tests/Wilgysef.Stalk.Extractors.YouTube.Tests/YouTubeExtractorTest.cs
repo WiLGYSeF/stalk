@@ -129,7 +129,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(159);
         results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
@@ -142,7 +142,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/videos"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(130);
         results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
@@ -155,7 +155,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/playlist?list=UUdYR5Oyz8Q4g0ZmB4PkTD7g"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(130);
         results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
@@ -169,41 +169,41 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/watch?v=_BSSJi-sHh8"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(2);
         var thumbnailResult = results.Single(r => r.ItemId == "_BSSJi-sHh8#thumb");
         thumbnailResult.Uri.AbsoluteUri.StartsWith("https://img.youtube.com/vi_webp/_BSSJi-sHh8/maxresdefault.webp");
-        thumbnailResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
-        thumbnailResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
-        thumbnailResult.Metadata["file.extension"].ShouldBe("webp");
-        thumbnailResult.Metadata["video.published"].ShouldBe("20210407");
-        thumbnailResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20210407__BSSJi-sHh8#thumb");
-        thumbnailResult.Metadata["video.id"].ShouldBe("_BSSJi-sHh8");
-        thumbnailResult.Metadata["video.title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
-        thumbnailResult.Metadata["video.duration"].ShouldBe("03:45");
-        thumbnailResult.Metadata["video.duration_seconds"].ShouldBe(225.966);
-        thumbnailResult.Metadata["video.description"].ShouldBe("I love shotguns!!!\n私の初めての英語のカバー曲です。温かく見守ってください。\nIt's my first cover in English song! Please listen warmly!\n\noriginal : The Cab Angel With A Shotgun\nmix : たけまる 様 @takemaru_game\nillust : あやみ 様 @ayamy_garubinu\nvocal,movie : うと @amatsukauto\n\n☆゜+.*.+゜☆゜+.*.+゜☆゜+.*.+゜☆");
-        thumbnailResult.Metadata["video.view_count"].ShouldBe("2,700,338 views");
-        thumbnailResult.Metadata["video.like_count"].ShouldBe("113,285 likes");
-        thumbnailResult.Metadata["video.comment_count"].ShouldBe("5.4K");
+        thumbnailResult.Metadata!["channel", "id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
+        thumbnailResult.Metadata["channel", "name"].ShouldBe("Uto Ch. 天使うと");
+        thumbnailResult.Metadata["file", "extension"].ShouldBe("webp");
+        thumbnailResult.Metadata["origin", "item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20210407__BSSJi-sHh8#thumb");
+        thumbnailResult.Metadata["video", "comment_count"].ShouldBe("5.4K");
+        thumbnailResult.Metadata["video", "description"].ShouldBe("I love shotguns!!!\n私の初めての英語のカバー曲です。温かく見守ってください。\nIt's my first cover in English song! Please listen warmly!\n\noriginal : The Cab Angel With A Shotgun\nmix : たけまる 様 @takemaru_game\nillust : あやみ 様 @ayamy_garubinu\nvocal,movie : うと @amatsukauto\n\n☆゜+.*.+゜☆゜+.*.+゜☆゜+.*.+゜☆");
+        thumbnailResult.Metadata["video", "duration"].ShouldBe("03:45");
+        thumbnailResult.Metadata["video", "duration_seconds"].ShouldBe(225.966);
+        thumbnailResult.Metadata["video", "id"].ShouldBe("_BSSJi-sHh8");
+        thumbnailResult.Metadata["video", "like_count"].ShouldBe("113,285 likes");
+        thumbnailResult.Metadata["video", "published"].ShouldBe("20210407");
+        thumbnailResult.Metadata["video", "title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
+        thumbnailResult.Metadata["video", "view_count"].ShouldBe("2,700,338 views");
         thumbnailResult.Type.ShouldBe(JobTaskType.Download);
 
         var videoResult = results.Single(r => r.ItemId == "_BSSJi-sHh8");
         videoResult.Uri.AbsoluteUri.ShouldBe("https://www.youtube.com/watch?v=_BSSJi-sHh8");
-        videoResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
-        videoResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
-        videoResult.Metadata["file.extension"].ShouldBe("%(ext)s");
-        videoResult.Metadata["video.published"].ShouldBe("20210407");
-        videoResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20210407__BSSJi-sHh8");
-        videoResult.Metadata["video.id"].ShouldBe("_BSSJi-sHh8");
-        videoResult.Metadata["video.title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
-        videoResult.Metadata["video.duration"].ShouldBe("03:45");
-        videoResult.Metadata["video.duration_seconds"].ShouldBe(225.966);
-        videoResult.Metadata["video.description"].ShouldBe("I love shotguns!!!\n私の初めての英語のカバー曲です。温かく見守ってください。\nIt's my first cover in English song! Please listen warmly!\n\noriginal : The Cab Angel With A Shotgun\nmix : たけまる 様 @takemaru_game\nillust : あやみ 様 @ayamy_garubinu\nvocal,movie : うと @amatsukauto\n\n☆゜+.*.+゜☆゜+.*.+゜☆゜+.*.+゜☆");
-        videoResult.Metadata["video.view_count"].ShouldBe("2,700,338 views");
-        videoResult.Metadata["video.like_count"].ShouldBe("113,285 likes");
-        videoResult.Metadata["video.comment_count"].ShouldBe("5.4K");
+        videoResult.Metadata!["channel", "id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
+        videoResult.Metadata["channel", "name"].ShouldBe("Uto Ch. 天使うと");
+        videoResult.Metadata["file", "extension"].ShouldBe("%(ext)s");
+        videoResult.Metadata["origin", "item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20210407__BSSJi-sHh8");
+        videoResult.Metadata["video", "comment_count"].ShouldBe("5.4K");
+        videoResult.Metadata["video", "description"].ShouldBe("I love shotguns!!!\n私の初めての英語のカバー曲です。温かく見守ってください。\nIt's my first cover in English song! Please listen warmly!\n\noriginal : The Cab Angel With A Shotgun\nmix : たけまる 様 @takemaru_game\nillust : あやみ 様 @ayamy_garubinu\nvocal,movie : うと @amatsukauto\n\n☆゜+.*.+゜☆゜+.*.+゜☆゜+.*.+゜☆");
+        videoResult.Metadata["video", "duration_seconds"].ShouldBe(225.966);
+        videoResult.Metadata["video", "duration"].ShouldBe("03:45");
+        videoResult.Metadata["video", "like_count"].ShouldBe("113,285 likes");
+        videoResult.Metadata["video", "id"].ShouldBe("_BSSJi-sHh8");
+        videoResult.Metadata["video", "published"].ShouldBe("20210407");
+        videoResult.Metadata["video", "title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
+        videoResult.Metadata["video", "view_count"].ShouldBe("2,700,338 views");
         videoResult.Type.ShouldBe(JobTaskType.Download);
     }
 
@@ -213,7 +213,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(6);
         results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
@@ -232,42 +232,42 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri(uri),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(38);
         results.Where(r => r.ItemId!.Contains("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")).Count().ShouldBe(2);
 
         var textResult = results.Single(r => r.ItemId == "UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         textResult.Uri.AbsoluteUri.ShouldBe("data:text/plain;charset=UTF-8;base64,44K544Kx44K444Ol44O844Or44KS5b6p5rS744GV44Gb44G+44GX44Gf77yB4pypLirLmg0K44GT44KM44KS57aa44GR44Gm44GE44GP44Gu44GM55uu5qiZ44Gt44CC44CCDQrjgYLjgIHjgZ3jgYbjgYTjgYjjgbBUd2l0Y2jjgpLlp4vjgoHjgZ/jgojvvZ7vvIHvvIENCuOBn+OBvuOBq+aBr+aKnOOBjeOBq+S9v+OBhuS6iOWumuOBoOOBi+OCieaah+OBquS6uuOBr+imi+OBq+adpeOBpuOBre+9nuKZoQrjgrnjgrHjgrjjg6Xjg7zjg6vjga/ml6XmnKzmmYLplpPjgaDjgojvvZ4KCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQoKSSBoYXZlIG15IHNjaGVkdWxlIGJhY2sh4pypLirLmg0KTXkgZ29hbCBpcyB0byBrZWVwIHRoaXMgZ29pbmcuDQpPaCwgYnkgdGhlIHdheSwgSSd2ZSBzdGFydGVkIFR3aXRjaC4NCiBJJ20gZ29pbmcgdG8gdXNlIGl0IHRvIHJlbGF4IG9uY2UgaW4gYSB3aGlsZSwgc28gaWYgeW91J3JlIGZyZWUsIGNvbWUgY2hlY2sgaXQgb3V0fuKZoQoK4oC7VGhpcyBzY2hlZHVsZSBpcyBpbiBKYXBhbiB0aW1lIQoKCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQoKCg0KVXRv4oCZ772TIFR3aXRjaCAgaHR0cHM6Ly93d3cudHdpdGNoLnR2L3V0b19fXwoKCuKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqe+9peKcqQ==");
-        textResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
-        textResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
-        textResult.Metadata["file.extension"].ShouldBe("txt");
-        textResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#20211201_UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
-        textResult.Metadata["origin.uri"].ShouldBe("https://www.youtube.com/post/UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
-        textResult.Metadata["post.id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
-        textResult.Metadata["post.published"].ShouldBe("20211201");
-        textResult.Metadata["post.published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
-        textResult.Metadata["post.votes"].ShouldBe("4.3K");
+        textResult.Metadata!["channel", "id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
+        textResult.Metadata["channel", "name"].ShouldBe("Uto Ch. 天使うと");
+        textResult.Metadata["file", "extension"].ShouldBe("txt");
+        textResult.Metadata["origin", "item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#20211201_UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
+        textResult.Metadata["origin", "uri"].ShouldBe("https://www.youtube.com/post/UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
+        textResult.Metadata["post", "id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
+        textResult.Metadata["post", "published"].ShouldBe("20211201");
+        textResult.Metadata["post", "published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
+        textResult.Metadata["post", "votes"].ShouldBe("4.3K");
         textResult.Type.ShouldBe(JobTaskType.Download);
 
         var imageResult = results.Single(r => r.ItemId == "UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP#image");
         imageResult.Uri.AbsoluteUri.ShouldBe("https://yt3.ggpht.com/BRWDFVKhADpFgyxc1iZgYop1k3QJGR67yoYoFulEYm35Jrvb7A2gLjpodlKVhmGtlBuUvx0VkQLD1Q=s1920-nd-v1");
-        imageResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
-        imageResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
-        imageResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#20211201_UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP#image");
-        imageResult.Metadata["post.id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
-        imageResult.Metadata["post.published"].ShouldBe("20211201");
-        imageResult.Metadata["post.published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
-        imageResult.Metadata["post.votes"].ShouldBe("4.3K");
+        imageResult.Metadata!["channel", "id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
+        imageResult.Metadata["channel", "name"].ShouldBe("Uto Ch. 天使うと");
+        imageResult.Metadata["origin", "item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#20211201_UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP#image");
+        imageResult.Metadata["post", "id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
+        imageResult.Metadata["post", "published"].ShouldBe("20211201");
+        imageResult.Metadata["post", "published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
+        imageResult.Metadata["post", "votes"].ShouldBe("4.3K");
         imageResult.Type.ShouldBe(JobTaskType.Download);
 
         var emojiResult = results.First(r => r.ItemId!.Contains("#emoji#"));
         emojiResult.ItemId.ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#emoji#YjYIYfvYAamL8gT4576oCA");
         emojiResult.Uri.AbsoluteUri.ShouldBe("https://yt3.ggpht.com/aI7NJRY3Q0B5jo-3nISoXGjmgXBNbB8ClpJaJNP5IhTLbGNWDea_m_XbTx5cIU5GKmZwEMKQoA=w512-h512-c-k-nd");
-        emojiResult.Metadata!["file.extension"].ShouldBe("png");
-        emojiResult.Metadata["emoji.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g/YjYIYfvYAamL8gT4576oCA");
-        emojiResult.Metadata["emoji.name"].ShouldBe("konuto");
-        emojiResult.Metadata["emoji.sub_id"].ShouldBe("YjYIYfvYAamL8gT4576oCA");
+        emojiResult.Metadata!["file", "extension"].ShouldBe("png");
+        emojiResult.Metadata["emoji", "id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g/YjYIYfvYAamL8gT4576oCA");
+        emojiResult.Metadata["emoji", "name"].ShouldBe("konuto");
+        emojiResult.Metadata["emoji", "sub_id"].ShouldBe("YjYIYfvYAamL8gT4576oCA");
         emojiResult.Type.ShouldBe(JobTaskType.Download);
     }
 
@@ -282,7 +282,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri(uri),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(36);
         results.All(r => r.ItemId!.Contains("#emoji#")).ShouldBeTrue();
@@ -313,7 +313,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/watch?v=_BSSJi-sHh8"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         request!.Headers.Single(p => p.Key == "Cookie").Value
             .ShouldBe(new[] { string.Join("; ", cookies.Select(q => $"{q.Key}={q.Value}")) });
@@ -332,7 +332,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/watch?v=_BSSJi-sHh8"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
         var thumbnailResult = results.Single(r => r.ItemId == "_BSSJi-sHh8#thumb");
         thumbnailResult.Uri.AbsoluteUri.EndsWith(".jpg").ShouldBeTrue();
     }

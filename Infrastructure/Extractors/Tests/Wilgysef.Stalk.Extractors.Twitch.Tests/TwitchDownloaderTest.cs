@@ -80,7 +80,7 @@ public class TwitchDownloaderTest : BaseTest
             "662849096#20220831_1577714683.%(ext)s",
             "1577714683",
             "meta.txt",
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(moveInfoJson ? 2 : 3);
         var subtitlesResult = results.Single(r => r.Path.EndsWith("662849096#20220831_1577714683.rechat.json"));
