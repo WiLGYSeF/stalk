@@ -32,7 +32,7 @@ public static class EnumUtils
     /// <param name="value">Value to parse to enum.</param>
     /// <param name="result">Parse result.</param>
     /// <param name="ignoreCase">Whether to ignore case when parsing.</param>
-    /// <returns><c>true</c> if parsing was successful, <c>false</c> otherwise.</returns>
+    /// <returns><see langword="true"/> if parsing was successful, otherwise <see langword="false"/>.</returns>
     public static bool TryParse<T>(string value, out T result, bool ignoreCase = true) where T : struct, IConvertible
     {
         try
@@ -109,7 +109,7 @@ public static class EnumUtils
     /// <param name="enumMemberValueRequired">
     /// Whether to throw if no matching enum member value is found.
     /// Otherwise try to parse with <see cref="Parse{T}(string, bool)"/>.</param>
-    /// <returns><c>true</c> if parsing was successful, <c>false</c> otherwise.</returns>
+    /// <returns><see langword="true"/> if parsing was successful, otherwise <see langword="false"/>.</returns>
     public static bool TryParseEnumMemberValue<T>(
         string value,
         out T result,

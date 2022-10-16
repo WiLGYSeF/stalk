@@ -4,11 +4,26 @@ namespace Wilgysef.Stalk.Core.Utilities;
 
 public static class JsonUtils
 {
+    /// <summary>
+    /// Deserializes JSON.
+    /// </summary>
+    /// <typeparam name="T">Deserialized target type.</typeparam>
+    /// <param name="json">JSON.</param>
+    /// <param name="options">JSON serializer options.</param>
+    /// <returns>Deserialized object.</returns>
+    /// <exception cref="JsonException">The JSON is invalid or could not be deserialized.</exception>
     public static T? TryDeserialize<T>(string json, JsonSerializerOptions? options = null)
     {
         return TryDeserialize<T>(json, options, out _);
     }
 
+    /// <summary>
+    /// Deserializes JSON object.
+    /// </summary>
+    /// <param name="json">JSON.</param>
+    /// <param name="options">JSON serializer options.</param>
+    /// <returns>Deserialized JSON object.</returns>
+    /// <exception cref="JsonException">The JSON is invalid or could not be deserialized.</exception>
     public static IDictionary<string, object?>? TryDeserializeObject(string json, JsonSerializerOptions? options = null)
     {
         var dict = TryDeserialize<IDictionary<string, object?>>(json, options, out _);
@@ -25,6 +40,14 @@ public static class JsonUtils
         return dict;
     }
 
+    /// <summary>
+    /// Deserializes JSON.
+    /// </summary>
+    /// <typeparam name="T">Deserialized target type.</typeparam>
+    /// <param name="json">JSON.</param>
+    /// <param name="options">JSON serializer options.</param>
+    /// <param name="jsonException">JSON exception if deserializing failed.</param>
+    /// <returns>Deserialized object, or <see langword="default"/> if a <see cref="JsonException"/> occurred.</returns>
     public static T? TryDeserialize<T>(string json, JsonSerializerOptions? options, out JsonException? jsonException)
     {
         try
@@ -39,6 +62,13 @@ public static class JsonUtils
         }
     }
 
+    /// <summary>
+    /// Gets the value of the <see cref="JsonElement"/>, typed accordingly.
+    /// </summary>
+    /// <param name="element">JSON element.</param>
+    /// <param name="type">Value type.</param>
+    /// <returns>Value.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The element's <see cref="JsonElement.ValueKind"/> is unknown.</exception>
     public static object? GetJsonElementValue(JsonElement element, out Type? type)
     {
         switch (element.ValueKind)
@@ -74,6 +104,12 @@ public static class JsonUtils
         }
     }
 
+    /// <summary>
+    /// Gets the numeric value of the <see cref="JsonElement"/>, typed accordingly.
+    /// </summary>
+    /// <param name="element">JSON element.</param>
+    /// <param name="type">Value type.</param>
+    /// <returns>Value.</returns>
     public static object GetJsonElementNumber(JsonElement element, out Type type)
     {
         if (element.TryGetInt32(out var intValue))
