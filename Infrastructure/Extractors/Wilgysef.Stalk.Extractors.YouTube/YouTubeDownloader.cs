@@ -7,7 +7,6 @@ using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.FilenameSlugs;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.MetadataSerializers;
-using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.Core.Shared.ProcessServices;
 using Wilgysef.Stalk.Core.Shared.StringFormatters;
 using Wilgysef.Stalk.Extractors.YoutubeDl.Core;
@@ -25,7 +24,6 @@ public class YouTubeDownloader : DownloaderBase
     private readonly IFileSystem _fileSystem;
     private readonly IStringFormatter _stringFormatter;
     private readonly IFilenameSlugSelector _filenameSlugSelector;
-    private readonly ExternalBinariesOptions _externalBinariesOptions;
     private readonly IProcessService _processService;
 
     public YouTubeDownloader(
@@ -33,7 +31,6 @@ public class YouTubeDownloader : DownloaderBase
         IStringFormatter stringFormatter,
         IFilenameSlugSelector filenameSlugSelector,
         IMetadataSerializer metadataSerializer,
-        ExternalBinariesOptions externalBinariesOptions,
         IProcessService processService,
         HttpClient httpClient)
         : base(
@@ -46,7 +43,6 @@ public class YouTubeDownloader : DownloaderBase
         _fileSystem = fileSystem;
         _stringFormatter = stringFormatter;
         _filenameSlugSelector = filenameSlugSelector;
-        _externalBinariesOptions = externalBinariesOptions;
         _processService = processService;
     }
 

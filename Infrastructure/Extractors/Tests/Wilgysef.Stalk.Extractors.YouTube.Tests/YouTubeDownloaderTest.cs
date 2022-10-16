@@ -8,7 +8,6 @@ using Wilgysef.HttpClientInterception;
 using Wilgysef.Stalk.Core.FilenameSlugs;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.MetadataSerializers;
-using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.Core.StringFormatters;
 using Wilgysef.Stalk.Extractors.TestBase;
 using Wilgysef.Stalk.TestBase.Shared.Mocks;
@@ -53,10 +52,6 @@ public class YouTubeDownloaderTest : BaseTest
             new StringFormatter(),
             new FilenameSlugSelector(new[] { new WindowsFilenameSlug() }),
             new MetadataSerializer(),
-            new ExternalBinariesOptions
-            {
-                Path = @"D:\projects\stalk\Wilgysef.Stalk\ExternalBinaries\"
-            },
             _processService,
             new HttpClient(interceptor));
     }
