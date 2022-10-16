@@ -66,7 +66,7 @@ public abstract class YouTubeExtractorBase
                         isWebNativeShareAvailable = false,
                         webDisplayMode = "WEB_DISPLAY_MODE_BROWSER"
                     },
-                    originalUrl = originalUrl,
+                    originalUrl,
                     platform = "DESKTOP",
                     userInterfaceTheme = "USER_INTERFACE_THEME_DARK",
                 },
@@ -133,7 +133,7 @@ public abstract class YouTubeExtractorBase
         return request;
     }
 
-    protected static T? GetMetadata<T>(IMetadataObject metadata, JToken? token, params string[] keyParts)
+    protected static T? GetMetadata<T>(IMetadataObject metadata, JToken? token, params string[] keys)
     {
         if (token == null)
         {
@@ -141,7 +141,7 @@ public abstract class YouTubeExtractorBase
         }
 
         var value = token.Value<T>();
-        metadata.SetByParts(value, keyParts);
+        metadata[keys] = value;
         return value;
     }
 

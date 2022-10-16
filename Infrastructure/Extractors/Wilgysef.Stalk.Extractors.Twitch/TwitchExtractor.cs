@@ -224,7 +224,7 @@ public class TwitchExtractor : IExtractor
         if (DateTime.TryParse(video.SelectToken("$..publishedAt")?.ToString(), out var publishedAtResult))
         {
             publishedAt = publishedAtResult;
-            metadata.SetByParts(publishedAt.Value.ToString("yyyyMMdd"), MetadataVideoPublishedAtKeys);
+            metadata[MetadataVideoPublishedAtKeys] = publishedAt.Value.ToString("yyyyMMdd");
         }
 
         var title = video.SelectToken("$..title")?.ToString();
@@ -233,24 +233,24 @@ public class TwitchExtractor : IExtractor
             .Select(t => t["localizedName"]?.ToString())
             .Where(t => t != null);
 
-        metadata.SetByParts(videoId, MetadataVideoIdKeys);
+        metadata[MetadataVideoIdKeys] = videoId;
 
         if (videoLengthSeconds.HasValue)
         {
-            metadata.SetByParts(videoLengthSeconds.Value, MetadataVideoLengthSecondsKeys);
-            metadata.SetByParts(TimeSpanToString(TimeSpan.FromSeconds(videoLengthSeconds.Value)), MetadataVideoLengthKeys);
+            metadata[MetadataVideoLengthSecondsKeys] = videoLengthSeconds.Value;
+            metadata[MetadataVideoLengthKeys] = TimeSpanToString(TimeSpan.FromSeconds(videoLengthSeconds.Value));
         }
 
-        metadata.SetByParts(channelId, MetadataChannelIdKeys);
-        metadata.SetByParts(channelName, MetadataChannelNameKeys);
-        metadata.SetByParts(channelLogin, MetadataChannelLoginKeys);
+        metadata[MetadataChannelIdKeys] = channelId;
+        metadata[MetadataChannelNameKeys] = channelName;
+        metadata[MetadataChannelLoginKeys] = channelLogin;
 
-        metadata.SetByParts(title, MetadataVideoTitleKeys);
-        metadata.SetByParts(viewCount, MetadataVideoViewCountKeys);
+        metadata[MetadataVideoTitleKeys] = title;
+        metadata[MetadataVideoViewCountKeys] = viewCount;
 
         if (contentTags?.Any() ?? false)
         {
-            metadata.SetByParts(string.Join(", ", contentTags), MetadataVideoTagsKeys);
+            metadata[MetadataVideoTagsKeys] = string.Join(", ", contentTags);
         }
 
         var gameMetadata = video.SelectToken("$..game");
@@ -267,10 +267,10 @@ public class TwitchExtractor : IExtractor
 
             if (publishedAt.HasValue)
             {
-                thumbnailMetadata.SetByParts($"{channelId}#video#{publishedAt.Value:yyyyMMdd}_{videoId}#thumb", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+                thumbnailMetadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#video#{publishedAt.Value:yyyyMMdd}_{videoId}#thumb";
             }
 
-            thumbnailMetadata.SetByParts(GetExtensionFromUri(new Uri(thumbnailUrl)), MetadataObjectConsts.File.ExtensionKeys);
+            thumbnailMetadata[MetadataObjectConsts.File.ExtensionKeys] = GetExtensionFromUri(new Uri(thumbnailUrl));
 
             yield return new ExtractResult(
                 thumbnailUrl,
@@ -281,10 +281,10 @@ public class TwitchExtractor : IExtractor
 
         if (publishedAt.HasValue)
         {
-            metadata.SetByParts($"{channelId}#video#{publishedAt.Value:yyyyMMdd}_{videoId}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+            metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#video#{publishedAt.Value:yyyyMMdd}_{videoId}";
         }
 
-        metadata.SetByParts(YoutubeDlFileExtensionTemplate, MetadataObjectConsts.File.ExtensionKeys);
+        metadata[MetadataObjectConsts.File.ExtensionKeys] = YoutubeDlFileExtensionTemplate;
 
         yield return new ExtractResult(
             $"https://www.twitch.tv/videos/{videoId}",
@@ -341,7 +341,7 @@ public class TwitchExtractor : IExtractor
 
         var clipSlug = match.Groups["clip"].Value;
 
-        metadata.SetByParts(clipSlug, MetadataClipSlugKeys);
+        metadata[MetadataClipSlugKeys] = clipSlug;
 
         var responses = await GetClipDataAsync(clipSlug, cancellationToken);
 
@@ -358,12 +358,12 @@ public class TwitchExtractor : IExtractor
         if (DateTime.TryParse(comscoreStreamingQuery.SelectToken("$..clip.createdAt")?.ToString(), out var createdAtResult))
         {
             createdAt = createdAtResult;
-            metadata.SetByParts(createdAt.Value.ToString("yyyyMMdd"), MetadataClipCreatedAtKeys);
+            metadata[MetadataClipCreatedAtKeys] = createdAt.Value.ToString("yyyyMMdd");
         }
         var duration = comscoreStreamingQuery.SelectToken("$..clip.durationSeconds")?.Value<int>();
 
-        metadata.SetByParts(TimeSpanToString(duration.HasValue ? TimeSpan.FromSeconds(duration.Value) : null), MetadataClipDurationKeys);
-        metadata.SetByParts(duration, MetadataClipDurationSecondsKeys);
+        metadata[MetadataClipDurationKeys] = TimeSpanToString(duration.HasValue ? TimeSpan.FromSeconds(duration.Value) : null);
+        metadata[MetadataClipDurationSecondsKeys] = duration;
 
         var clipsBroadcasterInfo = responses.Single(r => r.Operation == "ClipsBroadcasterInfo").Data;
         var channelId = GetMetadata<string>(metadata, clipsBroadcasterInfo.SelectToken("$..broadcaster.id"), MetadataChannelIdKeys);
@@ -385,11 +385,11 @@ public class TwitchExtractor : IExtractor
 
         if (createdAt.HasValue)
         {
-            metadata.SetByParts($"{channelId}#clip#{createdAt.Value:yyyyMMdd}_{clipSlug}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+            metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#clip#{createdAt.Value:yyyyMMdd}_{clipSlug}";
         }
 
-        metadata.SetByParts($"https://clips.twitch.tv/{clipSlug}", MetadataObjectConsts.Origin.UriKeys);
-        metadata.SetByParts("mp4", MetadataObjectConsts.File.ExtensionKeys);
+        metadata[MetadataObjectConsts.Origin.UriKeys] = $"https://clips.twitch.tv/{clipSlug}";
+        metadata[MetadataObjectConsts.File.ExtensionKeys] = "mp4";
 
         yield return new ExtractResult(
             $"{videoUrl}?sig={signature}&token={HttpUtility.UrlEncode(token)}",
@@ -446,8 +446,8 @@ public class TwitchExtractor : IExtractor
         var price = subscriptionProduct.SelectToken("$.price")?.ToString();
         var tier = subscriptionProduct.SelectToken("$.tier")?.ToString();
 
-        metadata.SetByParts(price, MetadataEmotePriceKeys);
-        metadata.SetByParts(tier, MetadataEmoteTierKeys);
+        metadata[MetadataEmotePriceKeys] = price;
+        metadata[MetadataEmoteTierKeys] = tier;
 
         var emotes = subscriptionProduct.SelectToken("$.emotes");
         if (emotes== null)
@@ -464,18 +464,13 @@ public class TwitchExtractor : IExtractor
             GetMetadata<string>(emoteMetadata, emote.SelectToken("$.token"), MetadataEmoteTokenKeys);
             var assetType = GetMetadata<string>(emoteMetadata, emote.SelectToken("$.assetType"), MetadataEmoteAssetTypeKeys);
 
-            if (assetType == "ANIMATED")
-            {
-                emoteMetadata.SetByParts("gif", MetadataObjectConsts.File.ExtensionKeys);
-            }
-            else
-            {
-                emoteMetadata.SetByParts("png", MetadataObjectConsts.File.ExtensionKeys);
-            }
+            emoteMetadata[MetadataObjectConsts.File.ExtensionKeys] = assetType == "ANIMATED"
+                ? "gif"
+                : "png";
 
             if (channelId != null)
             {
-                emoteMetadata.SetByParts($"{channelId}#emote#{emoteId}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+                emoteMetadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#emote#{emoteId}";
             }
 
             yield return new ExtractResult(
@@ -564,7 +559,7 @@ public class TwitchExtractor : IExtractor
         return null;
     }
 
-    private static T? GetMetadata<T>(IMetadataObject metadata, JToken? token, params string[] keyParts)
+    private static T? GetMetadata<T>(IMetadataObject metadata, JToken? token, params string[] keys)
     {
         if (token == null)
         {
@@ -572,7 +567,7 @@ public class TwitchExtractor : IExtractor
         }
 
         var value = token.Value<T>();
-        metadata.SetByParts(value, keyParts);
+        metadata[keys] = value;
         return value;
     }
 

@@ -72,7 +72,7 @@ public class TwitchDownloader : DownloaderBase
 
         var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
         var filename = filenameSlug.SlugifyPath(
-            _stringFormatter.Format(filenameTemplate, metadata.GetFlattenedDictionary()));
+            _stringFormatter.Format(filenameTemplate, metadata.GetFlattenedDictionary(MetadataObjectConsts.Separator)));
 
         CreateDirectoriesFromFilename(filename);
 

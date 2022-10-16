@@ -2,6 +2,8 @@
 {
     public static class MetadataObjectConsts
     {
+        public const string Separator = ".";
+
         public static class File
         {
             public static readonly string[] ExtensionKeys = new[] { "file", "extension" };
