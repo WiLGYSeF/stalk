@@ -219,10 +219,16 @@ public class TwitterExtractor : IExtractor
             fullText += "\n" + string.Join('\n', entityUrls);
         }
 
+        var retweetedTweet = legacy["retweeted_status_result"]?["result"];
+        if (retweetedTweet != null)
+        {
+            metadata.SetByParts(retweetedTweet["rest_id"]?.ToString(), "retweet", "tweet_id");
+            metadata.SetByParts(GetUserId(retweetedTweet), "retweet", "user", "id");
+            metadata.SetByParts(GetUserScreenName(retweetedTweet), "retweet", "user", "screen_name");
+        }
+
         metadata.SetByParts("txt", MetadataObjectConsts.File.ExtensionKeys);
         metadata.SetByParts(GetTweetUri(userScreenName, tweetId), MetadataObjectConsts.Origin.UriKeys);
-
-        SetRetweetMetadata(tweet, metadata);
 
         if (fullText.Length > 0)
         {
@@ -367,21 +373,6 @@ public class TwitterExtractor : IExtractor
         return match.Success
             ? $"https://pbs.twimg.com/media/{match.Groups["id"].Value}?format={match.Groups["extension"].Value}&name=large"
             : uri;
-    }
-
-    private static bool SetRetweetMetadata(JToken tweet, IMetadataObject metadata)
-    {
-        var legacy = tweet["legacy"]!;
-        var retweetedTweet = legacy["retweeted_status_result"]?["result"];
-        if (retweetedTweet == null)
-        {
-            return false;
-        }
-
-        metadata.SetByParts(retweetedTweet["rest_id"]?.ToString(), "retweet", "tweet_id");
-        metadata.SetByParts(GetUserId(retweetedTweet), "retweet", "user", "id");
-        metadata.SetByParts(GetUserScreenName(retweetedTweet), "retweet", "user", "screen_name");
-        return true;
     }
 
     private async Task<string> GetUserIdAsync(string userScreenName, CancellationToken cancellationToken)

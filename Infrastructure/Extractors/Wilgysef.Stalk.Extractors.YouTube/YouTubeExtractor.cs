@@ -35,6 +35,16 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         "https://img.youtube.com/vi/{0}/default.jpg",
     };
 
+    private static readonly string[] MetadataVideoIdKeys = new string[] { "video", "id" };
+    private static readonly string[] MetadataVideoTitleKeys = new string[] { "video", "title" };
+    private static readonly string[] MetadataVideoPublishedKeys = new string[] { "video", "published" };
+    private static readonly string[] MetadataVideoDurationKeys = new string[] { "video", "duration" };
+    private static readonly string[] MetadataVideoDurationSecondsKeys = new string[] { "video", "duration_seconds" };
+    private static readonly string[] MetadataVideoViewCountKeys = new string[] { "video", "view_count" };
+    private static readonly string[] MetadataVideoDescriptionKeys = new string[] { "video", "description" };
+    private static readonly string[] MetadataVideoLikeCountKeys = new string[] { "video", "like_count" };
+    private static readonly string[] MetadataVideoCommentCountKeys = new string[] { "video", "comment_count" };
+
     /// <summary>
     /// Template string for file extension with youtube-dl.
     /// </summary>
@@ -213,13 +223,12 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         var initialData = GetYtInitialData(doc);
         var playerResponse = GetYtInitialPlayerResponse(doc);
 
-        var channelId = initialData.SelectToken("$..videoOwnerRenderer.title.runs[0]..browseId")!.ToString();
-        var channelName = initialData.SelectToken("$..videoOwnerRenderer.title.runs[0].text")?.ToString();
+        var channelId = GetMetadata<string>(metadata, initialData.SelectToken("$..videoOwnerRenderer.title.runs[0]..browseId"), MetadataChannelIdKeys);
+        var channelName = GetMetadata<string>(metadata, initialData.SelectToken("$..videoOwnerRenderer.title.runs[0].text"), MetadataChannelNameKeys);
         var videoId = initialData.SelectTokens("$..topLevelButtons..watchEndpoint.videoId").First().ToString();
         var title = ConcatRuns(initialData.SelectToken("$..videoPrimaryInfoRenderer.title.runs"));
         var date = GetDateTime(initialData.SelectToken("$..dateText.simpleText")?.ToString());
         var description = ConcatRuns(initialData.SelectToken("$..description.runs"));
-        var viewCount = initialData.SelectToken("$..viewCount.simpleText")!.ToString();
         var commentCount = initialData.SelectTokens("$..engagementPanels[*].engagementPanelSectionListRenderer")
             .FirstOrDefault(t => t["panelIdentifier"]?.ToString() == "comment-item-section")
             ?.SelectToken("$..contextualInfo.runs[*].text")
@@ -232,17 +241,16 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
         var published = date?.ToString("yyyyMMdd");
 
-        metadata.SetByParts(channelId, MetadataChannelIdKeys);
-        metadata.SetByParts(channelName, MetadataChannelNameKeys);
+        GetMetadata<string>(metadata, initialData.SelectToken("$..viewCount.simpleText"), MetadataVideoViewCountKeys);
+
         metadata.SetByParts(videoId, MetadataVideoIdKeys);
         metadata.SetByParts(title, MetadataVideoTitleKeys);
-        metadata["published"] = published;
+        metadata.SetByParts(published, MetadataVideoPublishedKeys);
         metadata.SetByParts(TimeSpanToString(videoDuration), MetadataVideoDurationKeys);
         metadata.SetByParts(videoDuration?.TotalSeconds, MetadataVideoDurationSecondsKeys);
-        metadata.SetByParts(description, "video", "description");
-        metadata.SetByParts(viewCount, "video", "view_count");
-        metadata.SetByParts(likeCount, "video", "like_count");
-        metadata.SetByParts(commentCount, "video", "comment_count");
+        metadata.SetByParts(description, MetadataVideoDescriptionKeys);
+        metadata.SetByParts(likeCount, MetadataVideoLikeCountKeys);
+        metadata.SetByParts(commentCount, MetadataVideoCommentCountKeys);
 
         var thumbnailResult = await ExtractThumbnailAsync(
             channelId,

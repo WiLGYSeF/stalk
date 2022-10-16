@@ -2,6 +2,7 @@
 using System.Net.Http.Json;
 using HtmlAgilityPack;
 using Wilgysef.Stalk.Core.Shared.DateTimeProviders;
+using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
 namespace Wilgysef.Stalk.Extractors.YouTube;
 
@@ -9,10 +10,6 @@ public abstract class YouTubeExtractorBase
 {
     protected static readonly string[] MetadataChannelIdKeys = new string[] { "channel", "id" };
     protected static readonly string[] MetadataChannelNameKeys = new string[] { "channel", "name" };
-    protected static readonly string[] MetadataVideoIdKeys = new string[] { "video", "id" };
-    protected static readonly string[] MetadataVideoTitleKeys = new string[] { "video", "title" };
-    protected static readonly string[] MetadataVideoDurationKeys = new string[] { "video", "duration" };
-    protected static readonly string[] MetadataVideoDurationSecondsKeys = new string[] { "video", "duration_seconds" };
 
     public IDictionary<string, object?> Config { get; set; } = new Dictionary<string, object?>();
 
@@ -134,6 +131,18 @@ public abstract class YouTubeExtractorBase
             request.Headers.Add("Cookie", ExtractorConfig.CookieString);
         }
         return request;
+    }
+
+    protected static T? GetMetadata<T>(IMetadataObject metadata, JToken? token, params string[] keyParts)
+    {
+        if (token == null)
+        {
+            return default;
+        }
+
+        var value = token.Value<T>();
+        metadata.SetByParts(value, keyParts);
+        return value;
     }
 
     protected DateTime? GetDateTime(string? dateTime)

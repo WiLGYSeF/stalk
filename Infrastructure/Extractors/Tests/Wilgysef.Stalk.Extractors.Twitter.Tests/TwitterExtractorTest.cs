@@ -4,6 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Wilgysef.HttpClientInterception;
+using Wilgysef.Stalk.Core.CacheObjects;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Extractors.TestBase;
@@ -71,9 +72,23 @@ public class TwitterExtractorTest : BaseTest
     [Theory]
     [InlineData("https://twitter.com/amatsukauto/status/1560187874460733440", null)]
     [InlineData("https://twitter.com/amatsukauto", null)]
+    [InlineData("https://twitter.com", null)]
     public void GetItemIds(string uri, string expected)
     {
         _twitterExtractor.GetItemId(new Uri(uri)).ShouldBe(expected);
+    }
+
+    [Fact]
+    public void GetItemIds_Cached_UserId()
+    {
+        _twitterExtractor.Cache = new CacheObject<string, object?>();
+        _twitterExtractor.Cache["UserIds"] = new Dictionary<string, string>
+        {
+            { "amatsukauto", "1308334634745249793" }
+        };
+
+        _twitterExtractor.GetItemId(new Uri("https://twitter.com/amatsukauto/status/1560187874460733440"))
+            .ShouldBe("1308334634745249793#1560187874460733440");
     }
 
     [Fact]
@@ -86,6 +101,35 @@ public class TwitterExtractorTest : BaseTest
 
         results.Count.ShouldBe(99);
         results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
+        // video thumbnails have the same ItemId
+        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(96);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task Get_User_Tweets_Cached_UserId(bool isCacheSet, bool isUserCached)
+    {
+        var userIds = new Dictionary<string, string>();
+
+        _twitterExtractor.Cache = new CacheObject<string, object?>();
+
+        if (isCacheSet)
+        {
+            _twitterExtractor.Cache["UserIds"] = userIds;
+        }
+        if (isUserCached)
+        {
+            userIds["amatsukauto"] = "1308334634745249793";
+        }
+
+        var results = await _twitterExtractor.ExtractAsync(
+            new Uri("https://twitter.com/amatsukauto"),
+            null,
+            new MetadataObject('.')).ToListAsync();
+
+        results.Count.ShouldBe(99);
     }
 
     [Fact]
@@ -161,6 +205,7 @@ public class TwitterExtractorTest : BaseTest
         textResult.Metadata["file.extension"].ShouldBe("txt");
         textResult.Metadata["is_quote_status"].ShouldBe(false);
         textResult.Metadata["lang"].ShouldBe("ja");
+        textResult.Metadata["origin.uri"].ShouldBe("https://twitter.com/amatsukauto/status/1523276529123397632");
         textResult.Metadata["possibly_sensitive"].ShouldBe(false);
         textResult.Metadata["quote_count"].ShouldBe(33);
         textResult.Metadata["reply_count"].ShouldBe(116);
@@ -227,6 +272,7 @@ public class TwitterExtractorTest : BaseTest
         result.Metadata["file.extension"].ShouldBe("txt");
         result.Metadata["is_quote_status"].ShouldBe(false);
         result.Metadata["lang"].ShouldBe("en");
+        result.Metadata["origin.uri"].ShouldBe("https://twitter.com/amatsukauto/status/1567680068113285121");
         result.Metadata["possibly_sensitive"].ShouldBe(false);
         result.Metadata["quote_count"].ShouldBe(0);
         result.Metadata["reply_count"].ShouldBe(0);

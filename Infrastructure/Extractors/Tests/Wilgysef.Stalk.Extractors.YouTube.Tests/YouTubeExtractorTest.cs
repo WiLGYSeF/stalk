@@ -177,7 +177,7 @@ public class YouTubeExtractorTest : BaseTest
         thumbnailResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
         thumbnailResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
         thumbnailResult.Metadata["file.extension"].ShouldBe("webp");
-        thumbnailResult.Metadata["published"].ShouldBe("20210407");
+        thumbnailResult.Metadata["video.published"].ShouldBe("20210407");
         thumbnailResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20210407__BSSJi-sHh8#thumb");
         thumbnailResult.Metadata["video.id"].ShouldBe("_BSSJi-sHh8");
         thumbnailResult.Metadata["video.title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
@@ -194,7 +194,7 @@ public class YouTubeExtractorTest : BaseTest
         videoResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
         videoResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
         videoResult.Metadata["file.extension"].ShouldBe("%(ext)s");
-        videoResult.Metadata["published"].ShouldBe("20210407");
+        videoResult.Metadata["video.published"].ShouldBe("20210407");
         videoResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20210407__BSSJi-sHh8");
         videoResult.Metadata["video.id"].ShouldBe("_BSSJi-sHh8");
         videoResult.Metadata["video.title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
@@ -244,10 +244,10 @@ public class YouTubeExtractorTest : BaseTest
         textResult.Metadata["file.extension"].ShouldBe("txt");
         textResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#20211201_UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         textResult.Metadata["origin.uri"].ShouldBe("https://www.youtube.com/post/UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
-        textResult.Metadata["post_id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
-        textResult.Metadata["published"].ShouldBe("20211201");
-        textResult.Metadata["published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
-        textResult.Metadata["votes"].ShouldBe("4.3K");
+        textResult.Metadata["post.id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
+        textResult.Metadata["post.published"].ShouldBe("20211201");
+        textResult.Metadata["post.published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
+        textResult.Metadata["post.votes"].ShouldBe("4.3K");
         textResult.Type.ShouldBe(JobTaskType.Download);
 
         var imageResult = results.Single(r => r.ItemId == "UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP#image");
@@ -255,17 +255,19 @@ public class YouTubeExtractorTest : BaseTest
         imageResult.Metadata!["channel.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g");
         imageResult.Metadata["channel.name"].ShouldBe("Uto Ch. 天使うと");
         imageResult.Metadata["origin.item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#20211201_UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP#image");
-        imageResult.Metadata["post_id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
-        imageResult.Metadata["published"].ShouldBe("20211201");
-        imageResult.Metadata["published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
-        imageResult.Metadata["votes"].ShouldBe("4.3K");
+        imageResult.Metadata["post.id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
+        imageResult.Metadata["post.published"].ShouldBe("20211201");
+        imageResult.Metadata["post.published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
+        imageResult.Metadata["post.votes"].ShouldBe("4.3K");
         imageResult.Type.ShouldBe(JobTaskType.Download);
 
         var emojiResult = results.First(r => r.ItemId!.Contains("#emoji#"));
         emojiResult.ItemId.ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#emoji#YjYIYfvYAamL8gT4576oCA");
         emojiResult.Uri.AbsoluteUri.ShouldBe("https://yt3.ggpht.com/aI7NJRY3Q0B5jo-3nISoXGjmgXBNbB8ClpJaJNP5IhTLbGNWDea_m_XbTx5cIU5GKmZwEMKQoA=w512-h512-c-k-nd");
         emojiResult.Metadata!["file.extension"].ShouldBe("png");
-        emojiResult.Metadata["emoji_name"].ShouldBe("konuto");
+        emojiResult.Metadata["emoji.id"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g/YjYIYfvYAamL8gT4576oCA");
+        emojiResult.Metadata["emoji.name"].ShouldBe("konuto");
+        emojiResult.Metadata["emoji.sub_id"].ShouldBe("YjYIYfvYAamL8gT4576oCA");
         emojiResult.Type.ShouldBe(JobTaskType.Download);
     }
 

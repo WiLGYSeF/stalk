@@ -1,11 +1,11 @@
 using Shouldly;
-using System;
 using System.Net;
 using System.Net.Http.Json;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Channels;
 using Wilgysef.HttpClientInterception;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
@@ -32,7 +32,7 @@ public class TwitchExtractorTest
                 var json = JsonSerializer.Deserialize<List<JsonElement>>(request.Content!.ReadAsStream());
                 return new HttpResponseMessage(HttpStatusCode.OK)
                 {
-                    Content = JsonContent.Create(json.Select(e => GetGraphQlResponse(e)).ToList()),
+                    Content = JsonContent.Create(json!.Select(e => GetGraphQlResponse(e)).ToList()),
                 };
             });
 
@@ -114,6 +114,7 @@ public class TwitchExtractorTest
         thumbnailResult.Metadata["video.id"].ShouldBe("1586110158");
         thumbnailResult.Metadata["video.length_seconds"].ShouldBe(9178);
         thumbnailResult.Metadata["video.length"].ShouldBe("02:32:58");
+        thumbnailResult.Metadata["video.published_at"].ShouldBe("20220909");
         thumbnailResult.Metadata["video.title"].ShouldBe("Twitch partner get!!!!!!!!!");
         thumbnailResult.Metadata["video.view_count"].ShouldBe(19762);
         thumbnailResult.Metadata["video.game.id"].ShouldBe("518006");
@@ -131,6 +132,7 @@ public class TwitchExtractorTest
         videoResult.Metadata["video.id"].ShouldBe("1586110158");
         videoResult.Metadata["video.length_seconds"].ShouldBe(9178);
         videoResult.Metadata["video.length"].ShouldBe("02:32:58");
+        videoResult.Metadata["video.published_at"].ShouldBe("20220909");
         videoResult.Metadata["video.title"].ShouldBe("Twitch partner get!!!!!!!!!");
         videoResult.Metadata["video.view_count"].ShouldBe(19762);
         videoResult.Metadata["video.game.id"].ShouldBe("518006");
@@ -203,20 +205,20 @@ public class TwitchExtractorTest
 
         var gifResult = results.Single(r => r.ItemId == "emotesv2_9e8516dacaa44f6181451f6e99666a9e");
         gifResult.Uri.AbsoluteUri.ShouldBe("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_9e8516dacaa44f6181451f6e99666a9e/default/dark/1.0");
-        gifResult.Metadata!["emote.price"].ShouldBe("$4.99");
-        gifResult.Metadata["emote.tier"].ShouldBe("1000");
-        gifResult.Metadata["emote.id"].ShouldBe("emotesv2_9e8516dacaa44f6181451f6e99666a9e");
+        gifResult.Metadata!["emote.id"].ShouldBe("emotesv2_9e8516dacaa44f6181451f6e99666a9e");
+        gifResult.Metadata["emote.price"].ShouldBe("$4.99");
         gifResult.Metadata["emote.set_id"].ShouldBe("311162030");
+        gifResult.Metadata["emote.tier"].ShouldBe("1000");
         gifResult.Metadata["emote.token"].ShouldBe("utonyaUtopad");
         gifResult.Metadata["emote.asset_type"].ShouldBe("ANIMATED");
         gifResult.Metadata["file.extension"].ShouldBe("gif");
 
         var pngResult = results.Single(r => r.ItemId == "emotesv2_710f769a1dfd41b7ba0358a1f02037eb");
         pngResult.Uri.AbsoluteUri.ShouldBe("https://static-cdn.jtvnw.net/emoticons/v2/emotesv2_710f769a1dfd41b7ba0358a1f02037eb/default/dark/1.0");
-        pngResult.Metadata!["emote.price"].ShouldBe("$4.99");
-        pngResult.Metadata["emote.tier"].ShouldBe("1000");
-        pngResult.Metadata["emote.id"].ShouldBe("emotesv2_710f769a1dfd41b7ba0358a1f02037eb");
+        pngResult.Metadata!["emote.id"].ShouldBe("emotesv2_710f769a1dfd41b7ba0358a1f02037eb");
+        pngResult.Metadata["emote.price"].ShouldBe("$4.99");
         pngResult.Metadata["emote.set_id"].ShouldBe("496027315");
+        pngResult.Metadata["emote.tier"].ShouldBe("1000");
         pngResult.Metadata["emote.token"].ShouldBe("utonyaHeart");
         pngResult.Metadata["emote.asset_type"].ShouldBe("STATIC");
         pngResult.Metadata["file.extension"].ShouldBe("png");
@@ -230,86 +232,91 @@ public class TwitchExtractorTest
 
         if (operation == "FilterableVideoTower_Videos")
         {
-            var channelName = variables["channelOwnerLogin"].ToString();
+            var channelName = variables["channelOwnerLogin"].ToString()!;
 
             if (variables.TryGetValue("cursor", out var cursor))
             {
                 var cursorHash = MD5.HashData(Encoding.UTF8.GetBytes(cursor.ToString()!)).ToHexString();
-                return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{channelName}.{cursorHash}.json");
+                return GetMockedGraphQlData(operation, channelName, cursorHash);
             }
             else
             {
-                return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{channelName}.json");
+                return GetMockedGraphQlData(operation, channelName);
             }
         }
         else if (operation == "ChannelVideoCore")
         {
-            var videoId = variables["videoID"].ToString();
-            return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{videoId}.json");
+            var videoId = variables["videoID"].ToString()!;
+            return GetMockedGraphQlData(operation, videoId);
         }
         else if (operation == "VideoMetadata")
         {
-            var channelName = variables["channelLogin"].ToString();
-            var videoId = variables["videoID"].ToString();
-            return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{channelName}.{videoId}.json");
+            var channelName = variables["channelLogin"].ToString()!;
+            var videoId = variables["videoID"].ToString()!;
+            return GetMockedGraphQlData(operation, channelName, videoId);
         }
         else if (operation == "ClipsCards__User")
         {
-            var channelName = variables["login"].ToString();
+            var channelName = variables["login"].ToString()!;
 
             if (variables.TryGetValue("cursor", out var cursor))
             {
-                return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{channelName}.{cursor}.json");
+                return GetMockedGraphQlData(operation, channelName, cursor.ToString()!);
             }
             else
             {
-                return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{channelName}.json");
+                return GetMockedGraphQlData(operation, channelName);
             }
         }
         else if (operation == "VideoAccessToken_Clip")
         {
-            var slug = variables["slug"].ToString();
-            return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{slug}.json");
+            var slug = variables["slug"].ToString()!;
+            return GetMockedGraphQlData(operation, slug);
         }
         else if (operation == "ClipsSocialShare")
         {
-            var slug = variables["slug"].ToString();
-            return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{slug}.json");
+            var slug = variables["slug"].ToString()!;
+            return GetMockedGraphQlData(operation, slug);
         }
         else if (operation == "ComscoreStreamingQuery")
         {
-            var slug = variables["clipSlug"].ToString();
-            return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{slug}.json");
+            var slug = variables["clipSlug"].ToString()!;
+            return GetMockedGraphQlData(operation, slug);
         }
         else if (operation == "ClipsBroadcasterInfo")
         {
-            var slug = variables["slug"].ToString();
-            return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{slug}.json");
+            var slug = variables["slug"].ToString()!;
+            return GetMockedGraphQlData(operation, slug);
         }
         else if (operation == "ClipsViewCount")
         {
-            var slug = variables["slug"].ToString();
-            return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{slug}.json");
+            var slug = variables["slug"].ToString()!;
+            return GetMockedGraphQlData(operation, slug);
         }
         else if (operation == "ClipsCurator")
         {
-            var slug = variables["slug"].ToString();
-            return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{slug}.json");
+            var slug = variables["slug"].ToString()!;
+            return GetMockedGraphQlData(operation, slug);
         }
         else if (operation == "ChannelShell")
         {
-            var channelName = variables["login"].ToString();
-            return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{channelName}.json");
+            var channelName = variables["login"].ToString()!;
+            return GetMockedGraphQlData(operation, channelName);
         }
         else if (operation == "EmotePicker_EmotePicker_UserSubscriptionProducts")
         {
-            var channelId = variables["channelOwnerID"].ToString();
-            return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{operation}.{channelId}.json");
+            var channelId = variables["channelOwnerID"].ToString()!;
+            return GetMockedGraphQlData(operation, channelId);
         }
         else
         {
             throw new InvalidOperationException();
         }
+    }
+
+    private static object GetMockedGraphQlData(params string[] parts)
+    {
+        return GetObjectFromManifestResource($"{MockedDataResourcePrefix}.{string.Join('.', parts)}.json");
     }
 
     private static object GetObjectFromManifestResource(string name)
