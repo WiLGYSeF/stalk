@@ -8,43 +8,36 @@ namespace Wilgysef.Stalk.Core.MetadataObjects;
 [DebuggerTypeProxy(typeof(MetadataDebugView))]
 public class MetadataObject : IMetadataObject
 {
-    public char KeySeparator { get; set; }
-
     public bool HasValues => _root.Count > 0;
 
     private readonly Trie<string, object?> _root = new(null!, null);
 
-    public object? this[string key]
+    public object? this[params string[] keys]
     {
-        get => GetValue(key);
-        set => SetByParts(value, GetKeyParts(key));
+        get => GetValue(keys);
+        set => SetValue(value, false, keys);
     }
 
-    public MetadataObject(char keySeparator)
+    public void Add(object? value, params string[] keys)
     {
-        KeySeparator = keySeparator;
+        Add(value, (IEnumerable<string>)keys);
     }
 
-    public void Add(string key, object? value)
+    public void Add(object? value, IEnumerable<string> keys)
     {
-        AddByParts(value, GetKeyParts(key));
+        SetValue(value, true, keys);
     }
 
-    public void AddByParts(object? value, params string[] keyParts)
+    public bool TryAddValue(object? value, params string[] keys)
     {
-        SetValue(value, true, keyParts);
+        return TryAddValue(value, (IEnumerable<string>)keys);
     }
 
-    public bool TryAddValue(string key, object? value)
-    {
-        return TryAddValueByParts(value, GetKeyParts(key));
-    }
-
-    public bool TryAddValueByParts(object? value, params string[] keyParts)
+    public bool TryAddValue(object? value, IEnumerable<string> keys)
     {
         try
         {
-            SetValue(value, true, keyParts);
+            SetValue(value, true, keys);
             return true;
         }
         catch
@@ -53,31 +46,26 @@ public class MetadataObject : IMetadataObject
         }
     }
 
-    public void SetByParts(object? value, params string[] keyParts)
+    public object? GetValue(params string[] keys)
     {
-        SetValue(value, false, keyParts);
+        return GetValue((IEnumerable<string>)keys);
     }
 
-    public object? GetValue(string key)
+    public object? GetValue(IEnumerable<string> keys)
     {
-        return GetValueByParts(GetKeyParts(key));
-    }
-
-    public object? GetValueByParts(params string[] keyParts)
-    {
-        return TryGetValueByParts(out var value, keyParts)
+        return TryGetValue(out var value, keys)
             ? value
-            : throw new ArgumentException("Could not get value by key.", nameof(keyParts));
+            : throw new ArgumentException("Could not get value by key.", nameof(keys));
     }
 
-    public bool TryGetValue(string key, out object? value)
+    public bool TryGetValue(out object? value, params string[] keys)
     {
-        return TryGetValueByParts(out value, GetKeyParts(key));
+        return TryGetValue(out value, (IEnumerable<string>)keys);
     }
 
-    public bool TryGetValueByParts(out object? value, params string[] keyParts)
+    public bool TryGetValue(out object? value, IEnumerable<string> keys)
     {
-        if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keyParts))
+        if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keys))
         {
             value = default;
             return false;
@@ -92,24 +80,24 @@ public class MetadataObject : IMetadataObject
         return true;
     }
 
-    public bool Contains(string key)
+    public bool Contains(params string[] keys)
     {
-        return ContainsByParts(GetKeyParts(key));
+        return Contains((IEnumerable<string>)keys);
     }
 
-    public bool ContainsByParts(params string[] keyParts)
+    public bool Contains(IEnumerable<string> keys)
     {
-        return TryGetValueByParts(out _, keyParts);
+        return TryGetValue(out _, keys);
     }
 
-    public bool Remove(string key)
+    public bool Remove(params string[] keys)
     {
-        return RemoveByParts(GetKeyParts(key));
+        return Remove((IEnumerable<string>)keys);
     }
 
-    public bool RemoveByParts(params string[] keyParts)
+    public bool Remove(IEnumerable<string> keys)
     {
-        if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keyParts))
+        if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keys))
         {
             return false;
         }
@@ -123,26 +111,8 @@ public class MetadataObject : IMetadataObject
 
     public IMetadataObject Copy()
     {
-        var metadata = new MetadataObject(KeySeparator);
-        var nodes = new Queue<(ITrie<string, object?> Trie, string Key)>(_root.Children.Select(t => (t, t.Key)));
-
-        while (nodes.Count > 0)
-        {
-            var (trie, key) = nodes.Dequeue();
-
-            if (trie.Count > 0)
-            {
-                foreach (var child in trie.Children)
-                {
-                    nodes.Enqueue((child, key + KeySeparator + child.Key));
-                }
-            }
-            else
-            {
-                metadata[key] = trie.Value;
-            }
-        }
-
+        var metadata = new MetadataObject();
+        GetValues((keys, value) => metadata.SetValue(value, false, keys.ToArray()));
         return metadata;
     }
 
@@ -174,28 +144,10 @@ public class MetadataObject : IMetadataObject
         return dictionary;
     }
 
-    public IDictionary<string, object?> GetFlattenedDictionary()
+    public IDictionary<string, object?> GetFlattenedDictionary(string separator)
     {
         IDictionary<string, object?> dictionary = new Dictionary<string, object?>();
-        var nodes = new Queue<(ITrie<string, object?> Trie, string Key)>(_root.Children.Select(t => (t, t.Key)));
-
-        while (nodes.Count > 0)
-        {
-            var (trie, key) = nodes.Dequeue();
-
-            if (trie.Count > 0)
-            {
-                foreach (var child in trie.Children)
-                {
-                    nodes.Enqueue((child, key + KeySeparator + child.Key));
-                }
-            }
-            else
-            {
-                dictionary[key] = trie.Value;
-            }
-        }
-
+        GetValues((keys, value) => dictionary[string.Join(separator, keys)] = value);
         return dictionary;
     }
 
@@ -209,24 +161,19 @@ public class MetadataObject : IMetadataObject
         SetValues(dictionary, null);
     }
 
-    public string GetKey(params string[] keyParts)
+    private void SetValue(object? value, bool throwIfExisting, IEnumerable<string> keys)
     {
-        return string.Join(KeySeparator, keyParts);
-    }
-
-    private void SetValue(object? value, bool throwIfExisting, params string[] keyParts)
-    {
-        if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keyParts))
+        if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keys))
         {
-            trie = CreateTries(out ultimateKey, keyParts);
+            trie = CreateTries(out ultimateKey, keys);
         }
         if (trie.Terminal)
         {
-            throw new ArgumentException("Subkey already exists", nameof(keyParts));
+            throw new ArgumentException("Subkey already exists", nameof(keys));
         }
         if (throwIfExisting && trie.Contains(ultimateKey))
         {
-            throw new ArgumentException("Key already exists", nameof(keyParts));
+            throw new ArgumentException("Key already exists", nameof(keys));
         }
 
         var newTrie = new Trie<string, object?>(ultimateKey, value)
@@ -239,46 +186,74 @@ public class MetadataObject : IMetadataObject
     private bool TryGetPenultimateTrie(
         [MaybeNullWhen(false)] out ITrie<string, object?> trie,
         [MaybeNullWhen(false)] out string ultimateKey,
-        params string[] keyParts)
+        IEnumerable<string> keys)
     {
-        ITrie<string, object?> currentTrie = _root;
+        ITrie<string, object?>? currentTrie = _root;
+        var lastTrie = currentTrie;
+        string? lastKey = null;
 
-        for (var i = 0; i < keyParts.Length - 1; i++)
+        using var enumerator = keys.GetEnumerator();
+        while (enumerator.MoveNext())
         {
-            if (!currentTrie.TryGetChild(keyParts[i], out var value))
+            if (currentTrie == null)
             {
-                trie = default;
-                ultimateKey = default;
-                return false;
+                lastTrie = null;
+                break;
             }
-            currentTrie = value;
+
+            var key = enumerator.Current;
+            lastTrie = currentTrie;
+            lastKey = key;
+
+            currentTrie = currentTrie.TryGetChild(key, out var value) ? value : null;
         }
 
-        trie = currentTrie;
-        ultimateKey = keyParts[^1];
+        if (lastTrie == null)
+        {
+            trie = default;
+            ultimateKey = default;
+            return false;
+        }
+
+        trie = lastTrie;
+        ultimateKey = lastKey!;
         return true;
     }
 
-    private ITrie<string, object?> CreateTries(out string ultimateKey, params string[] keyParts)
+    private ITrie<string, object?> CreateTries(out string ultimateKey, IEnumerable<string> keys)
     {
         ITrie<string, object?> currentTrie = _root;
+        string? lastKey = null;
 
-        for (var i = 0; i < keyParts.Length - 1; i++)
+        using var enumerator = keys.GetEnumerator();
+        while (enumerator.MoveNext())
         {
-            var keyPart = keyParts[i];
-            if (!currentTrie.TryGetChild(keyPart, out var trie))
+            if (lastKey == null)
             {
-                trie = new Trie<string, object?>(keyPart, null);
-                currentTrie[keyPart] = trie;
+                lastKey = enumerator.Current;
+                continue;
+            }
+
+            if (!currentTrie.TryGetChild(lastKey, out var trie))
+            {
+                trie = new Trie<string, object?>(lastKey, null);
+                currentTrie[lastKey] = trie;
             }
             else if (trie.Terminal)
             {
-                throw new ArgumentException("Subkey already exists", nameof(keyParts));
+                throw new ArgumentException("Subkey already exists.", nameof(keys));
             }
             currentTrie = trie;
+
+            lastKey = enumerator.Current;
         }
 
-        ultimateKey = keyParts[^1];
+        if (lastKey == null)
+        {
+            throw new ArgumentException("Keys must have value.", nameof(keys));
+        }
+
+        ultimateKey = lastKey;
         return currentTrie;
     }
 
@@ -320,9 +295,41 @@ public class MetadataObject : IMetadataObject
         }
     }
 
-    private string[] GetKeyParts(string key)
+    private void GetValues(Action<IEnumerable<string>, object?> addAction)
     {
-        return key.Split(KeySeparator);
+        var nodes = new Stack<(ITrie<string, object?> Trie, int depth)>(_root.Children.Select(t => (t, 1)));
+        var currentKeys = new List<string>();
+
+        while (nodes.Count > 0)
+        {
+            var (trie, depth) = nodes.Pop();
+
+            while (depth < currentKeys.Count)
+            {
+                currentKeys.RemoveAt(currentKeys.Count - 1);
+            }
+
+            if (depth > currentKeys.Count)
+            {
+                currentKeys.Add(trie.Key);
+            }
+            else if (depth == currentKeys.Count)
+            {
+                currentKeys[^1] = trie.Key;
+            }
+
+            if (trie.Count > 0)
+            {
+                foreach (var child in trie.Children)
+                {
+                    nodes.Push((child, depth + 1));
+                }
+            }
+            else
+            {
+                addAction(currentKeys, trie.Value);
+            }
+        }
     }
 
     private class MetadataDebugView
@@ -333,7 +340,7 @@ public class MetadataObject : IMetadataObject
         {
             get
             {
-                return _metadata.GetFlattenedDictionary()
+                return _metadata.GetFlattenedDictionary(".")
                     .OrderBy(p => p.Key)
                     .ToList();
             }
