@@ -112,14 +112,7 @@ public class MetadataObject : IMetadataObject
     public IMetadataObject Copy()
     {
         var metadata = new MetadataObject();
-        GetValues(
-            _root.Children,
-            t => t.Key,
-            t => t.Value,
-            t => t.Children,
-            t => t.Count,
-            t => { },
-            (keys, value) => metadata.SetValue(value, false, keys.ToArray()));
+        GetValues((keys, value) => metadata.SetValue(value, false, keys.ToArray()));
         return metadata;
     }
 
@@ -154,25 +147,30 @@ public class MetadataObject : IMetadataObject
     public IDictionary<string, object?> GetFlattenedDictionary(string separator)
     {
         IDictionary<string, object?> dictionary = new Dictionary<string, object?>();
-        GetValues(
-            _root.Children,
-            t => t.Key,
-            t => t.Value,
-            t => t.Children,
-            t => t.Count,
-            t => { },
-            (keys, value) => dictionary[string.Join(separator, keys)] = value);
+        GetValues((keys, value) => dictionary[string.Join(separator, keys)] = value);
         return dictionary;
     }
 
     public void From(IDictionary<object, object?> dictionary)
     {
-        SetValues(dictionary, null);
+        GetValues(
+            dictionary,
+            p => p.Key.ToString()!,
+            p => p.Value,
+            p => (IDictionary<object, object?>)p.Value!,
+            p => (p.Value as IDictionary<object, object?>)?.Count > 0,
+            (keys, value) => SetValue(value, false, keys));
     }
 
     public void From(IDictionary<string, object?> dictionary)
     {
-        SetValues(dictionary, null);
+        GetValues(
+            dictionary,
+            p => p.Key,
+            p => p.Value,
+            p => (IDictionary<string, object?>)p.Value!,
+            p => (p.Value as IDictionary<string, object?>)?.Count > 0,
+            (keys, value) => SetValue(value, false, keys));
     }
 
     private void SetValue(object? value, bool throwIfExisting, IEnumerable<string> keys)
@@ -271,37 +269,12 @@ public class MetadataObject : IMetadataObject
         return currentTrie;
     }
 
-    private void SetValues(IDictionary<object, object?> dictionary, string[] root)
-    {
-        GetValues(
-            dictionary,
-            p => p.Key.ToString()!,
-            p => p.Value,
-            p => (IDictionary<object, object?>?)p.Value,
-            p => ((IDictionary<object, object?>?)p.Value)?.Count ?? 0,
-            p => { },
-            (keys, value) => SetValue(value, false, keys));
-    }
-
-    private void SetValues(IDictionary<string, object?> dictionary, string[] root)
-    {
-        GetValues(
-            dictionary,
-            p => p.Key,
-            p => p.Value,
-            p => (IDictionary<string, object?>?)p.Value,
-            p => ((IDictionary<string, object?>?)p.Value)?.Count ?? 0,
-            p => { },
-            (keys, value) => SetValue(value, false, keys));
-    }
-
     private static void GetValues<T>(
         IEnumerable<T> initial,
         Func<T, string> keyAction,
         Func<T, object?> valueAction,
         Func<T, IEnumerable<T>> childrenAction,
-        Func<T, int> countAction,
-        Action<T> traverseAction,
+        Func<T, bool> hasChildrenAction,
         Action<IEnumerable<string>, object?> addAction)
     {
         var nodes = new Stack<(T, int depth)>(initial.Select(i => (i, 1)));
@@ -325,10 +298,8 @@ public class MetadataObject : IMetadataObject
                 currentKeys[^1] = keyAction(trie);
             }
 
-            if (countAction(trie) > 0)
+            if (hasChildrenAction(trie))
             {
-                traverseAction(trie);
-
                 foreach (var child in childrenAction(trie))
                 {
                     nodes.Push((child, depth + 1));
@@ -339,6 +310,17 @@ public class MetadataObject : IMetadataObject
                 addAction(currentKeys, valueAction(trie));
             }
         }
+    }
+
+    private void GetValues(Action<IEnumerable<string>, object?> addAction)
+    {
+        GetValues(
+            _root.Children,
+            t => t.Key,
+            t => t.Value,
+            t => t.Children,
+            t => t.Count > 0,
+            addAction);
     }
 
     private class MetadataDebugView

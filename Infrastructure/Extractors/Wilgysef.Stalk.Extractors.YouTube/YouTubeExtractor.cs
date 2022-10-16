@@ -243,14 +243,14 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
         GetMetadata<string>(metadata, initialData.SelectToken("$..viewCount.simpleText"), MetadataVideoViewCountKeys);
 
-        metadata.SetByParts(videoId, MetadataVideoIdKeys);
-        metadata.SetByParts(title, MetadataVideoTitleKeys);
-        metadata.SetByParts(published, MetadataVideoPublishedKeys);
-        metadata.SetByParts(TimeSpanToString(videoDuration), MetadataVideoDurationKeys);
-        metadata.SetByParts(videoDuration?.TotalSeconds, MetadataVideoDurationSecondsKeys);
-        metadata.SetByParts(description, MetadataVideoDescriptionKeys);
-        metadata.SetByParts(likeCount, MetadataVideoLikeCountKeys);
-        metadata.SetByParts(commentCount, MetadataVideoCommentCountKeys);
+        metadata[MetadataVideoIdKeys] = videoId;
+        metadata[MetadataVideoTitleKeys] = title;
+        metadata[MetadataVideoPublishedKeys] = published;
+        metadata[MetadataVideoDurationKeys] = TimeSpanToString(videoDuration);
+        metadata[MetadataVideoDurationSecondsKeys] = videoDuration?.TotalSeconds;
+        metadata[MetadataVideoDescriptionKeys] = description;
+        metadata[MetadataVideoLikeCountKeys] = likeCount;
+        metadata[MetadataVideoCommentCountKeys] = commentCount;
 
         var thumbnailResult = await ExtractThumbnailAsync(
             channelId,
@@ -265,10 +265,10 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
         if (published != null)
         {
-            metadata.SetByParts($"{channelId}#video#{published}_{videoId}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+            metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#video#{published}_{videoId}";
         }
 
-        metadata.SetByParts(YoutubeDlFileExtensionTemplate, MetadataObjectConsts.File.ExtensionKeys);
+        metadata[MetadataObjectConsts.File.ExtensionKeys] = YoutubeDlFileExtensionTemplate;
 
         yield return new ExtractResult(
             uri,
@@ -308,11 +308,11 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
                 if (published != null)
                 {
-                    metadata.SetByParts($"{channelId}#video#{published}_{videoId}#thumb", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+                    metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#video#{published}_{videoId}#thumb";
                 }
 
                 var uri = new Uri(uriString);
-                metadata.SetByParts(GetExtensionFromUri(uri), MetadataObjectConsts.File.ExtensionKeys);
+                metadata[MetadataObjectConsts.File.ExtensionKeys] = GetExtensionFromUri(uri);
 
                 result = new ExtractResult(
                     uri,

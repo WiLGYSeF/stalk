@@ -129,7 +129,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(159);
         results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
@@ -142,7 +142,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/videos"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(130);
         results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
@@ -155,7 +155,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/playlist?list=UUdYR5Oyz8Q4g0ZmB4PkTD7g"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(130);
         results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
@@ -169,7 +169,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/watch?v=_BSSJi-sHh8"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(2);
         var thumbnailResult = results.Single(r => r.ItemId == "_BSSJi-sHh8#thumb");
@@ -213,7 +213,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(6);
         results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
@@ -232,7 +232,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri(uri),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(38);
         results.Where(r => r.ItemId!.Contains("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")).Count().ShouldBe(2);
@@ -282,7 +282,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri(uri),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(36);
         results.All(r => r.ItemId!.Contains("#emoji#")).ShouldBeTrue();
@@ -313,7 +313,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/watch?v=_BSSJi-sHh8"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         request!.Headers.Single(p => p.Key == "Cookie").Value
             .ShouldBe(new[] { string.Join("; ", cookies.Select(q => $"{q.Key}={q.Value}")) });
@@ -332,7 +332,7 @@ public class YouTubeExtractorTest : BaseTest
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/watch?v=_BSSJi-sHh8"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
         var thumbnailResult = results.Single(r => r.ItemId == "_BSSJi-sHh8#thumb");
         thumbnailResult.Uri.AbsoluteUri.EndsWith(".jpg").ShouldBeTrue();
     }

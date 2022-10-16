@@ -74,7 +74,7 @@ public class TwitchExtractorTest
         var results = await _twitchExtractor.ExtractAsync(
             new Uri("https://www.twitch.tv/utonyan"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(3);
         var videosResult = results.Single(r => r.Uri.AbsoluteUri == "https://www.twitch.tv/utonyan/videos");
@@ -88,7 +88,7 @@ public class TwitchExtractorTest
         var results = await _twitchExtractor.ExtractAsync(
             new Uri("https://www.twitch.tv/utonyan/videos"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(22);
         results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
@@ -101,7 +101,7 @@ public class TwitchExtractorTest
         var results = await _twitchExtractor.ExtractAsync(
             new Uri("https://www.twitch.tv/videos/1586110158"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(2);
         var thumbnailResult = results.Single(r => r.ItemId == "1586110158#thumb");
@@ -147,7 +147,7 @@ public class TwitchExtractorTest
         var results = await _twitchExtractor.ExtractAsync(
             new Uri("https://www.twitch.tv/utonyan/clips"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(40);
         results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
@@ -163,7 +163,7 @@ public class TwitchExtractorTest
         var results = await _twitchExtractor.ExtractAsync(
             new Uri(uri),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         var result = results.Single();
         result.ItemId.ShouldBe("ResoluteKathishOcelotArgieB8-_aFeNcWSMiNC34Bc");
@@ -196,7 +196,7 @@ public class TwitchExtractorTest
         var results = await _twitchExtractor.ExtractAsync(
             new Uri("https://www.twitch.tv/utonyan/about"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(18);
         results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);

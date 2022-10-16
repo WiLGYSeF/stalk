@@ -97,7 +97,7 @@ public class TwitterExtractorTest : BaseTest
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(99);
         results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
@@ -127,7 +127,7 @@ public class TwitterExtractorTest : BaseTest
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(99);
     }
@@ -138,7 +138,7 @@ public class TwitterExtractorTest : BaseTest
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto/status/1560187874460733440"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(1);
         var result = results.Single();
@@ -166,7 +166,7 @@ public class TwitterExtractorTest : BaseTest
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto/status/1554680837861683200"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(1);
         var result = results.Single();
@@ -194,7 +194,7 @@ public class TwitterExtractorTest : BaseTest
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto/status/1523276529123397632"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(3);
         var textResult = results.Single(r => r.Uri.AbsoluteUri.StartsWith("data:"));
@@ -261,7 +261,7 @@ public class TwitterExtractorTest : BaseTest
         var results = await _twitterExtractor.ExtractAsync(
             new Uri("https://twitter.com/amatsukauto/status/1567680068113285121"),
             null,
-            new MetadataObject('.')).ToListAsync();
+            new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(2);
         var result = results.Single(r => r.Uri.AbsoluteUri.StartsWith("data:"));

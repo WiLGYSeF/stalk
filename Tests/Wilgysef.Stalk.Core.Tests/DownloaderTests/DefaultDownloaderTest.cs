@@ -60,7 +60,7 @@ public class DefaultDownloaderTest : BaseTest
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
         if (!computeHash)
         {
@@ -91,38 +91,38 @@ public class DefaultDownloaderTest : BaseTest
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
-        var metadataWritten = new MetadataObject(metadata.KeySeparator);
+        var metadataWritten = new MetadataObject();
         metadataWritten.From(deserializer.Deserialize<IDictionary<object, object?>>(
                 Encoding.UTF8.GetString(_fileSystem.File.ReadAllBytes(metadataFilename))));
 
         if (saveFilenameTemplateMetadata)
         {
-            metadataWritten.GetValueByParts(MetadataObjectConsts.File.FilenameTemplateKeys).ShouldBe(filename);
-            metadataWritten.GetValueByParts(MetadataObjectConsts.MetadataFilenameTemplateKeys).ShouldBe(metadataFilename);
+            metadataWritten[MetadataObjectConsts.File.FilenameTemplateKeys].ShouldBe(filename);
+            metadataWritten[MetadataObjectConsts.MetadataFilenameTemplateKeys].ShouldBe(metadataFilename);
         }
         else
         {
-            metadataWritten.ContainsByParts(MetadataObjectConsts.File.FilenameTemplateKeys).ShouldBeFalse();
-            metadataWritten.ContainsByParts(MetadataObjectConsts.MetadataFilenameTemplateKeys).ShouldBeFalse();
+            metadataWritten.Contains(MetadataObjectConsts.File.FilenameTemplateKeys).ShouldBeFalse();
+            metadataWritten.Contains(MetadataObjectConsts.MetadataFilenameTemplateKeys).ShouldBeFalse();
         }
 
-        metadataWritten.GetValueByParts(MetadataObjectConsts.Origin.ItemIdKeys).ShouldBe(itemId);
-        metadataWritten.GetValueByParts(MetadataObjectConsts.Origin.UriKeys).ShouldBe(uri.ToString());
-        (DateTime.Now - DateTime.Parse((string)metadataWritten.GetValueByParts(MetadataObjectConsts.RetrievedKeys)!))
+        metadataWritten[MetadataObjectConsts.Origin.ItemIdKeys].ShouldBe(itemId);
+        metadataWritten[MetadataObjectConsts.Origin.UriKeys].ShouldBe(uri.ToString());
+        (DateTime.Now - DateTime.Parse((string)metadataWritten[MetadataObjectConsts.RetrievedKeys]!))
             .Duration().TotalMinutes.ShouldBeLessThan(1);
-        metadataWritten.GetValueByParts(MetadataObjectConsts.File.SizeKeys).ShouldBe(TestDownloadData.Length.ToString());
+        metadataWritten[MetadataObjectConsts.File.SizeKeys].ShouldBe(TestDownloadData.Length.ToString());
 
         if (computeHash)
         {
             var hashName = "SHA256";
-            metadataWritten.GetValueByParts(MetadataObjectConsts.File.HashKeys)
+            metadataWritten[MetadataObjectConsts.File.HashKeys]
                 .ShouldBe(Convert.ToHexString(HashAlgorithm.Create(hashName)!.ComputeHash(TestDownloadData)).ToLower());
-            metadataWritten.GetValueByParts(MetadataObjectConsts.File.HashAlgorithmKeys).ShouldBe(hashName);
+            metadataWritten[MetadataObjectConsts.File.HashAlgorithmKeys].ShouldBe(hashName);
         }
         else
         {
-            metadataWritten.ContainsByParts(MetadataObjectConsts.File.HashKeys).ShouldBeFalse();
-            metadataWritten.ContainsByParts(MetadataObjectConsts.File.HashAlgorithmKeys).ShouldBeFalse();
+            metadataWritten.Contains(MetadataObjectConsts.File.HashKeys).ShouldBeFalse();
+            metadataWritten.Contains(MetadataObjectConsts.File.HashAlgorithmKeys).ShouldBeFalse();
         }
     }
 
@@ -133,7 +133,7 @@ public class DefaultDownloaderTest : BaseTest
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
         var testData = "test data";
         var cookie = "test cookie";
@@ -173,7 +173,7 @@ public class DefaultDownloaderTest : BaseTest
         var filename = "testfile${value}";
         var itemId = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
         metadata["value"] = "abc";
 
         await foreach (var result in _downloader.DownloadAsync(

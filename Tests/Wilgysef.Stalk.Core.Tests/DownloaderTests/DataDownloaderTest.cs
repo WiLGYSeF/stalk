@@ -45,7 +45,7 @@ public class DataDownloaderTest : BaseTest
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
         await foreach (var result in _downloader.DownloadAsync(
             uri,
@@ -72,7 +72,7 @@ public class DataDownloaderTest : BaseTest
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
         await foreach (var result in _downloader.DownloadAsync(
             uri,
@@ -99,7 +99,7 @@ public class DataDownloaderTest : BaseTest
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
         await foreach (var result in _downloader.DownloadAsync(
             uri,
@@ -126,7 +126,7 @@ public class DataDownloaderTest : BaseTest
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
         await foreach (var result in _downloader.DownloadAsync(
             uri,
@@ -152,7 +152,7 @@ public class DataDownloaderTest : BaseTest
         var filename = "testfile";
         var itemId = RandomValues.RandomString(10);
         var metadataFilename = "testmeta";
-        var metadata = new MetadataObject('.');
+        var metadata = new MetadataObject();
 
         var extractResult = new ExtractResult(
             Encoding.UTF8.GetBytes(data),
