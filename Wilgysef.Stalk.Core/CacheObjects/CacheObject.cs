@@ -46,6 +46,7 @@ public class CacheObject<TKey, TValue> : ICacheObject<TKey, TValue> where TKey :
             value = cacheValue.Value;
             return true;
         }
+
         value = default;
         return false;
     }
@@ -79,6 +80,7 @@ public class CacheObject<TKey, TValue> : ICacheObject<TKey, TValue> where TKey :
             value = cacheValue.Value;
             return true;
         }
+
         value = default;
         return false;
     }

@@ -31,7 +31,7 @@ public class ExtractorHttpClientFactory : IExtractorHttpClientFactory, ITransien
         return _httpClient;
     }
 
-    private bool SetUserAgentHeader(HttpClient client, string? value)
+    private static bool SetUserAgentHeader(HttpClient client, string? value)
     {
         if (client.DefaultRequestHeaders.UserAgent.Count > 0)
         {

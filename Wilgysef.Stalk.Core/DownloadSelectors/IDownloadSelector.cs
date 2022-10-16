@@ -10,6 +10,6 @@ public interface IDownloadSelector
     /// <see cref="DefaultDownloader"/> is given lower priority to any other downloaders.
     /// </summary>
     /// <param name="uri">URI.</param>
-    /// <returns></returns>
+    /// <returns>Downloader, or <see langword="null"/> if none could be found.</returns>
     IDownloader? SelectDownloader(Uri uri);
 }

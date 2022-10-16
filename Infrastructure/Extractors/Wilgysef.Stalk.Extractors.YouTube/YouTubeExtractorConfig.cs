@@ -1,8 +1,10 @@
-﻿using Wilgysef.Stalk.Core.Shared.Extensions;
+﻿using System.Linq.Expressions;
+using Wilgysef.Stalk.Core.Shared.Extensions;
+using Wilgysef.Stalk.Extractors.YoutubeDl.Core;
 
 namespace Wilgysef.Stalk.Extractors.YouTube;
 
-public class YouTubeExtractorConfig : YouTubeConfig
+public class YouTubeExtractorConfig
 {
     public static readonly string CookiesKey = "cookies";
     public static readonly string UseWebpThumbnailsKey = "useWebpThumbnails";
@@ -27,28 +29,30 @@ public class YouTubeExtractorConfig : YouTubeConfig
     {
         if (config?.TryGetValueAs<IEnumerable<string>, string, object?>(CookiesKey, out var cookies) ?? false)
         {
-            CookieString = GetCookieString(cookies);
+            CookieString = YoutubeDlConfig.GetCookieString(cookies);
         }
         else if (config?.TryGetValueAs<string, string, object?>(CookiesKey, out var cookie) ?? false)
         {
-            CookieString = GetCookieString(new[] { cookie });
+            CookieString = YoutubeDlConfig.GetCookieString(new[] { cookie });
         }
 
-        if (config?.TryGetValueAs<bool, string, object?>(UseWebpThumbnailsKey, out var useWebpThumbnails) ?? false)
+        TrySetValue(() => UseWebpThumbnails, config, UseWebpThumbnailsKey);
+        TrySetValue(() => EmojiScaleWidth, config, EmojiScaleWidthKey);
+        TrySetValue(() => CommunityEmojisOnly, config, CommunityEmojisOnlyKey);
+        TrySetValue(() => YouTubeClientVersion, config, YouTubeClientVersionKey);
+    }
+
+    // TODO: move to shared
+    private static bool TrySetValue<T>(Expression<Func<T>> property, IDictionary<string, object?>? config, string key)
+    {
+        if (!(config?.TryGetValueAs<T, string, object?>(key, out var value) ?? false))
         {
-            UseWebpThumbnails = useWebpThumbnails;
+            return false;
         }
-        if (config?.TryGetValueAs<int, string, object?>(EmojiScaleWidthKey, out var emojiScaleWidth) ?? false)
-        {
-            EmojiScaleWidth = emojiScaleWidth;
-        }
-        if (config?.TryGetValueAs<bool, string, object?>(CommunityEmojisOnlyKey, out var communityEmojisOnly) ?? false)
-        {
-            CommunityEmojisOnly = communityEmojisOnly;
-        }
-        if (config?.TryGetValueAs<string, string, object?>(YouTubeClientVersion, out var youtubeClientVersion) ?? false)
-        {
-            YouTubeClientVersion = youtubeClientVersion;
-        }
+
+        Expression.Lambda(Expression.Assign(property.Body, Expression.Constant(value)))
+            .Compile()
+            .DynamicInvoke();
+        return true;
     }
 }

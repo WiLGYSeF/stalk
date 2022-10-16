@@ -21,6 +21,12 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// </summary>
         public byte[]? Data { get; set; }
 
+        /// <summary>
+        /// Download request data.
+        /// </summary>
+        /// <param name="method">Download method.</param>
+        /// <param name="headers">Headers.</param>
+        /// <param name="data">Request data.</param>
         public DownloadRequestData(
             HttpMethod? method = null,
             List<KeyValuePair<string, string>>? headers = null,

@@ -2,6 +2,9 @@
 {
     public interface IOptionSection
     {
+        /// <summary>
+        /// Options label.
+        /// </summary>
         string Label { get; }
     }
 }

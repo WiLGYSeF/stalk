@@ -35,6 +35,16 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         "https://img.youtube.com/vi/{0}/default.jpg",
     };
 
+    private static readonly string[] MetadataVideoIdKeys = new string[] { "video", "id" };
+    private static readonly string[] MetadataVideoTitleKeys = new string[] { "video", "title" };
+    private static readonly string[] MetadataVideoPublishedKeys = new string[] { "video", "published" };
+    private static readonly string[] MetadataVideoDurationKeys = new string[] { "video", "duration" };
+    private static readonly string[] MetadataVideoDurationSecondsKeys = new string[] { "video", "duration_seconds" };
+    private static readonly string[] MetadataVideoViewCountKeys = new string[] { "video", "view_count" };
+    private static readonly string[] MetadataVideoDescriptionKeys = new string[] { "video", "description" };
+    private static readonly string[] MetadataVideoLikeCountKeys = new string[] { "video", "like_count" };
+    private static readonly string[] MetadataVideoCommentCountKeys = new string[] { "video", "comment_count" };
+
     /// <summary>
     /// Template string for file extension with youtube-dl.
     /// </summary>
@@ -50,7 +60,6 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         return GetExtractType(uri) != null;
     }
 
-    // TODO: should this be async?
     public IAsyncEnumerable<ExtractResult> ExtractAsync(
         Uri uri,
         string? itemData,
@@ -73,7 +82,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
                 var communityExtractor = CreateCommunityExtractor();
                 return communityExtractor.ExtractCommunityAsync(uri, metadata, cancellationToken);
             default:
-                throw new ArgumentException("Cannot extract URI.", nameof(uri));
+                throw new ArgumentOutOfRangeException(nameof(uri));
         }
     }
 
@@ -208,17 +217,18 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        metadata = metadata.Copy();
+
         var doc = await GetHtmlDocument(uri, cancellationToken);
         var initialData = GetYtInitialData(doc);
         var playerResponse = GetYtInitialPlayerResponse(doc);
 
-        var channelId = initialData.SelectToken("$..videoOwnerRenderer.title.runs[0]..browseId")!.ToString();
-        var channelName = initialData.SelectToken("$..videoOwnerRenderer.title.runs[0].text")?.ToString();
+        var channelId = GetMetadata<string>(metadata, initialData.SelectToken("$..videoOwnerRenderer.title.runs[0]..browseId"), MetadataChannelIdKeys);
+        var channelName = GetMetadata<string>(metadata, initialData.SelectToken("$..videoOwnerRenderer.title.runs[0].text"), MetadataChannelNameKeys);
         var videoId = initialData.SelectTokens("$..topLevelButtons..watchEndpoint.videoId").First().ToString();
         var title = ConcatRuns(initialData.SelectToken("$..videoPrimaryInfoRenderer.title.runs"));
         var date = GetDateTime(initialData.SelectToken("$..dateText.simpleText")?.ToString());
         var description = ConcatRuns(initialData.SelectToken("$..description.runs"));
-        var viewCount = initialData.SelectToken("$..viewCount.simpleText")!.ToString();
         var commentCount = initialData.SelectTokens("$..engagementPanels[*].engagementPanelSectionListRenderer")
             .FirstOrDefault(t => t["panelIdentifier"]?.ToString() == "comment-item-section")
             ?.SelectToken("$..contextualInfo.runs[*].text")
@@ -231,23 +241,22 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
         var published = date?.ToString("yyyyMMdd");
 
-        metadata.SetByParts(channelId, MetadataChannelIdKeys);
-        metadata.SetByParts(channelName, MetadataChannelNameKeys);
-        metadata.SetByParts(videoId, MetadataVideoIdKeys);
-        metadata.SetByParts(title, MetadataVideoTitleKeys);
-        metadata["published"] = published;
-        metadata.SetByParts(TimeSpanToString(videoDuration), MetadataVideoDurationKeys);
-        metadata.SetByParts(videoDuration?.TotalSeconds, MetadataVideoDurationSecondsKeys);
-        metadata.SetByParts(description, "video", "description");
-        metadata.SetByParts(viewCount, "video", "view_count");
-        metadata.SetByParts(likeCount, "video", "like_count");
-        metadata.SetByParts(commentCount, "video", "comment_count");
+        GetMetadata<string>(metadata, initialData.SelectToken("$..viewCount.simpleText"), MetadataVideoViewCountKeys);
+
+        metadata[MetadataVideoIdKeys] = videoId;
+        metadata[MetadataVideoTitleKeys] = title;
+        metadata[MetadataVideoPublishedKeys] = published;
+        metadata[MetadataVideoDurationKeys] = TimeSpanToString(videoDuration);
+        metadata[MetadataVideoDurationSecondsKeys] = videoDuration?.TotalSeconds;
+        metadata[MetadataVideoDescriptionKeys] = description;
+        metadata[MetadataVideoLikeCountKeys] = likeCount;
+        metadata[MetadataVideoCommentCountKeys] = commentCount;
 
         var thumbnailResult = await ExtractThumbnailAsync(
             channelId,
             videoId,
             published,
-            metadata.Copy(),
+            metadata,
             cancellationToken);
         if (thumbnailResult != null)
         {
@@ -256,13 +265,13 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
         if (published != null)
         {
-            metadata.SetByParts($"{channelId}#video#{published}_{videoId}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+            metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#video#{published}_{videoId}";
         }
 
-        metadata.SetByParts(YoutubeDlFileExtensionTemplate, MetadataObjectConsts.File.ExtensionKeys);
+        metadata[MetadataObjectConsts.File.ExtensionKeys] = YoutubeDlFileExtensionTemplate;
 
         yield return new ExtractResult(
-            uri.AbsoluteUri,
+            uri,
             videoId,
             JobTaskType.Download,
             metadata: metadata);
@@ -275,6 +284,8 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         IMetadataObject metadata,
         CancellationToken cancellationToken)
     {
+        metadata = metadata.Copy();
+
         ExtractResult? result = null;
 
         foreach (var uriFormat in ThumbnailUris)
@@ -297,14 +308,14 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
                 if (published != null)
                 {
-                    metadata.SetByParts($"{channelId}#video#{published}_{videoId}#thumb", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+                    metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#video#{published}_{videoId}#thumb";
                 }
 
                 var uri = new Uri(uriString);
-                metadata.SetByParts(GetExtensionFromUri(uri), MetadataObjectConsts.File.ExtensionKeys);
+                metadata[MetadataObjectConsts.File.ExtensionKeys] = GetExtensionFromUri(uri);
 
                 result = new ExtractResult(
-                    uri.AbsoluteUri,
+                    uri,
                     $"{videoId}#thumb",
                     JobTaskType.Download,
                     metadata: metadata);
@@ -370,7 +381,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
     private YouTubeCommunityExtractor CreateCommunityExtractor()
     {
-        return new YouTubeCommunityExtractor(HttpClient, DateTimeProvider, ExtractorConfig, Logger, Cache);
+        return new YouTubeCommunityExtractor(HttpClient, DateTimeProvider, ExtractorConfig);
     }
 
     private static Uri GetVideosUri(string channel, bool shortChannel = false)

@@ -1,10 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Web;
-using Wilgysef.Stalk.Core.Shared.CacheObjects;
 using Wilgysef.Stalk.Core.Shared.DateTimeProviders;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
@@ -17,20 +15,20 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
     private static readonly Regex CommunityImageRegex = new(@"^https://yt3\.ggpht\.com/(?<image>[A-Za-z0-9_-]+)=s(?<size>[0-9]+)", RegexOptions.Compiled);
     private static readonly Regex EmojiImageRegex = new(@"^https://yt3\.ggpht\.com/(?<image>[A-Za-z0-9_-]+)=w(?<width>[0-9]+)-h(?<height>[0-9]+)", RegexOptions.Compiled);
 
-    private readonly ILogger? _logger;
-    private readonly ICacheObject<string, object?>? _cache;
+    private static readonly string[] MetadataPostIdKeys = new[] { "post", "id" };
+    private static readonly string[] MetadataPostPublishedKeys = new[] { "post", "published" };
+    private static readonly string[] MetadataPostPublishedFromKeys = new[] { "post", "published_from" };
+    private static readonly string[] MetadataPostVotesKeys = new[] { "post", "votes" };
+    private static readonly string[] MetadataPostCommentsCountKeys = new[] { "post", "comments_count" };
+    private static readonly string[] MetadataEmojiIdKeys = new[] { "emoji", "id" };
+    private static readonly string[] MetadataEmojiSubIdKeys = new[] { "emoji", "sub_id" };
+    private static readonly string[] MetadataEmojiNameKeys = new[] { "emoji", "name" };
 
     public YouTubeCommunityExtractor(
         HttpClient httpClient,
         IDateTimeProvider dateTimeProvider,
-        YouTubeExtractorConfig config,
-        ILogger? logger,
-        ICacheObject<string, object?>? cache)
-        : base(httpClient, dateTimeProvider, config)
-    {
-        _logger = logger;
-        _cache = cache;
-    }
+        YouTubeExtractorConfig config)
+        : base(httpClient, dateTimeProvider, config) { }
 
     public async IAsyncEnumerable<ExtractResult> ExtractCommunityAsync(
         Uri uri,
@@ -60,7 +58,7 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
 
             foreach (var communityPost in communityPosts)
             {
-                foreach (var result in ExtractCommunity(communityPost, metadata.Copy()))
+                foreach (var result in ExtractCommunity(communityPost, metadata))
                 {
                     yield return result;
                 }
@@ -113,7 +111,7 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
             ?? json.SelectToken("$..authorEndpoint.browseEndpoint.browseId")!.ToString();
 
         // assume the emojis are one continuation token away from the community post
-        // I have no idea where to find the emojis normally
+        // no idea where to find the emojis normally
 
         var continuationToken = json.SelectToken("$..continuationCommand.token")!.ToString();
         json = await GetCommunityJsonAsync(channelId, continuationToken, cancellationToken);
@@ -139,48 +137,51 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
 
     private IEnumerable<ExtractResult> ExtractCommunity(JToken post, IMetadataObject metadata)
     {
-        var postId = post["postId"]!.ToString();
-        var channelId = post.SelectToken("$..authorEndpoint.browseEndpoint.browseId")!.ToString();
-        var channelName = post.SelectToken("$..authorText.runs[*].text")!.ToString();
+        metadata = metadata.Copy();
 
-        metadata["post_id"] = postId;
-        metadata.SetByParts(channelId, MetadataChannelIdKeys);
-        metadata.SetByParts(channelName, MetadataChannelNameKeys);
+        var postId = GetMetadata<string>(metadata, post["postId"], MetadataPostIdKeys)!;
+        var channelId = GetMetadata<string>(metadata, post.SelectToken("$..authorEndpoint.browseEndpoint.browseId"), MetadataChannelIdKeys)!;
+        GetMetadata<string>(metadata, post.SelectToken("$..authorText.runs[*].text"), MetadataChannelNameKeys);
 
         var publishedTime = post.SelectToken("$.publishedTimeText.runs[*].text");
         string? relativeDateTime = null;
         if (publishedTime != null)
         {
             relativeDateTime = GetRelativeDateTime(publishedTime.ToString());
-            metadata["published"] = relativeDateTime;
-            metadata["published_from"] = publishedTime.ToString() + $" from {DateTimeProvider.OffsetNow}";
+            metadata[MetadataPostPublishedKeys] = relativeDateTime;
+            metadata[MetadataPostPublishedFromKeys] = publishedTime.ToString() + $" from {DateTimeProvider.OffsetNow}";
         }
 
-        metadata["votes"] = post["voteCount"]?["simpleText"]?.ToString();
+        GetMetadata<string>(metadata, post["voteCount"]?["simpleText"], MetadataPostVotesKeys);
+        GetMetadata<string>(metadata, post.SelectToken("$..replyButton.buttonRenderer.text.simpleText"), MetadataPostCommentsCountKeys);
 
-        var commentsCount = post.SelectToken("$..replyButton.buttonRenderer.text.simpleText");
-        if (commentsCount != null)
-        {
-            metadata["comments_count"] = commentsCount.ToString();
-        }
-
-        var imageResult = ExtractCommunityImage(post, metadata.Copy(), relativeDateTime);
+        var imageResult = ExtractCommunityImage(post, metadata, relativeDateTime);
         if (imageResult != null)
         {
             yield return imageResult;
         }
 
-        var textResult = ExtractCommunityText(post, metadata.Copy(), relativeDateTime);
+        var textResult = ExtractCommunityText(
+            post,
+            postId,
+            channelId,
+            relativeDateTime,
+            metadata);
         if (textResult != null)
         {
             yield return textResult;
         }
     }
 
-    private ExtractResult? ExtractCommunityText(JToken post, IMetadataObject metadata, string? relativeDateTime)
+    private static ExtractResult? ExtractCommunityText(
+        JToken post,
+        string postId,
+        string channelId,
+        string? relativeDateTime,
+        IMetadataObject metadata)
     {
-        var postId = post["postId"]!.ToString();
-        var channelId = post.SelectToken("$..authorEndpoint.browseEndpoint.browseId")!.ToString();
+        metadata = metadata.Copy();
+
         var contextTextRuns = post["contentText"]?["runs"];
         if (contextTextRuns == null)
         {
@@ -189,7 +190,7 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
 
         if (relativeDateTime != null)
         {
-            metadata.SetByParts($"{channelId}#community#{relativeDateTime}_{postId}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+            metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#community#{relativeDateTime}_{postId}";
         }
 
         var textBuilder = new StringBuilder();
@@ -207,14 +208,12 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
         }
         var text = textBuilder.ToString();
 
-        metadata.SetByParts("txt", MetadataObjectConsts.File.ExtensionKeys);
+        metadata[MetadataObjectConsts.File.ExtensionKeys] = "txt";
 
         var canonicalBaseUrl = post.SelectToken("$..publishedTimeText..canonicalBaseUrl")?.ToString();
-        metadata.SetByParts(
-            canonicalBaseUrl != null
-                ? $"https://www.youtube.com{canonicalBaseUrl}"
-                : $"https://www.youtube.com/post/{postId}",
-            MetadataObjectConsts.Origin.UriKeys);
+        metadata[MetadataObjectConsts.Origin.UriKeys] = canonicalBaseUrl != null
+            ? $"https://www.youtube.com{canonicalBaseUrl}"
+            : $"https://www.youtube.com/post/{postId}";
 
         return new ExtractResult(
             Encoding.UTF8.GetBytes(text),
@@ -223,8 +222,10 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
             metadata: metadata);
     }
 
-    private ExtractResult? ExtractCommunityImage(JToken post, IMetadataObject metadata, string? relativeDateTime)
+    private static ExtractResult? ExtractCommunityImage(JToken post, IMetadataObject metadata, string? relativeDateTime)
     {
+        metadata = metadata.Copy();
+
         var images = post.SelectToken("$..backstageImageRenderer.image.thumbnails");
         if (images == null)
         {
@@ -239,11 +240,11 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
         var postId = post["postId"]!.ToString();
         var channelId = post.SelectToken("$..authorEndpoint.browseEndpoint.browseId")!.ToString();
 
-        metadata.SetByParts("png", MetadataObjectConsts.File.ExtensionKeys);
+        metadata[MetadataObjectConsts.File.ExtensionKeys] = "png";
 
         if (relativeDateTime != null)
         {
-            metadata.SetByParts($"{channelId}#community#{relativeDateTime}_{postId}#image", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+            metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#community#{relativeDateTime}_{postId}#image";
         }
 
         imageUrl = GetCommunityImageUrlFromThumbnail(imageUrl);
@@ -257,15 +258,15 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
 
     private IEnumerable<ExtractResult> ExtractEmojis(JObject json, IMetadataObject metadata, string? channelId = null)
     {
-        var customEmojis = json.SelectTokens("$..customEmojis[*]");
-        if (customEmojis == null || !customEmojis.Any())
+        var customEmojis = json.SelectToken("$..customEmojis");
+        if (customEmojis == null)
         {
             yield break;
         }
 
         foreach (var emoji in customEmojis)
         {
-            var result = ExtractEmoji(emoji, metadata.Copy(), channelId);
+            var result = ExtractEmoji(emoji, metadata, channelId);
             if (result != null)
             {
                 yield return result;
@@ -275,7 +276,10 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
 
     private ExtractResult? ExtractEmoji(JToken emoji, IMetadataObject metadata, string? channelId = null)
     {
-        var emojiIdParts = emoji["emojiId"]?.ToString().Split("/");
+        metadata = metadata.Copy();
+
+        var emojiId = emoji["emojiId"]!.ToString();
+        var emojiIdParts = emojiId.Split("/");
         if (emojiIdParts == null || emojiIdParts.Length != 2)
         {
             throw new ArgumentException("Invalid emoji Id.");
@@ -295,9 +299,11 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
             throw new ArgumentException("Could not get emoji URL.");
         }
 
-        metadata.SetByParts(emojiChannelId, MetadataChannelIdKeys);
-        metadata["emoji_name"] = emoji.SelectToken("$..label")?.ToString();
-        metadata.SetByParts("png", MetadataObjectConsts.File.ExtensionKeys);
+        metadata[MetadataChannelIdKeys] = emojiChannelId;
+        metadata[MetadataEmojiIdKeys] = emojiId;
+        metadata[MetadataEmojiSubIdKeys] = emojiSubId;
+        GetMetadata<string>(metadata, emoji.SelectToken("$..label"), MetadataEmojiNameKeys);
+        metadata[MetadataObjectConsts.File.ExtensionKeys] = "png";
 
         return new ExtractResult(
             GetScaledEmojiImageUri(url),

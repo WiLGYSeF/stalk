@@ -4,9 +4,11 @@ using System.Dynamic;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
+using System.Threading.Channels;
 using System.Web;
 using Wilgysef.Stalk.Core.Shared.CacheObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Shared.Extensions;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
@@ -22,6 +24,8 @@ public class TwitchExtractor : IExtractor
 
     public IDictionary<string, object?> Config { get; set; } = new Dictionary<string, object?>();
 
+    private static readonly string ClientIdHeader = "Client-Id";
+
     private const string ChannelRegex = @"(?<channel>[A-Za-z0-9_-]+)";
     private static readonly Regex ChannelUriRegex = new(Consts.UriPrefixRegex + $@"/{ChannelRegex}/?", RegexOptions.Compiled);
     private static readonly Regex VideosRegex = new(Consts.UriPrefixRegex + $@"/{ChannelRegex}/videos", RegexOptions.Compiled);
@@ -30,12 +34,14 @@ public class TwitchExtractor : IExtractor
     private static readonly Regex ClipAltRegex = new(@"(?:https?://)?clips\.twitch\.tv/(?<clip>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
     private static readonly Regex AboutRegex = new(Consts.UriPrefixRegex + $@"/{ChannelRegex}/about/?", RegexOptions.Compiled);
 
-    private static readonly string[] MetadataVideoIdKeys = new[] { "video", "id" };
-    private static readonly string[] MetadataVideoLengthSecondsKeys = new[] { "video", "length_seconds" };
-    private static readonly string[] MetadataVideoLengthKeys = new[] { "video", "length" };
     private static readonly string[] MetadataChannelIdKeys = new[] { "channel", "id" };
     private static readonly string[] MetadataChannelNameKeys = new[] { "channel", "name" };
     private static readonly string[] MetadataChannelLoginKeys = new[] { "channel", "login" };
+
+    private static readonly string[] MetadataVideoIdKeys = new[] { "video", "id" };
+    private static readonly string[] MetadataVideoLengthSecondsKeys = new[] { "video", "length_seconds" };
+    private static readonly string[] MetadataVideoLengthKeys = new[] { "video", "length" };
+    private static readonly string[] MetadataVideoPublishedAtKeys = new[] { "video", "published_at" };
     private static readonly string[] MetadataVideoTitleKeys = new[] { "video", "title" };
     private static readonly string[] MetadataVideoViewCountKeys = new[] { "video", "view_count" };
     private static readonly string[] MetadataVideoTagsKeys = new[] { "video", "tags" };
@@ -91,7 +97,7 @@ public class TwitchExtractor : IExtractor
             ExtractType.Clips => ExtractClipsAsync(uri, metadata, cancellationToken),
             ExtractType.Clip => ExtractClipAsync(uri, metadata, cancellationToken),
             ExtractType.About => ExtractAboutAsync(uri, metadata, cancellationToken),
-            _ => throw new NotImplementedException(),
+            _ => throw new ArgumentOutOfRangeException(nameof(uri)),
         };
     }
 
@@ -99,22 +105,17 @@ public class TwitchExtractor : IExtractor
     {
         var absoluteUri = uri.AbsoluteUri;
 
-        var match = Consts.VideoRegex.Match(absoluteUri);
-        if (match.Success)
+        if (Consts.VideoRegex.TryMatch(absoluteUri, out var videoMatch))
         {
-            return match.Groups["video"].Value;
+            return videoMatch.Groups["video"].Value;
         }
-
-        match = ClipRegex.Match(absoluteUri);
-        if (match.Success)
+        if (ClipRegex.TryMatch(absoluteUri, out var clipMatch))
         {
-            return match.Groups["clip"].Value;
+            return clipMatch.Groups["clip"].Value;
         }
-
-        match = ClipAltRegex.Match(absoluteUri);
-        if (match.Success)
+        if (ClipAltRegex.TryMatch(absoluteUri, out var clipAltMatch))
         {
-            return match.Groups["clip"].Value;
+            return clipAltMatch.Groups["clip"].Value;
         }
 
         return null;
@@ -125,7 +126,9 @@ public class TwitchExtractor : IExtractor
         _httpClient = client;
     }
 
-    private async IAsyncEnumerable<ExtractResult> ExtractChannelAsync(
+#pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously
+    private static async IAsyncEnumerable<ExtractResult> ExtractChannelAsync(
+#pragma warning restore CS1998 // Async method lacks 'await' operators and will run synchronously
         Uri uri,
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
@@ -163,12 +166,12 @@ public class TwitchExtractor : IExtractor
 
         while (true)
         {
-            var json = await GetVideosAsync(channelName, cursor, cancellationToken);
+            var json = await GetGraphQlDataAsync(GraphQlRequest.FilterableVideoTower_Videos(channelName, cursor), cancellationToken);
             var videos = json.SelectTokens("$..videos.edges[*].node");
 
             foreach (var video in videos)
             {
-                foreach (var result in ExtractVideo(video, metadata.Copy()))
+                foreach (var result in ExtractVideo(video, metadata))
                 {
                     yield return result;
                 }
@@ -192,20 +195,22 @@ public class TwitchExtractor : IExtractor
         var match = Consts.VideoRegex.Match(uri.AbsoluteUri);
         var videoId = match.Groups["video"].Value;
 
-        var channelVideoCore = await GetChannelVideoCoreAsync(videoId, cancellationToken);
+        var channelVideoCore = await GetGraphQlDataAsync(GraphQlRequest.ChannelVideoCore(videoId), cancellationToken);
         var channelName = channelVideoCore.SelectToken("$..owner.login")!.ToString();
 
-        var videoMetadata = await GetVideoMetadataAsync(channelName, videoId, cancellationToken);
+        var videoMetadata = await GetGraphQlDataAsync(GraphQlRequest.VideoMetadata(channelName, videoId), cancellationToken);
         var video = videoMetadata.SelectToken("$..video");
 
-        foreach (var result in ExtractVideo(video!, metadata.Copy()))
+        foreach (var result in ExtractVideo(video!, metadata))
         {
             yield return result;
         }
     }
 
-    private IEnumerable<ExtractResult> ExtractVideo(JToken video, IMetadataObject metadata)
+    private static IEnumerable<ExtractResult> ExtractVideo(JToken video, IMetadataObject metadata)
     {
+        metadata = metadata.Copy();
+
         var videoId = video.SelectToken("$.id")!.ToString();
         var videoLengthSeconds = video.SelectToken("$.lengthSeconds")?.Value<int>();
 
@@ -219,6 +224,7 @@ public class TwitchExtractor : IExtractor
         if (DateTime.TryParse(video.SelectToken("$..publishedAt")?.ToString(), out var publishedAtResult))
         {
             publishedAt = publishedAtResult;
+            metadata[MetadataVideoPublishedAtKeys] = publishedAt.Value.ToString("yyyyMMdd");
         }
 
         var title = video.SelectToken("$..title")?.ToString();
@@ -227,32 +233,32 @@ public class TwitchExtractor : IExtractor
             .Select(t => t["localizedName"]?.ToString())
             .Where(t => t != null);
 
-        metadata.SetByParts(videoId, MetadataVideoIdKeys);
+        metadata[MetadataVideoIdKeys] = videoId;
 
         if (videoLengthSeconds.HasValue)
         {
-            metadata.SetByParts(videoLengthSeconds.Value, MetadataVideoLengthSecondsKeys);
-            metadata.SetByParts(TimeSpanToString(TimeSpan.FromSeconds(videoLengthSeconds.Value)), MetadataVideoLengthKeys);
+            metadata[MetadataVideoLengthSecondsKeys] = videoLengthSeconds.Value;
+            metadata[MetadataVideoLengthKeys] = TimeSpanToString(TimeSpan.FromSeconds(videoLengthSeconds.Value));
         }
 
-        metadata.SetByParts(channelId, MetadataChannelIdKeys);
-        metadata.SetByParts(channelName, MetadataChannelNameKeys);
-        metadata.SetByParts(channelLogin, MetadataChannelLoginKeys);
+        metadata[MetadataChannelIdKeys] = channelId;
+        metadata[MetadataChannelNameKeys] = channelName;
+        metadata[MetadataChannelLoginKeys] = channelLogin;
 
-        metadata.SetByParts(title, MetadataVideoTitleKeys);
-        metadata.SetByParts(viewCount, MetadataVideoViewCountKeys);
+        metadata[MetadataVideoTitleKeys] = title;
+        metadata[MetadataVideoViewCountKeys] = viewCount;
 
         if (contentTags?.Any() ?? false)
         {
-            metadata.SetByParts(string.Join(", ", contentTags), MetadataVideoTagsKeys);
+            metadata[MetadataVideoTagsKeys] = string.Join(", ", contentTags);
         }
 
         var gameMetadata = video.SelectToken("$..game");
         if (gameMetadata != null)
         {
-            metadata.SetByParts(gameMetadata["id"]?.ToString(), MetadataGameIdKeys);
-            metadata.SetByParts(gameMetadata["displayName"]?.ToString(), MetadataGameNameKeys);
-            metadata.SetByParts(gameMetadata["boxArtURL"]?.ToString(), MetadataGameBoxartUrlKeys);
+            GetMetadata<string>(metadata, gameMetadata["id"], MetadataGameIdKeys);
+            GetMetadata<string>(metadata, gameMetadata["displayName"], MetadataGameNameKeys);
+            GetMetadata<string>(metadata, gameMetadata["boxArtURL"], MetadataGameBoxartUrlKeys);
         }
 
         if (thumbnailUrl != null)
@@ -261,10 +267,10 @@ public class TwitchExtractor : IExtractor
 
             if (publishedAt.HasValue)
             {
-                thumbnailMetadata.SetByParts($"{channelId}#{publishedAt.Value:yyyyMMdd}_{videoId}#thumb", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+                thumbnailMetadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#video#{publishedAt.Value:yyyyMMdd}_{videoId}#thumb";
             }
 
-            thumbnailMetadata.SetByParts(GetExtensionFromUri(new Uri(thumbnailUrl)), MetadataObjectConsts.File.ExtensionKeys);
+            thumbnailMetadata[MetadataObjectConsts.File.ExtensionKeys] = GetExtensionFromUri(new Uri(thumbnailUrl));
 
             yield return new ExtractResult(
                 thumbnailUrl,
@@ -275,10 +281,10 @@ public class TwitchExtractor : IExtractor
 
         if (publishedAt.HasValue)
         {
-            metadata.SetByParts($"{channelId}#{publishedAt.Value:yyyyMMdd}_{videoId}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+            metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#video#{publishedAt.Value:yyyyMMdd}_{videoId}";
         }
 
-        metadata.SetByParts(YoutubeDlFileExtensionTemplate, MetadataObjectConsts.File.ExtensionKeys);
+        metadata[MetadataObjectConsts.File.ExtensionKeys] = YoutubeDlFileExtensionTemplate;
 
         yield return new ExtractResult(
             $"https://www.twitch.tv/videos/{videoId}",
@@ -298,7 +304,7 @@ public class TwitchExtractor : IExtractor
 
         while (true)
         {
-            var json = await GetClipsCardsAsync(channelName, cursor, cancellationToken);
+            var json = await GetGraphQlDataAsync(GraphQlRequest.ClipsCards__User(channelName, cursor), cancellationToken);
             var clips = json.SelectTokens("$..clips.edges[*].node");
 
             foreach (var clip in clips)
@@ -306,7 +312,7 @@ public class TwitchExtractor : IExtractor
                 var clipSlug = clip.SelectToken("$.slug")!.ToString();
                 yield return new ExtractResult(
                     $"https://clips.twitch.tv/{clipSlug}",
-                    clipSlug,
+                    $"clip#{clipSlug}",
                     JobTaskType.Extract,
                     metadata: metadata);
             }
@@ -324,6 +330,8 @@ public class TwitchExtractor : IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
+        metadata = metadata.Copy();
+
         var absoluteUri = uri.AbsoluteUri;
         var match = ClipRegex.Match(absoluteUri);
         if (!match.Success)
@@ -333,25 +341,16 @@ public class TwitchExtractor : IExtractor
 
         var clipSlug = match.Groups["clip"].Value;
 
-        metadata.SetByParts(clipSlug, MetadataClipSlugKeys);
+        metadata[MetadataClipSlugKeys] = clipSlug;
 
         var responses = await GetClipDataAsync(clipSlug, cancellationToken);
 
         var clipsSocialShare = responses.Single(r => r.Operation == "ClipsSocialShare").Data;
-
-        var clipId = clipsSocialShare.SelectToken("$..clip.id")?.ToString();
-        var clipUrl = clipsSocialShare.SelectToken("$.clip.url")!.ToString();
-        var title = clipsSocialShare.SelectToken("$.clip.title")?.ToString();
-
-        metadata.SetByParts(clipId, MetadataClipIdKeys);
-        metadata.SetByParts(clipUrl, MetadataClipUrlKeys);
-        metadata.SetByParts(title, MetadataClipTitleKeys);
-
-        var gameId = clipsSocialShare.SelectToken("$..game.id")?.ToString();
-        var gameName = clipsSocialShare.SelectToken("$..game.name")?.ToString();
-
-        metadata.SetByParts(gameId, MetadataClipGameIdKeys);
-        metadata.SetByParts(gameName, MetadataClipGameNameKeys);
+        GetMetadata<string>(metadata, clipsSocialShare.SelectToken("$..clip.id"), MetadataClipIdKeys);
+        GetMetadata<string>(metadata, clipsSocialShare.SelectToken("$.clip.url"), MetadataClipUrlKeys);
+        GetMetadata<string>(metadata, clipsSocialShare.SelectToken("$.clip.title"), MetadataClipTitleKeys);
+        GetMetadata<string>(metadata, clipsSocialShare.SelectToken("$..game.id"), MetadataClipGameIdKeys);
+        GetMetadata<string>(metadata, clipsSocialShare.SelectToken("$..game.name"), MetadataClipGameNameKeys);
 
         var comscoreStreamingQuery = responses.Single(r => r.Operation == "ComscoreStreamingQuery").Data;
 
@@ -359,52 +358,38 @@ public class TwitchExtractor : IExtractor
         if (DateTime.TryParse(comscoreStreamingQuery.SelectToken("$..clip.createdAt")?.ToString(), out var createdAtResult))
         {
             createdAt = createdAtResult;
+            metadata[MetadataClipCreatedAtKeys] = createdAt.Value.ToString("yyyyMMdd");
         }
         var duration = comscoreStreamingQuery.SelectToken("$..clip.durationSeconds")?.Value<int>();
 
-        metadata.SetByParts(createdAt?.ToString("yyyyMMdd"), MetadataClipCreatedAtKeys);
-        metadata.SetByParts(TimeSpanToString(duration.HasValue ? TimeSpan.FromSeconds(duration.Value) : null), MetadataClipDurationKeys);
-        metadata.SetByParts(duration, MetadataClipDurationSecondsKeys);
+        metadata[MetadataClipDurationKeys] = TimeSpanToString(duration.HasValue ? TimeSpan.FromSeconds(duration.Value) : null);
+        metadata[MetadataClipDurationSecondsKeys] = duration;
 
         var clipsBroadcasterInfo = responses.Single(r => r.Operation == "ClipsBroadcasterInfo").Data;
-
-        var channelId = clipsBroadcasterInfo.SelectToken("$..broadcaster.id")?.ToString();
-        var channelLogin = clipsBroadcasterInfo.SelectToken("$..broadcaster.login")?.ToString();
-        var channelName = clipsBroadcasterInfo.SelectToken("$..broadcaster.displayName")?.ToString();
-
-        metadata.SetByParts(channelId, MetadataChannelIdKeys);
-        metadata.SetByParts(channelName, MetadataChannelNameKeys);
-        metadata.SetByParts(channelLogin, MetadataChannelLoginKeys);
+        var channelId = GetMetadata<string>(metadata, clipsBroadcasterInfo.SelectToken("$..broadcaster.id"), MetadataChannelIdKeys);
+        GetMetadata<string>(metadata, clipsBroadcasterInfo.SelectToken("$..broadcaster.login"), MetadataChannelNameKeys);
+        GetMetadata<string>(metadata, clipsBroadcasterInfo.SelectToken("$..broadcaster.displayName"), MetadataChannelLoginKeys);
 
         var clipsViewCount = responses.Single(r => r.Operation == "ClipsViewCount").Data;
-
-        var viewCount = clipsViewCount.SelectToken("$..clip.viewCount")?.Value<int>();
-
-        metadata.SetByParts(viewCount, MetadataClipViewCountKeys);
+        GetMetadata<int>(metadata, clipsViewCount.SelectToken("$..clip.viewCount"), MetadataClipViewCountKeys);
 
         var clipsCurator = responses.Single(r => r.Operation == "ClipsCurator").Data;
-
-        var curatorId = clipsCurator.SelectToken("$..curator.id")?.ToString();
-        var curatorLogin = clipsCurator.SelectToken("$..curator.login")?.ToString();
-        var curatorName = clipsCurator.SelectToken("$..curator.displayName")?.ToString();
-
-        metadata.SetByParts(curatorId, MetadataClipCuratorIdKeys);
-        metadata.SetByParts(curatorName, MetadataClipCuratorNameKeys);
-        metadata.SetByParts(curatorLogin, MetadataClipCuratorLoginKeys);
+        GetMetadata<string>(metadata, clipsCurator.SelectToken("$..curator.id"), MetadataClipCuratorIdKeys);
+        GetMetadata<string>(metadata, clipsCurator.SelectToken("$..curator.login"), MetadataClipCuratorNameKeys);
+        GetMetadata<string>(metadata, clipsCurator.SelectToken("$..curator.displayName"), MetadataClipCuratorLoginKeys);
 
         var videoAccessTokenClip = responses.Single(r => r.Operation == "VideoAccessToken_Clip").Data;
-
         var videoUrl = videoAccessTokenClip.SelectToken("$..videoQualities[0].sourceURL")!.ToString();
         var signature = videoAccessTokenClip.SelectToken("$..playbackAccessToken.signature")!.ToString();
         var token = videoAccessTokenClip.SelectToken("$..playbackAccessToken.value")!.ToString();
 
         if (createdAt.HasValue)
         {
-            metadata.SetByParts($"{channelId}#{createdAt.Value:yyyyMMdd}_{clipSlug}", MetadataObjectConsts.Origin.ItemIdSeqKeys);
+            metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#clip#{createdAt.Value:yyyyMMdd}_{clipSlug}";
         }
 
-        metadata.SetByParts($"https://clips.twitch.tv/{clipSlug}", MetadataObjectConsts.Origin.UriKeys);
-        metadata.SetByParts("mp4", MetadataObjectConsts.File.ExtensionKeys);
+        metadata[MetadataObjectConsts.Origin.UriKeys] = $"https://clips.twitch.tv/{clipSlug}";
+        metadata[MetadataObjectConsts.File.ExtensionKeys] = "mp4";
 
         yield return new ExtractResult(
             $"{videoUrl}?sig={signature}&token={HttpUtility.UrlEncode(token)}",
@@ -416,12 +401,12 @@ public class TwitchExtractor : IExtractor
     private async IAsyncEnumerable<ExtractResult> ExtractAboutAsync(
         Uri uri,
         IMetadataObject metadata,
-        CancellationToken cancellationToken)
+        [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var match = AboutRegex.Match(uri.AbsoluteUri);
         var channelName = match.Groups["channel"].Value;
 
-        var json = await GetChannelShellAsync(channelName, cancellationToken);
+        var json = await GetGraphQlDataAsync(GraphQlRequest.ChannelShell(channelName), cancellationToken);
         var channelId = json.SelectToken("$..userOrError.id")?.ToString();
 
         if (channelId != null)
@@ -438,48 +423,54 @@ public class TwitchExtractor : IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var json = await GetEmotePickerUserSubscriptionProductsAsync(channelId, cancellationToken);
-        var subscriptionProducts = json.SelectTokens("$..subscriptionProducts[*]");
+        var json = await GetGraphQlDataAsync(GraphQlRequest.EmotePicker_EmotePicker_UserSubscriptionProducts(channelId), cancellationToken);
+        var subscriptionProducts = json.SelectToken("$..subscriptionProducts");
+        if (subscriptionProducts == null)
+        {
+            yield break;
+        }
 
         foreach (var subscriptionProduct in subscriptionProducts)
         {
-            foreach (var result in ExtractSubscriptionProduct(subscriptionProduct, metadata.Copy()))
+            foreach (var result in ExtractSubscriptionProduct(subscriptionProduct, metadata, channelId))
             {
                 yield return result;
             }
         }
     }
 
-    private IEnumerable<ExtractResult> ExtractSubscriptionProduct(JToken subscriptionProduct, IMetadataObject metadata)
+    private static IEnumerable<ExtractResult> ExtractSubscriptionProduct(JToken subscriptionProduct, IMetadataObject metadata, string? channelId)
     {
+        metadata = metadata.Copy();
+
         var price = subscriptionProduct.SelectToken("$.price")?.ToString();
         var tier = subscriptionProduct.SelectToken("$.tier")?.ToString();
 
-        metadata.SetByParts(price, MetadataEmotePriceKeys);
-        metadata.SetByParts(tier, MetadataEmoteTierKeys);
+        metadata[MetadataEmotePriceKeys] = price;
+        metadata[MetadataEmoteTierKeys] = tier;
 
-        var emotes = subscriptionProduct.SelectTokens("$.emotes[*]");
+        var emotes = subscriptionProduct.SelectToken("$.emotes");
+        if (emotes== null)
+        {
+            yield break;
+        }
+
         foreach (var emote in emotes)
         {
             var emoteMetadata = metadata.Copy();
 
-            var emoteId = emote.SelectToken("$.id")!.ToString();
-            var setId = emote.SelectToken("$.setID")?.ToString();
-            var token = emote.SelectToken("$.token")?.ToString();
-            var assetType = emote.SelectToken("$.assetType")?.ToString();
+            var emoteId = GetMetadata<string>(emoteMetadata, emote.SelectToken("$.id"), MetadataEmoteIdKeys);
+            GetMetadata<string>(emoteMetadata, emote.SelectToken("$.setID"), MetadataEmoteSetIdKeys);
+            GetMetadata<string>(emoteMetadata, emote.SelectToken("$.token"), MetadataEmoteTokenKeys);
+            var assetType = GetMetadata<string>(emoteMetadata, emote.SelectToken("$.assetType"), MetadataEmoteAssetTypeKeys);
 
-            emoteMetadata.SetByParts(emoteId, MetadataEmoteIdKeys);
-            emoteMetadata.SetByParts(setId, MetadataEmoteSetIdKeys);
-            emoteMetadata.SetByParts(token, MetadataEmoteTokenKeys);
-            emoteMetadata.SetByParts(assetType, MetadataEmoteAssetTypeKeys);
+            emoteMetadata[MetadataObjectConsts.File.ExtensionKeys] = assetType == "ANIMATED"
+                ? "gif"
+                : "png";
 
-            if (assetType == "ANIMATED")
+            if (channelId != null)
             {
-                emoteMetadata.SetByParts("gif", MetadataObjectConsts.File.ExtensionKeys);
-            }
-            else
-            {
-                emoteMetadata.SetByParts("png", MetadataObjectConsts.File.ExtensionKeys);
+                emoteMetadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#emote#{emoteId}";
             }
 
             yield return new ExtractResult(
@@ -490,187 +481,32 @@ public class TwitchExtractor : IExtractor
         }
     }
 
-    private async Task<JToken> GetVideosAsync(
-        string channelName,
-        string? cursor,
-        CancellationToken cancellationToken)
-    {
-        dynamic variables = new ExpandoObject();
-        variables.broadcastType = (object?)null;
-        variables.channelOwnerLogin = channelName;
-        variables.limit = 30;
-        variables.videoSort = "TIME";
-
-        if (cursor != null)
-        {
-            variables.cursor = cursor;
-        }
-
-        return await GetGraphQlDataAsync(
-            "FilterableVideoTower_Videos",
-            "a937f1d22e269e39a03b509f65a7490f9fc247d7f83d6ac1421523e3b68042cb",
-            variables,
-            cancellationToken: cancellationToken);
-    }
-
-    private async Task<JToken> GetChannelVideoCoreAsync(
-        string videoId,
-        CancellationToken cancellationToken)
-    {
-        var variables = new
-        {
-            videoID = videoId,
-        };
-
-        return await GetGraphQlDataAsync(
-            "ChannelVideoCore",
-            "cf1ccf6f5b94c94d662efec5223dfb260c9f8bf053239a76125a58118769e8e2",
-            variables,
-            cancellationToken: cancellationToken);
-    }
-
-    private async Task<JToken> GetVideoMetadataAsync(
-        string channelName,
-        string videoId,
-        CancellationToken cancellationToken)
-    {
-        var variables = new
-        {
-            channelLogin = channelName,
-            videoID = videoId,
-        };
-
-        return await GetGraphQlDataAsync(
-            "VideoMetadata",
-            "49b5b8f268cdeb259d75b58dcb0c1a748e3b575003448a2333dc5cdafd49adad",
-            variables,
-            cancellationToken: cancellationToken);
-    }
-
-    private async Task<JToken> GetClipsCardsAsync(
-        string channelName,
-        string? cursor,
-        CancellationToken cancellationToken)
-    {
-        dynamic variables = new ExpandoObject();
-        variables.criteria = new
-        {
-            filter = "ALL_TIME"
-        };
-        variables.limit = 20;
-        variables.login = channelName;
-
-        if (cursor != null)
-        {
-            variables.cursor = cursor;
-        }
-
-        return await GetGraphQlDataAsync(
-            "ClipsCards__User",
-            "b73ad2bfaecfd30a9e6c28fada15bd97032c83ec77a0440766a56fe0bd632777",
-            variables,
-            cancellationToken: cancellationToken);
-    }
-
-    private async Task<JToken> GetChannelShellAsync(string channelName, CancellationToken cancellationToken)
-    {
-        var variables = new
-        {
-            login = channelName
-        };
-
-        return await GetGraphQlDataAsync(
-            "ChannelShell",
-            "580ab410bcd0c1ad194224957ae2241e5d252b2c5173d8e0cce9d32d5bb14efe",
-            variables,
-            cancellationToken: cancellationToken);
-    }
-
-    private async Task<JToken> GetEmotePickerUserSubscriptionProductsAsync(string channelId, CancellationToken cancellationToken)
-    {
-        var variables = new
-        {
-            channelOwnerID = channelId,
-        };
-
-        return await GetGraphQlDataAsync(
-            "EmotePicker_EmotePicker_UserSubscriptionProducts",
-            "71b5f829a4576d53b714c01d3176f192cbd0b14973eb1c3d0ee23d5d1b78fd7e",
-            variables,
-            cancellationToken: cancellationToken);
-    }
-
     private async Task<List<GraphQlResponse>> GetClipDataAsync(
-        string slug,
+        string clipSlug,
         CancellationToken cancellationToken)
     {
-        var slugData = new
-        {
-            slug
-        };
-
-        return await GetGraphQlDataAsync(
+        return await GetGraphQlResponseAsync(
             new[]
             {
-                new GraphQlRequest(
-                    "ClipsSocialShare",
-                    slugData,
-                    "86533e14855999f00b4c700c3a73149f1ddb5a5948453c77defcb8350e8d108d"),
-                new GraphQlRequest(
-                    "ComscoreStreamingQuery",
-                    new
-                    {
-                        channel = "",
-                        clipSlug = slug,
-                        isClip = true,
-                        isLive = false,
-                        isVodOrCollection = false,
-                        vodID = ""
-                    },
-                    "e1edae8122517d013405f237ffcc124515dc6ded82480a88daef69c83b53ac01"),
-                new GraphQlRequest(
-                    "ClipsBroadcasterInfo",
-                    slugData,
-                    "ce258d9536360736605b42db697b3636e750fdb14ff0a7da8c7225bdc2c07e8a"),
-                new GraphQlRequest(
-                    "ClipsViewCount",
-                    slugData,
-                    "00209f168e946123d3b911544a57be26391306685e6cae80edf75cdcf55bd979"),
-                new GraphQlRequest(
-                    "ClipsCurator",
-                    slugData,
-                    "769e99d9ac3f68e53c63dd902807cc9fbea63dace36c81643d776bcb120902e2"),
-                new GraphQlRequest(
-                    "VideoAccessToken_Clip",
-                    slugData,
-                    "36b89d2507fce29e5ca551df756d27c1cfe079e2609642b4390aa4c35796eb11")
+                GraphQlRequest.ClipsSocialShare(clipSlug),
+                GraphQlRequest.ComscoreStreamingQueryClip(clipSlug),
+                GraphQlRequest.ClipsBroadcasterInfo(clipSlug),
+                GraphQlRequest.ClipsViewCount(clipSlug),
+                GraphQlRequest.ClipsCurator(clipSlug),
+                GraphQlRequest.VideoAccessToken_Clip(clipSlug),
             },
             cancellationToken);
     }
 
-    private async Task<JToken> GetGraphQlDataAsync(
-        string operation,
-        string sha256Hash,
-        object variables,
-        int version = 1,
-        CancellationToken cancellationToken = default)
+    private async Task<JToken> GetGraphQlDataAsync(GraphQlRequest request, CancellationToken cancellationToken)
     {
-        var response = await PostGraphQlAsync(
-            operation,
-            sha256Hash,
-            variables,
-            version,
-            cancellationToken);
-        var content = await response.Content.ReadAsStringAsync(cancellationToken);
-        var result = JArray.Parse(content);
-        return result.Single(t => t["extensions"]?["operationName"]?.ToString() == operation);
+        var responses = await GetGraphQlResponseAsync(new[] { request }, cancellationToken);
+        return responses[0].Data;
     }
 
-    private async Task<List<GraphQlResponse>> GetGraphQlDataAsync(
-        IEnumerable<GraphQlRequest> requests,
-        CancellationToken cancellationToken = default)
+    private async Task<List<GraphQlResponse>> GetGraphQlResponseAsync(IEnumerable<GraphQlRequest> requests, CancellationToken cancellationToken)
     {
-        var response = await PostGraphQlAsync(
+        using var response = await PostGraphQlAsync(
             requests.Select(r => r.GetRequest()).ToArray(),
             cancellationToken);
         var content = await response.Content.ReadAsStringAsync(cancellationToken);
@@ -678,42 +514,15 @@ public class TwitchExtractor : IExtractor
         return result.Select(r => new GraphQlResponse(r["extensions"]!["operationName"]!.ToString(), r["data"]!)).ToList();
     }
 
-    private async Task<HttpResponseMessage> PostGraphQlAsync(
-        string operation,
-        string sha256Hash,
-        object variables,
-        int version = 1,
-        CancellationToken cancellationToken = default)
-    {
-        var data = new object[] {
-            new
-            {
-                extensions = new
-                {
-                    persistedQuery = new
-                    {
-                        sha256Hash,
-                        version
-                    }
-                },
-                operationName = operation,
-                variables
-            }
-        };
-        return await PostGraphQlAsync(data, cancellationToken);
-    }
-
-    private async Task<HttpResponseMessage> PostGraphQlAsync(
-        object[] data,
-        CancellationToken cancellationToken = default)
+    private async Task<HttpResponseMessage> PostGraphQlAsync(object[] data, CancellationToken cancellationToken)
     {
         var request = new HttpRequestMessage(HttpMethod.Post, Consts.GraphQlUri)
         {
             Content = JsonContent.Create(data)
         };
-        if (!request.Headers.Contains("Client-Id"))
+        if (!request.Headers.Contains(ClientIdHeader))
         {
-            request.Headers.Add("Client-Id", Consts.ClientId);
+            request.Headers.Add(ClientIdHeader, Consts.ClientId);
         }
         var response = await _httpClient.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
@@ -750,6 +559,18 @@ public class TwitchExtractor : IExtractor
         return null;
     }
 
+    private static T? GetMetadata<T>(IMetadataObject metadata, JToken? token, params string[] keys)
+    {
+        if (token == null)
+        {
+            return default;
+        }
+
+        var value = token.Value<T>();
+        metadata[keys] = value;
+        return value;
+    }
+
     private static string? GetExtensionFromUri(Uri uri)
     {
         var extension = Path.GetExtension(uri.AbsolutePath);
@@ -765,59 +586,6 @@ public class TwitchExtractor : IExtractor
                 ? timeSpan.Value.ToString(@"hh\:mm\:ss")
                 : timeSpan.Value.ToString(@"mm\:ss")
             : null;
-    }
-
-    private class GraphQlRequest
-    {
-        public string Operation { get; }
-
-        public object Variables { get; }
-
-        public string Sha256Hash { get; }
-
-        public int Version { get; }
-
-        public GraphQlRequest(
-            string operation,
-            object variables,
-            string sha256Hash,
-            int version = 1)
-        {
-            Operation = operation;
-            Variables = variables;
-            Sha256Hash = sha256Hash;
-            Version = version;
-        }
-
-        public object GetRequest()
-        {
-            return new
-            {
-                extensions = new
-                {
-                    persistedQuery = new
-                    {
-                        sha256Hash = Sha256Hash,
-                        version = Version
-                    }
-                },
-                operationName = Operation,
-                variables = Variables
-            };
-        }
-    }
-
-    private class GraphQlResponse
-    {
-        public string Operation { get; }
-
-        public JToken Data { get; }
-
-        public GraphQlResponse(string operation, JToken data)
-        {
-            Operation = operation;
-            Data = data;
-        }
     }
 
     private enum ExtractType
