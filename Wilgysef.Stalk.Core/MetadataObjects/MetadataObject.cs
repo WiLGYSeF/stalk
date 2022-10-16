@@ -112,7 +112,14 @@ public class MetadataObject : IMetadataObject
     public IMetadataObject Copy()
     {
         var metadata = new MetadataObject();
-        GetValues((keys, value) => metadata.SetValue(value, false, keys.ToArray()));
+        GetValues(
+            _root.Children,
+            t => t.Key,
+            t => t.Value,
+            t => t.Children,
+            t => t.Count,
+            t => { },
+            (keys, value) => metadata.SetValue(value, false, keys.ToArray()));
         return metadata;
     }
 
@@ -147,7 +154,14 @@ public class MetadataObject : IMetadataObject
     public IDictionary<string, object?> GetFlattenedDictionary(string separator)
     {
         IDictionary<string, object?> dictionary = new Dictionary<string, object?>();
-        GetValues((keys, value) => dictionary[string.Join(separator, keys)] = value);
+        GetValues(
+            _root.Children,
+            t => t.Key,
+            t => t.Value,
+            t => t.Children,
+            t => t.Count,
+            t => { },
+            (keys, value) => dictionary[string.Join(separator, keys)] = value);
         return dictionary;
     }
 
@@ -257,47 +271,40 @@ public class MetadataObject : IMetadataObject
         return currentTrie;
     }
 
-    private void SetValues(IDictionary<object, object?> dictionary, string? root)
+    private void SetValues(IDictionary<object, object?> dictionary, string[] root)
     {
-        foreach (var (key, value) in dictionary)
-        {
-            var keyToString = key.ToString();
-            if (keyToString == null)
-            {
-                continue;
-            }
-
-            var keyStr = root != null ? root + KeySeparator + keyToString : keyToString;
-            if (value is IDictionary<object, object?> dict)
-            {
-                SetValues(dict, keyStr);
-            }
-            else
-            {
-                this[keyStr] = value;
-            }
-        }
+        GetValues(
+            dictionary,
+            p => p.Key.ToString()!,
+            p => p.Value,
+            p => (IDictionary<object, object?>?)p.Value,
+            p => ((IDictionary<object, object?>?)p.Value)?.Count ?? 0,
+            p => { },
+            (keys, value) => SetValue(value, false, keys));
     }
 
-    private void SetValues(IDictionary<string, object?> dictionary, string? root)
+    private void SetValues(IDictionary<string, object?> dictionary, string[] root)
     {
-        foreach (var (key, value) in dictionary)
-        {
-            var keyStr = root != null ? root + KeySeparator + key : key;
-            if (value is IDictionary<string, object?> dict)
-            {
-                SetValues(dict, keyStr);
-            }
-            else
-            {
-                this[keyStr] = value;
-            }
-        }
+        GetValues(
+            dictionary,
+            p => p.Key,
+            p => p.Value,
+            p => (IDictionary<string, object?>?)p.Value,
+            p => ((IDictionary<string, object?>?)p.Value)?.Count ?? 0,
+            p => { },
+            (keys, value) => SetValue(value, false, keys));
     }
 
-    private void GetValues(Action<IEnumerable<string>, object?> addAction)
+    private static void GetValues<T>(
+        IEnumerable<T> initial,
+        Func<T, string> keyAction,
+        Func<T, object?> valueAction,
+        Func<T, IEnumerable<T>> childrenAction,
+        Func<T, int> countAction,
+        Action<T> traverseAction,
+        Action<IEnumerable<string>, object?> addAction)
     {
-        var nodes = new Stack<(ITrie<string, object?> Trie, int depth)>(_root.Children.Select(t => (t, 1)));
+        var nodes = new Stack<(T, int depth)>(initial.Select(i => (i, 1)));
         var currentKeys = new List<string>();
 
         while (nodes.Count > 0)
@@ -311,23 +318,25 @@ public class MetadataObject : IMetadataObject
 
             if (depth > currentKeys.Count)
             {
-                currentKeys.Add(trie.Key);
+                currentKeys.Add(keyAction(trie));
             }
             else if (depth == currentKeys.Count)
             {
-                currentKeys[^1] = trie.Key;
+                currentKeys[^1] = keyAction(trie);
             }
 
-            if (trie.Count > 0)
+            if (countAction(trie) > 0)
             {
-                foreach (var child in trie.Children)
+                traverseAction(trie);
+
+                foreach (var child in childrenAction(trie))
                 {
                     nodes.Push((child, depth + 1));
                 }
             }
             else
             {
-                addAction(currentKeys, trie.Value);
+                addAction(currentKeys, valueAction(trie));
             }
         }
     }
