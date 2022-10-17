@@ -49,12 +49,15 @@ public static class JobBuilderExtensions
             .WithFinishedTime(endTime);
     }
 
-    public static JobBuilder WithRandomTasks(this JobBuilder builder, JobTaskState taskState, int count)
+    public static JobBuilder WithRandomTasks(this JobBuilder builder, JobTaskState taskState, int count, JobTaskType type = JobTaskType.Extract)
     {
         for (var i = 0; i < count; i++)
         {
             var taskBuilder = new JobTaskBuilder();
-            builder.WithTasks(taskBuilder.WithRandomInitializedState(taskState).Create());
+            builder.WithTasks(taskBuilder
+                .WithRandomInitializedState(taskState)
+                .WithType(type)
+                .Create());
         }
 
         return builder;

@@ -513,12 +513,14 @@ public class Job : Entity
         //    throw new InvalidOperationException("Job still has active tasks.");
         //}
 
-        var failedTaskCount = Tasks.Count(t => t.State == JobTaskState.Failed);
+        var failedTasks = Tasks.Where(t => t.State == JobTaskState.Failed).ToList();
         var config = GetConfig();
 
-        ChangeState((failedTaskCount > config.MaxFailures || failedTaskCount == Tasks.Count(t => t.IsDone))
-            ? JobState.Failed
-            : JobState.Completed);
+        var failed = failedTasks.Count > config.MaxFailures
+            || failedTasks.Count == Tasks.Count(t => t.IsDone)
+            || failedTasks.Any(t => t.Result.RetryJobTaskId == null);
+
+        ChangeState(failed ? JobState.Failed : JobState.Completed);
 
         DomainEvents.AddOrReplace(new JobDoneEvent(Id));
     }
