@@ -167,7 +167,7 @@ public class JobCommandHandler : Command,
         job.ChangeConfig(jobConfig);
     }
 
-    private void SetIfNotNull<T>(Action<T> action, Func<T> valueFunc)
+    private static void SetIfNotNull<T>(Action<T> action, Func<T> valueFunc)
     {
         var value = valueFunc();
         if (value != null)
