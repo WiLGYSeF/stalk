@@ -345,10 +345,6 @@ public class Job : Entity
             throw new InvalidOperationException($"{nameof(ConfigJson)} is not valid config.");
         }
 
-        // deserializer marks these null when not present
-        config.Delay ??= new();
-        config.ExtractorConfig ??= new();
-        config.DownloaderConfig ??= new();
         return config;
     }
 
@@ -403,6 +399,11 @@ public class Job : Entity
     internal void SetConfig(JobConfig? config)
     {
         config ??= new JobConfig();
+
+        // just in case (automapper did not set these before)
+        config.Delay ??= new();
+        config.ExtractorConfig ??= new();
+        config.DownloaderConfig ??= new();
 
         var serialized = Encoding.UTF8.GetString(
             JsonSerializer.SerializeToUtf8Bytes(config, new JsonSerializerOptions

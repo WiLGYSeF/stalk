@@ -31,11 +31,13 @@ public class JobCommandHandler : Command,
 
     public async Task<JobDto> HandleCommandAsync(CreateJob command)
     {
+        var config = Mapper.Map<JobConfig>(command.Config);
+
         var builder = new JobBuilder().WithId(_idGenerator.CreateId())
             .WithName(command.Name)
             .WithPriority(command.Priority)
             .WithDelayedUntilTime(command.DelayedUntil)
-            .WithConfig(Mapper.Map<JobConfig>(command.Config));
+            .WithConfig(config);
 
         foreach (var task in command.Tasks)
         {

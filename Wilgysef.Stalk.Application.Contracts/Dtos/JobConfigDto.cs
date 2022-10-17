@@ -2,21 +2,21 @@
 
 public class JobConfigDto
 {
-    public int? MaxTaskWorkerCount { get; set; }
+    public int? MaxTaskWorkerCount { get; set; } = 4;
 
     public string? DownloadFilenameTemplate { get; set; }
 
-    public bool? DownloadData { get; set; }
+    public bool? DownloadData { get; set; } = true;
 
     public string? MetadataFilenameTemplate { get; set; }
 
-    public bool? SaveMetadata { get; set; }
+    public bool? SaveMetadata { get; set; } = true;
 
     public bool? SaveFilenameTemplatesMetadata { get; set; }
 
     public string? ItemIdPath { get; set; }
 
-    public bool? SaveItemIds { get; set; }
+    public bool? SaveItemIds { get; set; } = true;
 
     public bool? StopWithNoNewItemIds { get; set; }
 

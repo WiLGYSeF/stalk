@@ -41,14 +41,17 @@ public class JobAutoMapperProfile : Profile
         CreateMap<JobConfig.Range, JobConfigDto.RangeDto>();
 
         CreateMap<JobConfigDto, JobConfig>()
+            .ForMember(c => c.Delay, opt => opt.MapFrom(d => d.Delay ?? new JobConfigDto.DelayConfigDto()))
             .ForMember(c => c.ExtractorConfig, opt => opt
-                .MapFrom(d => new JobConfigGroupCollection(d.ExtractorConfig != null
-                    ? d.ExtractorConfig.Select(CreateJobConfigGroup)
-                    : null)))
+                .MapFrom(d => new JobConfigGroupCollection(
+                    d.ExtractorConfig != null
+                        ? d.ExtractorConfig.Select(CreateJobConfigGroup)
+                        : null)))
             .ForMember(c => c.DownloaderConfig, opt => opt
-                .MapFrom(d => new JobConfigGroupCollection(d.DownloaderConfig != null
-                    ? d.DownloaderConfig.Select(CreateJobConfigGroup)
-                    : null)));
+                .MapFrom(d => new JobConfigGroupCollection(
+                    d.DownloaderConfig != null
+                        ? d.DownloaderConfig.Select(CreateJobConfigGroup)
+                        : null)));
         CreateMap<JobConfigDto.LoggingDto, JobConfig.Logging>();
         CreateMap<JobConfigDto.DelayConfigDto, JobConfig.DelayConfig>();
         CreateMap<JobConfigDto.ConfigGroupDto, JobConfigGroup>();
