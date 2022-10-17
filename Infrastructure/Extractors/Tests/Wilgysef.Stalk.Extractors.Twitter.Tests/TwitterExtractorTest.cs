@@ -101,8 +101,7 @@ public class TwitterExtractorTest : BaseTest
 
         results.Count.ShouldBe(99);
         results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
-        // video thumbnails have the same ItemId
-        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(96);
+        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(results.Count);
     }
 
     [Theory]
@@ -234,7 +233,7 @@ public class TwitterExtractorTest : BaseTest
         thumbnailResult.Type.ShouldBe(JobTaskType.Download);
 
         var videoResult = results.Single(r => r.Uri.AbsoluteUri.StartsWith("https://video.twimg.com/ext_tw_video/"));
-        videoResult.ItemId.ShouldBe("1308334634745249793#1523276529123397632#1523196911448035328");
+        videoResult.ItemId.ShouldBe("1308334634745249793#1523276529123397632#1523196911448035328#video");
         videoResult.Uri.AbsoluteUri.ShouldBe("https://video.twimg.com/ext_tw_video/1523196911448035328/pu/vid/1280x720/r-Ybk23JsBkJIy9b.mp4?tag=12");
         videoResult.Metadata!["created_at"].ShouldBe("2022-05-08 12:20:00");
         videoResult.Metadata["favorite_count"].ShouldBe(5823);

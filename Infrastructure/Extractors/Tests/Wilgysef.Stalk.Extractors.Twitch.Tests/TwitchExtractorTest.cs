@@ -8,8 +8,8 @@ using System.Text.Json;
 using Wilgysef.HttpClientInterception;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Shared.Extensions;
 using Wilgysef.Stalk.Core.Utilities;
-using Wilgysef.Stalk.Extractors.TestBase;
 
 namespace Wilgysef.Stalk.Extractors.Twitch.Tests;
 

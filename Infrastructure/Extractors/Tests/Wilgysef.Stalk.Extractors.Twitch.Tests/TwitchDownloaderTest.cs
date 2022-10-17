@@ -30,7 +30,7 @@ public class TwitchDownloaderTest : BaseTest
 
         var fileSystem = new MockFileSystem();
         fileSystem.AddFileFromEmbeddedResource(
-            Path.Combine(Directory.GetCurrentDirectory(), "662849096#20220831_1577714683.info.json"),
+            "662849096#20220831_1577714683.info.json",
             assembly,
             $"{MockedDataResourcePrefix}.Video.1577714683.info.json");
 

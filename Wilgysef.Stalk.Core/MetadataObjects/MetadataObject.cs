@@ -58,6 +58,18 @@ public class MetadataObject : IMetadataObject
             : throw new ArgumentException("Could not get value by key.", nameof(keys));
     }
 
+    public T? GetValueAs<T>(params string[] keys)
+    {
+        return GetValueAs<T>((IEnumerable<string>)keys);
+    }
+
+    public T? GetValueAs<T>(IEnumerable<string> keys)
+    {
+        return TryGetValueAs<T>(out var value, keys)
+            ? value
+            : throw new ArgumentException("Could not get value by key.", nameof(keys));
+    }
+
     public bool TryGetValue(out object? value, params string[] keys)
     {
         return TryGetValue(out value, (IEnumerable<string>)keys);
@@ -65,19 +77,39 @@ public class MetadataObject : IMetadataObject
 
     public bool TryGetValue(out object? value, IEnumerable<string> keys)
     {
-        if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keys))
+        if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keys)
+            || !trie.TryGetChild(ultimateKey, out var leafTrie))
         {
             value = default;
             return false;
         }
 
-        if (!trie.TryGetChild(ultimateKey, out var leafTrie))
+        value = leafTrie.Value;
+        return true;
+    }
+
+    public bool TryGetValueAs<T>(out T? value, params string[] keys)
+    {
+        return TryGetValueAs<T>(out value, (IEnumerable<string>)keys);
+    }
+
+    public bool TryGetValueAs<T>(out T? value, IEnumerable<string> keys)
+    {
+        if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keys)
+            || !trie.TryGetChild(ultimateKey, out var leafTrie))
         {
             value = default;
             return false;
         }
-        value = leafTrie.Value;
-        return true;
+
+        if (leafTrie.Value is T val)
+        {
+            value = val;
+            return true;
+        }
+
+        value = default;
+        return false;
     }
 
     public bool Contains(params string[] keys)

@@ -8,6 +8,7 @@ using System.Text.RegularExpressions;
 using Wilgysef.HttpClientInterception;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Shared.Extensions;
 using Wilgysef.Stalk.Extractors.TestBase;
 using Wilgysef.Stalk.TestBase.Shared;
 using Wilgysef.Stalk.TestBase.Shared.Mocks;

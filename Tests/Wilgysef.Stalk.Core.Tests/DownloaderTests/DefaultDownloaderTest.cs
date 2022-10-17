@@ -9,7 +9,6 @@ using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.TestBase;
-using Wilgysef.Stalk.TestBase.Shared.Mocks;
 using YamlDotNet.Serialization;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -57,10 +56,13 @@ public class DefaultDownloaderTest : BaseTest
     public async Task Download_File_Save_Metadata(bool computeHash, bool saveFilenameTemplateMetadata)
     {
         var uri = RandomValues.RandomUri();
-        var filename = "testfile";
+        var filename = "testfile${value}";
+        var expectedFilename = "testfileabc";
         var itemId = RandomValues.RandomString(10);
-        var metadataFilename = "testmeta";
+        var metadataFilename = "testmeta${value}";
+        var expectedMetadataFilename = "testmetaabc";
         var metadata = new MetadataObject();
+        metadata["value"] = "abc";
 
         if (!computeHash)
         {
@@ -69,31 +71,31 @@ public class DefaultDownloaderTest : BaseTest
 
         _downloader.Config[DownloaderBase.SaveFilenameTemplatesMetadataKey] = saveFilenameTemplateMetadata;
 
-        await foreach (var result in _downloader.DownloadAsync(
+        var results = await _downloader.DownloadAsync(
             uri,
             filename,
             itemId,
             metadataFilename,
-            metadata))
-        {
-            result.Path.ShouldBe(filename);
-            result.Uri.ShouldBe(uri);
-            result.ItemId.ShouldBe(itemId);
-            result.MetadataPath.ShouldBe(metadataFilename);
-        }
+            metadata).ToListAsync();
+
+        var result = results.Single();
+        result.Path.ShouldBe(expectedFilename);
+        result.Uri.ShouldBe(uri);
+        result.ItemId.ShouldBe(itemId);
+        result.MetadataPath.ShouldBe(expectedMetadataFilename);
 
         _httpEntryLog.Entries.Count.ShouldBe(1);
         _httpEntryLog.Entries.Single().Request.RequestUri.ShouldBe(uri);
 
         _fileSystem.AllFiles.Count().ShouldBe(2);
-        _fileSystem.File.ReadAllBytes(filename).ShouldBe(TestDownloadData);
+        _fileSystem.File.ReadAllBytes(expectedFilename).ShouldBe(TestDownloadData);
 
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
             .Build();
         var metadataWritten = new MetadataObject();
         metadataWritten.From(deserializer.Deserialize<IDictionary<object, object?>>(
-                Encoding.UTF8.GetString(_fileSystem.File.ReadAllBytes(metadataFilename))));
+                Encoding.UTF8.GetString(_fileSystem.File.ReadAllBytes(expectedMetadataFilename))));
 
         if (saveFilenameTemplateMetadata)
         {
@@ -138,7 +140,7 @@ public class DefaultDownloaderTest : BaseTest
         var testData = "test data";
         var cookie = "test cookie";
 
-        await foreach (var result in _downloader.DownloadAsync(
+        await _downloader.DownloadAsync(
             uri,
             filename,
             itemId,
@@ -150,13 +152,7 @@ public class DefaultDownloaderTest : BaseTest
                 {
                     new KeyValuePair<string, string>("Set-Cookie", cookie)
                 },
-                Encoding.UTF8.GetBytes(testData))))
-        {
-            result.Path.ShouldBe(filename);
-            result.Uri.ShouldBe(uri);
-            result.ItemId.ShouldBe(itemId);
-            result.MetadataPath.ShouldBe(metadataFilename);
-        }
+                Encoding.UTF8.GetBytes(testData))).ToListAsync();
 
         _httpEntryLog.Entries.Count.ShouldBe(1);
         var request = _httpEntryLog.Entries.Single().Request;
@@ -166,27 +162,41 @@ public class DefaultDownloaderTest : BaseTest
         (await request.Content!.ReadAsStringAsync()).ShouldBe(testData);
     }
 
-    [Fact]
-    public async Task Download_File_FormatFilename()
+    [Theory]
+    [InlineData("testfile", "testmeta", null, "testfile\\1234", "testmeta\\1234.meta.txt")]
+    [InlineData("testfile${value}", "testmeta${value}", null, "testfileabc", "testmetaabc")]
+    [InlineData("testfile", "testmeta", "txt", "testfile\\1234.txt", "testmeta\\1234.meta.txt")]
+    [InlineData("testfile${value}", "testmeta${value}", "txt", "testfileabc", "testmetaabc")]
+    public async Task Download_File_FormatFilename(
+        string filename,
+        string metadataFilename,
+        string? extension,
+        string expectedFilename,
+        string expectedMetadataFilename)
     {
         var uri = RandomValues.RandomUri();
-        var filename = "testfile${value}";
-        var itemId = RandomValues.RandomString(10);
-        var metadataFilename = "testmeta";
+        var itemId = "1234";
         var metadata = new MetadataObject();
-        metadata["value"] = "abc";
 
-        await foreach (var result in _downloader.DownloadAsync(
+        metadata["value"] = "abc";
+        metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = itemId;
+
+        if (extension != null)
+        {
+            metadata[MetadataObjectConsts.File.ExtensionKeys] = extension;
+        }
+
+        var results = await _downloader.DownloadAsync(
             uri,
             filename,
             itemId,
             metadataFilename,
-            metadata))
-        {
-            result.Path.ShouldBe("testfileabc");
-            result.Uri.ShouldBe(uri);
-            result.ItemId.ShouldBe(itemId);
-            result.MetadataPath.ShouldBe(metadataFilename);
-        }
+            metadata).ToListAsync();
+
+        var result = results.Single();
+        result.Path.ShouldBe(expectedFilename);
+        result.Uri.ShouldBe(uri);
+        result.ItemId.ShouldBe(itemId);
+        result.MetadataPath.ShouldBe(expectedMetadataFilename);
     }
 }

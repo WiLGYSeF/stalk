@@ -30,7 +30,7 @@ public class YouTubeDownloaderTest : BaseTest
 
         var fileSystem = new MockFileSystem();
         fileSystem.AddFileFromEmbeddedResource(
-            Path.Combine(Directory.GetCurrentDirectory(), "UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.info.json"),
+            "UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.info.json",
             assembly,
             $"{MockedDataResourcePrefix}.Video.2SVDVhzzzSY.info.json");
 

@@ -154,17 +154,9 @@ public class TwitchDownloader : DownloaderBase
         _fileSystem.File.Delete(metadataFilename);
     }
 
-    private static string GetFullPath(IProcess process, string path)
+    private string GetFullPath(IProcess process, string path)
     {
-        return Path.GetFullPath(Path.Combine(process.StartInfo.WorkingDirectory, path));
-    }
-
-    private void CreateDirectoriesFromFilename(string filename)
-    {
-        var dirname = Path.GetDirectoryName(filename);
-        if (!string.IsNullOrEmpty(dirname))
-        {
-            _fileSystem.Directory.CreateDirectory(dirname);
-        }
+        return _fileSystem.Path.GetFullPath(
+            _fileSystem.Path.Combine(process.StartInfo.WorkingDirectory, path));
     }
 }

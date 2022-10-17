@@ -4,10 +4,8 @@ using System.Text;
 using Wilgysef.Stalk.Core.Downloaders;
 using Wilgysef.Stalk.Core.MetadataObjects;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
-using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.TestBase;
-using Wilgysef.Stalk.TestBase.Shared.Mocks;
 
 namespace Wilgysef.Stalk.Core.Tests.DownloaderTests;
 
@@ -42,26 +40,29 @@ public class DataDownloaderTest : BaseTest
     {
         var data = Encoding.UTF8.GetBytes("this is a test");
         var uri = new Uri($"data:text/plain;base64,{Convert.ToBase64String(data)}");
-        var filename = "testfile";
+        var filename = "testfile${value}";
+        var expectedFilename = "testfileabc";
         var itemId = RandomValues.RandomString(10);
-        var metadataFilename = "testmeta";
+        var metadataFilename = "testmeta${value}";
+        var expectedMetadataFilename = "testmetaabc";
         var metadata = new MetadataObject();
+        metadata["value"] = "abc";
 
-        await foreach (var result in _downloader.DownloadAsync(
+        var results = await _downloader.DownloadAsync(
             uri,
             filename,
             itemId,
             metadataFilename,
-            metadata))
-        {
-            result.Path.ShouldBe(filename);
-            result.Uri.ShouldBe(uri);
-            result.ItemId.ShouldBe(itemId);
-            result.MetadataPath.ShouldBe(metadataFilename);
-        }
+            metadata).ToListAsync();
+
+        var result = results.Single();
+        result.Path.ShouldBe(expectedFilename);
+        result.Uri.ShouldBe(uri);
+        result.ItemId.ShouldBe(itemId);
+        result.MetadataPath.ShouldBe(expectedMetadataFilename);
 
         _fileSystem.AllFiles.Count().ShouldBe(2);
-        _fileSystem.File.ReadAllBytes(filename).ShouldBe(data);
+        _fileSystem.File.ReadAllBytes(result.Path).ShouldBe(data);
     }
 
     [Fact]
@@ -74,21 +75,16 @@ public class DataDownloaderTest : BaseTest
         var metadataFilename = "testmeta";
         var metadata = new MetadataObject();
 
-        await foreach (var result in _downloader.DownloadAsync(
+        var results = await _downloader.DownloadAsync(
             uri,
             filename,
             itemId,
             metadataFilename,
-            metadata))
-        {
-            result.Path.ShouldBe(filename);
-            result.Uri.ShouldBe(uri);
-            result.ItemId.ShouldBe(itemId);
-            result.MetadataPath.ShouldBe(metadataFilename);
-        }
+            metadata).ToListAsync();
+        var result = results.Single();
 
         _fileSystem.AllFiles.Count().ShouldBe(2);
-        _fileSystem.File.ReadAllBytes(filename).ShouldBe(Encoding.UTF8.GetBytes(data));
+        _fileSystem.File.ReadAllBytes(result.Path).ShouldBe(Encoding.UTF8.GetBytes(data));
     }
 
     [Fact]
@@ -101,21 +97,16 @@ public class DataDownloaderTest : BaseTest
         var metadataFilename = "testmeta";
         var metadata = new MetadataObject();
 
-        await foreach (var result in _downloader.DownloadAsync(
+        var results = await _downloader.DownloadAsync(
             uri,
             filename,
             itemId,
             metadataFilename,
-            metadata))
-        {
-            result.Path.ShouldBe(filename);
-            result.Uri.ShouldBe(uri);
-            result.ItemId.ShouldBe(itemId);
-            result.MetadataPath.ShouldBe(metadataFilename);
-        }
+            metadata).ToListAsync();
+        var result = results.Single();
 
         _fileSystem.AllFiles.Count().ShouldBe(2);
-        _fileSystem.File.ReadAllBytes(filename).ShouldBe(data);
+        _fileSystem.File.ReadAllBytes(result.Path).ShouldBe(data);
     }
 
     [Fact]
@@ -128,21 +119,16 @@ public class DataDownloaderTest : BaseTest
         var metadataFilename = "testmeta";
         var metadata = new MetadataObject();
 
-        await foreach (var result in _downloader.DownloadAsync(
+        var results = await _downloader.DownloadAsync(
             uri,
             filename,
             itemId,
             metadataFilename,
-            metadata))
-        {
-            result.Path.ShouldBe(filename);
-            result.Uri.ShouldBe(uri);
-            result.ItemId.ShouldBe(itemId);
-            result.MetadataPath.ShouldBe(metadataFilename);
-        }
+            metadata).ToListAsync();
+        var result = results.Single();
 
         _fileSystem.AllFiles.Count().ShouldBe(2);
-        _fileSystem.File.ReadAllBytes(filename).ShouldBe(Encoding.UTF8.GetBytes(data));
+        _fileSystem.File.ReadAllBytes(result.Path).ShouldBe(Encoding.UTF8.GetBytes(data));
     }
 
     [Fact]
@@ -159,21 +145,16 @@ public class DataDownloaderTest : BaseTest
             mediaType: "text/plain",
             itemId);
 
-        await foreach (var result in _downloader.DownloadAsync(
+        var results = await _downloader.DownloadAsync(
             new Uri("data:"),
             filename,
             itemId,
             metadataFilename,
             metadata,
-            requestData: extractResult.DownloadRequestData))
-        {
-            result.Path.ShouldBe(filename);
-            result.Uri.AbsoluteUri.ShouldBe("data:");
-            result.ItemId.ShouldBe(itemId);
-            result.MetadataPath.ShouldBe(metadataFilename);
-        }
+            requestData: extractResult.DownloadRequestData).ToListAsync();
+        var result = results.Single();
 
         _fileSystem.AllFiles.Count().ShouldBe(2);
-        _fileSystem.File.ReadAllBytes(filename).ShouldBe(Encoding.UTF8.GetBytes(data));
+        _fileSystem.File.ReadAllBytes(result.Path).ShouldBe(Encoding.UTF8.GetBytes(data));
     }
 }

@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace Wilgysef.Stalk.Extractors.TestBase
+namespace Wilgysef.Stalk.Core.Shared.Extensions
 {
     public static class ByteArrayExtensions
     {

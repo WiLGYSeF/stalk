@@ -109,6 +109,35 @@ public class MetadataObjectTest
     }
 
     [Fact]
+    public void Get_Values_As()
+    {
+        var metadata = new MetadataObject();
+
+        metadata.Add(1, "abc");
+        metadata.Add(2, "aaa", "asdf");
+
+        metadata.GetValueAs<int>("abc").ShouldBe(1);
+        metadata.GetValueAs<int>("aaa", "asdf").ShouldBe(2);
+
+        Should.Throw<ArgumentException>(() =>
+        {
+            metadata.GetValueAs<int>("asdf");
+        });
+        Should.Throw<ArgumentException>(() =>
+        {
+            metadata.GetValueAs<int>("eee", "abc");
+        });
+        Should.Throw<ArgumentException>(() =>
+        {
+            metadata.GetValueAs<int>("aaa", "abc");
+        });
+        Should.Throw<ArgumentException>(() =>
+        {
+            metadata.GetValueAs<string>("aaa", "asdf");
+        });
+    }
+
+    [Fact]
     public void TryGet_Values()
     {
         var metadata = new MetadataObject();
@@ -127,6 +156,27 @@ public class MetadataObjectTest
         metadata.TryGetValue(out _, "asdf").ShouldBeFalse();
         metadata.TryGetValue(out _, "eee", "abc").ShouldBeFalse();
         metadata.TryGetValue(out _, "aaa", "abc").ShouldBeFalse();
+    }
+
+    [Fact]
+    public void TryGet_Values_As()
+    {
+        var metadata = new MetadataObject();
+
+        metadata.Add(1, "abc");
+        metadata.Add(2, "aaa", "asdf");
+
+        metadata.TryGetValueAs<int>(out var value, "abc").ShouldBeTrue();
+        value.ShouldBe(1);
+
+        metadata.TryGetValueAs<int>(out value, "aaa", "asdf").ShouldBeTrue();
+        value.ShouldBe(2);
+
+        metadata.TryGetValueAs<int>(out _, "asdf").ShouldBeFalse();
+        metadata.TryGetValueAs<int>(out _, "eee", "abc").ShouldBeFalse();
+        metadata.TryGetValueAs<int>(out _, "aaa", "abc").ShouldBeFalse();
+
+        metadata.TryGetValueAs<string>(out _, "abc").ShouldBeFalse();
     }
 
     [Fact]

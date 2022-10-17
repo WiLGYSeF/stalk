@@ -1,10 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using System.Dynamic;
 using System.Net.Http.Json;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
-using System.Threading.Channels;
 using System.Web;
 using Wilgysef.Stalk.Core.Shared.CacheObjects;
 using Wilgysef.Stalk.Core.Shared.Enums;

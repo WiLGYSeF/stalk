@@ -18,17 +18,17 @@
         bool UseUnicode { get; set; }
 
         /// <summary>
-        /// Slugifies the directory path.
+        /// Slugifies the path.
         /// </summary>
-        /// <param name="path">Directory path.</param>
-        /// <returns>Slugified directory path.</returns>
+        /// <param name="path">Path.</param>
+        /// <returns>Slugified path.</returns>
         string SlugifyPath(string path);
 
         /// <summary>
-        /// Slugifies the file path.
+        /// Slugifies the filename.
         /// </summary>
-        /// <param name="file">File path.</param>
-        /// <returns>Slugified file path.</returns>
+        /// <param name="file">Filename.</param>
+        /// <returns>Slugified filename.</returns>
         string SlugifyFile(string file);
 
         /// <summary>

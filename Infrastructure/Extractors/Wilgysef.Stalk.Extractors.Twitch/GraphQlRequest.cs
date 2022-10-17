@@ -1,6 +1,4 @@
-﻿using Newtonsoft.Json.Linq;
-using System.Dynamic;
-using System.Threading;
+﻿using System.Dynamic;
 
 namespace Wilgysef.Stalk.Extractors.Twitch;
 

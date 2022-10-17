@@ -324,7 +324,7 @@ public class TwitterExtractor : IExtractor
 
             yield return new ExtractResult(
                 videoUri,
-                $"{userId}#{tweetId}#{mediaId}",
+                $"{userId}#{tweetId}#{mediaId}#video",
                 JobTaskType.Download,
                 metadata: mediaMetadata);
         }

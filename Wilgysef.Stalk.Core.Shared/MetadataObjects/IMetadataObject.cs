@@ -21,7 +21,7 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// Adds value.
         /// </summary>
         /// <param name="value">Value.</param>
-        /// <param name="keys">KEys.</param>
+        /// <param name="keys">Keys.</param>
         /// <exception cref="ArgumentException">Subkey already exists.</exception>
         void Add(object? value, params string[] keys);
 
@@ -29,7 +29,7 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// Adds value.
         /// </summary>
         /// <param name="value">Value.</param>
-        /// <param name="keys">KEys.</param>
+        /// <param name="keys">Keys.</param>
         /// <exception cref="ArgumentException">Subkey already exists.</exception>
         void Add(object? value, IEnumerable<string> keys);
 
@@ -37,7 +37,7 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// Adds a new value if it does not exist.
         /// </summary>
         /// <param name="value">Value.</param>
-        /// <param name="keys">KEys.</param>
+        /// <param name="keys">Keys.</param>
         /// <returns><see langword="true"/> if the value was added, <see langword="false"/> otherwise.</returns>
         bool TryAddValue(object? value, params string[] keys);
 
@@ -45,29 +45,45 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// Adds a new value if it does not exist.
         /// </summary>
         /// <param name="value">Value.</param>
-        /// <param name="keys">KEys.</param>
+        /// <param name="keys">Keys.</param>
         /// <returns><see langword="true"/> if the value was added, <see langword="false"/> otherwise.</returns>
         bool TryAddValue(object? value, IEnumerable<string> keys);
 
         /// <summary>
         /// Gets value.
         /// </summary>
-        /// <param name="keys">KEys.</param>
+        /// <param name="keys">Keys.</param>
         /// <returns>Value.</returns>
         object? GetValue(params string[] keys);
 
         /// <summary>
         /// Gets value.
         /// </summary>
-        /// <param name="keys">KEys.</param>
+        /// <param name="keys">Keys.</param>
         /// <returns>Value.</returns>
         object? GetValue(IEnumerable<string> keys);
 
         /// <summary>
         /// Gets value.
         /// </summary>
+        /// <typeparam name="T">Value type.</typeparam>
+        /// <param name="keys">Keys.</param>
+        /// <returns>Value.</returns>
+        T GetValueAs<T>(params string[] keys);
+
+        /// <summary>
+        /// Gets value.
+        /// </summary>
+        /// <typeparam name="T">Value type.</typeparam>
+        /// <param name="keys">Keys.</param>
+        /// <returns>Value.</returns>
+        T GetValueAs<T>(IEnumerable<string> keys);
+
+        /// <summary>
+        /// Gets value.
+        /// </summary>
         /// <param name="value">Value.</param>
-        /// <param name="keys">KEys.</param>
+        /// <param name="keys">Keys.</param>
         /// <returns><see langword="true"/> if the value exists, <see langword="false"/> otherwise.</returns>
         bool TryGetValue(out object? value, params string[] keys);
 
@@ -75,35 +91,53 @@ namespace Wilgysef.Stalk.Core.Shared.MetadataObjects
         /// Gets value.
         /// </summary>
         /// <param name="value">Value.</param>
-        /// <param name="keys">KEys.</param>
+        /// <param name="keys">Keys.</param>
         /// <returns><see langword="true"/> if the value exists, <see langword="false"/> otherwise.</returns>
         bool TryGetValue(out object? value, IEnumerable<string> keys);
 
         /// <summary>
+        /// Gets value.
+        /// </summary>
+        /// <typeparam name="T">Value type.</typeparam>
+        /// <param name="value">Value.</param>
+        /// <param name="keys">Keys.</param>
+        /// <returns><see langword="true"/> if the value exists, <see langword="false"/> otherwise.</returns>
+        bool TryGetValueAs<T>(out T value, params string[] keys);
+
+        /// <summary>
+        /// Gets value.
+        /// </summary>
+        /// <typeparam name="T">Value type.</typeparam>
+        /// <param name="value">Value.</param>
+        /// <param name="keys">Keys.</param>
+        /// <returns><see langword="true"/> if the value exists, <see langword="false"/> otherwise.</returns>
+        bool TryGetValueAs<T>(out T value, IEnumerable<string> keys);
+
+        /// <summary>
         /// Checks if key exists.
         /// </summary>
-        /// <param name="keys">KEys.</param>
+        /// <param name="keys">Keys.</param>
         /// <returns><see langword="true"/> if the value exists, <see langword="false"/> otherwise.</returns>
         bool Contains(params string[] keys);
 
         /// <summary>
         /// Checks if key exists.
         /// </summary>
-        /// <param name="keys">KEys.</param>
+        /// <param name="keys">Keys.</param>
         /// <returns><see langword="true"/> if the value exists, <see langword="false"/> otherwise.</returns>
         bool Contains(IEnumerable<string> keys);
 
         /// <summary>
         /// Removes a key value.
         /// </summary>
-        /// <param name="keys">KEys.</param>
+        /// <param name="keys">Keys.</param>
         /// <returns><see langword="true"/> if the value was removed, <see langword="false"/> otherwise.</returns>
         bool Remove(params string[] keys);
 
         /// <summary>
         /// Removes a key value.
         /// </summary>
-        /// <param name="keys">KEys.</param>
+        /// <param name="keys">Keys.</param>
         /// <returns><see langword="true"/> if the value was removed, <see langword="false"/> otherwise.</returns>
         bool Remove(IEnumerable<string> keys);
 

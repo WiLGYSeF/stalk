@@ -6,7 +6,6 @@ using System.IO.Abstractions;
 using System.Net.Http;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Wilgysef.Stalk.Core.Shared.Extensions;
@@ -19,6 +18,9 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 {
     public abstract class DownloaderBase : IDownloader
     {
+        /// <summary>
+        /// Config key for setting whether filename and metadata templates should be saved as metadata.
+        /// </summary>
         public const string SaveFilenameTemplatesMetadataKey = "saveFilenameTemplatesMetadata";
 
         /// <summary>
@@ -153,9 +155,11 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             DownloadRequestData? requestData = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
-            var filename = filenameSlug.SlugifyPath(
-                _stringFormatter.Format(filenameTemplate, metadata.GetFlattenedDictionary(MetadataObjectConsts.Separator)));
+            var filename = GetFormattedSlugifiedFilename(
+                filenameTemplate,
+                metadata.GetFlattenedDictionary(MetadataObjectConsts.Separator),
+                metadata,
+                false);
 
             CreateDirectoriesFromFilename(filename);
 
@@ -244,7 +248,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
                 filename,
                 null,
                 fileSize,
-                hashAlgorithm?.Hash != null ? ToHexString(hashAlgorithm.Hash) : null,
+                hashAlgorithm?.Hash != null ? hashAlgorithm.Hash.ToHexString() : null,
                 hashAlgorithm?.Hash != null ? hashName : null,
                 createMetadata: true);
         }
@@ -266,9 +270,11 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
                 return Task.FromResult<string?>(null);
             }
 
-            var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
-            var metadataFilename = filenameSlug.SlugifyPath(
-                _stringFormatter.Format(metadataFilenameTemplate, metadata.GetFlattenedDictionary(MetadataObjectConsts.Separator)));
+            var metadataFilename = GetFormattedSlugifiedFilename(
+                metadataFilenameTemplate,
+                metadata.GetFlattenedDictionary(MetadataObjectConsts.Separator),
+                metadata,
+                true);
 
             CreateDirectoriesFromFilename(metadataFilename);
 
@@ -286,26 +292,69 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             return Task.FromResult<string?>(metadataFilename);
         }
 
-        private void CreateDirectoriesFromFilename(string filename)
+        /// <summary>
+        /// Gets the formatted and slugified filename.
+        /// </summary>
+        /// <param name="filenameFormat">Filename format.</param>
+        /// <param name="formatValues">Format values.</param>
+        /// <param name="metadata">Metadata.</param>
+        /// <param name="isMetadataFilename">Whether the filename is intended for metadata files.</param>
+        /// <returns>Formatted and slugified filename.</returns>
+        protected string GetFormattedSlugifiedFilename(
+            string filenameFormat,
+            IDictionary<string, object?> formatValues,
+            IMetadataObject metadata,
+            bool isMetadataFilename)
         {
-            var dirname = Path.GetDirectoryName(filename);
+            var formattedFilename = _stringFormatter.Format(filenameFormat, formatValues);
+
+            if (formattedFilename == filenameFormat)
+            {
+                formattedFilename = _fileSystem.Path.Combine(
+                    filenameFormat,
+                    GetDefaultFilename(metadata, isMetadataFilename));
+            }
+
+            return _filenameSlugSelector
+                .GetFilenameSlugByPlatform()
+                .SlugifyPath(formattedFilename);
+        }
+
+        protected string? GetDefaultFilename(IMetadataObject metadata, bool isMetadataFilename)
+        {
+            if (!metadata.TryGetValue(out var itemIdSeq, MetadataObjectConsts.Origin.ItemIdSeqKeys)
+                || itemIdSeq == null)
+            {
+                return null;
+            }
+
+            var defaultFilename = itemIdSeq.ToString();
+            if (!isMetadataFilename)
+            {
+                if (metadata.TryGetValue(out var extension, MetadataObjectConsts.File.ExtensionKeys)
+                    && extension != null)
+                {
+                    defaultFilename += "." + extension;
+                }
+            }
+            else
+            {
+                defaultFilename += ".meta.txt";
+            }
+            return defaultFilename;
+        }
+
+        /// <summary>
+        /// Creates directories from filename path if directories do not exist.
+        /// </summary>
+        /// <param name="filename">Filename path.</param>
+        protected void CreateDirectoriesFromFilename(string filename)
+        {
+            var dirname = _fileSystem.Path.GetDirectoryName(filename);
             if (!string.IsNullOrEmpty(dirname))
             {
                 _fileSystem.Directory.CreateDirectory(dirname);
             }
-        }
-
-        private const string HexAlphabet = "0123456789abcdef";
-
-        private static string ToHexString(byte[] bytes)
-        {
-            var result = new StringBuilder(bytes.Length * 2);
-            foreach (var b in bytes)
-            {
-                result.Append(HexAlphabet[b >> 4]);
-                result.Append(HexAlphabet[b & 15]);
-            }
-            return result.ToString();
         }
     }
 }
