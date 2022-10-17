@@ -40,7 +40,7 @@ public class JobTaskWorker : IJobTaskWorker
     public virtual async Task WorkAsync(CancellationToken cancellationToken = default)
     {
         var isDone = false;
-        (string? Code, string Message, string Detail)? fail = null;
+        JobTaskFailResult? fail = null;
 
         using var _ = Logger?.BeginScope("Job task {JobTaskId}", JobTask.Id);
 
@@ -90,9 +90,13 @@ public class JobTaskWorker : IJobTaskWorker
             {
                 var workerException = exception as JobTaskWorkerException;
 
-                await CheckAndRetryJobAsync(exception);
+                var retryJobTask = await CheckAndRetryJobAsync(exception);
 
-                fail = (workerException?.Code, exception.Message, exception.ToString());
+                fail = new(
+                    retryJobTask?.Id,
+                    workerException?.Code,
+                    exception.Message,
+                    exception.ToString());
             }
         }
         finally
@@ -109,7 +113,11 @@ public class JobTaskWorker : IJobTaskWorker
 
                     if (fail.HasValue)
                     {
-                        JobTask.Fail(fail.Value.Code, fail.Value.Message, fail.Value.Detail);
+                        JobTask.Fail(
+                            fail.Value.RetryJobTaskId,
+                            fail.Value.Code,
+                            fail.Value.Message,
+                            fail.Value.Detail);
                     }
                     else if (isDone)
                     {
@@ -381,5 +389,28 @@ public class JobTaskWorker : IJobTaskWorker
         return min != max && min < max
             ? RandomNumberGenerator.GetInt32(min, max)
             : min;
+    }
+
+    private struct JobTaskFailResult
+    {
+        public long? RetryJobTaskId { get; }
+
+        public string? Code { get; }
+
+        public string Message { get; }
+
+        public string Detail { get; }
+
+        public JobTaskFailResult(
+            long? retryJobTaskId,
+            string? code,
+            string message,
+            string detail)
+        {
+            RetryJobTaskId = retryJobTaskId;
+            Code = code;
+            Message = message;
+            Detail = detail;
+        }
     }
 }

@@ -12,6 +12,11 @@ public class JobTaskResult
     public virtual bool? Success { get; protected set; }
 
     /// <summary>
+    /// Job task retry Id.
+    /// </summary>
+    public virtual long? RetryJobTaskId { get; protected set; }
+
+    /// <summary>
     /// Result error code.
     /// </summary>
     public virtual string? ErrorCode { get; protected set; }
@@ -30,6 +35,7 @@ public class JobTaskResult
 
     public static JobTaskResult Create(
         bool? success = null,
+        long? retryJobTaskId = null,
         string? errorCode = null,
         string? errorMessage = null,
         string? errorDetail = null)
@@ -37,6 +43,7 @@ public class JobTaskResult
         return new JobTaskResult
         {
             Success = success,
+            RetryJobTaskId = retryJobTaskId,
             ErrorCode = errorCode,
             ErrorMessage = errorMessage,
             ErrorDetail = errorDetail,

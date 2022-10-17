@@ -78,9 +78,12 @@ public class TaskDelayTest : BaseTest
         job = await this.WaitUntilJobAsync(job.Id, job => job.Tasks.Count >= 2);
 
         workerInstance.CancellationTokenSource.Cancel();
+        job = await this.WaitUntilJobAsync(job.Id, job => job.Tasks.Single(t => t.Id == jobTaskId).IsDone);
 
         var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
         var retryTask = job.Tasks.First(t => t.Id != jobTaskId);
+
+        jobTask.Result.RetryJobTaskId.ShouldBe(retryTask.Id);
         retryTask.Uri.ShouldBe(jobTask.Uri);
         (retryTask.DelayedUntil!.Value - DateTime.Now).TotalSeconds.ShouldBeInRange(90, 100);
     }
@@ -108,9 +111,12 @@ public class TaskDelayTest : BaseTest
         job = await this.WaitUntilJobAsync(job.Id, job => job.Tasks.Count >= 2);
 
         workerInstance.CancellationTokenSource.Cancel();
+        job = await this.WaitUntilJobAsync(job.Id, job => job.Tasks.Single(t => t.Id == jobTaskId).IsDone);
 
         var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
         var retryTask = job.Tasks.First(t => t.Id != jobTaskId);
+
+        jobTask.Result.RetryJobTaskId.ShouldBe(retryTask.Id);
         retryTask.Uri.ShouldBe(jobTask.Uri);
         retryTask.DelayedUntil.ShouldBeNull();
     }
@@ -144,6 +150,7 @@ public class TaskDelayTest : BaseTest
         job = await this.WaitUntilJobAsync(job.Id, job => job.Tasks.Count >= 2);
 
         workerInstance.CancellationTokenSource.Cancel();
+        job = await this.WaitUntilJobAsync(job.Id, job => job.Tasks.Single(t => t.Id == jobTaskId).IsDone);
 
         var jobTask = job.Tasks.Single(t => t.Id == jobTaskId);
         var retryTask = job.Tasks.First(t => t.Id != jobTaskId);

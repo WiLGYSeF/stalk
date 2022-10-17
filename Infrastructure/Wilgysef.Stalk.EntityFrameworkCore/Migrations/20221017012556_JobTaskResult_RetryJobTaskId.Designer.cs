@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Wilgysef.Stalk.EntityFrameworkCore;
 
@@ -10,9 +11,10 @@ using Wilgysef.Stalk.EntityFrameworkCore;
 namespace Wilgysef.Stalk.EntityFrameworkCore.Migrations
 {
     [DbContext(typeof(StalkDbContext))]
-    partial class StalkDbContextModelSnapshot : ModelSnapshot
+    [Migration("20221017012556_JobTaskResult_RetryJobTaskId")]
+    partial class JobTaskResult_RetryJobTaskId
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

@@ -470,6 +470,7 @@ public class JobTask : Entity
     /// Set job task as failed and unsuccessful.
     /// </summary>
     internal void Fail(
+        long? retryJobTaskId = null,
         string? errorCode = null,
         string? errorMessage = null,
         string? errorDetail = null)
@@ -477,9 +478,10 @@ public class JobTask : Entity
         ChangeState(JobTaskState.Failed);
 
         Result = JobTaskResult.Create(
-            success: false,
-            errorCode: errorCode,
-            errorMessage: errorMessage,
-            errorDetail: errorDetail);
+            false,
+            retryJobTaskId,
+            errorCode,
+            errorMessage,
+            errorDetail);
     }
 }
