@@ -68,6 +68,8 @@ internal class JobWorkerStarter
             }
             WorkerTask.Exception.ShouldBeNull();
 
+            CancellationTokenSource.Dispose();
+
             GC.SuppressFinalize(this);
         }
     }

@@ -52,6 +52,8 @@ public class JobWorkerService : IJobWorkerService, ITransientDependency
             {
                 // this is singleton
                 _jobWorkerCollectionService.RemoveJobWorker(worker);
+
+                cancellationTokenSource.Dispose();
             }
         }
     }

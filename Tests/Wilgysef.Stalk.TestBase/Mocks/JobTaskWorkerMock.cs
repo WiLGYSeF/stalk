@@ -30,7 +30,7 @@ public class JobTaskWorkerMock : JobTaskWorker
 
     public override async Task WorkAsync(CancellationToken cancellationToken = default)
     {
-        WorkEvent?.Invoke(this, new EventArgs());
+        WorkEvent?.Invoke(this, EventArgs.Empty);
 
         await base.WorkAsync(cancellationToken);
     }

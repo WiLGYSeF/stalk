@@ -37,7 +37,7 @@ namespace Wilgysef.Stalk.TestBase.Shared.Mocks
 
         private Task? _errorReadTask;
         private Task? _outputReadTask;
-        private CancellationTokenSource _readTokenSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource _readTokenSource = new CancellationTokenSource();
 
         private static readonly ConstructorInfo? DataReceivedEventArgsConstructor = typeof(DataReceivedEventArgs)
             .GetConstructor(
@@ -155,6 +155,7 @@ namespace Wilgysef.Stalk.TestBase.Shared.Mocks
         public void Dispose()
         {
             _readTokenSource.Cancel();
+            _readTokenSource.Dispose();
         }
 
         private static DataReceivedEventArgs CreateDataReceivedEventArgs(string data)
