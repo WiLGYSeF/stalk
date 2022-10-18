@@ -1,8 +1,11 @@
-﻿using Shouldly;
+﻿using Moq;
+using Shouldly;
 using System.Diagnostics;
+using System.IO.Abstractions;
 using System.IO.Abstractions.TestingHelpers;
 using System.Net;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using Wilgysef.HttpClientInterception;
 using Wilgysef.Stalk.Core.FilenameSlugs;
@@ -11,6 +14,7 @@ using Wilgysef.Stalk.Core.MetadataSerializers;
 using Wilgysef.Stalk.Core.StringFormatters;
 using Wilgysef.Stalk.Extractors.TestBase;
 using Wilgysef.Stalk.TestBase.Shared.Mocks;
+using MockExtensions = Wilgysef.MoqExtensions.MockExtensions;
 
 namespace Wilgysef.Stalk.Extractors.YouTube.Tests;
 
@@ -18,7 +22,10 @@ public class YouTubeDownloaderTest : BaseTest
 {
     private static readonly string MockedDataResourcePrefix = $"{typeof(YouTubeDownloaderTest).Namespace}.MockedData";
 
+    private readonly List<string> _deletedFiles = new();
+
     private readonly MockProcessService _processService;
+    private readonly MockFileSystem _fileSystem;
     private readonly YouTubeDownloader _youTubeDownloader;
 
     public YouTubeDownloaderTest()
@@ -28,8 +35,15 @@ public class YouTubeDownloaderTest : BaseTest
 
         var assembly = Assembly.GetExecutingAssembly();
 
-        var fileSystem = new MockFileSystem();
-        fileSystem.AddFileFromEmbeddedResource(
+        _fileSystem = new MockFileSystem();
+
+        var mockFileSystem = MockExtensions.Decorate<MockFileSystem, IFileSystem>(_fileSystem);
+        var mockFile = MockExtensions.Decorate<IFile, IFile>(_fileSystem.File);
+        mockFile.Setup(m => m.Delete(It.IsAny<string>()))
+            .Callback<string>(path => _deletedFiles.Add(path));
+        mockFileSystem.Setup(m => m.File).Returns(mockFile.Object);
+
+        _fileSystem.AddFileFromEmbeddedResource(
             "UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20211227_2SVDVhzzzSY.info.json",
             assembly,
             $"{MockedDataResourcePrefix}.Video.2SVDVhzzzSY.info.json");
@@ -48,7 +62,7 @@ public class YouTubeDownloaderTest : BaseTest
         });
 
         _youTubeDownloader = new YouTubeDownloader(
-            fileSystem,
+            mockFileSystem.Object,
             new StringFormatter(),
             new FilenameSlugSelector(new[] { new WindowsFilenameSlug() }),
             new MetadataSerializer(),
@@ -85,31 +99,23 @@ public class YouTubeDownloaderTest : BaseTest
         if (moveInfoJson)
         {
             ((IDictionary<string, object>)(videoResult.Metadata!["youtube_dl"]!)).Count.ShouldBe(56);
+            _deletedFiles.ShouldContain(f => f.EndsWith(".info.json"));
         }
         else
         {
             var metadataResult = results.Single(r => r.Path.EndsWith(".info.json"));
             videoResult.Metadata!.Contains("youtube_dl").ShouldBeFalse();
+            _deletedFiles.ShouldBeEmpty();
         }
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Download_With_Cookies(bool multipleCookies)
+    [Fact]
+    public async Task Download_With_Cookies()
     {
-        var cookies = new Dictionary<string, string>();
-        if (multipleCookies)
-        {
-            cookies["YSC"] = "_wwCnBu9guc";
-            cookies["VISITOR_INFO1_LIVE"] = "MHllVv46iSU";
-            _youTubeDownloader.Config[YouTubeDownloaderConfig.CookiesKey] = cookies.Select(p => $"{p.Key}={p.Value}");
-        }
-        else
-        {
-            cookies["VISITOR_INFO1_LIVE"] = "MHllVv46iSU";
-            _youTubeDownloader.Config[YouTubeDownloaderConfig.CookiesKey] = cookies.Select(p => $"{p.Key}={p.Value}").Single();
-        }
+        var cookies = Encoding.UTF8.GetBytes("testdata");
+        var cookiesBase64 = Convert.ToBase64String(cookies);
+
+        _youTubeDownloader.Config[YouTubeDownloaderConfig.CookieFileContentsKey] = cookiesBase64;
 
         var results = await _youTubeDownloader.DownloadAsync(
             new Uri("https://www.youtube.com/watch?v=2SVDVhzzzSY"),
@@ -121,18 +127,21 @@ public class YouTubeDownloaderTest : BaseTest
         var process = _processService.Processes.Single();
 
         using var enumerator = process.StartInfo.ArgumentList.GetEnumerator();
-        string? cookieHeader = null;
+        string? cookieFilename = null;
 
         while (enumerator.MoveNext())
         {
-            if (enumerator.Current == "--add-header")
+            if (enumerator.Current == "--cookies")
             {
                 enumerator.MoveNext();
-                cookieHeader = enumerator.Current;
+                cookieFilename = enumerator.Current;
                 break;
             }
         }
 
-        cookieHeader.ShouldBe("Cookie:" + string.Join("; ", cookies.Select(p => $"{p.Key}={p.Value}")));
+        var cookieFileContents = await _fileSystem.File.ReadAllBytesAsync(cookieFilename!);
+        cookieFileContents.ShouldBe(cookies);
+
+        _deletedFiles.Contains(cookieFilename!);
     }
 }

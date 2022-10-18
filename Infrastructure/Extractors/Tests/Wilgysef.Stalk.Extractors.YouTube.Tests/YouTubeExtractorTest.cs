@@ -289,27 +289,17 @@ public class YouTubeExtractorTest : BaseTest
         results.All(r => r.ItemId!.Contains("#emoji#")).ShouldBeTrue();
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Config_Cookies(bool multipleCookies)
+    [Fact]
+    public async Task Config_Cookies()
     {
         HttpRequestMessage? request = null;
 
         _httpInterceptor.RequestProcessed += HttpInterceptor_RequestProcessed;
 
         var cookies = new Dictionary<string, string>();
-        if (multipleCookies)
-        {
-            cookies["YSC"] = "_wwCnBu9guc";
-            cookies["VISITOR_INFO1_LIVE"] = "MHllVv46iSU";
-            _youTubeExtractor.Config[YouTubeExtractorConfig.CookiesKey] = cookies.Select(p => $"{p.Key}={p.Value}");
-        }
-        else
-        {
-            cookies["VISITOR_INFO1_LIVE"] = "MHllVv46iSU";
-            _youTubeExtractor.Config[YouTubeExtractorConfig.CookiesKey] = cookies.Select(p => $"{p.Key}={p.Value}").Single();
-        }
+        cookies["YSC"] = "_wwCnBu9guc";
+        cookies["VISITOR_INFO1_LIVE"] = "MHllVv46iSU";
+        _youTubeExtractor.Config[YouTubeExtractorConfig.CookiesKey] = string.Join("; ", cookies.Select(q => $"{q.Key}={q.Value}"));
 
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/watch?v=_BSSJi-sHh8"),

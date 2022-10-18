@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Tests\Wilgysef.MoqExtensions\Wilgysef.MoqExtensions.csproj" />
     <ProjectReference Include="..\..\..\Wilgysef.Stalk.Core.Shared\Wilgysef.Stalk.Core.Shared.csproj" />
     <ProjectReference Include="..\Wilgysef.Stalk.Extractors.YoutubeDl.Core\Wilgysef.Stalk.Extractors.YoutubeDl.Core.csproj" />
   </ItemGroup>

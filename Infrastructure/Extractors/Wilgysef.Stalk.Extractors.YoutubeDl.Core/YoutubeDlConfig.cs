@@ -64,25 +64,8 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
         public string? ExecutableName { get; set; }
 
         /// <summary>
-        /// Cookie string.
+        /// Cookie file contents.
         /// </summary>
-        public string? CookieString { get; set; }
-
-        public static string GetCookieString(IEnumerable<string> cookies)
-        {
-            var builder = new StringBuilder();
-
-            foreach (var cookie in cookies)
-            {
-                builder.Append(cookie.TrimEnd(';', ' '));
-                builder.Append("; ");
-            }
-
-            if (builder.Length != 0)
-            {
-                builder.Remove(builder.Length - 2, 2);
-            }
-            return builder.ToString();
-        }
+        public byte[]? CookieFileContents { get; set; }
     }
 }

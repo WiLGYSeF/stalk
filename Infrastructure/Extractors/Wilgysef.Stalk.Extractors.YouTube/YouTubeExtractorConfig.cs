@@ -1,6 +1,5 @@
 ﻿using System.Linq.Expressions;
 using Wilgysef.Stalk.Core.Shared.Extensions;
-using Wilgysef.Stalk.Extractors.YoutubeDl.Core;
 
 namespace Wilgysef.Stalk.Extractors.YouTube;
 
@@ -27,15 +26,7 @@ public class YouTubeExtractorConfig
 
     public YouTubeExtractorConfig(IDictionary<string, object?>? config)
     {
-        if (config?.TryGetValueAs<IEnumerable<string>, string, object?>(CookiesKey, out var cookies) ?? false)
-        {
-            CookieString = YoutubeDlConfig.GetCookieString(cookies);
-        }
-        else if (config?.TryGetValueAs<string, string, object?>(CookiesKey, out var cookie) ?? false)
-        {
-            CookieString = YoutubeDlConfig.GetCookieString(new[] { cookie });
-        }
-
+        TrySetValue(() => CookieString, config, CookiesKey);
         TrySetValue(() => UseWebpThumbnails, config, UseWebpThumbnailsKey);
         TrySetValue(() => EmojiScaleWidth, config, EmojiScaleWidthKey);
         TrySetValue(() => CommunityEmojisOnly, config, CommunityEmojisOnlyKey);

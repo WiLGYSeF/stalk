@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Shouldly;
 using System.Runtime.CompilerServices;
+using Wilgysef.MoqExtensions;
 using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
@@ -25,8 +26,8 @@ public class TaskFailedTest : BaseTest
     private int _extractExceptions = 0;
     private int _downloadExceptions = 0;
 
-    private object _extractLock = new();
-    private object _downloadLock = new();
+    private readonly object _extractLock = new();
+    private readonly object _downloadLock = new();
 
     private readonly Mock<IExtractor> _extractorMock;
     private readonly Mock<IDownloader> _downloaderMock;

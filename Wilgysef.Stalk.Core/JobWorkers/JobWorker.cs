@@ -166,6 +166,7 @@ public class JobWorker : IJobWorker
         await ReloadJobAsync();
         if (!JobTaskFailuresLessThanMaxFailures())
         {
+            Logger?.LogInformation("Job {JobId} exceeded maximum failure count: {MaxFailures}.", Job.Id, _jobConfig.MaxFailures.GetValueOrDefault());
             return;
         }
 
