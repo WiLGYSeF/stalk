@@ -4,6 +4,7 @@ using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
+using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.TestBase;
 
 namespace Wilgysef.Stalk.Core.Tests.JobStateManagerTests;
@@ -33,15 +34,15 @@ public class StopJobTaskAsyncTest : BaseTest
     }
 
     [Theory]
-    [InlineData(JobTaskState.Active, true, true)]
-    [InlineData(JobTaskState.Inactive, true, true)]
-    [InlineData(JobTaskState.Completed, false, false)]
-    [InlineData(JobTaskState.Failed, false, false)]
-    [InlineData(JobTaskState.Cancelled, false, false)]
-    [InlineData(JobTaskState.Cancelling, false, false)]
-    [InlineData(JobTaskState.Paused, false, false)]
-    [InlineData(JobTaskState.Pausing, false, false)]
-    public async Task Stop_Job(JobTaskState state, bool intermediaryChange, bool change)
+    [InlineData(JobTaskState.Active, true, true, false)]
+    [InlineData(JobTaskState.Inactive, true, true, false)]
+    [InlineData(JobTaskState.Completed, false, false, false)]
+    [InlineData(JobTaskState.Failed, false, false, false)]
+    [InlineData(JobTaskState.Cancelled, false, false, false)]
+    [InlineData(JobTaskState.Cancelling, false, false, true)]
+    [InlineData(JobTaskState.Paused, false, false, false)]
+    [InlineData(JobTaskState.Pausing, false, false, true)]
+    public async Task Stop_JobTask(JobTaskState state, bool intermediaryChange, bool change, bool throwsException)
     {
         var job = new JobBuilder().WithRandomInitializedState(JobState.Active)
             .WithRandomTasks(state, 1)
@@ -49,6 +50,12 @@ public class StopJobTaskAsyncTest : BaseTest
         var jobTask = job.Tasks.First();
 
         await _jobManager.CreateJobAsync(job);
+
+        if (throwsException)
+        {
+            await Should.ThrowAsync<BusinessException>(async () => await _jobTaskStateManager.StopJobTaskAsync(jobTask));
+            return;
+        }
 
         var task = Task.Run(async () => await _jobTaskStateManager.StopJobTaskAsync(jobTask));
 

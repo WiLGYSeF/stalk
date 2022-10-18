@@ -14,6 +14,11 @@
         /// </summary>
         public const string JobActive = "Stalk:000002";
 
+        /// <summary>
+        /// The job is already transitioning to a different state.
+        /// </summary>
+        public const string JobTransitioning = "Stalk:000003";
+
         #endregion
 
         #region Job Task Error Codes
@@ -27,6 +32,11 @@
         /// The job task is active.
         /// </summary>
         public const string JobTaskActive = "Stalk:001002";
+
+        /// <summary>
+        /// The job task is already transitioning to a different state.
+        /// </summary>
+        public const string JobTaskTransitioning = "Stalk:001003";
 
         #endregion
 

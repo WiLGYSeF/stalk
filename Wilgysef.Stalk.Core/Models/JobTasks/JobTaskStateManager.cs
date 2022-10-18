@@ -20,13 +20,10 @@ public class JobTaskStateManager : IJobTaskStateManager, ITransientDependency
 
     public async Task StopJobTaskAsync(JobTask jobTask)
     {
-        if (jobTask.IsFinished)
+        CheckJobTaskNotTransitioning(jobTask);
+
+        if (jobTask.IsDone)
         {
-            return;
-        }
-        if (jobTask.IsTransitioning)
-        {
-            // TODO: take over pause with cancel
             return;
         }
 
@@ -43,11 +40,20 @@ public class JobTaskStateManager : IJobTaskStateManager, ITransientDependency
 
     public async Task PauseJobTaskAsync(JobTask jobTask)
     {
+        CheckJobTaskNotTransitioning(jobTask);
+
+        if (jobTask.IsDone)
+        {
+            return;
+        }
+
         await PauseJobTaskAsync(jobTask, true);
     }
 
     public async Task UnpauseJobTaskAsync(JobTask jobTask)
     {
+        CheckJobTaskNotTransitioning(jobTask);
+
         if (jobTask.IsDone)
         {
             throw new JobTaskAlreadyDoneException();
@@ -63,11 +69,6 @@ public class JobTaskStateManager : IJobTaskStateManager, ITransientDependency
 
     private async Task PauseJobTaskAsync(JobTask jobTask, bool changeState)
     {
-        if (jobTask.IsDone || jobTask.IsTransitioning)
-        {
-            return;
-        }
-
         if (jobTask.IsActive)
         {
             if (changeState)
@@ -83,6 +84,14 @@ public class JobTaskStateManager : IJobTaskStateManager, ITransientDependency
         {
             jobTask.ChangeState(JobTaskState.Paused);
             await _jobTaskManager.UpdateJobTaskAsync(jobTask);
+        }
+    }
+
+    private static void CheckJobTaskNotTransitioning(JobTask jobTask)
+    {
+        if (jobTask.IsTransitioning)
+        {
+            throw new JobTaskTransitioningException();
         }
     }
 }

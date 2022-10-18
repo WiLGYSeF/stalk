@@ -248,8 +248,6 @@ public class WorkAsyncTest : BaseTest
     [Fact]
     public async Task Work_Job_Cancel()
     {
-        // TODO: unstable test
-
         var job = new JobBuilder()
             .WithRandomInitializedState(JobState.Inactive)
             .WithRandomTasks(JobTaskState.Inactive, 1)
@@ -262,15 +260,7 @@ public class WorkAsyncTest : BaseTest
         job.Tasks.Count(t => t.State == JobTaskState.Active).ShouldBe(1);
 
         workerInstance.CancellationTokenSource.Cancel();
-
         job = await this.WaitUntilJobAsync(job.Id, job => job.State == JobState.Inactive);
-
-        // TODO: remove
-        var customMessage = string.Join(
-            Environment.NewLine,
-            job.Tasks.Select(t => $"{t.Id} {t.State}"));
-
-        job.State.ShouldBe(JobState.Inactive, customMessage);
 
         var jobWorkerCollectionService = GetRequiredService<IJobWorkerCollectionService>();
         jobWorkerCollectionService.Workers.ShouldBeEmpty();

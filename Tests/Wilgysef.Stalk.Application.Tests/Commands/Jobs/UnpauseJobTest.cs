@@ -49,7 +49,7 @@ public class UnpauseJobTest : BaseTest
 
         using (var scope = BeginLifetimeScope())
         {
-            var unpauseJobCommandHandler = GetRequiredService<ICommandHandler<UnpauseJob, JobDto>>();
+            var unpauseJobCommandHandler = scope.GetRequiredService<ICommandHandler<UnpauseJob, JobDto>>();
             await unpauseJobCommandHandler.HandleCommandAsync(new UnpauseJob(jobId));
         }
 

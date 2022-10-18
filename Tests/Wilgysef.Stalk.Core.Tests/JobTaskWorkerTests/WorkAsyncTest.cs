@@ -225,8 +225,6 @@ public class WorkAsyncTest : BaseTest
     [Fact]
     public async Task Reuses_JobScope_Cache()
     {
-        // TODO: unstable test
-
         await CreateRunAndCancelJob(
             new JobBuilder()
                 .WithRandomInitializedState(JobState.Inactive)
@@ -253,8 +251,6 @@ public class WorkAsyncTest : BaseTest
     [Fact]
     public async Task Reuses_JobScope_HttpClient()
     {
-        // TODO: unstable test
-
         await CreateRunAndCancelJob(
             new JobBuilder()
                 .WithRandomInitializedState(JobState.Inactive)

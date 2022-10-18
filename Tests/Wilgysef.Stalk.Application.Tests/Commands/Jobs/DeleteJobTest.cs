@@ -50,7 +50,7 @@ public class DeleteJobTest : BaseTest
 
         using (var scope = BeginLifetimeScope())
         {
-            var deleteJobCommandHandler = GetRequiredService<ICommandHandler<DeleteJob, JobDto>>();
+            var deleteJobCommandHandler = scope.GetRequiredService<ICommandHandler<DeleteJob, JobDto>>();
             await deleteJobCommandHandler.HandleCommandAsync(new DeleteJob(jobId));
         }
 

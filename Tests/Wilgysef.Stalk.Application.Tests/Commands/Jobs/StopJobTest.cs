@@ -35,8 +35,6 @@ public class StopJobTest : BaseTest
     [Fact]
     public async Task Stop_Job()
     {
-        // TODO: unstable test
-
         var createCommand = new CreateJobBuilder(_mapper).WithRandom().Create();
 
         var jobDto = await _createJobCommandHandler.HandleCommandAsync(createCommand);
@@ -48,7 +46,7 @@ public class StopJobTest : BaseTest
 
         using (var scope = BeginLifetimeScope())
         {
-            var stopJobCommandHandler = GetRequiredService<ICommandHandler<StopJob, JobDto>>();
+            var stopJobCommandHandler = scope.GetRequiredService<ICommandHandler<StopJob, JobDto>>();
             await stopJobCommandHandler.HandleCommandAsync(new StopJob(jobId));
         }
 

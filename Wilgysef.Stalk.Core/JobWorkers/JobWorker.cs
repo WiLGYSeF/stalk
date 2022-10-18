@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System.Diagnostics;
 using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
@@ -134,24 +135,23 @@ public class JobWorker : IJobWorker
 
             if (Job != null)
             {
-                try
-                {
-                    using var scope = _lifetimeScope.BeginLifetimeScope();
-                    var jobManager = scope.GetRequiredService<IJobManager>();
-                    await ReloadJobAsync(jobManager);
-
-                    if (isDone)
+                await RetryActionAsync(
+                    async () =>
                     {
-                        Job.Done();
-                    }
+                        using var scope = _lifetimeScope.BeginLifetimeScope();
+                        var jobManager = scope.GetRequiredService<IJobManager>();
+                        await ReloadJobAsync(jobManager);
 
-                    Job.Deactivate();
-                    await jobManager.UpdateJobAsync(Job, CancellationToken.None);
-                }
-                catch (Exception exception)
-                {
-                    Logger?.LogError(exception, "Failed to update Job {JobId} state.", Job?.Id);
-                }
+                        if (isDone)
+                        {
+                            Job.Done();
+                        }
+
+                        Job.Deactivate();
+                        await jobManager.UpdateJobAsync(Job, CancellationToken.None);
+                    },
+                    exception => Logger?.LogError(exception, "Failed to update Job {JobId} state.", Job?.Id),
+                    TimeSpan.FromSeconds(1));
             }
         }
     }
@@ -234,6 +234,27 @@ public class JobWorker : IJobWorker
         }
 
         return (DateTime.Now - _lastTimeWithNoTasks.Value) >= NoTaskTimeout;
+    }
+
+    private static async Task<bool> RetryActionAsync(Func<Task> action, Action<Exception> failAction, TimeSpan timeSpan)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var success = false;
+
+        while (!success && stopwatch.Elapsed < timeSpan)
+        {
+            try
+            {
+                await action();
+                success = true;
+            }
+            catch (Exception exception)
+            {
+                failAction(exception);
+            }
+        }
+
+        return success;
     }
 
     private bool JobTaskFailuresLessThanMaxFailures()

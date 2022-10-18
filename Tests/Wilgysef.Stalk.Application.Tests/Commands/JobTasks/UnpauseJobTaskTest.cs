@@ -55,7 +55,7 @@ public class UnpauseJobTaskTest : BaseTest
 
         using (var scope = BeginLifetimeScope())
         {
-            var unpauseJobTaskCommandHandler = GetRequiredService<ICommandHandler<UnpauseJobTask, JobDto>>();
+            var unpauseJobTaskCommandHandler = scope.GetRequiredService<ICommandHandler<UnpauseJobTask, JobDto>>();
             await unpauseJobTaskCommandHandler.HandleCommandAsync(new UnpauseJobTask(jobTaskId));
         }
 

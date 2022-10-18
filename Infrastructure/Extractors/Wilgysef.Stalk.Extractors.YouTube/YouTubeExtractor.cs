@@ -223,7 +223,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         var initialData = GetYtInitialData(doc);
         var playerResponse = GetYtInitialPlayerResponse(doc);
 
-        var channelId = GetMetadata<string>(metadata, initialData.SelectToken("$..videoOwnerRenderer.title.runs[0]..browseId"), MetadataChannelIdKeys);
+        var channelId = GetMetadata<string>(metadata, initialData.SelectToken("$..videoOwnerRenderer.title.runs[0]..browseId"), MetadataChannelIdKeys)!;
         var channelName = GetMetadata<string>(metadata, initialData.SelectToken("$..videoOwnerRenderer.title.runs[0].text"), MetadataChannelNameKeys);
         var videoId = initialData.SelectTokens("$..topLevelButtons..watchEndpoint.videoId").First().ToString();
         var title = ConcatRuns(initialData.SelectToken("$..videoPrimaryInfoRenderer.title.runs"));

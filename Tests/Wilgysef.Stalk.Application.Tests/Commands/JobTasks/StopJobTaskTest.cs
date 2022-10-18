@@ -48,7 +48,7 @@ public class StopJobTaskTest : BaseTest
 
         using (var scope = BeginLifetimeScope())
         {
-            var stopJobTaskCommandHandler = GetRequiredService<ICommandHandler<StopJobTask, JobDto>>();
+            var stopJobTaskCommandHandler = scope.GetRequiredService<ICommandHandler<StopJobTask, JobDto>>();
             await stopJobTaskCommandHandler.HandleCommandAsync(new StopJobTask(jobTaskId));
         }
 

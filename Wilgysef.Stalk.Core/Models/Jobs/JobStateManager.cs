@@ -25,13 +25,10 @@ public class JobStateManager : IJobStateManager, ITransientDependency
 
     public async Task StopJobAsync(Job job)
     {
-        if (job.IsFinished)
+        CheckJobNotTransitioning(job);
+
+        if (job.IsDone)
         {
-            return;
-        }
-        if (job.IsTransitioning)
-        {
-            // TODO: take over pause with cancel
             return;
         }
 
@@ -56,16 +53,26 @@ public class JobStateManager : IJobStateManager, ITransientDependency
 
     public async Task PauseJobAsync(Job job)
     {
+        CheckJobNotTransitioning(job);
+
+        if (job.IsDone)
+        {
+            return;
+        }
+
         await PauseJobAsync(job, true);
         await _jobManager.UpdateJobAsync(job);
     }
 
     public async Task UnpauseJobAsync(Job job)
     {
+        CheckJobNotTransitioning(job);
+
         if (job.IsDone)
         {
             throw new JobAlreadyDoneException();
         }
+
         if (job.IsActive)
         {
             return;
@@ -89,11 +96,6 @@ public class JobStateManager : IJobStateManager, ITransientDependency
 
     private async Task PauseJobAsync(Job job, bool changeState)
     {
-        if (job.IsDone || job.IsTransitioning)
-        {
-            return;
-        }
-
         if (job.IsActive)
         {
             if (changeState)
@@ -117,6 +119,14 @@ public class JobStateManager : IJobStateManager, ITransientDependency
             }
 
             _jobRepository.Update(job);
+        }
+    }
+
+    private static void CheckJobNotTransitioning(Job job)
+    {
+        if (job.IsTransitioning)
+        {
+            throw new JobTransitioningException();
         }
     }
 }

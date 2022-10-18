@@ -35,8 +35,6 @@ public class PauseJobTest : BaseTest
     [Fact]
     public async Task Pause_Job()
     {
-        // TODO: unstable test
-
         var createCommand = new CreateJobBuilder(_mapper).WithRandom().Create();
 
         var jobDto = await _createJobCommandHandler.HandleCommandAsync(createCommand);

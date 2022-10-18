@@ -23,9 +23,9 @@ public class UnpauseJobAsyncTest : BaseTest
     [InlineData(JobState.Completed, false, true)]
     [InlineData(JobState.Failed, false, true)]
     [InlineData(JobState.Cancelled, false, true)]
-    [InlineData(JobState.Cancelling, false, false)]
+    [InlineData(JobState.Cancelling, false, true)]
     [InlineData(JobState.Paused, true, false)]
-    [InlineData(JobState.Pausing, false, false)]
+    [InlineData(JobState.Pausing, false, true)]
     public async Task Unpause_Job(JobState state, bool change, bool throwsException)
     {
         var job = new JobBuilder().WithRandomInitializedState(state).Create();
@@ -34,7 +34,7 @@ public class UnpauseJobAsyncTest : BaseTest
 
         if (throwsException)
         {
-            await Should.ThrowAsync<JobAlreadyDoneException>(_jobStateManager.UnpauseJobAsync(job));
+            await Should.ThrowAsync<BusinessException>(_jobStateManager.UnpauseJobAsync(job));
             return;
         }
 
