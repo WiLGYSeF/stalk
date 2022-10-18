@@ -57,9 +57,17 @@ using (var scope = app.Services.CreateScope())
 
     if (appOptions.PauseJobsOnStart)
     {
-        logger?.LogInformation("Pausing all jobs...");
-        var jobStateManager = scope.ServiceProvider.GetRequiredService<IJobStateManager>();
-        await jobStateManager.PauseJobsAsync();
+        try
+        {
+            logger?.LogInformation("Pausing all jobs...");
+            var jobStateManager = scope.ServiceProvider.GetRequiredService<IJobStateManager>();
+            await jobStateManager.PauseJobsAsync();
+        }
+        catch (Exception exception)
+        {
+            logger?.LogError(exception, "Could not pause all jobs.");
+            throw;
+        }
     }
 
     await appStartup.StartAsync(app.Services.GetAutofacRoot());

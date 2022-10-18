@@ -88,6 +88,11 @@ public class JobStateManager : IJobStateManager, ITransientDependency
 
         foreach (var job in jobs)
         {
+            if (job.IsDone)
+            {
+                continue;
+            }
+
             await PauseJobAsync(job, true);
         }
 
