@@ -118,7 +118,7 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
             if (Config.CookieString != null)
             {
                 startInfo.ArgumentList.Add("--add-header");
-                startInfo.ArgumentList.Add($"Cookie:{Config.CookieString}");
+                startInfo.ArgumentList.Add($"Cookie: {Config.CookieString}");
             }
 
             startInfo.ArgumentList.Add("--output");
@@ -129,6 +129,8 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
             configure?.Invoke(startInfo);
 
             var process = FindAndStartProcess(startInfo);
+
+            Logger?.LogDebug("Running youtube-dl: {Filename} {ArgumentList}", startInfo.FileName, startInfo.ArgumentList);
 
             _downloadStatuses[process.Id] = downloadStatus;
             if (outputCallback != null)

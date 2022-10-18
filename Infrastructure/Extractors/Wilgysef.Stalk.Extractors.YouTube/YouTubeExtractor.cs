@@ -44,6 +44,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
     private static readonly string[] MetadataVideoDescriptionKeys = new string[] { "video", "description" };
     private static readonly string[] MetadataVideoLikeCountKeys = new string[] { "video", "like_count" };
     private static readonly string[] MetadataVideoCommentCountKeys = new string[] { "video", "comment_count" };
+    private static readonly string[] MetadataVideoIsMembersOnlyKeys = new string[] { "video", "is_members_only" };
 
     /// <summary>
     /// Template string for file extension with youtube-dl.
@@ -225,7 +226,9 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
         var channelId = GetMetadata<string>(metadata, initialData.SelectToken("$..videoOwnerRenderer.title.runs[0]..browseId"), MetadataChannelIdKeys)!;
         var channelName = GetMetadata<string>(metadata, initialData.SelectToken("$..videoOwnerRenderer.title.runs[0].text"), MetadataChannelNameKeys);
-        var videoId = initialData.SelectTokens("$..topLevelButtons..watchEndpoint.videoId").First().ToString();
+
+        var videoId = initialData.SelectToken("$..currentVideoEndpoint..videoId")!.ToString();
+
         var title = ConcatRuns(initialData.SelectToken("$..videoPrimaryInfoRenderer.title.runs"));
         var date = GetDateTime(initialData.SelectToken("$..dateText.simpleText")?.ToString());
         var description = ConcatRuns(initialData.SelectToken("$..description.runs"));
@@ -251,6 +254,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         metadata[MetadataVideoDescriptionKeys] = description;
         metadata[MetadataVideoLikeCountKeys] = likeCount;
         metadata[MetadataVideoCommentCountKeys] = commentCount;
+        metadata[MetadataVideoIsMembersOnlyKeys] = initialData.SelectToken("$..membershipButton") != null;
 
         var thumbnailResult = await ExtractThumbnailAsync(
             channelId,

@@ -75,20 +75,14 @@ public class TwitchDownloader : DownloaderBase
         var status = new DownloadStatus();
         var process = youtubeDl.FindAndStartProcess(uri.AbsoluteUri, filename, status);
 
-        try
+        await process.WaitForExitAsync(cancellationToken);
+
+        if (status.OutputFilename == null)
         {
-            await process.WaitForExitAsync(cancellationToken);
-        }
-        catch (Exception exception)
-        {
-            Logger?.LogError(exception, "Twitch: Failed to run youtube-dl: {ExitCode}", process.ExitCode);
-            throw;
+            throw new InvalidOperationException("Could not get output filename.");
         }
 
-        if (status.OutputFilename != null)
-        {
-            status.OutputFilename = GetFullPath(process, status.OutputFilename);
-        }
+        status.OutputFilename = GetFullPath(process, status.OutputFilename);
         if (status.MetadataFilename != null)
         {
             status.MetadataFilename = GetFullPath(process, status.MetadataFilename);
