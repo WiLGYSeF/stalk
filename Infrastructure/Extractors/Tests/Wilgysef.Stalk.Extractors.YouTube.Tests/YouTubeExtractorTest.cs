@@ -184,6 +184,7 @@ public class YouTubeExtractorTest : BaseTest
         thumbnailResult.Metadata["video", "duration"].ShouldBe("03:45");
         thumbnailResult.Metadata["video", "duration_seconds"].ShouldBe(225.966);
         thumbnailResult.Metadata["video", "id"].ShouldBe("_BSSJi-sHh8");
+        thumbnailResult.Metadata["video", "is_members_only"].ShouldBe(false);
         thumbnailResult.Metadata["video", "like_count"].ShouldBe("113,285 likes");
         thumbnailResult.Metadata["video", "published"].ShouldBe("20210407");
         thumbnailResult.Metadata["video", "title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
@@ -202,6 +203,7 @@ public class YouTubeExtractorTest : BaseTest
         videoResult.Metadata["video", "duration"].ShouldBe("03:45");
         videoResult.Metadata["video", "like_count"].ShouldBe("113,285 likes");
         videoResult.Metadata["video", "id"].ShouldBe("_BSSJi-sHh8");
+        videoResult.Metadata["video", "is_members_only"].ShouldBe(false);
         videoResult.Metadata["video", "published"].ShouldBe("20210407");
         videoResult.Metadata["video", "title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
         videoResult.Metadata["video", "view_count"].ShouldBe("2,700,338 views");
@@ -246,6 +248,7 @@ public class YouTubeExtractorTest : BaseTest
         textResult.Metadata["origin", "item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#20211201_UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         textResult.Metadata["origin", "uri"].ShouldBe("https://www.youtube.com/post/UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         textResult.Metadata["post", "id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
+        textResult.Metadata["post", "is_members_only"].ShouldBe(false);
         textResult.Metadata["post", "published"].ShouldBe("20211201");
         textResult.Metadata["post", "published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
         textResult.Metadata["post", "votes"].ShouldBe("4.3K");
@@ -257,6 +260,7 @@ public class YouTubeExtractorTest : BaseTest
         imageResult.Metadata["channel", "name"].ShouldBe("Uto Ch. 天使うと");
         imageResult.Metadata["origin", "item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#20211201_UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP#image");
         imageResult.Metadata["post", "id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
+        imageResult.Metadata["post", "is_members_only"].ShouldBe(false);
         imageResult.Metadata["post", "published"].ShouldBe("20211201");
         imageResult.Metadata["post", "published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
         imageResult.Metadata["post", "votes"].ShouldBe("4.3K");
