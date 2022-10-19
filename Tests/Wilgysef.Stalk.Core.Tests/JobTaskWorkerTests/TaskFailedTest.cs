@@ -87,6 +87,8 @@ public class TaskFailedTest : BaseTest
     [Fact]
     public async Task Job_Failed_With_FailedTasks_NoRetry()
     {
+        // TODO: unstable test
+
         DownloadException = new JobTaskWorkerException("a");
         DownloadExceptionCount = 1;
 
