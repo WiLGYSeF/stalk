@@ -60,7 +60,7 @@ public class YouTubeDownloader : DownloaderBase
     {
         _config = new(Config);
 
-        var youtubeDl = new YoutubeDlRunner(_processService, OutputOutputRegex)
+        using var youtubeDl = new YoutubeDlRunner(_processService, _fileSystem, OutputOutputRegex)
         {
             Config = _config.ToYoutubeDlConfig(),
             Logger = Logger,
@@ -73,7 +73,11 @@ public class YouTubeDownloader : DownloaderBase
         CreateDirectoriesFromFilename(filename);
 
         var status = new DownloadStatus();
-        var process = youtubeDl.FindAndStartProcess(uri.AbsoluteUri, filename, status);
+        var process = await youtubeDl.FindAndStartProcessAsync(
+            uri.AbsoluteUri,
+            filename,
+            status,
+            cancellationToken: cancellationToken);
 
         await process.WaitForExitAsync(cancellationToken);
 

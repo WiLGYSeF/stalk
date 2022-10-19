@@ -9,7 +9,7 @@ public class ItemIdSet : IItemIdSet
     public IReadOnlyCollection<string> PendingItems => _pendingItemIds;
 
     private readonly HashSet<string> _itemIds = new();
-    // TODO: this should not be here
+
     private readonly HashSet<string> _pendingItemIds = new();
 
     private readonly object _lock = new();

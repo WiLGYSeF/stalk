@@ -1,6 +1,7 @@
 ﻿using Moq;
 using Shouldly;
 using System.Runtime.CompilerServices;
+using Wilgysef.MoqExtensions;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.Models.Jobs;
@@ -13,7 +14,7 @@ using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.Core.Tests.Utilities;
 using Wilgysef.Stalk.TestBase;
 using Wilgysef.Stalk.TestBase.Extensions;
-using MockExtensions = Wilgysef.Stalk.TestBase.MockExtensions;
+using MockExtensions = Wilgysef.MoqExtensions.MockExtensions;
 
 namespace Wilgysef.Stalk.Core.Tests.JobTaskWorkerTests;
 

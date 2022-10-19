@@ -4,14 +4,17 @@ using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.IO.Abstractions;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading;
+using System.Threading.Tasks;
 using Wilgysef.Stalk.Core.Shared.Extensions;
 using Wilgysef.Stalk.Core.Shared.ProcessServices;
 
 namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
 {
-    public class YoutubeDlRunner
+    public class YoutubeDlRunner : IDisposable
     {
         /// <summary>
         /// Regex group name of the output file.
@@ -43,12 +46,19 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
 
         public ILogger? Logger { get; set; }
 
+        private ITemporaryFile? _cookieFile;
+
         private readonly IProcessService _processService;
+        private readonly IFileSystem _fileSystem;
         private readonly Regex _outputOutputRegex;
 
-        public YoutubeDlRunner(IProcessService processService, Regex outputOutputRegex)
+        public YoutubeDlRunner(
+            IProcessService processService,
+            IFileSystem fileSystem,
+            Regex outputOutputRegex)
         {
             _processService = processService;
+            _fileSystem = fileSystem;
             _outputOutputRegex = outputOutputRegex;
         }
 
@@ -67,14 +77,16 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
         /// Callback on error received.
         /// If it returns <see langword="true"/>, do not do default error processing for that data.
         /// </param>
+        /// <param name="cancellationToken"></param>
         /// <returns>Process.</returns>
-        public virtual IProcess FindAndStartProcess(
+        public virtual async Task<IProcess> FindAndStartProcessAsync(
             string uri,
             string filename,
             IDownloadStatus downloadStatus,
             Action<ProcessStartInfo>? configure = null,
             Func<string, IDownloadStatus, bool>? outputCallback = null,
-            Func<string, IDownloadStatus, bool>? errorCallback = null)
+            Func<string, IDownloadStatus, bool>? errorCallback = null,
+            CancellationToken cancellationToken = default)
         {
             var startInfo = new ProcessStartInfo()
             {
@@ -115,10 +127,14 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
                 startInfo.ArgumentList.Add("--write-subs");
             }
 
-            if (Config.CookieString != null)
+            if (Config.CookieFileContents != null)
             {
-                startInfo.ArgumentList.Add("--add-header");
-                startInfo.ArgumentList.Add($"Cookie: {Config.CookieString}");
+                _cookieFile = await CreateCookieFileAsync(
+                    Config.CookieFileContents,
+                    cancellationToken);
+
+                startInfo.ArgumentList.Add("--cookies");
+                startInfo.ArgumentList.Add(_cookieFile.Filename);
             }
 
             startInfo.ArgumentList.Add("--output");
@@ -148,6 +164,28 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
             process.BeginErrorReadLine();
 
             return process;
+        }
+
+        public virtual void Dispose()
+        {
+            _cookieFile?.Dispose();
+        }
+
+        protected virtual async Task<ITemporaryFile> CreateCookieFileAsync(byte[] contents, CancellationToken cancellationToken = default)
+        {
+            ITemporaryFile? file = null;
+
+            try
+            {
+                file = new TemporaryFile(_fileSystem);
+                await _fileSystem.File.WriteAllBytesAsync(file.Filename, contents, cancellationToken);
+                return file;
+            }
+            catch
+            {
+                file?.Dispose();
+                throw;
+            }
         }
 
         protected virtual void Process_OutputDataReceived(object sender, DataReceivedEventArgs args)

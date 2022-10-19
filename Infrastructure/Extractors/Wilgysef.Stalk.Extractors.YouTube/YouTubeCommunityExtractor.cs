@@ -20,6 +20,7 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
     private static readonly string[] MetadataPostPublishedFromKeys = new[] { "post", "published_from" };
     private static readonly string[] MetadataPostVotesKeys = new[] { "post", "votes" };
     private static readonly string[] MetadataPostCommentsCountKeys = new[] { "post", "comments_count" };
+    private static readonly string[] MetadataPostIsMembersOnlyKeys = new[] { "post", "is_members_only" };
     private static readonly string[] MetadataEmojiIdKeys = new[] { "emoji", "id" };
     private static readonly string[] MetadataEmojiSubIdKeys = new[] { "emoji", "sub_id" };
     private static readonly string[] MetadataEmojiNameKeys = new[] { "emoji", "name" };
@@ -154,6 +155,8 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
 
         GetMetadata<string>(metadata, post["voteCount"]?["simpleText"], MetadataPostVotesKeys);
         GetMetadata<string>(metadata, post.SelectToken("$..replyButton.buttonRenderer.text.simpleText"), MetadataPostCommentsCountKeys);
+
+        metadata[MetadataPostIsMembersOnlyKeys] = post.SelectToken("$..sponsorsOnlyBadgeRenderer") != null;
 
         var imageResult = ExtractCommunityImage(post, metadata, relativeDateTime);
         if (imageResult != null)

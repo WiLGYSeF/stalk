@@ -15,7 +15,7 @@ public class YouTubeDownloaderConfig
     public static readonly string WriteSubsKey = "writeSubs";
     public static readonly string MoveInfoJsonToMetadataKey = "moveInfoJsonToMetadata";
     public static readonly string ExecutableNameKey = "executableName";
-    public static readonly string CookiesKey = "cookies";
+    public static readonly string CookieFileContentsKey = "cookieFileContents";
 
     /// <summary>
     /// <c>-R</c>, <c>--retries</c>
@@ -64,11 +64,20 @@ public class YouTubeDownloaderConfig
     /// </summary>
     public bool WriteSubs { get; set; } = true;
 
+    /// <summary>
+    /// Whether <c>*.info.json</c> file contents be moved to the metadata file.
+    /// </summary>
     public bool MoveInfoJsonToMetadata { get; set; } = false;
 
+    /// <summary>
+    /// <c>youtube-dl</c> executable path.
+    /// </summary>
     public string? ExecutableName { get; set; }
 
-    public string? CookieString { get; set; }
+    /// <summary>
+    /// Cookie file contents encoded in base64.
+    /// </summary>
+    public string? CookieFileContents { get; set; }
 
     public YouTubeDownloaderConfig() { }
 
@@ -88,15 +97,7 @@ public class YouTubeDownloaderConfig
         TrySetValue(() => WriteSubs, config, WriteSubsKey);
         TrySetValue(() => MoveInfoJsonToMetadata, config, MoveInfoJsonToMetadataKey);
         TrySetValue(() => ExecutableName, config, ExecutableNameKey);
-
-        if (config?.TryGetValueAs<IEnumerable<string>, string, object?>(CookiesKey, out var cookies) ?? false)
-        {
-            CookieString = YoutubeDlConfig.GetCookieString(cookies);
-        }
-        else if (config?.TryGetValueAs<string, string, object?>(CookiesKey, out var cookie) ?? false)
-        {
-            CookieString = YoutubeDlConfig.GetCookieString(new[] { cookie });
-        }
+        TrySetValue(() => CookieFileContents, config, CookieFileContentsKey);
     }
 
     public YoutubeDlConfig ToYoutubeDlConfig()
@@ -112,7 +113,9 @@ public class YouTubeDownloaderConfig
             WriteSubs = WriteSubs,
             MoveInfoJsonToMetadata = MoveInfoJsonToMetadata,
             ExecutableName = ExecutableName,
-            CookieString = CookieString,
+            CookieFileContents = CookieFileContents != null
+                ? Convert.FromBase64String(CookieFileContents)
+                : null,
         };
     }
 

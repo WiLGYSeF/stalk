@@ -184,6 +184,7 @@ public class YouTubeExtractorTest : BaseTest
         thumbnailResult.Metadata["video", "duration"].ShouldBe("03:45");
         thumbnailResult.Metadata["video", "duration_seconds"].ShouldBe(225.966);
         thumbnailResult.Metadata["video", "id"].ShouldBe("_BSSJi-sHh8");
+        thumbnailResult.Metadata["video", "is_members_only"].ShouldBe(false);
         thumbnailResult.Metadata["video", "like_count"].ShouldBe("113,285 likes");
         thumbnailResult.Metadata["video", "published"].ShouldBe("20210407");
         thumbnailResult.Metadata["video", "title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
@@ -202,6 +203,7 @@ public class YouTubeExtractorTest : BaseTest
         videoResult.Metadata["video", "duration"].ShouldBe("03:45");
         videoResult.Metadata["video", "like_count"].ShouldBe("113,285 likes");
         videoResult.Metadata["video", "id"].ShouldBe("_BSSJi-sHh8");
+        videoResult.Metadata["video", "is_members_only"].ShouldBe(false);
         videoResult.Metadata["video", "published"].ShouldBe("20210407");
         videoResult.Metadata["video", "title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
         videoResult.Metadata["video", "view_count"].ShouldBe("2,700,338 views");
@@ -246,6 +248,7 @@ public class YouTubeExtractorTest : BaseTest
         textResult.Metadata["origin", "item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#20211201_UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         textResult.Metadata["origin", "uri"].ShouldBe("https://www.youtube.com/post/UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         textResult.Metadata["post", "id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
+        textResult.Metadata["post", "is_members_only"].ShouldBe(false);
         textResult.Metadata["post", "published"].ShouldBe("20211201");
         textResult.Metadata["post", "published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
         textResult.Metadata["post", "votes"].ShouldBe("4.3K");
@@ -257,6 +260,7 @@ public class YouTubeExtractorTest : BaseTest
         imageResult.Metadata["channel", "name"].ShouldBe("Uto Ch. 天使うと");
         imageResult.Metadata["origin", "item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#community#20211201_UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP#image");
         imageResult.Metadata["post", "id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
+        imageResult.Metadata["post", "is_members_only"].ShouldBe(false);
         imageResult.Metadata["post", "published"].ShouldBe("20211201");
         imageResult.Metadata["post", "published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
         imageResult.Metadata["post", "votes"].ShouldBe("4.3K");
@@ -289,27 +293,36 @@ public class YouTubeExtractorTest : BaseTest
         results.All(r => r.ItemId!.Contains("#emoji#")).ShouldBeTrue();
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Config_Cookies(bool multipleCookies)
+    [Fact]
+    public async Task Config_Cookies_Authorization()
     {
         HttpRequestMessage? request = null;
 
+        _dateTimeProvider.SetDateTimeOffset(DateTimeOffset.FromUnixTimeSeconds(1666138176));
         _httpInterceptor.RequestProcessed += HttpInterceptor_RequestProcessed;
 
-        var cookies = new Dictionary<string, string>();
-        if (multipleCookies)
+        var cookies = new Dictionary<string, string>
         {
-            cookies["YSC"] = "_wwCnBu9guc";
-            cookies["VISITOR_INFO1_LIVE"] = "MHllVv46iSU";
-            _youTubeExtractor.Config[YouTubeExtractorConfig.CookiesKey] = cookies.Select(p => $"{p.Key}={p.Value}");
-        }
-        else
-        {
-            cookies["VISITOR_INFO1_LIVE"] = "MHllVv46iSU";
-            _youTubeExtractor.Config[YouTubeExtractorConfig.CookiesKey] = cookies.Select(p => $"{p.Key}={p.Value}").Single();
-        }
+            ["APISID"] = "F0nAduc5-K2v10P4/DwJ3VnqRW2WNM527L",
+            ["LOGIN_INFO"] = "PPhfS8vvQWDsTSNdjJPTegcx5mHdSE3JjC_cy5-hRGxWGtCu6OYhMgB2LsA_s7Wi9y-Q-v1hhlVCSGcgTDPrntQm7t25Cf7TRmeMiz:PKV2TfTucSKARCGZeDiZFWTht17txtjTpYL8r1n8CQp9noLvRQX4FvhFrCHtZGM0SAUfSwJ4kngzNOIzBWIggOOJCd21EZAPYkVSHLdMSW7rNGeoZQ0UbN0nAXo7B9B9ISaJZHqDWJLfBUPXs1MhAcw3OIKCfN1MLJuvPObmA1FOZAJNMXobR9kWjCHGiecCeWt1VjFYd2s6lFO7N1H2Dk2z",
+            ["GPS"] = "1",
+            ["HSID"] = "CX6n18vygFjlDoAKA",
+            ["PREF"] = "f4=4000000&tz=America.New_York&f6=40000000",
+            ["SAPISID"] = "4uZsQNnox-RcAnhX/Wxdil8HFrHrFgVDVk",
+            ["SID"] = "Ckn1VMYeNVa27a9735bGozUKrE5vnNIc1ZvnoNsXT6PXKjDYwDoP6o3gk-OwBNdJDmLcVv.",
+            ["SIDCC"] = "ZCq-BOKEKPe65ykXmQngHE-P8zIjlzczLj0dOAZ3xzFbg9O4ywODsXFdAc45Xm7TmHF7I9TU",
+            ["SSID"] = "C6ZF7iZgHTBzcDs2k",
+            ["VISITOR_INFO1_LIVE"] = "MHllVv46iSU",
+            ["YSC"] = "_wwCnBu9guc",
+            ["__Secure-1PAPISID"] = "4uZsQNnox-RcAnhX/Wxdil8HFrHrFgVDVk",
+            ["__Secure-1PSID"] = "Loa6TCQaEAq61b7830xGeuDWvA9xqWXo7VfqjYeNC4ZRFmCQvDHgqVSQI1hjptac_3RH5s.",
+            ["__Secure-1PSIDCC"] = "UWe-SGS5iOezdBNyeAAE-wMph4JEW3jlzdaLq53TPSUjT4tz6-WmGmoGOAlkouDm1lVMo43Woh",
+            ["__Secure-3PAPISID"] = "4uZsQNnox-RcAnhX/Wxdil8HFrHrFgVDVk",
+            ["__Secure-3PSID"] = "Niv5HASjDSx36h0353mTguIWxM9fnVQu5HcllApYB2CEWeRI2LgWrULpoqHeW89aY5gi9N.",
+            ["__Secure-3PSIDCC"] = "DEf-NPEvrwBDApCy6941J07UoTIONAKpAJ3AxGTMHQHcOVAQvCrQa2XPCRDC6LvYxt6XJCLa",
+        };
+
+        _youTubeExtractor.Config[YouTubeExtractorConfig.CookiesKey] = string.Join("; ", cookies.Select(q => $"{q.Key}={q.Value}"));
 
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri("https://www.youtube.com/watch?v=_BSSJi-sHh8"),
@@ -318,6 +331,7 @@ public class YouTubeExtractorTest : BaseTest
 
         request!.Headers.Single(p => p.Key == "Cookie").Value
             .ShouldBe(new[] { string.Join("; ", cookies.Select(q => $"{q.Key}={q.Value}")) });
+        request.Headers.Single(p => p.Key == "Authorization").Value.Single().ShouldBe("SAPISIDHASH 1666138176_44eeabfc8365d084bbe0775dd604ef081ae31cb3");
 
         void HttpInterceptor_RequestProcessed(object? sender, HttpRequestMessage e)
         {

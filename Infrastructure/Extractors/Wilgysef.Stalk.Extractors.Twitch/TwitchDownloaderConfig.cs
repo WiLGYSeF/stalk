@@ -15,7 +15,7 @@ public class TwitchDownloaderConfig
     public static readonly string WriteSubsKey = "writeSubs";
     public static readonly string MoveInfoJsonToMetadataKey = "moveInfoJsonToMetadata";
     public static readonly string ExecutableNameKey = "executableName";
-    public static readonly string CookiesKey = "cookies";
+    public static readonly string CookieFileContentsKey = "cookieFileContents";
 
     /// <summary>
     /// <c>-R</c>, <c>--retries</c>
@@ -75,9 +75,9 @@ public class TwitchDownloaderConfig
     public string? ExecutableName { get; set; }
 
     /// <summary>
-    /// Cookie string.
+    /// Cookie file contents encoded in base64.
     /// </summary>
-    public string? CookieString { get; set; }
+    public string? CookieFileContents { get; set; }
 
     public TwitchDownloaderConfig() { }
 
@@ -97,15 +97,7 @@ public class TwitchDownloaderConfig
         TrySetValue(() => WriteSubs, config, WriteSubsKey);
         TrySetValue(() => MoveInfoJsonToMetadata, config, MoveInfoJsonToMetadataKey);
         TrySetValue(() => ExecutableName, config, ExecutableNameKey);
-
-        if (config?.TryGetValueAs<IEnumerable<string>, string, object?>(CookiesKey, out var cookies) ?? false)
-        {
-            CookieString = YoutubeDlConfig.GetCookieString(cookies);
-        }
-        else if (config?.TryGetValueAs<string, string, object?>(CookiesKey, out var cookie) ?? false)
-        {
-            CookieString = YoutubeDlConfig.GetCookieString(new[] { cookie });
-        }
+        TrySetValue(() => CookieFileContents, config, CookieFileContentsKey);
     }
 
     public YoutubeDlConfig ToYoutubeDlConfig()
@@ -121,7 +113,9 @@ public class TwitchDownloaderConfig
             WriteSubs = WriteSubs,
             MoveInfoJsonToMetadata = MoveInfoJsonToMetadata,
             ExecutableName = ExecutableName,
-            CookieString = CookieString,
+            CookieFileContents = CookieFileContents != null
+                ? Convert.FromBase64String(CookieFileContents)
+                : null,
         };
     }
 
