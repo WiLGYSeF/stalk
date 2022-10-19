@@ -294,15 +294,34 @@ public class YouTubeExtractorTest : BaseTest
     }
 
     [Fact]
-    public async Task Config_Cookies()
+    public async Task Config_Cookies_Authorization()
     {
         HttpRequestMessage? request = null;
 
+        _dateTimeProvider.SetDateTimeOffset(DateTimeOffset.FromUnixTimeSeconds(1666138176));
         _httpInterceptor.RequestProcessed += HttpInterceptor_RequestProcessed;
 
-        var cookies = new Dictionary<string, string>();
-        cookies["YSC"] = "_wwCnBu9guc";
-        cookies["VISITOR_INFO1_LIVE"] = "MHllVv46iSU";
+        var cookies = new Dictionary<string, string>
+        {
+            ["APISID"] = "F0nAduc5-K2v10P4/DwJ3VnqRW2WNM527L",
+            ["LOGIN_INFO"] = "PPhfS8vvQWDsTSNdjJPTegcx5mHdSE3JjC_cy5-hRGxWGtCu6OYhMgB2LsA_s7Wi9y-Q-v1hhlVCSGcgTDPrntQm7t25Cf7TRmeMiz:PKV2TfTucSKARCGZeDiZFWTht17txtjTpYL8r1n8CQp9noLvRQX4FvhFrCHtZGM0SAUfSwJ4kngzNOIzBWIggOOJCd21EZAPYkVSHLdMSW7rNGeoZQ0UbN0nAXo7B9B9ISaJZHqDWJLfBUPXs1MhAcw3OIKCfN1MLJuvPObmA1FOZAJNMXobR9kWjCHGiecCeWt1VjFYd2s6lFO7N1H2Dk2z",
+            ["GPS"] = "1",
+            ["HSID"] = "CX6n18vygFjlDoAKA",
+            ["PREF"] = "f4=4000000&tz=America.New_York&f6=40000000",
+            ["SAPISID"] = "4uZsQNnox-RcAnhX/Wxdil8HFrHrFgVDVk",
+            ["SID"] = "Ckn1VMYeNVa27a9735bGozUKrE5vnNIc1ZvnoNsXT6PXKjDYwDoP6o3gk-OwBNdJDmLcVv.",
+            ["SIDCC"] = "ZCq-BOKEKPe65ykXmQngHE-P8zIjlzczLj0dOAZ3xzFbg9O4ywODsXFdAc45Xm7TmHF7I9TU",
+            ["SSID"] = "C6ZF7iZgHTBzcDs2k",
+            ["VISITOR_INFO1_LIVE"] = "MHllVv46iSU",
+            ["YSC"] = "_wwCnBu9guc",
+            ["__Secure-1PAPISID"] = "4uZsQNnox-RcAnhX/Wxdil8HFrHrFgVDVk",
+            ["__Secure-1PSID"] = "Loa6TCQaEAq61b7830xGeuDWvA9xqWXo7VfqjYeNC4ZRFmCQvDHgqVSQI1hjptac_3RH5s.",
+            ["__Secure-1PSIDCC"] = "UWe-SGS5iOezdBNyeAAE-wMph4JEW3jlzdaLq53TPSUjT4tz6-WmGmoGOAlkouDm1lVMo43Woh",
+            ["__Secure-3PAPISID"] = "4uZsQNnox-RcAnhX/Wxdil8HFrHrFgVDVk",
+            ["__Secure-3PSID"] = "Niv5HASjDSx36h0353mTguIWxM9fnVQu5HcllApYB2CEWeRI2LgWrULpoqHeW89aY5gi9N.",
+            ["__Secure-3PSIDCC"] = "DEf-NPEvrwBDApCy6941J07UoTIONAKpAJ3AxGTMHQHcOVAQvCrQa2XPCRDC6LvYxt6XJCLa",
+        };
+
         _youTubeExtractor.Config[YouTubeExtractorConfig.CookiesKey] = string.Join("; ", cookies.Select(q => $"{q.Key}={q.Value}"));
 
         var results = await _youTubeExtractor.ExtractAsync(
@@ -312,6 +331,7 @@ public class YouTubeExtractorTest : BaseTest
 
         request!.Headers.Single(p => p.Key == "Cookie").Value
             .ShouldBe(new[] { string.Join("; ", cookies.Select(q => $"{q.Key}={q.Value}")) });
+        request.Headers.Single(p => p.Key == "Authorization").Value.Single().ShouldBe("SAPISIDHASH 1666138176_44eeabfc8365d084bbe0775dd604ef081ae31cb3");
 
         void HttpInterceptor_RequestProcessed(object? sender, HttpRequestMessage e)
         {

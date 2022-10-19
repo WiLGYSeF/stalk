@@ -1,13 +1,19 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using HtmlAgilityPack;
+using Newtonsoft.Json.Linq;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using HtmlAgilityPack;
+using System.Security.Cryptography;
+using System.Text;
 using Wilgysef.Stalk.Core.Shared.DateTimeProviders;
+using Wilgysef.Stalk.Core.Shared.Extensions;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
 namespace Wilgysef.Stalk.Extractors.YouTube;
 
 public abstract class YouTubeExtractorBase
 {
+    private const string OriginUrl = "https://www.youtube.com";
+
     protected static readonly string[] MetadataChannelIdKeys = new string[] { "channel", "id" };
     protected static readonly string[] MetadataChannelNameKeys = new string[] { "channel", "name" };
 
@@ -128,9 +134,33 @@ public abstract class YouTubeExtractorBase
     {
         if (ExtractorConfig.CookieString != null)
         {
+            KeyValuePair<string, string>? sapisidCookie = GetCookies(ExtractorConfig.CookieString).FirstOrDefault(p => p.Key == "SAPISID");
+            if (sapisidCookie.HasValue)
+            {
+                request.Headers.Authorization = new AuthenticationHeaderValue("SAPISIDHASH", GetSapisidhash(sapisidCookie.Value.Value));
+            }
+
             request.Headers.Add("Cookie", ExtractorConfig.CookieString);
         }
+
+        request.Headers.Add("X-Origin", OriginUrl);
         return request;
+    }
+
+    protected static IEnumerable<KeyValuePair<string, string>> GetCookies(string cookies)
+    {
+        return cookies.Split(";").Select(c => Separate(c.TrimStart(), '='));
+    }
+
+    protected string GetSapisidhash(string sapisid)
+    {
+        // thank you
+        // https://stackoverflow.com/a/32065323
+
+        var epochSeconds = DateTimeProvider.OffsetNow.ToUnixTimeSeconds();
+        var hash = SHA1.HashData(Encoding.UTF8.GetBytes($"{epochSeconds} {sapisid} {OriginUrl}"));
+
+        return $"{epochSeconds}_{hash.ToHexString()}";
     }
 
     protected static T? GetMetadata<T>(IMetadataObject metadata, JToken? token, params string[] keys)
@@ -220,5 +250,11 @@ public abstract class YouTubeExtractorBase
         }
 
         return relativeTime.ToString("yyyyMMdd");
+    }
+
+    private static KeyValuePair<string, string> Separate(string value, char separator)
+    {
+        var index = value.IndexOf(separator);
+        return new KeyValuePair<string, string>(value[..index], value[(index + 1)..]);
     }
 }
