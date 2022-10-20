@@ -243,8 +243,8 @@ public class YouTubeExtractorTest : BaseTest
     [InlineData("https://www.youtube.com/post/UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")]
     public async Task Get_Community_Single(string uri)
     {
-        _dateTimeProvider.SetDateTime(new DateTime(2022, 10, 1, 0, 0, 0, DateTimeKind.Utc));
-        _dateTimeProvider.SetDateTimeOffset(new DateTimeOffset(2022, 10, 1, 0, 0, 0, TimeSpan.Zero));
+        _dateTimeProvider.SetDateTime(new DateTime(2022, 10, 4, 0, 0, 0, DateTimeKind.Utc));
+        _dateTimeProvider.SetDateTimeOffset(new DateTimeOffset(2022, 10, 4, 0, 0, 0, TimeSpan.Zero));
 
         var results = await _youTubeExtractor.ExtractAsync(
             new Uri(uri),
@@ -264,7 +264,7 @@ public class YouTubeExtractorTest : BaseTest
         textResult.Metadata["post", "id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         textResult.Metadata["post", "is_members_only"].ShouldBe(false);
         textResult.Metadata["post", "published"].ShouldBe("20211201");
-        textResult.Metadata["post", "published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
+        textResult.Metadata["post", "published_from"].ShouldBe("10 months ago from 2022-10-04 00:00:00 +00:00");
         textResult.Metadata["post", "votes"].ShouldBe("4.3K");
         textResult.Type.ShouldBe(JobTaskType.Download);
 
@@ -276,7 +276,7 @@ public class YouTubeExtractorTest : BaseTest
         imageResult.Metadata["post", "id"].ShouldBe("UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP");
         imageResult.Metadata["post", "is_members_only"].ShouldBe(false);
         imageResult.Metadata["post", "published"].ShouldBe("20211201");
-        imageResult.Metadata["post", "published_from"].ShouldBe("10 months ago from 2022-10-01 00:00:00 +00:00");
+        imageResult.Metadata["post", "published_from"].ShouldBe("10 months ago from 2022-10-04 00:00:00 +00:00");
         imageResult.Metadata["post", "votes"].ShouldBe("4.3K");
         imageResult.Type.ShouldBe(JobTaskType.Download);
 

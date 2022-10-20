@@ -239,10 +239,12 @@ public abstract class YouTubeExtractorBase
         else if (span.StartsWith("month"))
         {
             relativeTime = dateTime.Value.AddMonths(-number);
+            relativeTime = new DateTime(relativeTime.Year, relativeTime.Month, 1, 0, 0, 0);
         }
         else if (span.StartsWith("year"))
         {
             relativeTime = dateTime.Value.AddYears(-number);
+            relativeTime = new DateTime(relativeTime.Year, 1, 1, 0, 0, 0);
         }
         else
         {
