@@ -136,7 +136,7 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
         return new Uri($"https://www.youtube.com/post/{postId}");
     }
 
-    private IEnumerable<ExtractResult> ExtractCommunity(JToken post, IMetadataObject metadata)
+    public IEnumerable<ExtractResult> ExtractCommunity(JToken post, IMetadataObject metadata)
     {
         metadata = metadata.Copy();
 

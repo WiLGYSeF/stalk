@@ -69,6 +69,8 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
     {
         ExtractorConfig = new YouTubeExtractorConfig(Config);
 
+        var communityExtractor = CreateCommunityExtractor();
+
         switch (GetExtractType(uri))
         {
             case ExtractType.Channel:
@@ -80,8 +82,10 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
             case ExtractType.Video:
                 return ExtractVideoAsync(uri, metadata, cancellationToken);
             case ExtractType.Community:
-                var communityExtractor = CreateCommunityExtractor();
                 return communityExtractor.ExtractCommunityAsync(uri, metadata, cancellationToken);
+            case ExtractType.Membership:
+                var membershipExtractor = CreateMembershipExtractor(communityExtractor);
+                return membershipExtractor.ExtractMembershipAsync(uri, metadata, cancellationToken);
             default:
                 throw new ArgumentOutOfRangeException(nameof(uri));
         }
@@ -388,6 +392,11 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         return new YouTubeCommunityExtractor(HttpClient, DateTimeProvider, ExtractorConfig);
     }
 
+    private YouTubeMembershipExtractor CreateMembershipExtractor(YouTubeCommunityExtractor communityExtractor)
+    {
+        return new YouTubeMembershipExtractor(HttpClient, communityExtractor, DateTimeProvider, ExtractorConfig);
+    }
+
     private static Uri GetVideosUri(string channel, bool shortChannel = false)
     {
         return new Uri(GetChannelUriPrefix(channel, shortChannel) + "videos");
@@ -443,6 +452,10 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         if (YouTubeCommunityExtractor.IsCommunityExtractType(uri))
         {
             return ExtractType.Community;
+        }
+        if (YouTubeMembershipExtractor.IsMembershipExtractType(uri))
+        {
+            return ExtractType.Membership;
         }
         if (Consts.ChannelRegex.IsMatch(leftUri))
         {
@@ -520,5 +533,6 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         Playlist,
         Video,
         Community,
+        Membership,
     }
 }

@@ -23,4 +23,8 @@ public static class Consts
 
     public static readonly Regex CommunityPostRegex = new(UriPrefixRegex + @"/post/(?<post>[A-Za-z0-9_-]+)", RegexOptions.Compiled);
     public const string CommunityPostRegexPostGroup = "post";
+
+    public static readonly Regex MembershipRegex = new(ChannelPrefixRegex + @"/membership", RegexOptions.Compiled);
+    public const string MembershipRegexChannelSegmentGroup = "segment";
+    public const string MembershipRegexChannelGroup = "channel";
 }
