@@ -106,7 +106,7 @@ public class JobConfig
     {
         var config = new Dictionary<string, object?>
         {
-            [DownloaderBase.SaveFilenameTemplatesMetadataKey] = SaveFilenameTemplatesMetadata
+            [DownloaderBase.ConfigKeys.SaveFilenameTemplatesMetadata] = SaveFilenameTemplatesMetadata
         };
 
         GetConfig(DownloaderConfig.Where(c => c.Name == GlobalConfigGroupName), config);

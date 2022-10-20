@@ -363,9 +363,9 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
                 var parts = timeSpan.Split(':').Select(p => int.Parse(p)).ToList();
                 return parts.Count switch
                 {
-                    0 => TimeSpan.FromSeconds(parts[0]),
-                    1 => new TimeSpan(0, parts[0], parts[1]),
-                    2 => new TimeSpan(parts[0], parts[1], parts[2]),
+                    1 => TimeSpan.FromSeconds(parts[0]),
+                    2 => new TimeSpan(0, parts[0], parts[1]),
+                    3 => new TimeSpan(parts[0], parts[1], parts[2]),
                     _ => null,
                 };
             }

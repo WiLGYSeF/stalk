@@ -18,10 +18,18 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 {
     public abstract class DownloaderBase : IDownloader
     {
-        /// <summary>
-        /// Config key for setting whether filename and metadata templates should be saved as metadata.
-        /// </summary>
-        public const string SaveFilenameTemplatesMetadataKey = "saveFilenameTemplatesMetadata";
+        public static class ConfigKeys
+        {
+            /// <summary>
+            /// Config key for setting whether filename and metadata templates should be saved as metadata.
+            /// </summary>
+            public const string SaveFilenameTemplatesMetadata = "saveFilenameTemplatesMetadata";
+
+            /// <summary>
+            /// Whether a file should be skipped if one with the same name already exists.
+            /// </summary>
+            public const string SkipExisting = "skipExisting";
+        }
 
         /// <summary>
         /// Buffer size for downloading files.
@@ -82,7 +90,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             DownloadRequestData? requestData = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            if (Config.TryGetValueAs<bool, string, object?>(SaveFilenameTemplatesMetadataKey, out var saveFilenameTemplatesMetadata)
+            if (Config.TryGetValueAs<bool, string, object?>(ConfigKeys.SaveFilenameTemplatesMetadata, out var saveFilenameTemplatesMetadata)
                 && saveFilenameTemplatesMetadata)
             {
                 metadata.TryAddValue(filenameTemplate, MetadataObjectConsts.File.FilenameTemplateKeys);
@@ -155,7 +163,15 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             DownloadRequestData? requestData = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            var filename = GetFormattedSlugifiedFilename(filenameTemplate, metadata);
+            var filename = GetFormattedSlugifiedFilename(filenameTemplate, metadata, false);
+
+            if (Config.TryGetValueAs<bool, string, object?>(ConfigKeys.SkipExisting, out var skipExisting)
+                && skipExisting
+                && _fileSystem.File.Exists(filename))
+            {
+                Logger?.LogInformation("Skipping download from {Uri}, file already exists: {Filename}", uri.AbsoluteUri, filename);
+                yield break;
+            }
 
             CreateDirectoriesFromFilename(filename);
 
@@ -266,7 +282,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
                 return Task.FromResult<string?>(null);
             }
 
-            var metadataFilename = GetFormattedSlugifiedFilename(metadataFilenameTemplate, metadata);
+            var metadataFilename = GetFormattedSlugifiedFilename(metadataFilenameTemplate, metadata, true);
 
             CreateDirectoriesFromFilename(metadataFilename);
 
@@ -317,16 +333,18 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// </summary>
         /// <param name="filenameTemplate">Filename template.</param>
         /// <param name="metadata">Metadata.</param>
+        /// <param name="isMetadataFilename">Whether the filename is intended for metadata files.</param>
         /// <returns>Formatted and slugified filename.</returns>
         protected string GetFormattedSlugifiedFilename(
             string filenameTemplate,
-            IMetadataObject metadata)
+            IMetadataObject metadata,
+            bool isMetadataFilename = false)
         {
             return GetFormattedSlugifiedFilename(
                 filenameTemplate,
                 metadata.GetFlattenedDictionary(MetadataObjectConsts.Separator),
                 metadata,
-                true);
+                isMetadataFilename);
         }
 
         /// <summary>

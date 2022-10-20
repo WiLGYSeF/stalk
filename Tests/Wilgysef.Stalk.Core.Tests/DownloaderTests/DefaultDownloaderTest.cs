@@ -69,7 +69,7 @@ public class DefaultDownloaderTest : BaseTest
             _downloader.HashName = null;
         }
 
-        _downloader.Config[DownloaderBase.SaveFilenameTemplatesMetadataKey] = saveFilenameTemplateMetadata;
+        _downloader.Config[DownloaderBase.ConfigKeys.SaveFilenameTemplatesMetadata] = saveFilenameTemplateMetadata;
 
         var results = await _downloader.DownloadAsync(
             uri,
@@ -198,5 +198,39 @@ public class DefaultDownloaderTest : BaseTest
         result.Uri.ShouldBe(uri);
         result.ItemId.ShouldBe(itemId);
         result.MetadataPath.ShouldBe(expectedMetadataFilename);
+    }
+
+    [Theory]
+    [InlineData("testfileabc")]
+    [InlineData("otherfile")]
+    public async Task Download_File_SkipExisting(string existingFilename)
+    {
+        var uri = RandomValues.RandomUri();
+        var filename = "testfile${value}";
+        var itemId = RandomValues.RandomString(10);
+        var metadataFilename = "testmeta";
+        var metadata = new MetadataObject();
+
+        metadata["value"] = "abc";
+
+        _fileSystem.AddFile(existingFilename, new MockFileData(""));
+
+        _downloader.Config[DownloaderBase.ConfigKeys.SkipExisting] = true;
+
+        var results = await _downloader.DownloadAsync(
+            uri,
+            filename,
+            itemId,
+            metadataFilename,
+            metadata).ToListAsync();
+
+        if (existingFilename == "testfileabc")
+        {
+            results.ShouldBeEmpty();
+        }
+        else
+        {
+            results.Count.ShouldBe(1);
+        }
     }
 }
