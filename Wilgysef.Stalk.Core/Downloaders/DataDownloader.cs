@@ -53,7 +53,7 @@ public class DataDownloader : DownloaderBase
         var offset = 5;
         for (; offset < uri.Length; offset++)
         {
-            if (uri[offset] == ';' || uri[offset] == ',')
+            if (uri[offset] == ',')
             {
                 break;
             }
@@ -61,23 +61,13 @@ public class DataDownloader : DownloaderBase
 
         var isBase64 = false;
 
-        if (uri[offset] == ';')
+        if (uri[offset] == ',')
         {
-            if (!uri[offset..].StartsWith(";base64,"))
-            {
-                throw new ArgumentException("Unknown encoding.", nameof(uri));
-            }
-            isBase64 = true;
-            offset += 8;
-        }
-        else
-        {
+            isBase64 = offset >= 7 && uri[(offset - 7)..].StartsWith(";base64,");
             offset++;
         }
 
         var data = uri[offset..];
-        return new MemoryStream(isBase64
-            ? Convert.FromBase64String(data)
-            : HttpUtility.UrlDecodeToBytes(data));
+        return new MemoryStream(isBase64 ? Convert.FromBase64String(data) : HttpUtility.UrlDecodeToBytes(data));
     }
 }

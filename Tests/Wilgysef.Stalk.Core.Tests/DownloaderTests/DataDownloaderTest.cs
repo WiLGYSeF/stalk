@@ -27,6 +27,7 @@ public class DataDownloaderTest : BaseTest
 
     [Theory]
     [InlineData("data:text/plain;base64,aGVsbG8gdGhlcmU=", true)]
+    [InlineData("data:text/plain;charset=UTF-8;base64,aGVsbG8gdGhlcmU=", true)]
     [InlineData("data:;base64,aGVsbG8gdGhlcmU=", true)]
     [InlineData("data:,test", true)]
     [InlineData("https://example.com", false)]
@@ -40,6 +41,36 @@ public class DataDownloaderTest : BaseTest
     {
         var data = Encoding.UTF8.GetBytes("this is a test");
         var uri = new Uri($"data:text/plain;base64,{Convert.ToBase64String(data)}");
+        var filename = "testfile${value}";
+        var expectedFilename = "testfileabc";
+        var itemId = RandomValues.RandomString(10);
+        var metadataFilename = "testmeta${value}";
+        var expectedMetadataFilename = "testmetaabc";
+        var metadata = new MetadataObject();
+        metadata["value"] = "abc";
+
+        var results = await _downloader.DownloadAsync(
+            uri,
+            filename,
+            itemId,
+            metadataFilename,
+            metadata).ToListAsync();
+
+        var result = results.Single();
+        result.Path.ShouldBe(expectedFilename);
+        result.Uri.ShouldBe(uri);
+        result.ItemId.ShouldBe(itemId);
+        result.MetadataPath.ShouldBe(expectedMetadataFilename);
+
+        _fileSystem.AllFiles.Count().ShouldBe(2);
+        _fileSystem.File.ReadAllBytes(result.Path).ShouldBe(data);
+    }
+
+    [Fact]
+    public async Task Download_Data_Mediatype_Charset_Base64()
+    {
+        var data = Encoding.UTF8.GetBytes("this is a test");
+        var uri = new Uri($"data:text/plain;charset=UTF-8;base64,{Convert.ToBase64String(data)}");
         var filename = "testfile${value}";
         var expectedFilename = "testfileabc";
         var itemId = RandomValues.RandomString(10);

@@ -46,7 +46,7 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
         }
 
         var json = await GetCommunityJsonAsync(uri, cancellationToken);
-        var channelId = json.SelectToken("$..channelId")?.ToString()
+        var channelId = json.SelectTokens("$..channelId").FirstOrDefault()?.ToString()
             ?? json.SelectToken("$..authorEndpoint.browseEndpoint.browseId")!.ToString();
 
         var isSingle = uri.Query.Length > 0 && HttpUtility.ParseQueryString(uri.Query)["lb"] != null;
@@ -158,10 +158,22 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
 
         metadata[MetadataPostIsMembersOnlyKeys] = post.SelectToken("$..sponsorsOnlyBadgeRenderer") != null;
 
-        var imageResult = ExtractCommunityImage(post, metadata, relativeDateTime);
-        if (imageResult != null)
+        var backstageImageRenderers = post.SelectTokens("$..backstageImageRenderer");
+        var imageIndex = 1;
+        foreach (var backstageImageRenderer in backstageImageRenderers)
         {
-            yield return imageResult;
+            var result = ExtractCommunityImage(
+                backstageImageRenderer,
+                metadata,
+                channelId,
+                postId,
+                relativeDateTime,
+                imageIndex);
+            if (result != null)
+            {
+                imageIndex++;
+                yield return result;
+            }
         }
 
         var textResult = ExtractCommunityText(
@@ -225,11 +237,17 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
             metadata: metadata);
     }
 
-    private static ExtractResult? ExtractCommunityImage(JToken post, IMetadataObject metadata, string? relativeDateTime)
+    private static ExtractResult? ExtractCommunityImage(
+        JToken imageRenderer,
+        IMetadataObject metadata,
+        string channelId,
+        string postId,
+        string? relativeDateTime,
+        int imageIndex)
     {
         metadata = metadata.Copy();
 
-        var images = post.SelectToken("$..backstageImageRenderer.image.thumbnails");
+        var images = imageRenderer.SelectToken("$.image.thumbnails");
         if (images == null)
         {
             return null;
@@ -240,21 +258,19 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
             return null;
         }
 
-        var postId = post["postId"]!.ToString();
-        var channelId = post.SelectToken("$..authorEndpoint.browseEndpoint.browseId")!.ToString();
-
+        // TODO: could this be webp?
         metadata[MetadataObjectConsts.File.ExtensionKeys] = "png";
 
         if (relativeDateTime != null)
         {
-            metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#community#{relativeDateTime}_{postId}#image";
+            metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#community#{relativeDateTime}_{postId}#image{imageIndex}";
         }
 
         imageUrl = GetCommunityImageUrlFromThumbnail(imageUrl);
 
         return new ExtractResult(
             imageUrl,
-            $"{postId}#image",
+            $"{postId}#image{imageIndex}",
             JobTaskType.Download,
             metadata: metadata);
     }
