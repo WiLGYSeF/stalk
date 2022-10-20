@@ -70,10 +70,16 @@ public class YouTubeExtractorTest : BaseTest
                 var postId = match.Groups[Consts.CommunityPostRegexPostGroup].Value;
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.CommunityPost.{postId}.html");
             })
+            .AddUri(Consts.MembershipRegex, request =>
+            {
+                var match = Consts.MembershipRegex.Match(request.RequestUri!.AbsoluteUri);
+                var channelId = match.Groups[Consts.MembershipRegexChannelGroup].Value;
+                return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Membership.{channelId}.html");
+            })
             .AddUri(BrowseRegex, async (request, cancellationToken) =>
             {
                 var json = JsonSerializer.Deserialize<JsonNode>(await request.Content!.ReadAsStringAsync(cancellationToken));
-                var originalUrl = new Uri(json!["context"]!["client"]!["originalUrl"]!.ToString());
+                var originalUrl = new Uri(json!["context"]!["client"]!["mainAppWebInfo"]!["graftUrl"]!.ToString());
 
                 if (originalUrl.AbsolutePath.Contains("playlist"))
                 {
@@ -90,6 +96,14 @@ public class YouTubeExtractorTest : BaseTest
                     var continuationToken = json["continuation"]!.ToString();
                     var continuationHash = MD5.HashData(Encoding.UTF8.GetBytes(continuationToken)).ToHexString();
                     return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Community.{channelId}.{continuationHash}.json");
+                }
+                else if (originalUrl.AbsolutePath.Contains("membership"))
+                {
+                    var match = Consts.MembershipRegex.Match(originalUrl.AbsoluteUri);
+                    var channelId = match.Groups["channel"].Value;
+                    var continuationToken = json["continuation"]!.ToString();
+                    var continuationHash = MD5.HashData(Encoding.UTF8.GetBytes(continuationToken)).ToHexString();
+                    return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Membership.{channelId}.{continuationHash}.json");
                 }
                 else
                 {
@@ -291,6 +305,17 @@ public class YouTubeExtractorTest : BaseTest
 
         results.Count.ShouldBe(36);
         results.All(r => r.ItemId!.Contains("#emoji#")).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Get_Membership()
+    {
+        var results = await _youTubeExtractor.ExtractAsync(
+            new Uri("https://www.youtube.com/channel/UCvaTdHTWBGv3MKj3KVqJVCw/membership"),
+            null,
+            new MetadataObject()).ToListAsync();
+
+        results.Count.ShouldBe(88);
     }
 
     [Fact]

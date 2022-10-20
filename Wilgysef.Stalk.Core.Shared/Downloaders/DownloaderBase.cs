@@ -155,11 +155,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             DownloadRequestData? requestData = null,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
-            var filename = GetFormattedSlugifiedFilename(
-                filenameTemplate,
-                metadata.GetFlattenedDictionary(MetadataObjectConsts.Separator),
-                metadata,
-                false);
+            var filename = GetFormattedSlugifiedFilename(filenameTemplate, metadata);
 
             CreateDirectoriesFromFilename(filename);
 
@@ -270,11 +266,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
                 return Task.FromResult<string?>(null);
             }
 
-            var metadataFilename = GetFormattedSlugifiedFilename(
-                metadataFilenameTemplate,
-                metadata.GetFlattenedDictionary(MetadataObjectConsts.Separator),
-                metadata,
-                true);
+            var metadataFilename = GetFormattedSlugifiedFilename(metadataFilenameTemplate, metadata);
 
             CreateDirectoriesFromFilename(metadataFilename);
 
@@ -295,23 +287,23 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// <summary>
         /// Gets the formatted and slugified filename.
         /// </summary>
-        /// <param name="filenameFormat">Filename format.</param>
+        /// <param name="filenameTemplate">Filename template.</param>
         /// <param name="formatValues">Format values.</param>
         /// <param name="metadata">Metadata.</param>
         /// <param name="isMetadataFilename">Whether the filename is intended for metadata files.</param>
         /// <returns>Formatted and slugified filename.</returns>
         protected string GetFormattedSlugifiedFilename(
-            string filenameFormat,
+            string filenameTemplate,
             IDictionary<string, object?> formatValues,
             IMetadataObject metadata,
             bool isMetadataFilename)
         {
-            var formattedFilename = _stringFormatter.Format(filenameFormat, formatValues);
+            var formattedFilename = _stringFormatter.Format(filenameTemplate, formatValues);
 
-            if (formattedFilename == filenameFormat)
+            if (formattedFilename == filenameTemplate)
             {
                 formattedFilename = _fileSystem.Path.Combine(
-                    filenameFormat,
+                    filenameTemplate,
                     GetDefaultFilename(metadata, isMetadataFilename));
             }
 
@@ -320,6 +312,29 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
                 .SlugifyPath(formattedFilename);
         }
 
+        /// <summary>
+        /// Gets the formatted and slugified filename.
+        /// </summary>
+        /// <param name="filenameTemplate">Filename template.</param>
+        /// <param name="metadata">Metadata.</param>
+        /// <returns>Formatted and slugified filename.</returns>
+        protected string GetFormattedSlugifiedFilename(
+            string filenameTemplate,
+            IMetadataObject metadata)
+        {
+            return GetFormattedSlugifiedFilename(
+                filenameTemplate,
+                metadata.GetFlattenedDictionary(MetadataObjectConsts.Separator),
+                metadata,
+                true);
+        }
+
+        /// <summary>
+        /// Gets the default filename from metadata.
+        /// </summary>
+        /// <param name="metadata">Metadata.</param>
+        /// <param name="isMetadataFilename">Indicates if the filename will be used for a metadata filename.</param>
+        /// <returns>Default filename, or <see langword="null"/> if unknown.</returns>
         protected string? GetDefaultFilename(IMetadataObject metadata, bool isMetadataFilename)
         {
             if (!metadata.TryGetValue(out var itemIdSeq, MetadataObjectConsts.Origin.ItemIdSeqKeys)
