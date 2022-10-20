@@ -22,8 +22,6 @@ public class YouTubeDownloader : DownloaderBase
     private YouTubeDownloaderConfig _config = new();
 
     private readonly IFileSystem _fileSystem;
-    private readonly IStringFormatter _stringFormatter;
-    private readonly IFilenameSlugSelector _filenameSlugSelector;
     private readonly IProcessService _processService;
 
     public YouTubeDownloader(
@@ -41,8 +39,6 @@ public class YouTubeDownloader : DownloaderBase
             httpClient)
     {
         _fileSystem = fileSystem;
-        _stringFormatter = stringFormatter;
-        _filenameSlugSelector = filenameSlugSelector;
         _processService = processService;
     }
 
@@ -66,9 +62,7 @@ public class YouTubeDownloader : DownloaderBase
             Logger = Logger,
         };
 
-        var filenameSlug = _filenameSlugSelector.GetFilenameSlugByPlatform();
-        var filename = filenameSlug.SlugifyPath(
-            _stringFormatter.Format(filenameTemplate, metadata.GetFlattenedDictionary(MetadataObjectConsts.Separator)));
+        var filename = GetFormattedSlugifiedFilename(filenameTemplate, metadata);
 
         CreateDirectoriesFromFilename(filename);
 
