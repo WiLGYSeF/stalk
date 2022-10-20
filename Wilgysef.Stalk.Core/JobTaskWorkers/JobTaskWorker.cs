@@ -164,7 +164,7 @@ public class JobTaskWorker : IJobTaskWorker
         var newTasks = new List<JobTask>();
         IItemIdSet? itemIds = null;
 
-        Logger?.LogInformation("Job task {JobTaskId} extracting with {Extractor} from {Uri}", JobTask.Id, extractor.Name, jobTaskUri);
+        Logger?.LogInformation("Job task {JobTaskId} extracting with {Extractor} from {Uri}", JobTask.Id, extractor.Name, GetUriForLog(jobTaskUri));
 
         if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
         {
@@ -172,7 +172,7 @@ public class JobTaskWorker : IJobTaskWorker
             var itemId = JobTask.ItemId ?? extractor.GetItemId(jobTaskUri);
             if (itemId != null && itemIds.Contains(itemId))
             {
-                Logger?.LogInformation("Job task {JobTaskId} skipping item {ItemId} from {Uri}", JobTask.Id, itemId, jobTaskUri);
+                Logger?.LogInformation("Job task {JobTaskId} skipping item {ItemId} from {Uri}", JobTask.Id, itemId, GetUriForLog(jobTaskUri));
                 return;
             }
         }
@@ -186,13 +186,13 @@ public class JobTaskWorker : IJobTaskWorker
 
             if (itemIds != null && result.ItemId != null && itemIds.Contains(result.ItemId))
             {
-                Logger?.LogInformation("Job task {JobTaskId} skipping item {ItemId} from {Uri}", JobTask.Id, result.ItemId, jobTaskUri);
+                Logger?.LogInformation("Job task {JobTaskId} skipping item {ItemId} from {Uri}", JobTask.Id, result.ItemId, GetUriForLog(jobTaskUri));
                 resultsSkipped++;
                 continue;
             }
 
-            Logger?.LogInformation("Job task {JobTaskId} extracted {Uri}", JobTask.Id, result.Uri);
-            Logger?.LogDebug("Job task {JobTaskId} extracted {Uri}: {@Result}", JobTask.Id, result.Uri, new
+            Logger?.LogInformation("Job task {JobTaskId} extracted {Uri}", JobTask.Id, GetUriForLog(result.Uri));
+            Logger?.LogDebug("Job task {JobTaskId} extracted {Uri}: {@Result}", JobTask.Id, GetUriForLog(result.Uri), new
             {
                 result.ItemId,
                 result.Type,
@@ -268,12 +268,12 @@ public class JobTaskWorker : IJobTaskWorker
             itemIds = await itemIdSetService.GetItemIdSetAsync(JobConfig.ItemIdPath, JobTask.JobId);
             if (JobTask.ItemId != null && itemIds.Contains(JobTask.ItemId))
             {
-                Logger?.LogInformation("Job task {JobTaskId} skipping item {ItemId} from {Uri}", JobTask.Id, JobTask.ItemId, jobTaskUri);
+                Logger?.LogInformation("Job task {JobTaskId} skipping item {ItemId} from {Uri}", JobTask.Id, JobTask.ItemId, GetUriForLog(jobTaskUri));
                 return;
             }
         }
 
-        Logger?.LogInformation("Job task {JobTaskId} downloading with {Downloader} from {Uri}", JobTask.Id, downloader.Name, jobTaskUri);
+        Logger?.LogInformation("Job task {JobTaskId} downloading with {Downloader} from {Uri}", JobTask.Id, downloader.Name, GetUriForLog(jobTaskUri));
 
         await foreach (var result in downloader.DownloadAsync(
             jobTaskUri,
@@ -284,8 +284,8 @@ public class JobTaskWorker : IJobTaskWorker
             requestData: JobTask.DownloadRequestData,
             cancellationToken: cancellationToken))
         {
-            Logger?.LogInformation("Job task {JobTaskId} downloaded {Uri} to {Path}", JobTask.Id, result.Uri, result.Path);
-            Logger?.LogDebug("Job task {JobTaskId} downloaded {Uri}: {@Result}", JobTask.Id, result.Uri, new
+            Logger?.LogInformation("Job task {JobTaskId} downloaded {Uri} to {Path}", JobTask.Id, GetUriForLog(result.Uri), result.Path);
+            Logger?.LogDebug("Job task {JobTaskId} downloaded {Uri}: {@Result}", JobTask.Id, GetUriForLog(result.Uri), new
             {
                 result.ItemId,
                 result.MetadataPath,
@@ -389,6 +389,13 @@ public class JobTaskWorker : IJobTaskWorker
         return min != max && min < max
             ? RandomNumberGenerator.GetInt32(min, max)
             : min;
+    }
+
+    private static string GetUriForLog(Uri uri)
+    {
+        return uri.Scheme == "data"
+            ? "data:..."
+            : uri.ToString();
     }
 
     private struct JobTaskFailResult

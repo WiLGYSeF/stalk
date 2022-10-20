@@ -43,7 +43,7 @@ public class DataDownloader : DownloaderBase
         return Task.FromResult(GetStreamFromDataUri(uri.AbsoluteUri));
     }
 
-    private Stream GetStreamFromDataUri(string uri)
+    private static Stream GetStreamFromDataUri(string uri)
     {
         if (!uri.StartsWith("data:"))
         {
