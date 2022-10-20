@@ -15,8 +15,8 @@ public static class Consts
     public const string VideosRegexChannelSegmentGroup = "segment";
     public const string VideosRegexChannelGroup = "channel";
 
-    public static readonly Regex PlaylistRegex = new(UriPrefixRegex + @"/playlist\?", RegexOptions.Compiled);
-    public static readonly Regex VideoRegex = new(UriPrefixRegex + @"/watch\?", RegexOptions.Compiled);
+    public static readonly Regex PlaylistRegex = new(UriPrefixRegex + @"/playlist", RegexOptions.Compiled);
+    public static readonly Regex VideoRegex = new(UriPrefixRegex + @"/watch", RegexOptions.Compiled);
     public static readonly Regex CommunityRegex = new(ChannelPrefixRegex + "/community", RegexOptions.Compiled);
     public const string CommunityRegexChannelSegmentGroup = "segment";
     public const string CommunityRegexChannelGroup = "channel";

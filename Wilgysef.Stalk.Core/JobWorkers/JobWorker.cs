@@ -71,13 +71,11 @@ public class JobWorker : IJobWorker
         {
             Logger?.LogInformation("Job {JobId} starting.", Job.Id);
 
-            using (var scope = _lifetimeScope.BeginLifetimeScope())
+            if (!Job.IsActive)
             {
-                if (!Job.IsActive)
-                {
-                    var jobManager = scope.GetRequiredService<IJobManager>();
-                    await jobManager.SetJobActiveAsync(Job, cancellationToken);
-                }
+                using var scope = _lifetimeScope.BeginLifetimeScope();
+                var jobManager = scope.GetRequiredService<IJobManager>();
+                await jobManager.SetJobActiveAsync(Job, cancellationToken);
             }
 
             while (Job.HasUnfinishedTasks)

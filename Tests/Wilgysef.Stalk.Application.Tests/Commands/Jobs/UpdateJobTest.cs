@@ -71,7 +71,7 @@ public class UpdateJobTest : BaseTest
         job.Priority.ShouldBe(command.Priority!.Value);
 
         var backgroundJobs = await _backgroundJobManager.GetJobsAsync();
-        backgroundJobs.ShouldContain(j => j.JobArgsName == typeof(WorkPrioritizedJobsArgs).FullName);
+        backgroundJobs.ShouldContain(j => j.JobArgsName == typeof(WorkPrioritizedJobsArgs).AssemblyQualifiedName);
     }
 
     [Theory]

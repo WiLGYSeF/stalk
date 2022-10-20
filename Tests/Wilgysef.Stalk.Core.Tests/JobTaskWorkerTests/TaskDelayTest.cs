@@ -92,6 +92,8 @@ public class TaskDelayTest : BaseTest
     [Fact]
     public async Task Retry_JobTask_NoDelay()
     {
+        // TODO: unstable test
+
         ThrowExtractException = true;
 
         Job job;

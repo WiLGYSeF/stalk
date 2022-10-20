@@ -67,7 +67,7 @@ public class TwitterExtractor : IExtractor
 
     public bool CanExtract(Uri uri)
     {
-        return UriRegex.IsMatch(uri.AbsoluteUri);
+        return UriRegex.IsMatch(uri.GetLeftPart(UriPartial.Path));
     }
 
     public IAsyncEnumerable<ExtractResult> ExtractAsync(
@@ -86,7 +86,7 @@ public class TwitterExtractor : IExtractor
 
     public string? GetItemId(Uri uri)
     {
-        var match = UriRegex.Match(uri.AbsoluteUri);
+        var match = UriRegex.Match(uri.GetLeftPart(UriPartial.Path));
         if (!match.Success)
         {
             return null;
@@ -113,7 +113,7 @@ public class TwitterExtractor : IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var match = UriRegex.Match(uri.AbsoluteUri);
+        var match = UriRegex.Match(uri.GetLeftPart(UriPartial.Path));
         var userScreenName = match.Groups["user"].Value;
 
         var userId = await GetUserIdAsync(userScreenName, cancellationToken);
@@ -156,7 +156,7 @@ public class TwitterExtractor : IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var match = UriRegex.Match(uri.AbsoluteUri);
+        var match = UriRegex.Match(uri.GetLeftPart(UriPartial.Path));
         var tweetId = match.Groups["tweet"].Value;
 
         var tweetUri = GetTweetApiUri(tweetId);
@@ -562,7 +562,7 @@ public class TwitterExtractor : IExtractor
 
     private static ExtractType? GetExtractType(Uri uri)
     {
-        var match = UriRegex.Match(uri.AbsoluteUri);
+        var match = UriRegex.Match(uri.GetLeftPart(UriPartial.Path));
         if (match.Groups["tweet"].Success)
         {
             return ExtractType.Tweet;

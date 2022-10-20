@@ -48,7 +48,7 @@ public class YouTubeDownloader : DownloaderBase
 
     public override bool CanDownload(Uri uri)
     {
-        return Consts.VideoRegex.IsMatch(uri.AbsoluteUri);
+        return Consts.VideoRegex.IsMatch(uri.GetLeftPart(UriPartial.Path));
     }
 
     protected override async IAsyncEnumerable<DownloadFileResult> SaveFileAsync(

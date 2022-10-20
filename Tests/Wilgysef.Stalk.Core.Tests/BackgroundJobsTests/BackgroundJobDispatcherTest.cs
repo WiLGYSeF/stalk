@@ -25,14 +25,12 @@ public class BackgroundJobDispatcherTest : BaseTest
         await _backgroundJobManager.EnqueueJobAsync(
             BackgroundJob.Create(
                 1,
-                new TestJobArgs(),
-                argsName: typeof(TestJobArgs).AssemblyQualifiedName),
+                new TestJobArgs()),
             true);
         await _backgroundJobManager.EnqueueJobAsync(
             BackgroundJob.Create(
                 2,
-                new TestJobArgs(),
-                argsName: typeof(TestJobArgs).AssemblyQualifiedName),
+                new TestJobArgs()),
             true);
 
         var jobs = await _backgroundJobManager.GetJobsAsync();
@@ -40,14 +38,12 @@ public class BackgroundJobDispatcherTest : BaseTest
 
         await _backgroundJobDispatcher.ExecuteJobsAsync();
 
-        using (var scope = BeginLifetimeScope())
-        {
-            var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
-            jobs = await backgroundJobManager.GetJobsAsync();
+        using var scope = BeginLifetimeScope();
+        var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
+        jobs = await backgroundJobManager.GetJobsAsync();
 
-            jobs.Count.ShouldBe(2);
-            jobs.All(j => j.IsSucceeded).ShouldBeTrue();
-        }
+        jobs.Count.ShouldBe(2);
+        jobs.All(j => j.IsSucceeded).ShouldBeTrue();
     }
 
     [Fact]
@@ -56,22 +52,19 @@ public class BackgroundJobDispatcherTest : BaseTest
         await _backgroundJobManager.EnqueueJobAsync(
             BackgroundJob.Create(
                 1,
-                new TestChangeJobArgs(),
-                argsName: typeof(TestChangeJobArgs).AssemblyQualifiedName),
+                new TestChangeJobArgs()),
             true);
 
         await _backgroundJobDispatcher.ExecuteJobsAsync();
 
-        using (var scope = BeginLifetimeScope())
-        {
-            var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
-            var job = await backgroundJobManager.FindJobAsync(1);
-            job!.State.ShouldBe(BackgroundJobState.Scheduled);
-            job.Attempts.ShouldBe(1);
+        using var scope = BeginLifetimeScope();
+        var backgroundJobManager = scope.GetRequiredService<IBackgroundJobManager>();
+        var job = await backgroundJobManager.FindJobAsync(1);
+        job!.State.ShouldBe(BackgroundJobState.Scheduled);
+        job.Attempts.ShouldBe(1);
 
-            job.NextRun.ShouldNotBeNull();
-            (DateTime.Now.AddSeconds(123) - job.NextRun.Value).Duration().TotalSeconds.ShouldBeInRange(0, 3);
-        }
+        job.NextRun.ShouldNotBeNull();
+        (DateTime.Now.AddSeconds(123) - job.NextRun.Value).Duration().TotalSeconds.ShouldBeInRange(0, 3);
     }
 
     [Fact]
@@ -80,9 +73,8 @@ public class BackgroundJobDispatcherTest : BaseTest
         await _backgroundJobManager.EnqueueJobAsync(
             BackgroundJob.Create(
                 1,
-                new TestJobArgs(),
-                maximumLifetime: DateTime.Now.AddDays(-1),
-                argsName: typeof(TestChangeJobArgs).AssemblyQualifiedName),
+                new TestChangeJobArgs(),
+                maximumLifetime: DateTime.Now.AddDays(-1)),
             true);
 
         await _backgroundJobDispatcher.ExecuteJobsAsync();
@@ -102,9 +94,8 @@ public class BackgroundJobDispatcherTest : BaseTest
         await _backgroundJobManager.EnqueueJobAsync(
             BackgroundJob.Create(
                 1,
-                new TestJobArgs(),
-                maximumAttempts: 1,
-                argsName: typeof(TestChangeJobArgs).AssemblyQualifiedName),
+                new TestChangeJobArgs(),
+                maximumAttempts: 1),
             true);
 
         await _backgroundJobDispatcher.ExecuteJobsAsync();
@@ -124,8 +115,7 @@ public class BackgroundJobDispatcherTest : BaseTest
         await _backgroundJobManager.EnqueueJobAsync(
             BackgroundJob.Create(
                 1,
-                new TestFailJobArgs(),
-                argsName: typeof(TestFailJobArgs).AssemblyQualifiedName),
+                new TestFailJobArgs()),
             true);
 
         await _backgroundJobDispatcher.ExecuteJobsAsync();
@@ -145,8 +135,7 @@ public class BackgroundJobDispatcherTest : BaseTest
         await _backgroundJobManager.EnqueueJobAsync(
             BackgroundJob.Create(
                 1,
-                new TestFailJobArgs(),
-                argsName: typeof(TestFailJobArgs).AssemblyQualifiedName),
+                new TestFailJobArgs()),
             true);
 
         await _backgroundJobDispatcher.ExecuteJobsAsync();

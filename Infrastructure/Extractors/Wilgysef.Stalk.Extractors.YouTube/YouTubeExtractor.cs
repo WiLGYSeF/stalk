@@ -89,9 +89,9 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
     public string? GetItemId(Uri uri)
     {
-        var absoluteUri = uri.AbsoluteUri;
+        var leftUri = uri.GetLeftPart(UriPartial.Path);
 
-        if (Consts.VideoRegex.IsMatch(absoluteUri))
+        if (Consts.VideoRegex.IsMatch(leftUri))
         {
             var query = HttpUtility.ParseQueryString(uri.Query);
             if (query.TryGetValue("v", out var videoId))
@@ -100,7 +100,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
             }
         }
 
-        if (Consts.CommunityRegex.IsMatch(absoluteUri))
+        if (Consts.CommunityRegex.IsMatch(leftUri))
         {
             var query = HttpUtility.ParseQueryString(uri.Query);
             if (query.TryGetValue("lb", out var postId))
@@ -109,7 +109,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
             }
         }
 
-        var match = Consts.CommunityPostRegex.Match(absoluteUri);
+        var match = Consts.CommunityPostRegex.Match(leftUri);
         if (match.Success)
         {
             return match.Groups[Consts.CommunityPostRegexPostGroup].Value;
@@ -428,15 +428,15 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
     private static string GetChannel(Uri uri, out bool shortChannel)
     {
-        var match = Consts.ChannelRegex.Match(uri.AbsoluteUri);
+        var match = Consts.ChannelRegex.Match(uri.GetLeftPart(UriPartial.Path));
         shortChannel = match.Groups[Consts.ChannelRegexChannelSegmentGroup].Value == "c";
         return match.Groups[Consts.ChannelRegexChannelGroup].Value;
     }
 
     private static ExtractType? GetExtractType(Uri uri)
     {
-        var absoluteUri = uri.AbsoluteUri;
-        if (Consts.VideosRegex.IsMatch(absoluteUri))
+        var leftUri = uri.GetLeftPart(UriPartial.Path);
+        if (Consts.VideosRegex.IsMatch(leftUri))
         {
             return ExtractType.Videos;
         }
@@ -444,15 +444,15 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         {
             return ExtractType.Community;
         }
-        if (Consts.ChannelRegex.IsMatch(absoluteUri))
+        if (Consts.ChannelRegex.IsMatch(leftUri))
         {
             return ExtractType.Channel;
         }
-        if (Consts.PlaylistRegex.IsMatch(absoluteUri))
+        if (Consts.PlaylistRegex.IsMatch(leftUri))
         {
             return ExtractType.Playlist;
         }
-        if (Consts.VideoRegex.IsMatch(absoluteUri))
+        if (Consts.VideoRegex.IsMatch(leftUri))
         {
             return ExtractType.Video;
         }
@@ -485,6 +485,11 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
             .OrderByDescending(g => g.Count())
             .FirstOrDefault()
             ?.Key;
+
+        if (approxDuration == null)
+        {
+            return null;
+        }
 
         return long.TryParse(approxDuration, out var result)
             ? TimeSpan.FromMilliseconds(result)

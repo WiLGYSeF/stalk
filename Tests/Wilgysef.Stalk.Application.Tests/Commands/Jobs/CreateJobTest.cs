@@ -60,7 +60,7 @@ public class CreateJobTest : BaseTest
 
         var backgroundJobs = await _backgroundJobManager.GetJobsAsync();
         backgroundJobs.Count.ShouldBe(1);
-        backgroundJobs.ShouldContain(j => j.JobArgsName == typeof(WorkPrioritizedJobsArgs).FullName);
+        backgroundJobs.ShouldContain(j => j.JobArgsName == typeof(WorkPrioritizedJobsArgs).AssemblyQualifiedName);
     }
 
     [Fact]

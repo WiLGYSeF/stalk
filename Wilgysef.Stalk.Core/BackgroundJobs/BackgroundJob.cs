@@ -115,7 +115,7 @@ public class BackgroundJob : Entity
         int? maximumAttempts = null,
         string? argsName = null) where T : BackgroundJobArgs
     {
-        argsName ??= args.GetType().FullName;
+        argsName ??= args.GetType().AssemblyQualifiedName;
 
         if (argsName == null)
         {

@@ -97,7 +97,7 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var match = Consts.CommunityPostRegex.Match(uri.AbsoluteUri);
+        var match = Consts.CommunityPostRegex.Match(uri.GetLeftPart(UriPartial.Path));
         if (!match.Success)
         {
             var isSingle = uri.Query.Length > 0 && HttpUtility.ParseQueryString(uri.Query)["lb"] != null;
@@ -125,8 +125,8 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
 
     public static bool IsCommunityExtractType(Uri uri)
     {
-        var absoluteUri = uri.AbsoluteUri;
-        return Consts.CommunityRegex.IsMatch(absoluteUri) || Consts.CommunityPostRegex.IsMatch(absoluteUri);
+        var leftUri = uri.GetLeftPart(UriPartial.Path);
+        return Consts.CommunityRegex.IsMatch(leftUri) || Consts.CommunityPostRegex.IsMatch(leftUri);
     }
 
     private async Task<Uri> GetFirstCommunityPostUri(Uri communityUri, CancellationToken cancellationToken)

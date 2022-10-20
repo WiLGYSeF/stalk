@@ -101,17 +101,17 @@ public class TwitchExtractor : IExtractor
 
     public string? GetItemId(Uri uri)
     {
-        var absoluteUri = uri.AbsoluteUri;
+        var leftUri = uri.GetLeftPart(UriPartial.Path);
 
-        if (Consts.VideoRegex.TryMatch(absoluteUri, out var videoMatch))
+        if (Consts.VideoRegex.TryMatch(leftUri, out var videoMatch))
         {
             return videoMatch.Groups["video"].Value;
         }
-        if (ClipRegex.TryMatch(absoluteUri, out var clipMatch))
+        if (ClipRegex.TryMatch(leftUri, out var clipMatch))
         {
             return clipMatch.Groups["clip"].Value;
         }
-        if (ClipAltRegex.TryMatch(absoluteUri, out var clipAltMatch))
+        if (ClipAltRegex.TryMatch(leftUri, out var clipAltMatch))
         {
             return clipAltMatch.Groups["clip"].Value;
         }
@@ -131,7 +131,7 @@ public class TwitchExtractor : IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var match = ChannelUriRegex.Match(uri.AbsoluteUri);
+        var match = ChannelUriRegex.Match(uri.GetLeftPart(UriPartial.Path));
         var channelName = match.Groups["channel"].Value;
 
         yield return new ExtractResult(
@@ -158,7 +158,7 @@ public class TwitchExtractor : IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var match = VideosRegex.Match(uri.AbsoluteUri);
+        var match = VideosRegex.Match(uri.GetLeftPart(UriPartial.Path));
         var channelName = match.Groups["channel"].Value;
         string? cursor = null;
 
@@ -190,7 +190,7 @@ public class TwitchExtractor : IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var match = Consts.VideoRegex.Match(uri.AbsoluteUri);
+        var match = Consts.VideoRegex.Match(uri.GetLeftPart(UriPartial.Path));
         var videoId = match.Groups["video"].Value;
 
         var channelVideoCore = await GetGraphQlDataAsync(GraphQlRequest.ChannelVideoCore(videoId), cancellationToken);
@@ -296,7 +296,7 @@ public class TwitchExtractor : IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var match = ClipsRegex.Match(uri.AbsoluteUri);
+        var match = ClipsRegex.Match(uri.GetLeftPart(UriPartial.Path));
         var channelName = match.Groups["channel"].Value;
         string? cursor = null;
 
@@ -401,7 +401,7 @@ public class TwitchExtractor : IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var match = AboutRegex.Match(uri.AbsoluteUri);
+        var match = AboutRegex.Match(uri.GetLeftPart(UriPartial.Path));
         var channelName = match.Groups["channel"].Value;
 
         var json = await GetGraphQlDataAsync(GraphQlRequest.ChannelShell(channelName), cancellationToken);
@@ -571,7 +571,7 @@ public class TwitchExtractor : IExtractor
 
     private static string? GetExtensionFromUri(Uri uri)
     {
-        var extension = Path.GetExtension(uri.AbsolutePath);
+        var extension = Path.GetExtension(uri.GetLeftPart(UriPartial.Path));
         return extension.Length > 0 && extension[0] == '.'
             ? extension[1..]
             : extension;

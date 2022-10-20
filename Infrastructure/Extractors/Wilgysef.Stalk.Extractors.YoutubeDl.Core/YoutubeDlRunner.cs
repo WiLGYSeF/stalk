@@ -3,7 +3,6 @@ using System;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO.Abstractions;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -338,12 +337,10 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
 
         protected virtual long? SizeToBytes(string size)
         {
-            if (size.StartsWith("Unknown"))
+            if (size.StartsWith("Unknown") || !SizeRegex.TryMatch(size, out var match))
             {
                 return null;
             }
-
-            var match = SizeRegex.Match(size);
 
             int? multiplier = match.Groups["size"].Value[0] switch
             {
@@ -354,19 +351,28 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
                 _ => null,
             };
 
-            if (!multiplier.HasValue)
+            return multiplier.HasValue
+                ? (long?)(double.Parse(match.Groups["amount"].Value) * multiplier.Value)
+                : null;
+        }
+
+        protected virtual TimeSpan? ParseTimeSpan(string timeSpan)
+        {
+            try
+            {
+                var parts = timeSpan.Split(':').Select(p => int.Parse(p)).ToList();
+                return parts.Count switch
+                {
+                    0 => TimeSpan.FromSeconds(parts[0]),
+                    1 => new TimeSpan(0, parts[0], parts[1]),
+                    2 => new TimeSpan(parts[0], parts[1], parts[2]),
+                    _ => null,
+                };
+            }
+            catch
             {
                 return null;
             }
-
-            return (long)(double.Parse(match.Groups["amount"].Value) * multiplier.Value);
-        }
-
-        protected virtual TimeSpan ParseTimeSpan(string timeSpan)
-        {
-            return timeSpan.Count(c => c == ':') == 1
-                ? TimeSpan.ParseExact(timeSpan, "mm':'ss", CultureInfo.InvariantCulture)
-                : TimeSpan.Parse(timeSpan);
         }
     }
 }
