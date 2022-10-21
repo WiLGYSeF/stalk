@@ -263,10 +263,9 @@ public class TwitchExtractor : IExtractor
         {
             var thumbnailMetadata = metadata.Copy();
 
-            if (publishedAt.HasValue)
-            {
-                thumbnailMetadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#video#{publishedAt.Value:yyyyMMdd}_{videoId}#thumb";
-            }
+            thumbnailMetadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = publishedAt.HasValue
+                ? $"{channelId}#video#{publishedAt.Value:yyyyMMdd}_{videoId}#thumb"
+                : $"{channelId}#video#{videoId}#thumb";
 
             thumbnailMetadata[MetadataObjectConsts.File.ExtensionKeys] = GetExtensionFromUri(new Uri(thumbnailUrl));
 
@@ -277,10 +276,9 @@ public class TwitchExtractor : IExtractor
                 metadata: thumbnailMetadata);
         }
 
-        if (publishedAt.HasValue)
-        {
-            metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#video#{publishedAt.Value:yyyyMMdd}_{videoId}";
-        }
+        metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = publishedAt.HasValue
+            ? $"{channelId}#video#{publishedAt.Value:yyyyMMdd}_{videoId}"
+            : $"{channelId}#video#{videoId}";
 
         metadata[MetadataObjectConsts.File.ExtensionKeys] = YoutubeDlFileExtensionTemplate;
 
@@ -381,10 +379,9 @@ public class TwitchExtractor : IExtractor
         var signature = videoAccessTokenClip.SelectToken("$..playbackAccessToken.signature")!.ToString();
         var token = videoAccessTokenClip.SelectToken("$..playbackAccessToken.value")!.ToString();
 
-        if (createdAt.HasValue)
-        {
-            metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#clip#{createdAt.Value:yyyyMMdd}_{clipSlug}";
-        }
+        metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = createdAt.HasValue
+            ? $"{channelId}#clip#{createdAt.Value:yyyyMMdd}_{clipSlug}"
+            : $"{channelId}#clip#{clipSlug}";
 
         metadata[MetadataObjectConsts.Origin.UriKeys] = $"https://clips.twitch.tv/{clipSlug}";
         metadata[MetadataObjectConsts.File.ExtensionKeys] = "mp4";
@@ -529,28 +526,28 @@ public class TwitchExtractor : IExtractor
 
     private static ExtractType? GetExtractType(Uri uri)
     {
-        var absoluteUri = uri.AbsoluteUri;
-        if (Consts.VideoRegex.IsMatch(absoluteUri))
+        var leftUri = uri.GetLeftPart(UriPartial.Path);
+        if (Consts.VideoRegex.IsMatch(leftUri))
         {
             return ExtractType.Video;
         }
-        if (ClipRegex.IsMatch(absoluteUri) || ClipAltRegex.IsMatch(absoluteUri))
+        if (ClipRegex.IsMatch(leftUri) || ClipAltRegex.IsMatch(leftUri))
         {
             return ExtractType.Clip;
         }
-        if (ClipsRegex.IsMatch(absoluteUri))
+        if (ClipsRegex.IsMatch(leftUri))
         {
             return ExtractType.Clips;
         }
-        if (AboutRegex.IsMatch(absoluteUri))
+        if (AboutRegex.IsMatch(leftUri))
         {
             return ExtractType.About;
         }
-        if (VideosRegex.IsMatch(absoluteUri))
+        if (VideosRegex.IsMatch(leftUri))
         {
             return ExtractType.Videos;
         }
-        if (ChannelUriRegex.IsMatch(absoluteUri))
+        if (ChannelUriRegex.IsMatch(leftUri))
         {
             return ExtractType.Channel;
         }

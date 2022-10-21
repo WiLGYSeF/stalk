@@ -182,22 +182,12 @@ public abstract class YouTubeExtractorBase
             return null;
         }
 
-        var streamedLiveOn = "Streamed live on ";
-        if (dateTime.StartsWith(streamedLiveOn))
-        {
-            dateTime = dateTime[streamedLiveOn.Length..];
-        }
+        dateTime = SanitizeDateTime(dateTime);
 
         var success = DateTime.TryParse(dateTime, out var result);
         if (success)
         {
             return result;
-        }
-
-        var streamed = "Streamed ";
-        if (dateTime.StartsWith(streamed))
-        {
-            dateTime = dateTime[streamed.Length..];
         }
 
         var relative = GetRelativeDateTime(dateTime);
@@ -206,7 +196,7 @@ public abstract class YouTubeExtractorBase
 
     protected string? GetRelativeDateTime(string relative, DateTime? dateTime = null)
     {
-        var split = relative.Split(" ");
+        var split = SanitizeDateTime(relative).Split(" ");
         if (split.Length != 3 || !int.TryParse(split[0], out var number) || split[2] != "ago")
         {
             return null;
@@ -252,6 +242,28 @@ public abstract class YouTubeExtractorBase
         }
 
         return relativeTime.ToString("yyyyMMdd");
+    }
+
+    protected static string SanitizeDateTime(string dateTime)
+    {
+        var streamedLiveOn = "Streamed live on ";
+        if (dateTime.StartsWith(streamedLiveOn))
+        {
+            dateTime = dateTime[streamedLiveOn.Length..];
+        }
+
+        var editedIndex = dateTime.IndexOf(" (edited)");
+        if (editedIndex != -1)
+        {
+            dateTime = dateTime[..editedIndex];
+        }
+
+        var streamed = "Streamed ";
+        if (dateTime.StartsWith(streamed))
+        {
+            dateTime = dateTime[streamed.Length..];
+        }
+        return dateTime;
     }
 
     private static KeyValuePair<string, string> Separate(string value, char separator)

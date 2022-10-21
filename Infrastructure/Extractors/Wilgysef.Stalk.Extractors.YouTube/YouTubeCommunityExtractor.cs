@@ -203,10 +203,9 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
             return null;
         }
 
-        if (relativeDateTime != null)
-        {
-            metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#community#{relativeDateTime}_{postId}";
-        }
+        metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = relativeDateTime != null
+            ? $"{channelId}#community#{relativeDateTime}_{postId}"
+            : $"{channelId}#community#{postId}";
 
         var textBuilder = new StringBuilder();
         foreach (var content in contextTextRuns)
@@ -258,13 +257,12 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
             return null;
         }
 
+        metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = relativeDateTime != null
+            ? $"{channelId}#community#{relativeDateTime}_{postId}#image{imageIndex}"
+            : $"{channelId}#community#{postId}#image{imageIndex}";
+
         // TODO: could this be webp?
         metadata[MetadataObjectConsts.File.ExtensionKeys] = "png";
-
-        if (relativeDateTime != null)
-        {
-            metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#community#{relativeDateTime}_{postId}#image{imageIndex}";
-        }
 
         imageUrl = GetCommunityImageUrlFromThumbnail(imageUrl);
 

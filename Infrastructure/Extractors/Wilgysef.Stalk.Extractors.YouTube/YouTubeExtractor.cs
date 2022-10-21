@@ -271,10 +271,9 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
             yield return thumbnailResult;
         }
 
-        if (published != null)
-        {
-            metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#video#{published}_{videoId}";
-        }
+        metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = published != null
+            ? $"{channelId}#video#{published}_{videoId}"
+            : $"{channelId}#video#{videoId}";
 
         metadata[MetadataObjectConsts.File.ExtensionKeys] = YoutubeDlFileExtensionTemplate;
 
@@ -314,10 +313,9 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
                     continue;
                 }
 
-                if (published != null)
-                {
-                    metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = $"{channelId}#video#{published}_{videoId}#thumb";
-                }
+                metadata[MetadataObjectConsts.Origin.ItemIdSeqKeys] = published != null
+                    ? $"{channelId}#video#{published}_{videoId}#thumb"
+                    : $"{channelId}#video#{videoId}#thumb";
 
                 var uri = new Uri(uriString);
                 metadata[MetadataObjectConsts.File.ExtensionKeys] = GetExtensionFromUri(uri);

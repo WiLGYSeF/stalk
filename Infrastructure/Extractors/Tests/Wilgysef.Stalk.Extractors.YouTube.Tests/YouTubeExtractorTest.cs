@@ -316,6 +316,9 @@ public class YouTubeExtractorTest : BaseTest
             new MetadataObject()).ToListAsync();
 
         results.Count.ShouldBe(88);
+        // the URIs and item Ids are not unique because YouTube sometimes likes to return duplicates
+        results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(73);
+        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(74);
     }
 
     [Fact]
