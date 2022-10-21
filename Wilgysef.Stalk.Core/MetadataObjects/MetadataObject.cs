@@ -15,7 +15,7 @@ public class MetadataObject : IMetadataObject
     public object? this[params string[] keys]
     {
         get => GetValue(keys);
-        set => SetValue(value, false, keys);
+        set => SetValue(value, keys, true, true);
     }
 
     public void Add(object? value, params string[] keys)
@@ -25,7 +25,7 @@ public class MetadataObject : IMetadataObject
 
     public void Add(object? value, IEnumerable<string> keys)
     {
-        SetValue(value, true, keys);
+        SetValue(value, keys, false, true);
     }
 
     public bool TryAddValue(object? value, params string[] keys)
@@ -35,15 +35,7 @@ public class MetadataObject : IMetadataObject
 
     public bool TryAddValue(object? value, IEnumerable<string> keys)
     {
-        try
-        {
-            SetValue(value, true, keys);
-            return true;
-        }
-        catch
-        {
-            return false;
-        }
+        return SetValue(value, keys, false, false) == SetValueResult.Success;
     }
 
     public object? GetValue(params string[] keys)
@@ -144,7 +136,7 @@ public class MetadataObject : IMetadataObject
     public IMetadataObject Copy()
     {
         var metadata = new MetadataObject();
-        GetValues((keys, value) => metadata.SetValue(value, false, keys.ToArray()));
+        GetValues((keys, value) => metadata.SetValue(value, keys.ToArray(), false, true));
         return metadata;
     }
 
@@ -191,7 +183,7 @@ public class MetadataObject : IMetadataObject
             p => p.Value,
             p => (IDictionary<object, object?>)p.Value!,
             p => (p.Value as IDictionary<object, object?>)?.Count > 0,
-            (keys, value) => SetValue(value, false, keys));
+            (keys, value) => SetValue(value, keys, false, true));
     }
 
     public void From(IDictionary<string, object?> dictionary)
@@ -202,22 +194,32 @@ public class MetadataObject : IMetadataObject
             p => p.Value,
             p => (IDictionary<string, object?>)p.Value!,
             p => (p.Value as IDictionary<string, object?>)?.Count > 0,
-            (keys, value) => SetValue(value, false, keys));
+            (keys, value) => SetValue(value, keys, false, true));
     }
 
-    private void SetValue(object? value, bool throwIfExisting, IEnumerable<string> keys)
+    private SetValueResult SetValue(object? value, IEnumerable<string> keys, bool canOverwrite, bool throws)
     {
         if (!TryGetPenultimateTrie(out var trie, out var ultimateKey, keys))
         {
             trie = CreateTries(out ultimateKey, keys);
         }
+
         if (trie.Terminal)
         {
-            throw new ArgumentException("Subkey already exists", nameof(keys));
+            if (throws)
+            {
+                throw new ArgumentException($"Subkey already exists: {trie.Key}", nameof(keys));
+            }
+            return SetValueResult.SubkeyIsTerminal;
         }
-        if (throwIfExisting && trie.Contains(ultimateKey))
+
+        if (!canOverwrite && trie.Contains(ultimateKey))
         {
-            throw new ArgumentException("Key already exists", nameof(keys));
+            if (throws)
+            {
+                throw new ArgumentException($"Key already exists: {keys.ToList()}", nameof(keys));
+            }
+            return SetValueResult.KeyAlreadyExists;
         }
 
         var newTrie = new Trie<string, object?>(ultimateKey, value)
@@ -225,6 +227,7 @@ public class MetadataObject : IMetadataObject
             Terminal = true
         };
         trie[ultimateKey] = newTrie;
+        return SetValueResult.Success;
     }
 
     private bool TryGetPenultimateTrie(
@@ -373,5 +376,12 @@ public class MetadataObject : IMetadataObject
         {
             _metadata = metadata;
         }
+    }
+
+    private enum SetValueResult
+    {
+        Success,
+        SubkeyIsTerminal,
+        KeyAlreadyExists
     }
 }
