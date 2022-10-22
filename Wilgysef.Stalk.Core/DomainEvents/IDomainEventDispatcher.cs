@@ -15,7 +15,7 @@ public interface IDomainEventDispatcher
     /// </summary>
     /// <typeparam name="T">Event type.</typeparam>
     /// <param name="eventData">Event data.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns></returns>
     Task DispatchEventsAsync<T>(IEnumerable<T> eventData, CancellationToken cancellationToken = default) where T : notnull, IDomainEvent;
 }

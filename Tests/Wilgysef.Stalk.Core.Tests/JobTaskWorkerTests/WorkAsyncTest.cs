@@ -53,9 +53,9 @@ public class WorkAsyncTest : BaseTest
         _itemIdSetService.Setup(m => m.WriteChangesAsync(It.IsAny<string>(), It.IsAny<IItemIdSet>()))
             .Returns(WriteChangesAsync);
 
-        ReplaceServiceInstance(_extractorMock.Object);
-        ReplaceServiceInstance(_downloaderMock.Object);
-        ReplaceServiceInstance(_itemIdSetService.Object);
+        ReplaceService(_ => _extractorMock.Object);
+        ReplaceService(_ => _downloaderMock.Object);
+        ReplaceService(_ => _itemIdSetService.Object);
 
         _jobWorkerFactory = GetRequiredService<IJobWorkerFactory>();
 

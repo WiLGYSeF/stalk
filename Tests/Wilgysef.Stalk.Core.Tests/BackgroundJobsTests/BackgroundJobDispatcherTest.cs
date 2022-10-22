@@ -11,9 +11,9 @@ public class BackgroundJobDispatcherTest : BaseTest
 
     public BackgroundJobDispatcherTest()
     {
-        ReplaceService<TestJobHandler, IBackgroundJobHandler<TestJobArgs>>();
-        ReplaceService<TestFailJobHandler, IBackgroundJobHandler<TestFailJobArgs>>();
-        ReplaceService<TestChangeJobHandler, IBackgroundJobHandler<TestChangeJobArgs>>();
+        ReplaceService<IBackgroundJobHandler<TestJobArgs>, TestJobHandler>();
+        ReplaceService<IBackgroundJobHandler<TestFailJobArgs>, TestFailJobHandler>();
+        ReplaceService<IBackgroundJobHandler<TestChangeJobArgs>, TestChangeJobHandler>();
 
         _backgroundJobDispatcher = GetRequiredService<IBackgroundJobDispatcher>();
         _backgroundJobManager = GetRequiredService<IBackgroundJobManager>();

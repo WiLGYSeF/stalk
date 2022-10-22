@@ -11,7 +11,7 @@ public interface IBackgroundJobHandler<T> where T : BackgroundJobArgs
     /// Executes background job.
     /// </summary>
     /// <param name="args">Background job args.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns></returns>
     Task ExecuteJobAsync(T args, CancellationToken cancellationToken = default);
 }

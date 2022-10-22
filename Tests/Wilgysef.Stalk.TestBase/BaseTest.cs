@@ -15,7 +15,6 @@ using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.EntityFrameworkCore;
 using Wilgysef.Stalk.TestBase.Mocks;
-using Wilgysef.Stalk.TestBase.Shared.Mocks;
 
 namespace Wilgysef.Stalk.TestBase;
 
@@ -35,19 +34,17 @@ public abstract class BaseTest
 
     public HttpRequestEntryLog? HttpRequestEntryLog { get; private set; }
 
-    private IServiceProvider? _serviceProvider;
     private IServiceProvider ServiceProvider
     {
         get => _serviceProvider ??= GetServiceProvider();
         set => _serviceProvider = value;
     }
+    private IServiceProvider? _serviceProvider;
 
-    private readonly List<(Type Implementation, Type Service, ServiceRegistrationType RegistrationType)> _replaceServices = new();
-    private readonly List<(object Implementation, Type Service)> _replaceServiceInstances = new();
-    private readonly List<(Func<IComponentContext, object>, Type Service, ServiceRegistrationType RegistrationType)> _replaceServiceDelegates = new();
-
-    private readonly string _databaseName = Guid.NewGuid().ToString();
     private string DatabaseName => _databaseName;
+    private readonly string _databaseName = Guid.NewGuid().ToString();
+
+    private readonly List<RegistrationReplace> _replaceServices = new();
 
     #region Service Registration
 
@@ -66,98 +63,59 @@ public abstract class BaseTest
         return ServiceProvider.GetRequiredService<T>();
     }
 
-    public void ReplaceService<TImplementation, TService>()
-        where TImplementation : notnull
-        where TService : notnull
-    {
-        ReplaceService(typeof(TImplementation), typeof(TService));
-    }
+    #region Replace Services
 
-    public void ReplaceTransientService<TImplementation, TService>()
-        where TImplementation : notnull
-        where TService : notnull
-    {
-        ReplaceTransientService(typeof(TImplementation), typeof(TService));
-    }
-
-    public void ReplaceScopedService<TImplementation, TService>()
-        where TImplementation : notnull
-        where TService : notnull
-    {
-        ReplaceScopedService(typeof(TImplementation), typeof(TService));
-    }
-
-    public void ReplaceSingletonService<TImplementation, TService>()
-        where TImplementation : notnull
-        where TService : notnull
-    {
-        ReplaceSingletonService(typeof(TImplementation), typeof(TService));
-    }
-
-    public void ReplaceServiceInstance<TImplementation, TService>(TImplementation instance)
+    public void ReplaceService<TService, TImplementation>()
+        where TService : class
         where TImplementation : class
-        where TService : notnull
-    {
-        ReplaceServiceInstance(instance, typeof(TService));
-    }
+        => ReplaceService(typeof(TService), typeof(TImplementation));
 
-    public void ReplaceService(Type implementation, Type service)
-    {
-        ReplaceTransientService(implementation, service);
-    }
+    public void ReplaceTransientService<TService, TImplementation>()
+        where TService : class
+        where TImplementation : class
+        => ReplaceTransientService(typeof(TService), typeof(TImplementation));
 
-    public void ReplaceTransientService(Type implementation, Type service)
-    {
-        _replaceServices.Add((implementation, service, ServiceRegistrationType.Transient));
-        _serviceProvider = null;
-    }
+    public void ReplaceScopedService<TService, TImplementation>()
+        where TService : class
+        where TImplementation : class
+        => ReplaceScopedService(typeof(TService), typeof(TImplementation));
 
-    public void ReplaceScopedService(Type implementation, Type service)
-    {
-        _replaceServices.Add((implementation, service, ServiceRegistrationType.Scoped));
-        _serviceProvider = null;
-    }
+    public void ReplaceSingletonService<TService, TImplementation>()
+        where TService : class
+        where TImplementation : class
+        => ReplaceSingletonService(typeof(TService), typeof(TImplementation));
 
-    public void ReplaceSingletonService(Type implementation, Type service)
-    {
-        _replaceServices.Add((implementation, service, ServiceRegistrationType.Singleton));
-        _serviceProvider = null;
-    }
+    public void ReplaceService(Type service, Type implementation)
+        => ReplaceTransientService(service, implementation);
 
-    public void ReplaceServiceInstance<T>(T implementation) where T : class
-    {
-        _replaceServiceInstances.Add((implementation, typeof(T)));
-        _serviceProvider = null;
-    }
+    public void ReplaceTransientService(Type service, Type implementation)
+        => AddRegistrationReplace(RegistrationReplace.Transient(service, implementation));
 
-    public void ReplaceServiceInstance<T>(T implementation, Type service) where T : class
-    {
-        _replaceServiceInstances.Add((implementation, service));
-        _serviceProvider = null;
-    }
+    public void ReplaceScopedService(Type service, Type implementation)
+        => AddRegistrationReplace(RegistrationReplace.Scoped(service, implementation));
+
+    public void ReplaceSingletonService(Type service, Type implementation)
+        => AddRegistrationReplace(RegistrationReplace.Singleton(service, implementation));
 
     public void ReplaceService<T>(Func<IComponentContext, T> @delegate) where T : class
-    {
-        ReplaceTransientService(@delegate);
-    }
+        => ReplaceTransientService(@delegate);
 
-    public void ReplaceTransientService<T>(Func<IComponentContext, T> @delegate) where T : class
+    public void ReplaceTransientService<T>(Func<IComponentContext, T> factory) where T : class
+        => AddRegistrationReplace(RegistrationReplace.Transient(typeof(T), factory));
+
+    public void ReplaceScopedService<T>(Func<IComponentContext, T> factory) where T : class
+        => AddRegistrationReplace(RegistrationReplace.Scoped(typeof(T), factory));
+
+    public void ReplaceSingletonService<T>(Func<IComponentContext, T> factory) where T : class
+        => AddRegistrationReplace(RegistrationReplace.Singleton(typeof(T), factory));
+
+    private void AddRegistrationReplace(RegistrationReplace replace)
     {
-        _replaceServiceDelegates.Add((@delegate, typeof(T), ServiceRegistrationType.Transient));
+        _replaceServices.Add(replace);
         _serviceProvider = null;
     }
 
-    public void ReplaceScopedService<T>(Func<IComponentContext, T> @delegate) where T : class
-    {
-        _replaceServiceDelegates.Add((@delegate, typeof(T), ServiceRegistrationType.Scoped));
-        _serviceProvider = null;
-    }
-
-    public void ReplaceSingletonService<T>(Func<IComponentContext, T> @delegate) where T : class
-    {
-        _replaceServiceDelegates.Add((@delegate, typeof(T), ServiceRegistrationType.Singleton));
-        _serviceProvider = null;
-    }
+    #endregion
 
     private IServiceProvider GetServiceProvider(ContainerBuilder? builder = null)
     {
@@ -190,7 +148,7 @@ public abstract class BaseTest
             null,
             t => (Activator.CreateInstance(t) as IOptionSection)!);
 
-        ReplaceSingletonService<LoggerFactoryMock, Core.Shared.Loggers.ILoggerFactory>();
+        ReplaceSingletonService<Core.Shared.Loggers.ILoggerFactory, LoggerFactoryMock>();
 
         if (DoMockFileService)
         {
@@ -201,42 +159,100 @@ public abstract class BaseTest
             ReplaceHttpClient();
         }
 
-        foreach (var (implementation, service, type) in _replaceServices)
+        foreach (var replace in _replaceServices)
         {
-            var registration = builder.RegisterType(implementation)
-                .As(service)
-                .PropertiesAutowired();
-            RegisterByType(registration, type);
-        }
-
-        foreach (var (implementation, service) in _replaceServiceInstances)
-        {
-            builder.RegisterInstance(implementation)
-                .As(service)
-                .PropertiesAutowired()
-                .SingleInstance();
-        }
-
-        foreach (var (@delegate, service, type) in _replaceServiceDelegates)
-        {
-            var registration = builder.Register(@delegate)
-                .As(service)
-                .PropertiesAutowired();
-            RegisterByType(registration, type);
+            replace.Register(builder);
         }
 
         return builder;
+    }
 
-        static void RegisterByType<TLimit, TActivatorData, TRegistrationStyle>(IRegistrationBuilder<TLimit, TActivatorData, TRegistrationStyle> registration, ServiceRegistrationType type)
+    private class RegistrationReplace
+    {
+        public ServiceRegistrationType RegistrationType { get; }
+
+        public Type ServiceType { get; }
+
+        public Type? ImplementationType { get; }
+
+        public Func<IComponentContext, object>? Factory { get; }
+
+        private RegistrationReplace(ServiceRegistrationType type, Type serviceType, Type implementationType)
         {
-            _ = type switch
+            RegistrationType = type;
+            ServiceType = serviceType;
+            ImplementationType = implementationType;
+        }
+
+        private RegistrationReplace(ServiceRegistrationType type, Type serviceType, Func<IComponentContext, object> factory)
+        {
+            RegistrationType = type;
+            ServiceType = serviceType;
+            Factory = factory;
+        }
+
+        public void Register(ContainerBuilder builder)
+        {
+            if (Factory != null)
+            {
+                RegisterByType(RegisterFactory(builder));
+            }
+            else
+            {
+                RegisterByType(RegisterType(builder));
+            }
+        }
+
+        private IRegistrationBuilder<object, SimpleActivatorData, SingleRegistrationStyle> RegisterFactory(ContainerBuilder builder)
+        {
+            return builder.Register(Factory!).As(ServiceType).PropertiesAutowired();
+        }
+
+        private IRegistrationBuilder<object, ConcreteReflectionActivatorData, SingleRegistrationStyle> RegisterType(ContainerBuilder builder)
+        {
+            return builder.RegisterType(ImplementationType!).As(ServiceType).PropertiesAutowired();
+        }
+
+        private void RegisterByType<TLimit, TActivatorData, TRegistrationStyle>(IRegistrationBuilder<TLimit, TActivatorData, TRegistrationStyle> registration)
+        {
+            _ = RegistrationType switch
             {
                 ServiceRegistrationType.Transient => registration.InstancePerDependency(),
                 ServiceRegistrationType.Scoped => registration.InstancePerLifetimeScope(),
                 ServiceRegistrationType.Singleton => registration.SingleInstance(),
-                _ => throw new NotImplementedException(),
+                _ => throw new InvalidOperationException(),
             };
         }
+
+        public static RegistrationReplace Transient<TService, TImplementation>() => Transient(typeof(TService), typeof(TImplementation));
+
+        public static RegistrationReplace Transient(Type serviceType, Type implementationType)
+            => new(ServiceRegistrationType.Transient, serviceType, implementationType);
+
+        public static RegistrationReplace Scoped<TService, TImplementation>() => Scoped(typeof(TService), typeof(TImplementation));
+
+        public static RegistrationReplace Scoped(Type serviceType, Type implementationType)
+            => new(ServiceRegistrationType.Scoped, serviceType, implementationType);
+
+        public static RegistrationReplace Singleton<TService, TImplementation>() => Singleton(typeof(TService), typeof(TImplementation));
+
+        public static RegistrationReplace Singleton(Type serviceType, Type implementationType)
+            => new(ServiceRegistrationType.Singleton, serviceType, implementationType);
+
+        public static RegistrationReplace Transient<TService>(Func<IComponentContext, object> factory) => Transient(typeof(TService), factory);
+
+        public static RegistrationReplace Transient(Type serviceType, Func<IComponentContext, object> factory)
+            => new(ServiceRegistrationType.Transient, serviceType, factory);
+
+        public static RegistrationReplace Scoped<TService>(Func<IComponentContext, object> factory) => Scoped(typeof(TService), factory);
+
+        public static RegistrationReplace Scoped(Type serviceType, Func<IComponentContext, object> factory)
+            => new(ServiceRegistrationType.Scoped, serviceType, factory);
+
+        public static RegistrationReplace Singleton<TService>(Func<IComponentContext, object> factory) => Singleton(typeof(TService), factory);
+
+        public static RegistrationReplace Singleton(Type serviceType, Func<IComponentContext, object> factory)
+            => new(ServiceRegistrationType.Singleton, serviceType, factory);
     }
 
     private enum ServiceRegistrationType
@@ -253,7 +269,7 @@ public abstract class BaseTest
     private void ReplaceFileService()
     {
         MockFileSystem = new MockFileSystem();
-        _replaceServiceInstances.Insert(0, (MockFileSystem, typeof(IFileSystem)));
+        _replaceServices.Insert(0, RegistrationReplace.Singleton<IFileSystem>(_ => MockFileSystem));
     }
 
     private void ReplaceHttpClient()
@@ -274,9 +290,7 @@ public abstract class BaseTest
             }
         };
 
-        _replaceServiceDelegates.Insert(
-            0,
-            (_ => new HttpClient(HttpClientInterceptor), typeof(HttpClient), ServiceRegistrationType.Transient));
+        _replaceServices.Insert(0, RegistrationReplace.Transient<HttpClient>(_ => new HttpClient(HttpClientInterceptor)));
     }
 
     #endregion
