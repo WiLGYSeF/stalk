@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.Loggers;
 using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.ObjectInstances;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using ILoggerFactory = Wilgysef.Stalk.Core.Shared.Loggers.ILoggerFactory;
@@ -73,7 +74,7 @@ public class JobWorker : IJobWorker
     {
         var isDone = false;
 
-        LoggerHandle? loggerHandle = null;
+        IObjectInstanceHandle<ILogger>? loggerHandle = null;
         IDisposable? loggerScope = null;
 
         try
@@ -83,7 +84,7 @@ public class JobWorker : IJobWorker
                 loggerHandle = _loggerCollectionService.GetLoggerHandle(
                     _jobConfig.Logs.Path,
                     () => _loggerFactory.CreateLogger(_jobConfig.Logs.Path, (LogLevel)_jobConfig.Logs.Level));
-                Logger = new AggregateLogger(Logger, loggerHandle.Logger);
+                Logger = new AggregateLogger(Logger, loggerHandle.Value);
             }
 
             loggerScope = Logger?.BeginScope("Job {JobId}", Job.Id);

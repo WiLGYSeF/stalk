@@ -1,8 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
+using Wilgysef.Stalk.Core.ObjectInstances;
 
 namespace Wilgysef.Stalk.Core.Loggers;
 
 public interface ILoggerCollectionService
 {
-    LoggerHandle GetLoggerHandle(string path, Func<ILogger> factory);
+    IObjectInstanceHandle<ILogger> GetLoggerHandle(string path, Func<ILogger> factory);
 }

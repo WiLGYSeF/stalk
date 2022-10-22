@@ -51,11 +51,11 @@ public class AggregateLogger : IAggregateLogger
 
     private class AggregateDisposable<T> : IDisposable where T : IDisposable
     {
-        private readonly List<T> _disposables;
+        private readonly IEnumerable<T> _disposables;
 
         public AggregateDisposable(IEnumerable<T> disposables)
         {
-            _disposables = new(disposables);
+            _disposables = disposables;
         }
 
         public void Dispose()
