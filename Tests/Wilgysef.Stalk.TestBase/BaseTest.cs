@@ -14,6 +14,7 @@ using Wilgysef.Stalk.Application.ServiceRegistrar;
 using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.EntityFrameworkCore;
+using Wilgysef.Stalk.TestBase.Mocks;
 using Wilgysef.Stalk.TestBase.Shared.Mocks;
 
 namespace Wilgysef.Stalk.TestBase;
@@ -188,6 +189,8 @@ public abstract class BaseTest
             new LoggerFactory(new[] { new DebugLoggerProvider() }).CreateLogger("test"),
             null,
             t => (Activator.CreateInstance(t) as IOptionSection)!);
+
+        ReplaceSingletonService<LoggerFactoryMock, Core.Shared.Loggers.ILoggerFactory>();
 
         if (DoMockFileService)
         {
