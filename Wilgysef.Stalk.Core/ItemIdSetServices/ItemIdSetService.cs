@@ -1,5 +1,5 @@
 ﻿using System.IO.Abstractions;
-using Wilgysef.Stalk.Core.FileHandlerLockServices;
+using Wilgysef.Stalk.Core.FileLockServices;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 
 namespace Wilgysef.Stalk.Core.ItemIdSetServices;
@@ -7,16 +7,16 @@ namespace Wilgysef.Stalk.Core.ItemIdSetServices;
 public class ItemIdSetService : IItemIdSetService, ITransientDependency
 {
     private readonly IItemIdSetCollectionService _itemSetCollectionService;
-    private readonly IFileHandlerLockService _fileHandlerLockService;
+    private readonly IFileLockCollectionService _fileLockCollectionService;
     private readonly IFileSystem _fileSystem;
 
     public ItemIdSetService(
         IItemIdSetCollectionService itemSetCollectionService,
-        IFileHandlerLockService fileHandlerLockService,
+        IFileLockCollectionService fileLockCollectionService,
         IFileSystem fileSystem)
     {
         _itemSetCollectionService = itemSetCollectionService;
-        _fileHandlerLockService = fileHandlerLockService;
+        _fileLockCollectionService = fileLockCollectionService;
         _fileSystem = fileSystem;
     }
 
@@ -63,7 +63,8 @@ public class ItemIdSetService : IItemIdSetService, ITransientDependency
 
     public Task<int> WriteChangesAsync(string path, IItemIdSet itemIds)
     {
-        lock (_fileHandlerLockService.GetFileHandlerLock(path))
+        using var handle = _fileLockCollectionService.GetFileLockHandle(path);
+        lock (handle.Value)
         {
             using var stream = _fileSystem.File.Open(path, FileMode.Append);
             using var writer = new StreamWriter(stream);
