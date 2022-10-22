@@ -20,7 +20,7 @@ public class WorkPrioritizedJobsJobTest : BaseTest
 
     public WorkPrioritizedJobsJobTest()
     {
-        ReplaceService<JobWorkerFactoryMock, IJobWorkerFactory>();
+        ReplaceService<IJobWorkerFactory, JobWorkerFactoryMock>();
 
         _workPrioritizedJobsHandler = GetRequiredService<IBackgroundJobHandler<WorkPrioritizedJobsArgs>>();
         _jobManager = GetRequiredService<IJobManager>();

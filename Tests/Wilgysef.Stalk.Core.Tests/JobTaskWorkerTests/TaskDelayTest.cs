@@ -41,8 +41,8 @@ public class TaskDelayTest : BaseTest
         _downloaderMock.SetupAnyArgs<IDownloader, IAsyncEnumerable<DownloadResult>>(nameof(IDownloader.DownloadAsync))
             .Returns(DownloadAsync);
 
-        ReplaceServiceInstance(_extractorMock.Object);
-        ReplaceServiceInstance(_downloaderMock.Object);
+        ReplaceService(_ => _extractorMock.Object);
+        ReplaceService(_ => _downloaderMock.Object);
 
         _jobWorkerFactory = GetRequiredService<IJobWorkerFactory>();
 

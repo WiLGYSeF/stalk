@@ -26,7 +26,7 @@ public class PauseJobAsyncTest : BaseTest
             _manualResetEventSlimOuter.Wait();
         });
 
-        ReplaceServiceInstance<IJobWorkerService, IJobWorkerService>(jobWorkerService.Object);
+        ReplaceService<IJobWorkerService>(_ => jobWorkerService.Object);
 
         _jobManager = GetRequiredService<IJobManager>();
         _jobStateManager = GetRequiredService<IJobStateManager>();

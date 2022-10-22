@@ -24,7 +24,7 @@ public class NoExtractorTest : BaseTest
         _extractorMock = new Mock<IExtractor>();
         _extractorMock.Setup(m => m.CanExtract(It.IsAny<Uri>())).Returns(false);
 
-        ReplaceServiceInstance(_extractorMock.Object);
+        ReplaceService(_ => _extractorMock.Object);
 
         _jobWorkerFactory = GetRequiredService<IJobWorkerFactory>();
 

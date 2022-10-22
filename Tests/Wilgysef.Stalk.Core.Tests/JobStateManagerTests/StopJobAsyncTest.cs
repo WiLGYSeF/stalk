@@ -2,11 +2,9 @@
 using Shouldly;
 using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
-using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.TestBase;
-using Xunit.Sdk;
 
 namespace Wilgysef.Stalk.Core.Tests.JobStateManagerTests;
 
@@ -28,7 +26,7 @@ public class StopJobAsyncTest : BaseTest
             _manualResetEventSlimOuter.Wait();
         });
 
-        ReplaceServiceInstance<IJobWorkerService, IJobWorkerService>(jobWorkerService.Object);
+        ReplaceService(_ => jobWorkerService.Object);
 
         _jobManager = GetRequiredService<IJobManager>();
         _jobStateManager = GetRequiredService<IJobStateManager>();
