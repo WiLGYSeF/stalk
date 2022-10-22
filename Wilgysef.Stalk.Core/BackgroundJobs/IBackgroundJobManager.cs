@@ -7,7 +7,7 @@ public interface IBackgroundJobManager
     /// </summary>
     /// <param name="job">Background job.</param>
     /// <param name="saveChanges">Whether to save changes immediately after adding background job.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns></returns>
     Task<BackgroundJob> EnqueueJobAsync(BackgroundJob job, bool saveChanges, CancellationToken cancellationToken = default);
 
@@ -16,7 +16,7 @@ public interface IBackgroundJobManager
     /// </summary>
     /// <param name="job">Background job.</param>
     /// <param name="saveChanges">Whether to save changes immediately after adding background job.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns></returns>
     Task<BackgroundJob> EnqueueOrReplaceJobAsync(BackgroundJob job, bool saveChanges, CancellationToken cancellationToken = default);
 
@@ -26,7 +26,7 @@ public interface IBackgroundJobManager
     /// <param name="job">Background job.</param>
     /// <param name="saveChanges">Whether to save changes immediately after adding background job.</param>
     /// <param name="compareTo">Background job args comparison function.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns></returns>
     Task<BackgroundJob> EnqueueOrReplaceJobAsync(
         BackgroundJob job,
@@ -38,28 +38,28 @@ public interface IBackgroundJobManager
     /// Finds background job by Id.
     /// </summary>
     /// <param name="id">Background job Id.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Background job, or <see langword="null"/> if no background job was found.</returns>
     Task<BackgroundJob?> FindJobAsync(long id, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets list of background jobs.
     /// </summary>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of background jobs.</returns>
     Task<List<BackgroundJob>> GetJobsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Gets next priority queued background job.
     /// </summary>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Background job, or <see langword="null"/> if there are no queued background jobs.</returns>
     Task<BackgroundJob?> GetNextPriorityJobAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Abandon expired background jobs.
     /// </summary>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Background jobs that have been abandoned.</returns>
     Task<List<BackgroundJob>> AbandonExpiredJobsAsync(CancellationToken cancellationToken = default);
 
@@ -67,7 +67,7 @@ public interface IBackgroundJobManager
     /// Updates background job.
     /// </summary>
     /// <param name="job">Background job.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns></returns>
     Task UpdateJobAsync(BackgroundJob job, CancellationToken cancellationToken = default);
 
@@ -75,7 +75,7 @@ public interface IBackgroundJobManager
     /// Deletes background job.
     /// </summary>
     /// <param name="job">Background job.</param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns></returns>
     Task DeleteJobAsync(BackgroundJob job, CancellationToken cancellationToken = default);
 }

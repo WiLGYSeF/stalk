@@ -76,7 +76,7 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
         /// Callback on error received.
         /// If it returns <see langword="true"/>, do not do default error processing for that data.
         /// </param>
-        /// <param name="cancellationToken"></param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Process.</returns>
         public virtual async Task<IProcess> FindAndStartProcessAsync(
             string uri,

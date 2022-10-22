@@ -12,7 +12,7 @@ public interface IJobTaskWorker
     /// <summary>
     /// Does work on the job task.
     /// </summary>
-    /// <param name="cancellationToken"></param>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns></returns>
     Task WorkAsync(CancellationToken cancellationToken = default);
 }

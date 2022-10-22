@@ -154,7 +154,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// <param name="uri">URI to download from.</param>
         /// <param name="filenameTemplate">Filename template to save downloaded file.</param>
         /// <param name="metadata">Metadata object.</param>
-        /// <param name="cancellationToken"></param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Download file result.</returns>
         protected virtual async IAsyncEnumerable<DownloadFileResult> SaveFileAsync(
             Uri uri,
@@ -192,7 +192,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// Gets the contents stream from the URI.
         /// </summary>
         /// <param name="uri">URI.</param>
-        /// <param name="cancellationToken"></param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Stream with download contents.</returns>
         protected virtual async Task<Stream> GetFileStreamAsync(
             Uri uri,
@@ -223,7 +223,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// </param>
         /// <param name="hashAlgorithm">Hash algorithm for computing hash.</param>
         /// <param name="hashName">Hash name, only passed to return value.</param>
-        /// <param name="cancellationToken"></param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Download file results.</returns>
         protected virtual async Task<DownloadFileResult> SaveStreamAsync(
             Stream stream,
@@ -270,7 +270,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// </summary>
         /// <param name="metadataFilenameTemplate">Metadata filename template to save metadata files.</param>
         /// <param name="metadata">Metadata object.</param>
-        /// <param name="cancellationToken"></param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Metadata filename.</returns>
         protected virtual Task<string?> SaveMetadataAsync(
             string? metadataFilenameTemplate,
