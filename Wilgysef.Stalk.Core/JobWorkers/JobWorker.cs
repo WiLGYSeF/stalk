@@ -48,6 +48,8 @@ public class JobWorker : IJobWorker
 
     public ILogger? Logger { get; set; }
 
+    private ILogger? _logger;
+
     private TimeSpan NoTaskDelay { get; set; } = TimeSpan.FromSeconds(15);
 
     private readonly Dictionary<Task, long> _tasks = new();
@@ -77,6 +79,8 @@ public class JobWorker : IJobWorker
         IObjectInstanceHandle<ILogger>? loggerHandle = null;
         IDisposable? loggerScope = null;
 
+        _logger = Logger;
+
         try
         {
             if (_jobConfig.Logs?.Path != null)
@@ -84,12 +88,12 @@ public class JobWorker : IJobWorker
                 loggerHandle = _loggerCollectionService.GetLoggerHandle(
                     _jobConfig.Logs.Path,
                     () => _loggerFactory.CreateLogger(_jobConfig.Logs.Path, (LogLevel)_jobConfig.Logs.Level));
-                Logger = new AggregateLogger(Logger, loggerHandle.Value);
+                _logger = new AggregateLogger(Logger, loggerHandle.Value);
             }
 
-            loggerScope = Logger?.BeginScope("Job {JobId}", Job.Id);
+            loggerScope = _logger?.BeginScope("Job {JobId}", Job.Id);
 
-            Logger?.LogInformation("Job {JobId} starting.", Job.Id);
+            _logger?.LogInformation("Job {JobId} starting.", Job.Id);
 
             if (!Job.IsActive)
             {
@@ -123,12 +127,12 @@ public class JobWorker : IJobWorker
 
                 if (taskCompletedIndex != -1)
                 {
-                    Logger?.LogDebug("Job {JobId} wait for task succeeded.", Job.Id);
+                    _logger?.LogDebug("Job {JobId} wait for task succeeded.", Job.Id);
                     RemoveCompletedTasks(taskArray);
                 }
                 else
                 {
-                    Logger?.LogDebug("Job {JobId} wait for task timed out.", Job.Id);
+                    _logger?.LogDebug("Job {JobId} wait for task timed out.", Job.Id);
                 }
             }
 
@@ -140,16 +144,16 @@ public class JobWorker : IJobWorker
         }
         catch (OperationCanceledException)
         {
-            Logger?.LogInformation("Job {JobId} worker cancelled.", Job?.Id);
+            _logger?.LogInformation("Job {JobId} worker cancelled.", Job?.Id);
             throw;
         }
         catch (Exception exception)
         {
-            Logger?.LogError(exception, "Job {JobId} threw unexpected exception.", Job?.Id);
+            _logger?.LogError(exception, "Job {JobId} threw unexpected exception.", Job?.Id);
         }
         finally
         {
-            Logger?.LogInformation("Job {JobId} stopping.", Job?.Id);
+            _logger?.LogInformation("Job {JobId} stopping.", Job?.Id);
 
             if (Job != null)
             {
@@ -168,7 +172,7 @@ public class JobWorker : IJobWorker
                         Job.Deactivate();
                         await jobManager.UpdateJobAsync(Job, CancellationToken.None);
                     },
-                    exception => Logger?.LogError(exception, "Failed to update Job {JobId} state.", Job?.Id),
+                    exception => _logger?.LogError(exception, "Failed to update Job {JobId} state.", Job?.Id),
                     TimeSpan.FromSeconds(1));
             }
 
@@ -187,7 +191,7 @@ public class JobWorker : IJobWorker
         await ReloadJobAsync();
         if (!JobTaskFailuresLessThanMaxFailures())
         {
-            Logger?.LogInformation("Job {JobId} exceeded maximum failure count: {MaxFailures}.", Job.Id, _jobConfig.MaxFailures.GetValueOrDefault());
+            _logger?.LogInformation("Job {JobId} exceeded maximum failure count: {MaxFailures}.", Job.Id, _jobConfig.MaxFailures.GetValueOrDefault());
             return;
         }
 
@@ -211,11 +215,11 @@ public class JobWorker : IJobWorker
             if (task != null)
             {
                 _tasks.Add(task, jobTask.Id);
-                Logger?.LogDebug("Job {JobId} added task worker for {JobTaskId}.", Job.Id, jobTask.Id);
+                _logger?.LogDebug("Job {JobId} added task worker for {JobTaskId}.", Job.Id, jobTask.Id);
             }
             else
             {
-                Logger?.LogDebug("Job {JobId} task worker already started for {JobTaskId}.", Job.Id, jobTask.Id);
+                _logger?.LogDebug("Job {JobId} task worker already started for {JobTaskId}.", Job.Id, jobTask.Id);
             }
         }
     }
@@ -227,7 +231,7 @@ public class JobWorker : IJobWorker
             if (task.IsCompleted)
             {
                 _tasks.Remove(task, out var jobTaskId);
-                Logger?.LogDebug("Job {JobId} removed completed task for {JobTaskId}.", Job!.Id, jobTaskId);
+                _logger?.LogDebug("Job {JobId} removed completed task for {JobTaskId}.", Job!.Id, jobTaskId);
             }
         }
     }
