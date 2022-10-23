@@ -53,7 +53,7 @@ public class ItemIdSetCollectionService : IItemIdSetCollectionService, ISingleto
 
             foreach (var path in removePaths)
             {
-                _itemIdSets.Remove(path, out _);
+                _itemIdSets.Remove(path);
             }
             return success;
         }
@@ -71,7 +71,7 @@ public class ItemIdSetCollectionService : IItemIdSetCollectionService, ISingleto
             entry.JobIds.Remove(jobId);
             if (entry.JobIds.Count == 0)
             {
-                _itemIdSets.Remove(path, out _);
+                _itemIdSets.Remove(path);
             }
             return true;
         }

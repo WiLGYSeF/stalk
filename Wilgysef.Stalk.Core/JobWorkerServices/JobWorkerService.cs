@@ -1,5 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
-using Wilgysef.Stalk.Core.JobWorkerFactories;
+using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 
@@ -69,6 +69,7 @@ public class JobWorkerService : IJobWorkerService, ITransientDependency
         _jobWorkerCollectionService.CancelJobWorkerToken(worker);
         await _jobWorkerCollectionService.GetJobWorkerTask(worker);
         _jobWorkerCollectionService.RemoveJobWorker(worker);
+        worker.Dispose();
         return true;
     }
 

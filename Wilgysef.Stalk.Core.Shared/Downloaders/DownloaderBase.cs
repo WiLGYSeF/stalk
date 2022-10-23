@@ -148,6 +148,8 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             _httpClient = client;
         }
 
+        public virtual void Dispose() { }
+
         /// <summary>
         /// Downloads from the URI and saves it to a file.
         /// </summary>

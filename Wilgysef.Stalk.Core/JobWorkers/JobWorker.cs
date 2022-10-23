@@ -1,12 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using Wilgysef.Stalk.Core.JobTaskWorkerServices;
-using Wilgysef.Stalk.Core.Loggers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.ObjectInstances;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
-using ILoggerFactory = Wilgysef.Stalk.Core.Shared.Loggers.ILoggerFactory;
 
 namespace Wilgysef.Stalk.Core.JobWorkers;
 
@@ -46,9 +44,6 @@ public class JobWorker : IJobWorker
 
     public TimeSpan NoTaskTimeout { get; set; } = TimeSpan.FromMinutes(1);
 
-    public ILogger? Logger { get; set; }
-
-    private ILogger? _logger;
 
     private TimeSpan NoTaskDelay { get; set; } = TimeSpan.FromSeconds(15);
 
@@ -57,18 +52,18 @@ public class JobWorker : IJobWorker
     private DateTime? _lastTimeWithNoTasks;
 
     private readonly IServiceLifetimeScope _lifetimeScope;
-    private readonly ILoggerCollectionService _loggerCollectionService;
-    private readonly ILoggerFactory _loggerFactory;
+    private readonly ILogger? _logger;
+    private readonly IObjectInstanceHandle<ILogger>? _loggerHandle;
 
     public JobWorker(
         IServiceLifetimeScope lifetimeScope,
-        ILoggerCollectionService loggerCollectionService,
-        ILoggerFactory loggerFactory,
+        ILogger? logger,
+        IObjectInstanceHandle<ILogger>? loggerHandle,
         Job job)
     {
         _lifetimeScope = lifetimeScope;
-        _loggerCollectionService = loggerCollectionService;
-        _loggerFactory = loggerFactory;
+        _logger = logger;
+        _loggerHandle = loggerHandle;
         Job = job;
     }
 
@@ -76,23 +71,10 @@ public class JobWorker : IJobWorker
     {
         var isDone = false;
 
-        IObjectInstanceHandle<ILogger>? loggerHandle = null;
-        IDisposable? loggerScope = null;
-
-        _logger = Logger;
+        using var _ = _logger?.BeginScope("Job {JobId}", Job.Id);
 
         try
         {
-            if (_jobConfig.Logs?.Path != null)
-            {
-                loggerHandle = _loggerCollectionService.GetLoggerHandle(
-                    _jobConfig.Logs.Path,
-                    () => _loggerFactory.CreateLogger(_jobConfig.Logs.Path, (LogLevel)_jobConfig.Logs.Level));
-                _logger = new AggregateLogger(Logger, loggerHandle.Value);
-            }
-
-            loggerScope = _logger?.BeginScope("Job {JobId}", Job.Id);
-
             _logger?.LogInformation("Job {JobId} starting.", Job.Id);
 
             if (!Job.IsActive)
@@ -175,10 +157,14 @@ public class JobWorker : IJobWorker
                     exception => _logger?.LogError(exception, "Failed to update Job {JobId} state.", Job?.Id),
                     TimeSpan.FromSeconds(1));
             }
-
-            loggerScope?.Dispose();
-            loggerHandle?.Dispose();
         }
+    }
+
+    public void Dispose()
+    {
+        _loggerHandle?.Dispose();
+
+        GC.SuppressFinalize(this);
     }
 
     private async Task CreateJobTaskWorkers(CancellationToken cancellationToken)

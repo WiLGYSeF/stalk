@@ -1,4 +1,4 @@
-﻿using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
+﻿using Microsoft.Extensions.Logging;
 using Wilgysef.Stalk.Core.JobTaskWorkers;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
@@ -7,6 +7,8 @@ namespace Wilgysef.Stalk.TestBase.Mocks;
 
 public class JobTaskWorkerFactoryMock : IJobTaskWorkerFactory
 {
+    public ILogger? Logger { get; set; }
+
     public event EventHandler<WorkEventArgs>? WorkEvent;
 
     private readonly List<IJobTaskWorker> _jobTaskWorkers = new();
@@ -23,6 +25,7 @@ public class JobTaskWorkerFactoryMock : IJobTaskWorkerFactory
     {
         var worker = new JobTaskWorkerMock(
             _serviceLocator.BeginLifetimeScopeFromRoot(),
+            Logger,
             jobTask);
         worker.WorkEvent += (sender, args) => OnWorkEvent(worker);
 

@@ -1,7 +1,7 @@
 ﻿using Shouldly;
 using Wilgysef.Stalk.Core.BackgroundJobs;
 using Wilgysef.Stalk.Core.BackgroundJobs.Args;
-using Wilgysef.Stalk.Core.JobWorkerFactories;
+using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;

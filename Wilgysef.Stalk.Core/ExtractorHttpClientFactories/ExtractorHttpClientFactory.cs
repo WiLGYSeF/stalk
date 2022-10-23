@@ -19,16 +19,20 @@ public class ExtractorHttpClientFactory : IExtractorHttpClientFactory, ITransien
 
     public HttpClient CreateClient(IDictionary<string, object?> extractorConfig)
     {
+        ConfigureClient(_httpClient, extractorConfig);
+        return _httpClient;
+    }
+
+    private void ConfigureClient(HttpClient client, IDictionary<string, object?> extractorConfig)
+    {
         if (extractorConfig.TryGetValue(JobConfig.ExtractorConfigKeys.UserAgent, out var userAgent))
         {
-            SetUserAgentHeader(_httpClient, userAgent?.ToString());
+            SetUserAgentHeader(client, userAgent?.ToString());
         }
         else
         {
-            SetUserAgentHeader(_httpClient, _userAgentGenerator.Create());
+            SetUserAgentHeader(client, _userAgentGenerator.Create());
         }
-
-        return _httpClient;
     }
 
     private static bool SetUserAgentHeader(HttpClient client, string? value)

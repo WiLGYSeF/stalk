@@ -1,7 +1,8 @@
 ﻿using Autofac;
 using Microsoft.Extensions.Logging;
 using Shouldly;
-using Wilgysef.Stalk.Core.JobTaskWorkerFactories;
+using Wilgysef.Stalk.Core.JobScopeServices;
+using Wilgysef.Stalk.Core.JobTaskWorkers;
 using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Loggers;
 using Wilgysef.Stalk.Core.Models.Jobs;
@@ -52,16 +53,17 @@ public class LoggerTest : BaseTest
         secondLogger.Logs.Count.ShouldBe(firstLogger.Logs.Count);
     }
 
-    private JobWorker CreateJobWorker(Job job, out LoggerFactoryMock mockLoggerFactory, LogLevel rootLogLevel = LogLevel.Debug)
+    private IJobWorker CreateJobWorker(Job job, out LoggerFactoryMock mockLoggerFactory, LogLevel rootLogLevel = LogLevel.Debug)
     {
         mockLoggerFactory = new LoggerFactoryMock();
-        return new JobWorker(
-            BeginLifetimeScope(),
+        var jobWorkerFactory = new JobWorkerFactory(
+            GetRequiredService<IJobScopeService>(),
             GetRequiredService<ILoggerCollectionService>(),
-            mockLoggerFactory,
-            job)
+            mockLoggerFactory)
         {
             Logger = mockLoggerFactory.CreateLogger("root", rootLogLevel),
         };
+
+        return jobWorkerFactory.CreateWorker(job);
     }
 }

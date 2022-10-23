@@ -3,7 +3,7 @@
 public interface IExtractorHttpClientFactory
 {
     /// <summary>
-    /// Creates an HttpClient for the extractor.
+    /// Creates an HTTP client for the extractor.
     /// </summary>
     /// <param name="extractorConfig">Extractor config.</param>
     /// <returns>HTTP client.</returns>

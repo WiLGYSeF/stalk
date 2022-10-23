@@ -1,4 +1,5 @@
-﻿using Wilgysef.Stalk.Core.Shared.Dependencies;
+﻿using Microsoft.Extensions.Logging;
+using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
 namespace Wilgysef.Stalk.Core.JobScopeServices;
@@ -19,6 +20,16 @@ public class JobScopeService : IJobScopeService, ITransientDependency
     public IServiceLifetimeScope GetJobScope(long jobId)
     {
         return _jobScopeCollectionService.GetJobScope(jobId, _serviceLocator);
+    }
+
+    public void AddJobLogger(long jobId, ILogger? logger)
+    {
+        _jobScopeCollectionService.AddLoggerToScope(jobId, logger);
+    }
+
+    public ILogger? GetJobLogger(long jobId)
+    {
+        return _jobScopeCollectionService.GetLoggerFromScope(jobId);
     }
 
     public bool RemoveJobScope(long jobId)

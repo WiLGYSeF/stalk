@@ -1,12 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using Wilgysef.Stalk.Core.JobScopeServices;
-using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Loggers;
 using Wilgysef.Stalk.Core.Models.Jobs;
+using Wilgysef.Stalk.Core.ObjectInstances;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 using ILoggerFactory = Wilgysef.Stalk.Core.Shared.Loggers.ILoggerFactory;
 
-namespace Wilgysef.Stalk.Core.JobWorkerFactories;
+namespace Wilgysef.Stalk.Core.JobWorkers;
 
 public class JobWorkerFactory : IJobWorkerFactory, ITransientDependency
 {
@@ -28,13 +28,26 @@ public class JobWorkerFactory : IJobWorkerFactory, ITransientDependency
 
     public IJobWorker CreateWorker(Job job)
     {
-        return new JobWorker(
-            _jobScopeService.GetJobScope(job.Id),
-            _loggerCollectionService,
-            _loggerFactory,
-            job)
+        var jobConfig = job.GetConfig();
+
+        IObjectInstanceHandle<ILogger>? loggerHandle = null;
+        var jobLogger = Logger;
+
+        if (jobConfig.Logs?.Path != null)
         {
-            Logger = Logger,
-        };
+            loggerHandle = _loggerCollectionService.GetLoggerHandle(
+                jobConfig.Logs.Path,
+                () => _loggerFactory.CreateLogger(jobConfig.Logs.Path, (LogLevel)jobConfig.Logs.Level));
+            jobLogger = new AggregateLogger(Logger, loggerHandle.Value);
+        }
+
+        var jobScope = _jobScopeService.GetJobScope(job.Id);
+        _jobScopeService.AddJobLogger(job.Id, jobLogger);
+
+        return new JobWorker(
+            jobScope,
+            jobLogger,
+            loggerHandle,
+            job);
     }
 }

@@ -70,12 +70,12 @@ public class CacheObject<TKey, TValue> : ICacheObject<TKey, TValue> where TKey :
 
     public bool Remove(TKey key)
     {
-        return TryGetValue(key, out _) && _cache.Remove(key, out _);
+        return TryGetValue(key, out _) && _cache.TryRemove(key, out _);
     }
 
     public bool Remove(TKey key, out TValue? value)
     {
-        if (TryGetValue(key, out _) && _cache.Remove(key, out var cacheValue))
+        if (TryGetValue(key, out _) && _cache.TryRemove(key, out var cacheValue))
         {
             value = cacheValue.Value;
             return true;

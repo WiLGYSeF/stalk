@@ -1,10 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using Wilgysef.Stalk.Core.JobScopeServices;
-using Wilgysef.Stalk.Core.JobTaskWorkers;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 
-namespace Wilgysef.Stalk.Core.JobTaskWorkerFactories;
+namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
 public class JobTaskWorkerFactory : IJobTaskWorkerFactory, ITransientDependency
 {
@@ -22,9 +21,7 @@ public class JobTaskWorkerFactory : IJobTaskWorkerFactory, ITransientDependency
     {
         return new JobTaskWorker(
             _jobScopeService.GetJobScope(jobTask.JobId),
-            jobTask)
-        {
-            Logger = Logger,
-        };
+            _jobScopeService.GetJobLogger(jobTask.JobId),
+            jobTask);
     }
 }

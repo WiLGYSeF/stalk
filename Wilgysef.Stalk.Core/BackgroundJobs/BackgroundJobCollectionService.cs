@@ -16,6 +16,6 @@ public class BackgroundJobCollectionService : IBackgroundJobCollectionService, I
 
     public void RemoveActiveJob(BackgroundJob job)
     {
-        _backgroundTasks.Remove(job, out _);
+        _backgroundTasks.TryRemove(job, out _);
     }
 }

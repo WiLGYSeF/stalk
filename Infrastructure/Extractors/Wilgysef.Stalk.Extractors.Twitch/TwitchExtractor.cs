@@ -14,6 +14,8 @@ namespace Wilgysef.Stalk.Extractors.Twitch;
 
 public class TwitchExtractor : IExtractor
 {
+    // TODO: login?
+
     public string Name => "Twitch";
 
     public ILogger? Logger { get; set; }
@@ -122,6 +124,11 @@ public class TwitchExtractor : IExtractor
     public void SetHttpClient(HttpClient client)
     {
         _httpClient = client;
+    }
+
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
     }
 
 #pragma warning disable CS1998 // Async method lacks 'await' operators and will run synchronously

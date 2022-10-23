@@ -18,7 +18,7 @@ public class JobTaskWorkerCollectionService : IJobTaskWorkerCollectionService, I
 
     public void RemoveJobTaskWorker(IJobTaskWorker worker)
     {
-        _jobTaskWorkers.Remove(worker, out _);
+        _jobTaskWorkers.TryRemove(worker, out _);
     }
 
     public IJobTaskWorker? GetJobTaskWorker(JobTask jobTask)

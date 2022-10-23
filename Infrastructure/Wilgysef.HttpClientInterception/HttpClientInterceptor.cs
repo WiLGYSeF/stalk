@@ -198,7 +198,7 @@ namespace Wilgysef.HttpClientInterception
                         }
                     }
                 }
-                _requestMatches.Remove(response.RequestMessage, out _);
+                _requestMatches.TryRemove(response.RequestMessage, out _);
             }
 
             if (invokeEvent)
