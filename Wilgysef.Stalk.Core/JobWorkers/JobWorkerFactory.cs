@@ -1,13 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
 using Wilgysef.Stalk.Core.JobScopeServices;
-using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Loggers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.ObjectInstances;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 using ILoggerFactory = Wilgysef.Stalk.Core.Shared.Loggers.ILoggerFactory;
 
-namespace Wilgysef.Stalk.Core.JobWorkerFactories;
+namespace Wilgysef.Stalk.Core.JobWorkers;
 
 public class JobWorkerFactory : IJobWorkerFactory, ITransientDependency
 {

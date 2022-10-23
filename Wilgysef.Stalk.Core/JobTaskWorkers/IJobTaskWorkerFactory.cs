@@ -1,7 +1,6 @@
-﻿using Wilgysef.Stalk.Core.JobTaskWorkers;
-using Wilgysef.Stalk.Core.Models.JobTasks;
+﻿using Wilgysef.Stalk.Core.Models.JobTasks;
 
-namespace Wilgysef.Stalk.Core.JobTaskWorkerFactories;
+namespace Wilgysef.Stalk.Core.JobTaskWorkers;
 
 public interface IJobTaskWorkerFactory
 {

@@ -2,7 +2,7 @@
 using Shouldly;
 using System.Net;
 using Wilgysef.MoqExtensions;
-using Wilgysef.Stalk.Core.JobWorkerFactories;
+using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;
