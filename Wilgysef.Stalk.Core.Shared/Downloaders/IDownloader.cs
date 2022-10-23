@@ -7,7 +7,7 @@ using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
 namespace Wilgysef.Stalk.Core.Shared.Downloaders
 {
-    public interface IDownloader : IDisposable
+    public interface IDownloader // : IDisposable // this breaks Autofac registration???
     {
         /// <summary>
         /// Downloader name.

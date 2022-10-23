@@ -153,7 +153,7 @@ public class JobTaskWorker : IJobTaskWorker
         using var scope = _lifetimeScope.BeginLifetimeScope();
 
         var jobTaskUri = new Uri(JobTask!.Uri);
-        using var extractor = scope.GetRequiredService<IEnumerable<IExtractor>>()
+        var extractor = scope.GetRequiredService<IEnumerable<IExtractor>>()
             .FirstOrDefault(e => e.CanExtract(jobTaskUri));
 
         if (extractor == null)
@@ -256,7 +256,7 @@ public class JobTaskWorker : IJobTaskWorker
         var itemIdSetService = scope.GetRequiredService<IItemIdSetService>();
 
         var jobTaskUri = new Uri(JobTask!.Uri);
-        using var downloader = downloaderSelector.SelectDownloader(jobTaskUri);
+        var downloader = downloaderSelector.SelectDownloader(jobTaskUri);
 
         if (downloader == null)
         {

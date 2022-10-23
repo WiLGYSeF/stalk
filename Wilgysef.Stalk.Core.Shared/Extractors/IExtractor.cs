@@ -8,7 +8,7 @@ using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
 namespace Wilgysef.Stalk.Core.Shared.Extractors
 {
-    public interface IExtractor : IDisposable
+    public interface IExtractor // : IDisposable // this breaks Autofac registration???
     {
         /// <summary>
         /// Extractor name.
