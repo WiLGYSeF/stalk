@@ -147,6 +147,10 @@ public class JobCommandHandler : Command,
             {
                 jobConfig.Delay.TooManyRequestsDelay = new(config.Delay.TooManyRequestsDelay.Min, config.Delay.TooManyRequestsDelay.Max);
             }
+            if (config.Delay.TaskWorkerDelay != null)
+            {
+                jobConfig.Delay.TaskWorkerDelay = new(config.Delay.TaskWorkerDelay.Min, config.Delay.TaskWorkerDelay.Max);
+            }
         }
 
         if (config.ExtractorConfig != null)

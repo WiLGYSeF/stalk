@@ -156,6 +156,11 @@ public class JobConfig
         /// Delay range for retry job tasks for too many requests.
         /// </summary>
         public Range? TooManyRequestsDelay { get; set; }
+
+        /// <summary>
+        /// Delay range for job task workers before starting.
+        /// </summary>
+        public Range? TaskWorkerDelay { get; set; }
     }
 
     public class Range

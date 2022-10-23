@@ -44,6 +44,8 @@ public class JobConfigDto
         public RangeDto? TaskFailedDelay { get; set; }
 
         public RangeDto? TooManyRequestsDelay { get; set; }
+
+        public RangeDto? TaskWorkerDelay { get; set; }
     }
 
     public class ConfigGroupDto

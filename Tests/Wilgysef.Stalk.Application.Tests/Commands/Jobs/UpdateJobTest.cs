@@ -193,6 +193,7 @@ public class UpdateJobTest : BaseTest
                 TaskDelay = new JobConfig.Range(0, 100),
                 TaskFailedDelay = new JobConfig.Range(0, 100),
                 TooManyRequestsDelay = new JobConfig.Range(0, 100),
+                TaskWorkerDelay = new JobConfig.Range(0, 100),
             }
         };
 
@@ -215,14 +216,19 @@ public class UpdateJobTest : BaseTest
                 },
                 TaskFailedDelay = new JobConfigDto.RangeDto
                 {
-                    Min = 100,
-                    Max = 200,
+                    Min = 200,
+                    Max = 300,
                 },
                 TooManyRequestsDelay = new JobConfigDto.RangeDto
                 {
-                    Min = 100,
-                    Max = 200,
+                    Min = 300,
+                    Max = 400,
                 },
+                TaskWorkerDelay = new JobConfigDto.RangeDto
+                {
+                    Min = 400,
+                    Max = 500
+                }
             } : null
         };
 
@@ -239,6 +245,8 @@ public class UpdateJobTest : BaseTest
             job.Config.Delay.TaskFailedDelay!.Min.ShouldBe(jobConfigDto.Delay.TaskFailedDelay!.Min);
             job.Config.Delay.TooManyRequestsDelay!.Min.ShouldBe(jobConfigDto.Delay.TooManyRequestsDelay!.Min);
             job.Config.Delay.TooManyRequestsDelay!.Max.ShouldBe(jobConfigDto.Delay.TooManyRequestsDelay!.Max);
+            job.Config.Delay.TaskWorkerDelay!.Max.ShouldBe(jobConfigDto.Delay.TaskWorkerDelay!.Max);
+            job.Config.Delay.TaskWorkerDelay!.Max.ShouldBe(jobConfigDto.Delay.TaskWorkerDelay!.Max);
         }
         else
         {
@@ -248,6 +256,8 @@ public class UpdateJobTest : BaseTest
             job.Config.Delay.TaskFailedDelay!.Min.ShouldBe(jobConfig.Delay.TaskFailedDelay!.Min);
             job.Config.Delay.TooManyRequestsDelay!.Min.ShouldBe(jobConfig.Delay.TooManyRequestsDelay!.Min);
             job.Config.Delay.TooManyRequestsDelay!.Max.ShouldBe(jobConfig.Delay.TooManyRequestsDelay!.Max);
+            job.Config.Delay.TaskWorkerDelay!.Max.ShouldBe(jobConfig.Delay.TaskWorkerDelay!.Max);
+            job.Config.Delay.TaskWorkerDelay!.Max.ShouldBe(jobConfig.Delay.TaskWorkerDelay!.Max);
         }
     }
 

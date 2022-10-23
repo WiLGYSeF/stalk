@@ -63,6 +63,13 @@ public class JobTaskWorker : IJobTaskWorker
 
             JobConfig = JobTask.Job.GetConfig();
 
+            if (JobConfig.Delay.TaskWorkerDelay != null)
+            {
+                var waitTime = TimeSpan.FromSeconds(RandomInt(JobConfig.Delay.TaskWorkerDelay.Min, JobConfig.Delay.TaskWorkerDelay.Max));
+                Logger?.LogInformation("Job task {JobTaskId} waiting {WaitTime} before working.", JobTask.Id, waitTime);
+                await Task.Delay(waitTime, cancellationToken);
+            }
+
             switch (JobTask.Type)
             {
                 case JobTaskType.Extract:
