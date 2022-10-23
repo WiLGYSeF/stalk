@@ -108,6 +108,11 @@ public class TwitterExtractor : IExtractor
         _httpClient = client;
     }
 
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+    }
+
     private async IAsyncEnumerable<ExtractResult> ExtractUserAsync(
         Uri uri,
         IMetadataObject metadata,

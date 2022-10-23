@@ -121,6 +121,11 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         return null;
     }
 
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+    }
+
     private async IAsyncEnumerable<ExtractResult> ExtractChannelAsync(
         Uri uri,
         IMetadataObject metadata,

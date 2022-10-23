@@ -143,14 +143,17 @@ public class JobTaskWorker : IJobTaskWorker
         }
     }
 
-    public void Dispose() { }
+    public void Dispose()
+    {
+        GC.SuppressFinalize(this);
+    }
 
     protected virtual async Task ExtractAsync(CancellationToken cancellationToken)
     {
         using var scope = _lifetimeScope.BeginLifetimeScope();
 
         var jobTaskUri = new Uri(JobTask!.Uri);
-        var extractor = scope.GetRequiredService<IEnumerable<IExtractor>>()
+        using var extractor = scope.GetRequiredService<IEnumerable<IExtractor>>()
             .FirstOrDefault(e => e.CanExtract(jobTaskUri));
 
         if (extractor == null)
@@ -253,7 +256,7 @@ public class JobTaskWorker : IJobTaskWorker
         var itemIdSetService = scope.GetRequiredService<IItemIdSetService>();
 
         var jobTaskUri = new Uri(JobTask!.Uri);
-        var downloader = downloaderSelector.SelectDownloader(jobTaskUri);
+        using var downloader = downloaderSelector.SelectDownloader(jobTaskUri);
 
         if (downloader == null)
         {

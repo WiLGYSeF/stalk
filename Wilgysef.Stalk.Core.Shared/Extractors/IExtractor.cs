@@ -8,7 +8,7 @@ using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
 namespace Wilgysef.Stalk.Core.Shared.Extractors
 {
-    public interface IExtractor
+    public interface IExtractor : IDisposable
     {
         /// <summary>
         /// Extractor name.
