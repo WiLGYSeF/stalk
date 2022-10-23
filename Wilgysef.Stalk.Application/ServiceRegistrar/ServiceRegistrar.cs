@@ -158,7 +158,7 @@ public class ServiceRegistrar
         params Assembly[] assemblies)
     {
         return builder.RegisterAssemblyTypes(assemblies)
-            .Where(t => t.GetInterfaces().Any(i => i.IsAssignableFrom(type)))
+            .Where(t => t.GetInterfaces().Any(i => i == type))
             .AsImplementedInterfaces()
             .PropertiesAutowired();
     }
