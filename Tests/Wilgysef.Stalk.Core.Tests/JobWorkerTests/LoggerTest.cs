@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Shouldly;
 using Wilgysef.Stalk.Core.JobScopeServices;
 using Wilgysef.Stalk.Core.JobTaskWorkers;
-using Wilgysef.Stalk.Core.JobWorkerFactories;
 using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Loggers;
 using Wilgysef.Stalk.Core.Models.Jobs;

@@ -272,8 +272,8 @@ public class JobTaskWorker : IJobTaskWorker
             throw new JobTaskWorkerException("No download filename template given.");
         }
 
-        // TODO: HttpClient, user agent
-        //downloader.SetHttpClient(_httpClient);
+        var httpClientFactory = scope.GetRequiredService<IExtractorHttpClientFactory>();
+        downloader.SetHttpClient(httpClientFactory.CreateClient(new Dictionary<string, object?>()));
         downloader.Config = JobConfig.GetDownloaderConfig(downloader);
         downloader.Logger = _logger;
 
