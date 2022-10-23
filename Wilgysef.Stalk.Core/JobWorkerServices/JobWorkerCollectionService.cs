@@ -18,7 +18,7 @@ public class JobWorkerCollectionService : IJobWorkerCollectionService, ISingleto
 
     public void RemoveJobWorker(IJobWorker worker)
     {
-        if (_jobWorkers.Remove(worker, out var values))
+        if (_jobWorkers.TryRemove(worker, out var values))
         {
             values.CancellationTokenSource.Dispose();
         }

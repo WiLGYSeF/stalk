@@ -1,4 +1,5 @@
-﻿using Wilgysef.Stalk.Core.JobTaskWorkers;
+﻿using Microsoft.Extensions.Logging;
+using Wilgysef.Stalk.Core.JobTaskWorkers;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
@@ -15,8 +16,9 @@ public class JobTaskWorkerMock : JobTaskWorker
 
     public JobTaskWorkerMock(
         IServiceLifetimeScope lifetimeScope,
+        ILogger? logger,
         JobTask jobTask)
-        : base(lifetimeScope, jobTask) { }
+        : base(lifetimeScope, logger, jobTask) { }
 
     public void Finish()
     {

@@ -42,8 +42,11 @@ public class JobWorkerFactory : IJobWorkerFactory, ITransientDependency
             jobLogger = new AggregateLogger(Logger, loggerHandle.Value);
         }
 
+        var jobScope = _jobScopeService.GetJobScope(job.Id);
+        _jobScopeService.AddJobLogger(job.Id, jobLogger);
+
         return new JobWorker(
-            _jobScopeService.GetJobScope(job.Id),
+            jobScope,
             jobLogger,
             loggerHandle,
             job);

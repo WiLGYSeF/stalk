@@ -22,9 +22,7 @@ public class JobTaskWorkerFactory : IJobTaskWorkerFactory, ITransientDependency
     {
         return new JobTaskWorker(
             _jobScopeService.GetJobScope(jobTask.JobId),
-            jobTask)
-        {
-            Logger = Logger,
-        };
+            _jobScopeService.GetJobLogger(jobTask.JobId),
+            jobTask);
     }
 }
