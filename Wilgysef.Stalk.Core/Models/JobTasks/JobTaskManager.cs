@@ -40,7 +40,10 @@ public class JobTaskManager : IJobTaskManager, ITransientDependency
                 ?? throw new EntityNotFoundException(nameof(JobTask), id);
     }
 
-    public async Task<JobTask> UpdateJobTaskAsync(JobTask jobTask, bool forceUpdate = false, CancellationToken cancellationToken = default)
+    public async Task<JobTask> UpdateJobTaskAsync(
+        JobTask jobTask,
+        bool forceUpdate = false,
+        CancellationToken cancellationToken = default)
     {
         _jobTaskRepository.Update(jobTask, forceUpdate);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
