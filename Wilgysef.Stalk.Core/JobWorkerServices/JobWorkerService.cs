@@ -69,6 +69,7 @@ public class JobWorkerService : IJobWorkerService, ITransientDependency
         _jobWorkerCollectionService.CancelJobWorkerToken(worker);
         await _jobWorkerCollectionService.GetJobWorkerTask(worker);
         _jobWorkerCollectionService.RemoveJobWorker(worker);
+        worker.Dispose();
         return true;
     }
 

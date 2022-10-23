@@ -142,6 +142,8 @@ public class JobTaskWorker : IJobTaskWorker
         }
     }
 
+    public void Dispose() { }
+
     protected virtual async Task ExtractAsync(CancellationToken cancellationToken)
     {
         using var scope = _lifetimeScope.BeginLifetimeScope();
