@@ -58,7 +58,7 @@ public interface IRepository<T> where T : class
 
     #region Update
 
-    T Update(T entity);
+    T Update(T entity, bool forceUpdate = false);
 
     void UpdateRange(params T[] entities);
 

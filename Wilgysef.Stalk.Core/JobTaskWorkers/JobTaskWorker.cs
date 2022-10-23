@@ -125,7 +125,7 @@ public class JobTaskWorker : IJobTaskWorker
                     }
 
                     JobTask.Deactivate();
-                    await jobTaskManager.UpdateJobTaskAsync(JobTask, CancellationToken.None);
+                    await jobTaskManager.UpdateJobTaskAsync(JobTask, false, CancellationToken.None);
                 }
                 catch (Exception exception)
                 {

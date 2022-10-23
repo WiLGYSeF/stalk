@@ -146,7 +146,7 @@ public abstract class BaseTest
             builder,
             new LoggerFactory(new[] { new DebugLoggerProvider() }).CreateLogger("test"),
             null,
-            t => (Activator.CreateInstance(t) as IOptionSection)!);
+            t => (IOptionSection)Activator.CreateInstance(t)!);
 
         ReplaceSingletonService<Core.Shared.Loggers.ILoggerFactory, LoggerFactoryMock>();
 

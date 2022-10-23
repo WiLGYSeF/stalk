@@ -124,9 +124,15 @@ public abstract class GenericRepository<T> : IRepository<T>, ISpecificationRepos
 
     #region Update
 
-    public virtual T Update(T entity)
+    public virtual T Update(T entity, bool forceUpdate = false)
     {
-        return GetDbSet().Update(entity).Entity;
+        var entry = _dbContext.Entry(entity);
+
+        if (forceUpdate || entry.State == EntityState.Detached)
+        {
+            return GetDbSet().Update(entity).Entity;
+        }
+        return entity;
     }
 
     public virtual void UpdateRange(params T[] entities)

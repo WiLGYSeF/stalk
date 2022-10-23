@@ -170,7 +170,7 @@ public class JobWorker : IJobWorker
                         }
 
                         Job.Deactivate();
-                        await jobManager.UpdateJobAsync(Job, CancellationToken.None);
+                        await jobManager.UpdateJobAsync(Job, false, CancellationToken.None);
                     },
                     exception => _logger?.LogError(exception, "Failed to update Job {JobId} state.", Job?.Id),
                     TimeSpan.FromSeconds(1));

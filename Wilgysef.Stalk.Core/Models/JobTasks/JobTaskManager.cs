@@ -34,20 +34,15 @@ public class JobTaskManager : IJobTaskManager, ITransientDependency
 
     public async Task<JobTask> GetJobTaskAsync(long id, CancellationToken cancellationToken = default)
     {
-        var entity = await _jobTaskRepository.FirstOrDefaultAsync(
+        return await _jobTaskRepository.FirstOrDefaultAsync(
             new JobTaskSingleSpecification(jobTaskId: id),
-            cancellationToken);
-        if (entity == null)
-        {
-            throw new EntityNotFoundException(nameof(JobTask), id);
-        }
-
-        return entity;
+            cancellationToken)
+                ?? throw new EntityNotFoundException(nameof(JobTask), id);
     }
 
-    public async Task<JobTask> UpdateJobTaskAsync(JobTask jobTask, CancellationToken cancellationToken = default)
+    public async Task<JobTask> UpdateJobTaskAsync(JobTask jobTask, bool forceUpdate = false, CancellationToken cancellationToken = default)
     {
-        _jobTaskRepository.Update(jobTask);
+        _jobTaskRepository.Update(jobTask, forceUpdate);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return jobTask;
     }
@@ -72,6 +67,6 @@ public class JobTaskManager : IJobTaskManager, ITransientDependency
 
         jobTask.ChangeState(JobTaskState.Active);
 
-        await UpdateJobTaskAsync(jobTask, cancellationToken);
+        await UpdateJobTaskAsync(jobTask, false, cancellationToken);
     }
 }

@@ -30,9 +30,10 @@ public interface IJobTaskManager
     /// Updates job task.
     /// </summary>
     /// <param name="jobTask">Job task.</param>
+    /// <param name="forceUpdate">Indicates if the job task's properties should be force updated.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns></returns>
-    Task<JobTask> UpdateJobTaskAsync(JobTask jobTask, CancellationToken cancellationToken = default);
+    Task<JobTask> UpdateJobTaskAsync(JobTask jobTask, bool forceUpdate = false, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Deletes job task.

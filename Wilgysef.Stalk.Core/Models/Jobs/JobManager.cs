@@ -39,28 +39,18 @@ public class JobManager : IJobManager, ITransientDependency
 
     public async Task<Job> GetJobAsync(long id, bool readOnly, CancellationToken cancellationToken = default)
     {
-        var entity = await _jobRepository.FirstOrDefaultAsync(
+        return await _jobRepository.FirstOrDefaultAsync(
             new JobSingleSpecification(jobId: id, readOnly: readOnly),
-            cancellationToken);
-        if (entity == null)
-        {
-            throw new EntityNotFoundException(nameof(Job), id);
-        }
-
-        return entity;
+            cancellationToken)
+                ?? throw new EntityNotFoundException(nameof(Job), id);
     }
 
     public async Task<Job> GetJobByTaskIdAsync(long id, CancellationToken cancellationToken = default)
     {
-        var entity = await _jobRepository.FirstOrDefaultAsync(
+        return await _jobRepository.FirstOrDefaultAsync(
             new JobSingleSpecification(taskId: id),
-            cancellationToken);
-        if (entity == null)
-        {
-            throw new EntityNotFoundException(nameof(Job), id);
-        }
-
-        return entity;
+            cancellationToken)
+                ?? throw new EntityNotFoundException(nameof(Job), id);
     }
 
     public async Task<List<Job>> GetJobsAsync(CancellationToken cancellationToken = default)
@@ -87,9 +77,9 @@ public class JobManager : IJobManager, ITransientDependency
             cancellationToken);
     }
 
-    public async Task<Job> UpdateJobAsync(Job job, CancellationToken cancellationToken = default)
+    public async Task<Job> UpdateJobAsync(Job job, bool forceUpdate = false, CancellationToken cancellationToken = default)
     {
-        _jobRepository.Update(job);
+        _jobRepository.Update(job, forceUpdate);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return job;
     }
@@ -120,7 +110,7 @@ public class JobManager : IJobManager, ITransientDependency
 
         job.ChangeState(JobState.Active);
 
-        await UpdateJobAsync(job, cancellationToken);
+        await UpdateJobAsync(job, false, cancellationToken);
     }
 
     public async Task DeactivateJobsAsync(CancellationToken cancellationToken = default)

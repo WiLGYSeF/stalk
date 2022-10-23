@@ -71,9 +71,10 @@ public interface IJobManager
     /// Updates job.
     /// </summary>
     /// <param name="job">Job.</param>
+    /// <param name="forceUpdate">Indicates if the job's properties should be force updated.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns></returns>
-    Task<Job> UpdateJobAsync(Job job, CancellationToken cancellationToken = default);
+    Task<Job> UpdateJobAsync(Job job, bool forceUpdate = false, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Updates jobs.
