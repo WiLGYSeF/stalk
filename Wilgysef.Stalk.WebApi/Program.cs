@@ -26,8 +26,10 @@ ConfigureConfiguration();
 ConfigureServices();
 ConfigureSwagger();
 
+var appOptions = GetOptions<AppOptions>(builder.Configuration);
+
+builder.WebHost.UseUrls(appOptions.Urls.ToArray());
 var app = builder.Build();
-var appOptions = GetOptions<AppOptions>(app.Configuration);
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
