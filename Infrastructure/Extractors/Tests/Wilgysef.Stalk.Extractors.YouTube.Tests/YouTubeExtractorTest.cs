@@ -121,6 +121,7 @@ public class YouTubeExtractorTest : BaseTest
     [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/videos", true)]
     [InlineData("https://www.youtube.com/playlist?list=UUdYR5Oyz8Q4g0ZmB4PkTD7g", true)]
     [InlineData("https://www.youtube.com/watch?v=_BSSJi-sHh8", true)]
+    [InlineData("https://www.youtube.com/shorts/5p_ysxbwiAs", true)]
     [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community", true)]
     public void Can_Extract(string uri, bool expected)
     {
@@ -129,6 +130,7 @@ public class YouTubeExtractorTest : BaseTest
 
     [Theory]
     [InlineData("https://www.youtube.com/watch?v=_BSSJi-sHh8", "_BSSJi-sHh8")]
+    [InlineData("https://www.youtube.com/shorts/5p_ysxbwiAs", "5p_ysxbwiAs")]
     [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community?lb=UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP", "UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")]
     [InlineData("https://www.youtube.com/post/UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP", "UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")]
     [InlineData("https://www.youtube.com/watch", null)]
@@ -213,14 +215,43 @@ public class YouTubeExtractorTest : BaseTest
         videoResult.Metadata["origin", "item_id_seq"].ShouldBe("UCdYR5Oyz8Q4g0ZmB4PkTD7g#video#20210407__BSSJi-sHh8");
         videoResult.Metadata["video", "comment_count"].ShouldBe("5.4K");
         videoResult.Metadata["video", "description"].ShouldBe("I love shotguns!!!\n私の初めての英語のカバー曲です。温かく見守ってください。\nIt's my first cover in English song! Please listen warmly!\n\noriginal : The Cab Angel With A Shotgun\nmix : たけまる 様 @takemaru_game\nillust : あやみ 様 @ayamy_garubinu\nvocal,movie : うと @amatsukauto\n\n☆゜+.*.+゜☆゜+.*.+゜☆゜+.*.+゜☆");
-        videoResult.Metadata["video", "duration_seconds"].ShouldBe(225.966);
         videoResult.Metadata["video", "duration"].ShouldBe("03:45");
-        videoResult.Metadata["video", "like_count"].ShouldBe("113,285 likes");
+        videoResult.Metadata["video", "duration_seconds"].ShouldBe(225.966);
         videoResult.Metadata["video", "id"].ShouldBe("_BSSJi-sHh8");
         videoResult.Metadata["video", "is_members_only"].ShouldBe(false);
+        videoResult.Metadata["video", "like_count"].ShouldBe("113,285 likes");
         videoResult.Metadata["video", "published"].ShouldBe("20210407");
         videoResult.Metadata["video", "title"].ShouldBe("Angel With A Shotgun covered by amatsukauto ໒꒱· ﾟ");
         videoResult.Metadata["video", "view_count"].ShouldBe("2,700,338 views");
+        videoResult.Type.ShouldBe(JobTaskType.Download);
+    }
+
+    [Fact]
+    public async Task Get_Short()
+    {
+        var results = await _youTubeExtractor.ExtractAsync(
+            new Uri("https://www.youtube.com/shorts/5p_ysxbwiAs"),
+            null,
+            new MetadataObject()).ToListAsync();
+
+        results.Count.ShouldBe(1);
+        var videoResult = results.Single(r => r.ItemId == "5p_ysxbwiAs");
+        videoResult.Uri.AbsoluteUri.ShouldBe("https://www.youtube.com/watch?v=5p_ysxbwiAs");
+        videoResult.Metadata!["channel", "id"].ShouldBe("UCIaC5td9nGG6JeKllWLwFLA");
+        videoResult.Metadata["channel", "name"].ShouldBe("有栖マナAlice mana");
+        videoResult.Metadata["file", "extension"].ShouldBe("%(ext)s");
+        videoResult.Metadata["origin", "item_id_seq"].ShouldBe("UCIaC5td9nGG6JeKllWLwFLA#video#20221022_5p_ysxbwiAs");
+        videoResult.Metadata["origin", "uri"].ShouldBe("https://www.youtube.com/shorts/5p_ysxbwiAs");
+        videoResult.Metadata["video", "comment_count"].ShouldBe("71");
+        videoResult.Metadata["video", "description"].ShouldBe("Twiter-https://twitter.com/Alicemana_v\n\nFanart-#マナート 配信タグ #alicelive #shorts");
+        videoResult.Metadata["video", "duration"].ShouldBe("00:23");
+        videoResult.Metadata["video", "duration_seconds"].ShouldBe(23.999);
+        videoResult.Metadata["video", "id"].ShouldBe("5p_ysxbwiAs");
+        videoResult.Metadata["video", "is_members_only"].ShouldBe(false);
+        videoResult.Metadata["video", "like_count"].ShouldBe("1,121 likes");
+        videoResult.Metadata["video", "published"].ShouldBe("20221022");
+        videoResult.Metadata["video", "title"].ShouldBe("変態ASMR");
+        videoResult.Metadata["video", "view_count"].ShouldBe("6,472 views");
         videoResult.Type.ShouldBe(JobTaskType.Download);
     }
 

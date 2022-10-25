@@ -81,6 +81,8 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
                 return ExtractPlaylistAsync(uri, metadata, cancellationToken);
             case ExtractType.Video:
                 return ExtractVideoAsync(uri, metadata, cancellationToken);
+            case ExtractType.Short:
+                return ExtractShortAsync(uri, metadata, cancellationToken);
             case ExtractType.Community:
                 return communityExtractor.ExtractCommunityAsync(uri, metadata, cancellationToken);
             case ExtractType.Membership:
@@ -102,6 +104,11 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
             {
                 return videoId;
             }
+        }
+
+        if (Consts.ShortRegex.TryMatch(leftUri, out var shortMatch))
+        {
+            return shortMatch.Groups[Consts.ShortRegexShortGroup].Value;
         }
 
         if (Consts.CommunityRegex.IsMatch(leftUri))
@@ -263,7 +270,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         metadata[MetadataVideoDescriptionKeys] = description;
         metadata[MetadataVideoLikeCountKeys] = likeCount;
         metadata[MetadataVideoCommentCountKeys] = commentCount;
-        metadata[MetadataVideoIsMembersOnlyKeys] = initialData.SelectToken("$..membershipButton") != null;
+        metadata[MetadataVideoIsMembersOnlyKeys] = initialData.SelectTokens("$..badges[*].metadataBadgeRenderer.icon.iconType").Any(t => t.ToString() == "SPONSORSHIP_STAR");
 
         var thumbnailResult = await ExtractThumbnailAsync(
             channelId,
@@ -287,6 +294,17 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
             videoId,
             JobTaskType.Download,
             metadata: metadata);
+    }
+
+    private IAsyncEnumerable<ExtractResult> ExtractShortAsync(
+        Uri uri,
+        IMetadataObject metadata,
+        CancellationToken cancellationToken)
+    {
+        var match = Consts.ShortRegex.Match(uri.AbsoluteUri);
+        var shortId = match.Groups[Consts.ShortRegexShortGroup].Value;
+        metadata[MetadataObjectConsts.Origin.UriKeys] = uri.AbsoluteUri;
+        return ExtractVideoAsync(new Uri($"https://www.youtube.com/watch?v={shortId}"), metadata, cancellationToken);
     }
 
     private async Task<ExtractResult?> ExtractThumbnailAsync(
@@ -472,6 +490,10 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         {
             return ExtractType.Video;
         }
+        if (Consts.ShortRegex.IsMatch(leftUri))
+        {
+            return ExtractType.Short;
+        }
         return null;
     }
 
@@ -535,6 +557,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         Videos,
         Playlist,
         Video,
+        Short,
         Community,
         Membership,
     }
