@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Diagnostics;
+using System.Reflection;
 
 namespace Wilgysef.Stalk.Application.AssemblyLoaders;
 
@@ -14,6 +15,12 @@ internal static class AssemblyLoader
                 assemblies.Add(Assembly.LoadFrom(file));
             }
             catch (BadImageFormatException) { }
+            catch (FileLoadException)
+            {
+                Console.WriteLine($"Failed to load external assembly: {file}");
+                Debug.WriteLine($"Failed to load external assembly: {file}");
+                throw;
+            }
         }
         return assemblies;
     }
