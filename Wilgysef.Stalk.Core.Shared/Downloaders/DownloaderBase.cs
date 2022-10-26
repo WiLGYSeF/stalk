@@ -109,7 +109,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
                 cancellationToken))
             {
                 var resultMetadata = metadata.Copy();
-                resultMetadata.TryAddValue(DateTimeOffset.Now.ToString(), MetadataObjectConsts.RetrievedKeys);
+                resultMetadata.TryAddValue(DateTimeOffset.Now.ToString("u"), MetadataObjectConsts.RetrievedKeys);
 
                 if (downloadFileResult.FileSize.HasValue)
                 {

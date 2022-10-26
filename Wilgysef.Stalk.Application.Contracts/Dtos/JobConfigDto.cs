@@ -2,7 +2,7 @@
 
 public class JobConfigDto
 {
-    public int? MaxTaskWorkerCount { get; set; } = 4;
+    public int? MaxTaskWorkerCount { get; set; }
 
     public string? DownloadFilenameTemplate { get; set; }
 

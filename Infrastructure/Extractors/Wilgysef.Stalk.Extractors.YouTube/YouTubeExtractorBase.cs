@@ -252,17 +252,24 @@ public abstract class YouTubeExtractorBase
             dateTime = dateTime[streamedLiveOn.Length..];
         }
 
+        var streamed = "Streamed ";
+        if (dateTime.StartsWith(streamed))
+        {
+            dateTime = dateTime[streamed.Length..];
+        }
+
+        var premiered = "Premiered ";
+        if (dateTime.StartsWith(premiered))
+        {
+            dateTime = dateTime[premiered.Length..];
+        }
+
         var editedIndex = dateTime.IndexOf(" (edited)");
         if (editedIndex != -1)
         {
             dateTime = dateTime[..editedIndex];
         }
 
-        var streamed = "Streamed ";
-        if (dateTime.StartsWith(streamed))
-        {
-            dateTime = dateTime[streamed.Length..];
-        }
         return dateTime;
     }
 
