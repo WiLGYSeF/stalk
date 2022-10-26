@@ -85,6 +85,8 @@ public class UpdateJobTest : BaseTest
     [InlineData(nameof(JobConfigDto.MetadataFilenameTemplate), "a", null)]
     [InlineData(nameof(JobConfigDto.SaveMetadata), false, true)]
     [InlineData(nameof(JobConfigDto.SaveMetadata), false, null)]
+    [InlineData(nameof(JobConfigDto.SaveFilenameTemplatesMetadata), false, true)]
+    [InlineData(nameof(JobConfigDto.SaveFilenameTemplatesMetadata), false, null)]
     [InlineData(nameof(JobConfigDto.ItemIdPath), "a", "b")]
     [InlineData(nameof(JobConfigDto.ItemIdPath), "a", null)]
     [InlineData(nameof(JobConfigDto.SaveItemIds), false, true)]

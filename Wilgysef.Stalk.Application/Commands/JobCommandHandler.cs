@@ -121,6 +121,7 @@ public class JobCommandHandler : Command,
         SetIfNotNull(v => jobConfig.DownloadData = v!.Value, () => config.DownloadData);
         SetIfNotNull(v => jobConfig.MetadataFilenameTemplate = v, () => config.MetadataFilenameTemplate);
         SetIfNotNull(v => jobConfig.SaveMetadata = v!.Value, () => config.SaveMetadata);
+        SetIfNotNull(v => jobConfig.SaveFilenameTemplatesMetadata = v!.Value, () => config.SaveFilenameTemplatesMetadata);
         SetIfNotNull(v => jobConfig.ItemIdPath = v, () => config.ItemIdPath);
         SetIfNotNull(v => jobConfig.SaveItemIds = v!.Value, () => config.SaveItemIds);
         SetIfNotNull(v => jobConfig.StopWithNoNewItemIds = v!.Value, () => config.StopWithNoNewItemIds);
