@@ -1,0 +1,182 @@
+﻿{
+  "data": {
+    "user": {
+      "result": {
+        "__typename": "User",
+        "id": "VXNlcjoxMzA4MzM0NjM0NzQ1MjQ5Nzkz",
+        "rest_id": "1308334634745249793",
+        "affiliates_highlighted_label": {},
+        "has_nft_avatar": false,
+        "legacy": {
+          "created_at": "Tue Sep 22 09:17:48 +0000 2020",
+          "default_profile": true,
+          "default_profile_image": false,
+          "description": "すきなときにすきなだけ ჱ̒^._.^）￤ #utoart #Tenshimp #Utomeme ￤🤍 @aoinabi @Takeshitafungi ￤Twitch https://t.co/KUDHJ2sEBi",
+          "entities": {
+            "description": {
+              "urls": [
+                {
+                  "display_url": "twitch.tv/utonyan/about",
+                  "expanded_url": "https://www.twitch.tv/utonyan/about",
+                  "url": "https://t.co/KUDHJ2sEBi",
+                  "indices": [
+                    85,
+                    108
+                  ]
+                }
+              ]
+            },
+            "url": {
+              "urls": [
+                {
+                  "display_url": "youtube.com/channel/UCdYR5…",
+                  "expanded_url": "https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g",
+                  "url": "https://t.co/ZlPIWvb8Sv",
+                  "indices": [
+                    0,
+                    23
+                  ]
+                }
+              ]
+            }
+          },
+          "fast_followers_count": 0,
+          "favourites_count": 5959,
+          "followers_count": 239139,
+          "friends_count": 202,
+          "has_custom_timelines": false,
+          "is_translator": false,
+          "listed_count": 468,
+          "location": "",
+          "media_count": 130,
+          "name": "天使うと ☁ AmatsukaUto",
+          "normal_followers_count": 239139,
+          "pinned_tweet_ids_str": [],
+          "possibly_sensitive": false,
+          "profile_banner_extensions": {
+            "mediaColor": {
+              "r": {
+                "ok": {
+                  "palette": [
+                    {
+                      "percentage": 89.21,
+                      "rgb": {
+                        "blue": 243,
+                        "green": 227,
+                        "red": 226
+                      }
+                    },
+                    {
+                      "percentage": 6.6,
+                      "rgb": {
+                        "blue": 233,
+                        "green": 234,
+                        "red": 253
+                      }
+                    },
+                    {
+                      "percentage": 1.51,
+                      "rgb": {
+                        "blue": 254,
+                        "green": 234,
+                        "red": 186
+                      }
+                    },
+                    {
+                      "percentage": 1.36,
+                      "rgb": {
+                        "blue": 243,
+                        "green": 199,
+                        "red": 158
+                      }
+                    },
+                    {
+                      "percentage": 0.82,
+                      "rgb": {
+                        "blue": 205,
+                        "green": 194,
+                        "red": 234
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "profile_banner_url": "https://pbs.twimg.com/profile_banners/1308334634745249793/1660738736",
+          "profile_image_extensions": {
+            "mediaColor": {
+              "r": {
+                "ok": {
+                  "palette": [
+                    {
+                      "percentage": 89.49,
+                      "rgb": {
+                        "blue": 248,
+                        "green": 230,
+                        "red": 227
+                      }
+                    },
+                    {
+                      "percentage": 5.85,
+                      "rgb": {
+                        "blue": 219,
+                        "green": 169,
+                        "red": 135
+                      }
+                    },
+                    {
+                      "percentage": 2.75,
+                      "rgb": {
+                        "blue": 212,
+                        "green": 189,
+                        "red": 229
+                      }
+                    },
+                    {
+                      "percentage": 0.98,
+                      "rgb": {
+                        "blue": 145,
+                        "green": 121,
+                        "red": 119
+                      }
+                    },
+                    {
+                      "percentage": 0.57,
+                      "rgb": {
+                        "blue": 244,
+                        "green": 227,
+                        "red": 184
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "profile_image_url_https": "https://pbs.twimg.com/profile_images/1564257988126593026/RngCt9R0_normal.jpg",
+          "profile_interstitial_type": "",
+          "protected": false,
+          "screen_name": "amatsukauto",
+          "statuses_count": 655,
+          "translator_type": "none",
+          "url": "https://t.co/ZlPIWvb8Sv",
+          "verified": false,
+          "withheld_in_countries": []
+        },
+        "super_follow_eligible": false,
+        "super_followed_by": false,
+        "super_following": false,
+        "legacy_extended_profile": {
+          "birthdate": {
+            "day": 14,
+            "month": 10,
+            "visibility": "Public",
+            "year_visibility": "Self"
+          }
+        },
+        "is_profile_translatable": false
+      }
+    }
+  }
+}

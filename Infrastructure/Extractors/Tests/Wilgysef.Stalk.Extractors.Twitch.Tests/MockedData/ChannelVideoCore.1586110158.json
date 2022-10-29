@@ -1,0 +1,37 @@
+﻿[
+  {
+    "data": {
+      "video": {
+        "id": "1586110158",
+        "owner": {
+          "id": "662849096",
+          "login": "utonyan",
+          "displayName": "utonyan",
+          "primaryColorHex": "FFFFFF",
+          "profileImageURL": "https://static-cdn.jtvnw.net/jtv_user_pictures/f4313224-9ca2-42de-9421-a3078532c45b-profile_image-70x70.png",
+          "stream": null,
+          "__typename": "User",
+          "channel": {
+            "id": "662849096",
+            "self": {
+              "isAuthorized": true,
+              "restrictionType": null,
+              "__typename": "ChannelSelfEdge"
+            },
+            "trailer": {
+              "video": null,
+              "__typename": "Trailer"
+            },
+            "__typename": "Channel"
+          }
+        },
+        "__typename": "Video"
+      }
+    },
+    "extensions": {
+      "durationMilliseconds": 93,
+      "operationName": "ChannelVideoCore",
+      "requestID": "01GFAA4T7A216A5MH8BPFFB5DV"
+    }
+  }
+]
