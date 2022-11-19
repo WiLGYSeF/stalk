@@ -10,6 +10,8 @@ namespace Wilgysef.HttpClientInterception
 {
     public class HttpClientInterceptor : MessageProcessingHandler
     {
+        // TODO: RemoveRule for Uri, string, Regex
+
         public List<HttpClientInterceptionRule> Rules => _rules;
 
         public event EventHandler<HttpRequestMessage>? RequestProcessed;
@@ -53,6 +55,22 @@ namespace Wilgysef.HttpClientInterception
         {
             _rules.Add(rule);
             return this;
+        }
+
+        public HttpClientInterceptor AddRule(HttpClientInterceptionRule rule, int index)
+        {
+            _rules.Insert(index, rule);
+            return this;
+        }
+
+        public bool RemoveRule(HttpClientInterceptionRule rule)
+        {
+            return _rules.Remove(rule);
+        }
+
+        public void ClearRules()
+        {
+            _rules.Clear();
         }
 
         #region AddUri

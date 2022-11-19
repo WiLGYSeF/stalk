@@ -23,11 +23,12 @@ public class TwitterExtractorTest : BaseTest
     private const string GuestTokenEndpoint = "https://api.twitter.com/1.1/guest/activate.json";
 
     private readonly TwitterExtractor _twitterExtractor;
+    private readonly HttpClientInterceptor _interceptor;
 
     public TwitterExtractorTest()
     {
-        var interceptor = HttpClientInterceptor.Create();
-        interceptor
+        _interceptor = HttpClientInterceptor.Create();
+        _interceptor
             .AddForAny(_ => new HttpResponseMessage(HttpStatusCode.NotFound))
             .AddUri(UserByScreenNameRegex, request =>
             {
@@ -56,7 +57,7 @@ public class TwitterExtractorTest : BaseTest
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Activate.json");
             });
 
-        _twitterExtractor = new TwitterExtractor(new HttpClient(interceptor));
+        _twitterExtractor = new TwitterExtractor(new HttpClient(_interceptor));
     }
 
     [Theory]
@@ -283,6 +284,22 @@ public class TwitterExtractorTest : BaseTest
         result.Metadata["user", "id"].ShouldBe("1308334634745249793");
         result.Metadata["user", "screen_name"].ShouldBe("amatsukauto");
         result.Type.ShouldBe(JobTaskType.Download);
+    }
+
+    [Fact]
+    public async Task Get_Tweets_AgeRestricted()
+    {
+        _interceptor.AddUri(
+            UserTweetsRegex,
+            request => HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.UserTweets.AgeRestricted.json"));
+
+        var results = await _twitterExtractor.ExtractAsync(
+            new Uri("https://twitter.com/amatsukauto"),
+            null,
+            new MetadataObject()).ToListAsync();
+
+        results.Count.ShouldBe(65);
+        results.Count(r => r.Uri.AbsoluteUri.StartsWith("https://twitter.com/")).ShouldBe(2);
     }
 
     private static JsonNode GetUriQueryVariables(Uri uri)

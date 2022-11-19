@@ -15,8 +15,9 @@ namespace Wilgysef.Stalk.Extractors.Twitter;
 
 public class TwitterExtractor : IExtractor
 {
-    // TODO: login?
-    // TODO: tweet replies?
+    // TODO: check large number of user tweets are retrieved
+    // TODO: login
+    // TODO: tweet replies
 
     private const string UserByScreenNameEndpoint = "https://twitter.com/i/api/graphql/vG3rchZtwqiwlKgUYCrTRA/UserByScreenName";
     private const string UserTweetsEndpoint = "https://twitter.com/i/api/graphql/q881FFtQa69KN7jS9h_EDA/UserTweets";
@@ -139,8 +140,34 @@ public class TwitterExtractor : IExtractor
 
             foreach (var tweet in tweets)
             {
-                foreach (var result in ExtractTweet(tweet, metadata))
+                var results = ExtractTweet(tweet, metadata).GetEnumerator();
+
+                while (true)
                 {
+                    ExtractResult result;
+
+                    try
+                    {
+                        if (!results.MoveNext())
+                        {
+                            break;
+                        }
+                        result = results.Current;
+                    }
+                    catch
+                    {
+                        var entryId = GetEntryIdUpwards(tweet);
+                        if (entryId == null)
+                        {
+                            break;
+                        }
+
+                        result = new ExtractResult(
+                            GetTweetUri(userId, entryId),
+                            $"{userId}#{entryId}",
+                            JobTaskType.Extract);
+                    }
+
                     yield return result;
                 }
             }
@@ -379,6 +406,22 @@ public class TwitterExtractor : IExtractor
         return match.Success
             ? $"https://pbs.twimg.com/media/{match.Groups["id"].Value}?format={match.Groups["extension"].Value}&name=large"
             : uri;
+    }
+
+    private static string? GetEntryIdUpwards(JToken tweet)
+    {
+        for (var current = tweet; current != null; current = current.Parent)
+        {
+            if (current is JObject)
+            {
+                var entryId = current["entryId"]?.ToString();
+                if (entryId != null && entryId.StartsWith("tweet-"))
+                {
+                    return entryId["tweet-".Length..];
+                }
+            }
+        }
+        return null;
     }
 
     private async Task<string> GetUserIdAsync(string userScreenName, CancellationToken cancellationToken)
