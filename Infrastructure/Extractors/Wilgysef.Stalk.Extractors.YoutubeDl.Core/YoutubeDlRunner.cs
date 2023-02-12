@@ -143,6 +143,8 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
 
             configure?.Invoke(startInfo);
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             var process = FindAndStartProcess(startInfo);
 
             Logger?.LogDebug("Running youtube-dl: {Filename} {ArgumentList}", startInfo.FileName, startInfo.ArgumentList);
@@ -157,10 +159,16 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
                 _errorCallbacks[process.Id] = errorCallback;
             }
 
-            process.OutputDataReceived += Process_OutputDataReceived;
-            process.ErrorDataReceived += Process_ErrorDataReceived;
+            process.OutputDataReceived += OnOutputDataReceived;
+            process.ErrorDataReceived += OnErrorDataReceived;
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
+
+            if (cancellationToken.IsCancellationRequested)
+            {
+                process.Kill();
+                cancellationToken.ThrowIfCancellationRequested();
+            }
 
             return process;
         }
@@ -187,7 +195,7 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
             }
         }
 
-        protected virtual void Process_OutputDataReceived(object sender, DataReceivedEventArgs args)
+        protected virtual void OnOutputDataReceived(object sender, DataReceivedEventArgs args)
         {
             if (args.Data == null)
             {
@@ -265,7 +273,7 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
             }
         }
 
-        protected virtual void Process_ErrorDataReceived(object sender, DataReceivedEventArgs args)
+        protected virtual void OnErrorDataReceived(object sender, DataReceivedEventArgs args)
         {
             if (args.Data == null)
             {

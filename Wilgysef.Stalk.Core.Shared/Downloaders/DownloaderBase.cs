@@ -59,11 +59,15 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
         public virtual IDictionary<string, object?> Config { get; set; } = new Dictionary<string, object?>();
 
-        private readonly IFileSystem _fileSystem;
-        private readonly IStringFormatter _stringFormatter;
-        private readonly IFilenameSlugSelector _filenameSlugSelector;
-        private readonly IMetadataSerializer _metadataSerializer;
-        private HttpClient _httpClient;
+        protected IFileSystem FileSystem { get; }
+
+        protected IStringFormatter StringFormatter { get; }
+
+        protected IFilenameSlugSelector FilenameSlugSelector { get; }
+
+        protected IMetadataSerializer MetadataSerializer { get; }
+
+        protected HttpClient HttpClient { get; set; }
 
         protected DownloaderBase(
             IFileSystem fileSystem,
@@ -72,11 +76,11 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             IMetadataSerializer metadataSerializer,
             HttpClient httpClient)
         {
-            _fileSystem = fileSystem;
-            _stringFormatter = stringFormatter;
-            _filenameSlugSelector = filenameSlugSelector;
-            _metadataSerializer = metadataSerializer;
-            _httpClient = httpClient;
+            FileSystem = fileSystem;
+            StringFormatter = stringFormatter;
+            FilenameSlugSelector = filenameSlugSelector;
+            MetadataSerializer = metadataSerializer;
+            HttpClient = httpClient;
         }
 
         public abstract bool CanDownload(Uri uri);
@@ -145,7 +149,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
         public virtual void SetHttpClient(HttpClient client)
         {
-            _httpClient = client;
+            HttpClient = client;
         }
 
         public virtual void Dispose() { }
@@ -169,7 +173,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
             if (Config.TryGetValueAs<bool, string, object?>(ConfigKeys.SkipExisting, out var skipExisting)
                 && skipExisting
-                && _fileSystem.File.Exists(filename))
+                && FileSystem.File.Exists(filename))
             {
                 Logger?.LogInformation("Skipping download from {Uri}, file already exists: {Filename}", uri.AbsoluteUri, filename);
                 yield break;
@@ -178,7 +182,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             CreateDirectoriesFromFilename(filename);
 
             using var stream = await GetFileStreamAsync(uri, requestData, cancellationToken);
-            using var fileStream = _fileSystem.File.Open(filename, FileMode.CreateNew);
+            using var fileStream = FileSystem.File.Open(filename, FileMode.CreateNew);
 
             yield return await SaveStreamAsync(
                 stream,
@@ -202,8 +206,8 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             CancellationToken cancellationToken = default)
         {
             var response = requestData != null
-                ? await _httpClient.SendAsync(requestData.CreateRequest(uri), cancellationToken)
-                : await _httpClient.GetAsync(uri, cancellationToken);
+                ? await HttpClient.SendAsync(requestData.CreateRequest(uri), cancellationToken)
+                : await HttpClient.GetAsync(uri, cancellationToken);
             response.EnsureSuccessStatusCode();
 
             return await response.Content.ReadAsStreamAsync();
@@ -290,9 +294,9 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
             try
             {
-                using var stream = _fileSystem.File.Open(metadataFilename, FileMode.CreateNew);
+                using var stream = FileSystem.File.Open(metadataFilename, FileMode.CreateNew);
                 using var writer = new StreamWriter(stream);
-                _metadataSerializer.Serialize(writer, metadata.GetDictionary());
+                MetadataSerializer.Serialize(writer, metadata.GetDictionary());
             }
             catch (IOException exception)
             {
@@ -316,16 +320,16 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
             IMetadataObject metadata,
             bool isMetadataFilename)
         {
-            var formattedFilename = _stringFormatter.Format(filenameTemplate, formatValues);
+            var formattedFilename = StringFormatter.Format(filenameTemplate, formatValues);
 
             if (formattedFilename == filenameTemplate)
             {
-                formattedFilename = _fileSystem.Path.Combine(
+                formattedFilename = FileSystem.Path.Combine(
                     filenameTemplate,
                     GetDefaultFilename(metadata, isMetadataFilename));
             }
 
-            return _filenameSlugSelector
+            return FilenameSlugSelector
                 .GetFilenameSlugByPlatform()
                 .SlugifyPath(formattedFilename);
         }
@@ -385,10 +389,10 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// <param name="filename">Filename path.</param>
         protected void CreateDirectoriesFromFilename(string filename)
         {
-            var dirname = _fileSystem.Path.GetDirectoryName(filename);
+            var dirname = FileSystem.Path.GetDirectoryName(filename);
             if (!string.IsNullOrEmpty(dirname))
             {
-                _fileSystem.Directory.CreateDirectory(dirname);
+                FileSystem.Directory.CreateDirectory(dirname);
             }
         }
     }
