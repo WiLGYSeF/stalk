@@ -114,12 +114,12 @@ public class CacheObject<TKey, TValue> : ICacheObject<TKey, TValue> where TKey :
         return value;
     }
 
-    private static bool IsCacheValueExpired(CacheValue<TValue> cacheValue)
+    private static bool IsCacheValueExpired(in CacheValue<TValue> cacheValue)
     {
         return cacheValue.Expires.HasValue && cacheValue.Expires.Value < DateTime.Now;
     }
 
-    private class CacheValue<T>
+    private struct CacheValue<T>
     {
         public T? Value { get; }
 

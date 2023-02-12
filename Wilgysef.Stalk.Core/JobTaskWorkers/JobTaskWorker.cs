@@ -7,7 +7,6 @@ using Wilgysef.Stalk.Core.ExtractorHttpClientFactories;
 using Wilgysef.Stalk.Core.ItemIdSetServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
-using Wilgysef.Stalk.Core.Shared;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.Core.Shared.Extractors;
@@ -100,7 +99,7 @@ public class JobTaskWorker : IJobTaskWorker
 
                 var retryJobTask = await CheckAndRetryJobAsync(exception);
 
-                fail = new(
+                fail = new JobTaskFailResult(
                     retryJobTask?.Id,
                     workerException?.Code,
                     exception.Message,
@@ -158,9 +157,7 @@ public class JobTaskWorker : IJobTaskWorker
 
         if (extractor == null)
         {
-            throw new JobTaskWorkerException(
-                StalkErrorCodes.JobTaskWorkerNoExtractor,
-                $"No extractor found to extract from {jobTaskUri}");
+            throw new JobTaskNoExtractorException(jobTaskUri);
         }
 
         var extractorConfig = JobConfig.GetExtractorConfig(extractor);
@@ -183,6 +180,8 @@ public class JobTaskWorker : IJobTaskWorker
         if (JobConfig.SaveItemIds && JobConfig.ItemIdPath != null)
         {
             itemIds = await itemIdSetService.GetItemIdSetAsync(JobConfig.ItemIdPath, JobTask.JobId);
+            _logger?.LogDebug("Job task {JobTaskId} loaded {ItemIdsCount} from the item Id set", JobTask.Id, itemIds.Count);
+
             var itemId = JobTask.ItemId ?? extractor.GetItemId(jobTaskUri);
             if (itemId != null && itemIds.Contains(itemId))
             {
@@ -269,7 +268,7 @@ public class JobTaskWorker : IJobTaskWorker
         }
         if (JobConfig.DownloadFilenameTemplate == null)
         {
-            throw new JobTaskWorkerException("No download filename template given.");
+            throw new JobTaskNoDownloadFilenameTemplateException();
         }
 
         var httpClientFactory = scope.GetRequiredService<IExtractorHttpClientFactory>();

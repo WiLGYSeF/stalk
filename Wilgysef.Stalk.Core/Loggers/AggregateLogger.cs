@@ -41,7 +41,12 @@ public class AggregateLogger : IAggregateLogger
         return _loggers.Any(l => l.IsEnabled(logLevel));
     }
 
-    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+    public void Log<TState>(
+        LogLevel logLevel,
+        EventId eventId,
+        TState state,
+        Exception? exception,
+        Func<TState, Exception?, string> formatter)
     {
         foreach (var logger in _loggers)
         {

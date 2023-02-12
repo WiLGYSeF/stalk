@@ -170,7 +170,7 @@ public class WorkAsyncTest : BaseTest
 
         foreach (var jobTask in job.Tasks)
         {
-            _jobTaskWorkerFactory.FailJobTaskWorker(jobTask, new JobTaskWorkerException(""));
+            _jobTaskWorkerFactory.FailJobTaskWorker(jobTask, new JobTaskNoExtractorException(new Uri(jobTask.Uri)));
         }
 
         job = await this.WaitUntilJobAsync(job.Id, job => job.State == JobState.Failed);

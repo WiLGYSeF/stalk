@@ -77,16 +77,15 @@ public class ItemIdSetCollectionService : IItemIdSetCollectionService, ISingleto
         }
     }
 
-    private class ItemIdSetEntry
+    private struct ItemIdSetEntry
     {
         public IItemIdSet ItemIds { get; }
 
-        public HashSet<long> JobIds { get; }
+        public HashSet<long> JobIds { get; } = new();
 
         public ItemIdSetEntry(IItemIdSet itemIds)
         {
             ItemIds = itemIds;
-            JobIds = new();
         }
     }
 }

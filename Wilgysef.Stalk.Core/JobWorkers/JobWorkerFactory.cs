@@ -44,10 +44,16 @@ public class JobWorkerFactory : IJobWorkerFactory, ITransientDependency
         var jobScope = _jobScopeService.GetJobScope(job.Id);
         _jobScopeService.AddJobLogger(job.Id, jobLogger);
 
-        return new JobWorker(
+        var jobWorker = new JobWorker(
             jobScope,
             jobLogger,
-            loggerHandle,
             job);
+
+        if (loggerHandle != null)
+        {
+            jobWorker.OnDisposed += (_, _) => loggerHandle.Dispose();
+        }
+
+        return jobWorker;
     }
 }

@@ -1,6 +1,6 @@
 ﻿namespace Wilgysef.Stalk.Core.ObjectInstances;
 
-public class ObjectInstanceHandle<T> : IObjectInstanceHandle<T> where T : notnull
+public sealed class ObjectInstanceHandle<T> : IObjectInstanceHandle<T> where T : notnull
 {
     public T Value { get; }
 

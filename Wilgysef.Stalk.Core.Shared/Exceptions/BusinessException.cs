@@ -5,7 +5,7 @@ namespace Wilgysef.Stalk.Core.Shared.Exceptions
     /// <summary>
     /// Business exception.
     /// </summary>
-    public class BusinessException : Exception
+    public abstract class BusinessException : Exception
     {
         /// <summary>
         /// Business error code.
@@ -15,7 +15,11 @@ namespace Wilgysef.Stalk.Core.Shared.Exceptions
         /// <summary>
         /// Business exception.
         /// </summary>
-        public BusinessException(string code)
+        /// <param name="code">Business error code.</param>
+        /// <param name="message">Message.</param>
+        /// <param name="innerException">Inner exception.</param>
+        public BusinessException(string code, string? message = null, Exception? innerException = null)
+            : base(message, innerException)
         {
             Code = code;
         }

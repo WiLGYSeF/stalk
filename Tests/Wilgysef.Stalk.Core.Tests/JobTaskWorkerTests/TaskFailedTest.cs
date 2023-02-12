@@ -61,7 +61,7 @@ public class TaskFailedTest : BaseTest
     [Fact]
     public async Task Task_Threw_JobTaskWorkerException_NoRetry()
     {
-        ExtractException = new JobTaskWorkerException("a");
+        ExtractException = new JobTaskNoExtractorException(new Uri("http://example.com"));
 
         Job job;
         using (var scope = BeginLifetimeScope())
@@ -89,7 +89,7 @@ public class TaskFailedTest : BaseTest
     {
         // TODO: unstable test
 
-        DownloadException = new JobTaskWorkerException("a");
+        DownloadException = new JobTaskNoDownloadFilenameTemplateException();
         DownloadExceptionCount = 1;
 
         Job job;

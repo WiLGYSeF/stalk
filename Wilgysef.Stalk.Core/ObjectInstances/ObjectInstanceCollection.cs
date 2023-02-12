@@ -34,7 +34,7 @@ public class ObjectInstanceCollection<TKey, TValue> : IObjectInstanceCollection<
         {
             if (value is IDisposable disposable)
             {
-                disposable?.Dispose();
+                disposable.Dispose();
             }
 
             InstanceReleased?.Invoke(this, value);
@@ -68,16 +68,21 @@ public class ObjectInstanceCollection<TKey, TValue> : IObjectInstanceCollection<
             lock (_lock)
             {
                 _handleCount++;
-                handle.Disposing += (_, _) => OnHandleDisposed();
+                handle.Disposing += OnHandleDisposed;
             }
 
             return handle;
         }
 
-        private void OnHandleDisposed()
+        private void OnHandleDisposed(object? sender, EventArgs args)
         {
             lock (_lock)
             {
+                if (sender is ObjectInstanceHandle<TValue> handle)
+                {
+                    handle.Disposing -= OnHandleDisposed;
+                }
+
                 if (--_handleCount == 0)
                 {
                     _objectHandleCollection.Remove(_key, _value);

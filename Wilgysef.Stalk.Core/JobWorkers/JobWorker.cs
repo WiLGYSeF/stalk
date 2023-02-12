@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
-using Wilgysef.Stalk.Core.ObjectInstances;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 
@@ -44,6 +43,7 @@ public class JobWorker : IJobWorker
 
     public TimeSpan NoTaskTimeout { get; set; } = TimeSpan.FromMinutes(1);
 
+    public event EventHandler? OnDisposed;
 
     private TimeSpan NoTaskDelay { get; set; } = TimeSpan.FromSeconds(15);
 
@@ -53,17 +53,14 @@ public class JobWorker : IJobWorker
 
     private readonly IServiceLifetimeScope _lifetimeScope;
     private readonly ILogger? _logger;
-    private readonly IObjectInstanceHandle<ILogger>? _loggerHandle;
 
     public JobWorker(
         IServiceLifetimeScope lifetimeScope,
         ILogger? logger,
-        IObjectInstanceHandle<ILogger>? loggerHandle,
         Job job)
     {
         _lifetimeScope = lifetimeScope;
         _logger = logger;
-        _loggerHandle = loggerHandle;
         Job = job;
     }
 
@@ -162,7 +159,7 @@ public class JobWorker : IJobWorker
 
     public void Dispose()
     {
-        _loggerHandle?.Dispose();
+        OnDisposed?.Invoke(this, EventArgs.Empty);
 
         GC.SuppressFinalize(this);
     }
@@ -275,16 +272,16 @@ public class JobWorker : IJobWorker
             || Job!.Tasks.Count(t => t.State == JobTaskState.Failed) <= _jobConfig.MaxFailures.Value;
     }
 
-    private async Task<Job> ReloadJobAsync()
+    private Task<Job> ReloadJobAsync()
     {
         using var scope = _lifetimeScope.BeginLifetimeScope();
-        return await ReloadJobAsync(scope);
+        return ReloadJobAsync(scope);
     }
 
-    private async Task<Job> ReloadJobAsync(IServiceLifetimeScope scope)
+    private Task<Job> ReloadJobAsync(IServiceLifetimeScope scope)
     {
         var jobManager = scope.GetRequiredService<IJobManager>();
-        return await ReloadJobAsync(jobManager);
+        return ReloadJobAsync(jobManager);
     }
 
     private async Task<Job> ReloadJobAsync(IJobManager jobManager)

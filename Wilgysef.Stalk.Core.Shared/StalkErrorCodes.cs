@@ -51,6 +51,11 @@
         /// </summary>
         public const string JobTaskWorkerNoExtractor = "Stalk:003001";
 
+        /// <summary>
+        /// No download filename template given.
+        /// </summary>
+        public const string JobTaskWorkerNoDownloadFilenameTemplate = "Stalk:003002";
+
         #endregion
     }
 }

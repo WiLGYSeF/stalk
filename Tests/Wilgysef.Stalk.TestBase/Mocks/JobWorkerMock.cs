@@ -12,6 +12,8 @@ public class JobWorkerMock : IJobWorker
 
     public TimeSpan TaskWaitTimeout { get; set; } = TimeSpan.FromMilliseconds(500);
 
+    public event EventHandler? OnDisposed;
+
     private readonly IServiceLifetimeScope _lifetimeScope;
 
     public JobWorkerMock(

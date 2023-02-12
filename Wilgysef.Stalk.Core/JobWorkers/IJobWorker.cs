@@ -21,6 +21,11 @@ public interface IJobWorker : IDisposable
     TimeSpan TaskWaitTimeout { get; set; }
 
     /// <summary>
+    /// Fired after disposal.
+    /// </summary>
+    event EventHandler OnDisposed;
+
+    /// <summary>
     /// Does work on the job.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>

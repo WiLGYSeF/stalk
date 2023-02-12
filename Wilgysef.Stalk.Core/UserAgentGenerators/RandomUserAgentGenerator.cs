@@ -52,7 +52,7 @@ public class RandomUserAgentGenerator : IUserAgentGenerator, ITransientDependenc
         return $"Mozilla/5.0 ({systemInformation}) {platform}";
     }
 
-    private class RandomRange
+    private struct RandomRange
     {
         public Range Range { get; }
 
