@@ -1,8 +1,8 @@
 ﻿namespace Wilgysef.Stalk.Application.Contracts.Queries.Jobs;
 
-public class GetJobs : GetJobsBase
+public class GetJobsBasic : GetJobsBase
 {
-    public GetJobs(
+    public GetJobsBasic(
         string? name = null,
         ICollection<string>? states = null,
         DateTime? startedBefore = null,

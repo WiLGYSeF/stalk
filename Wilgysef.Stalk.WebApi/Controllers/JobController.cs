@@ -20,6 +20,7 @@ public class JobController : ControllerBase
 
     private readonly IQueryHandler<GetJob, JobDto> _getJobCommandHandler;
     private readonly IQueryHandler<GetJobs, JobListDto> _getJobsCommandHandler;
+    private readonly IQueryHandler<GetJobsBasic, JobListBasicDto> _getJobsBasicCommandHandler;
 
     private readonly ICommandHandler<CreateJobTask, JobDto> _createJobTaskDtoCommandHandler;
     private readonly ICommandHandler<StopJobTask, JobDto> _stopJobTaskCommandHandler;
@@ -37,6 +38,7 @@ public class JobController : ControllerBase
 
         IQueryHandler<GetJob, JobDto> getJobCommandHandler,
         IQueryHandler<GetJobs, JobListDto> getJobsCommandHandler,
+        IQueryHandler<GetJobsBasic, JobListBasicDto> getJobsBasicCommandHandler,
 
         ICommandHandler<CreateJobTask, JobDto> createJobTaskDtoCommandHandler,
         ICommandHandler<StopJobTask, JobDto> stopJobTaskCommandHandler,
@@ -53,6 +55,7 @@ public class JobController : ControllerBase
 
         _getJobCommandHandler = getJobCommandHandler;
         _getJobsCommandHandler = getJobsCommandHandler;
+        _getJobsBasicCommandHandler = getJobsBasicCommandHandler;
 
         _createJobTaskDtoCommandHandler = createJobTaskDtoCommandHandler;
         _stopJobTaskCommandHandler = stopJobTaskCommandHandler;

@@ -8,7 +8,8 @@ namespace Wilgysef.Stalk.Application.Queries;
 
 public class JobQueryHandler : Query,
     IQueryHandler<GetJob, JobDto>,
-    IQueryHandler<GetJobs, JobListDto>
+    IQueryHandler<GetJobs, JobListDto>,
+    IQueryHandler<GetJobsBasic, JobListBasicDto>
 {
     private readonly IJobManager _jobManager;
 
@@ -33,6 +34,17 @@ public class JobQueryHandler : Query,
         return new JobListDto
         {
             Jobs = Mapper.Map<ICollection<JobDto>>(jobs)
+        };
+    }
+
+    public async Task<JobListBasicDto> HandleQueryAsync(GetJobsBasic query)
+    {
+        var jobs = await _jobManager.GetJobsAsync(
+            new JobQuerySpecification(Mapper.Map<JobQuery>(query), readOnly: true));
+
+        return new JobListBasicDto
+        {
+            Jobs = Mapper.Map<ICollection<JobBasicDto>>(jobs)
         };
     }
 }

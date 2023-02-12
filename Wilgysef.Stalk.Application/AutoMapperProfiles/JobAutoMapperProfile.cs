@@ -17,15 +17,26 @@ public class JobAutoMapperProfile : Profile
             .ForMember(dto => dto.State, opt => opt.MapFrom(j => j.State.ToString().ToLower()))
             .ForMember(dto => dto.Config, opt => opt.MapFrom(j => j.GetConfig()));
 
+        CreateMap<Job, JobBasicDto>()
+            .ForMember(dto => dto.State, opt => opt.MapFrom(j => j.State.ToString().ToLower()))
+            .ForMember(dto => dto.Config, opt => opt.MapFrom(j => j.GetConfig()));
+
         MapJobConfig();
 
         CreateMap<JobTask, JobTaskDto>()
             .ForMember(dto => dto.State, opt => opt.MapFrom(t => t.State.ToString().ToLower()))
             .ForMember(dto => dto.Type, opt => opt.MapFrom(t => t.Type.ToString().ToLower()));
 
+        CreateMap<JobTask, JobTaskBasicDto>()
+            .ForMember(dto => dto.State, opt => opt.MapFrom(t => t.State.ToString().ToLower()));
+
         CreateMap<JobTaskResult, JobTaskResultDto>();
 
         CreateMap<GetJobs, JobQuery>()
+            .ForMember(q => q.States, opt => opt.MapFrom(q => q.States.Select(s => EnumUtils.Parse<JobState>(s, true))))
+            .ForMember(q => q.Sort, opt => opt.MapFrom(q => q.Sort != null ? EnumUtils.Parse<JobSortOrder>(q.Sort, true) : JobSortOrder.Id));
+
+        CreateMap<GetJobsBasic, JobQuery>()
             .ForMember(q => q.States, opt => opt.MapFrom(q => q.States.Select(s => EnumUtils.Parse<JobState>(s, true))))
             .ForMember(q => q.Sort, opt => opt.MapFrom(q => q.Sort != null ? EnumUtils.Parse<JobSortOrder>(q.Sort, true) : JobSortOrder.Id));
     }

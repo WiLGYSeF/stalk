@@ -9,14 +9,14 @@ using Wilgysef.Stalk.TestBase;
 
 namespace Wilgysef.Stalk.Application.Tests.Queries.Jobs;
 
-public class GetJobsTest : BaseTest
+public class GetJobsBasicTest : BaseTest
 {
-    private readonly IQueryHandler<GetJobs, JobListDto> _getJobsQueryHandler;
+    private readonly IQueryHandler<GetJobsBasic, JobListBasicDto> _getJobsQueryHandler;
     private readonly IJobManager _jobManager;
 
-    public GetJobsTest()
+    public GetJobsBasicTest()
     {
-        _getJobsQueryHandler = GetRequiredService<IQueryHandler<GetJobs, JobListDto>>();
+        _getJobsQueryHandler = GetRequiredService<IQueryHandler<GetJobsBasic, JobListBasicDto>>();
         _jobManager = GetRequiredService<IJobManager>();
     }
 
@@ -35,7 +35,7 @@ public class GetJobsTest : BaseTest
             await _jobManager.CreateJobAsync(job);
         }
 
-        var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobs());
+        var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobsBasic());
 
         query.Jobs.Count.ShouldBe(jobs.Count);
     }
@@ -61,7 +61,7 @@ public class GetJobsTest : BaseTest
             await _jobManager.CreateJobAsync(job);
         }
 
-        var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobs(
+        var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobsBasic(
             name: "test"));
 
         query.Jobs.Count.ShouldBe(2);
@@ -82,7 +82,7 @@ public class GetJobsTest : BaseTest
             await _jobManager.CreateJobAsync(job);
         }
 
-        var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobs(
+        var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobsBasic(
             states: new[] { JobState.Inactive.ToString(), JobState.Active.ToString() }));
 
         query.Jobs.Count.ShouldBe(2);
@@ -110,7 +110,7 @@ public class GetJobsTest : BaseTest
             await _jobManager.CreateJobAsync(job);
         }
 
-        var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobs(
+        var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobsBasic(
             startedBefore: new DateTime(2001, 1, 1)));
 
         query.Jobs.All(j => j.Name == "this").ShouldBeTrue();
@@ -139,7 +139,7 @@ public class GetJobsTest : BaseTest
             await _jobManager.CreateJobAsync(job);
         }
 
-        var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobs(
+        var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobsBasic(
             startedAfter: new DateTime(2001, 1, 1)));
 
         query.Jobs.All(j => j.Name == "this").ShouldBeTrue();
@@ -170,7 +170,7 @@ public class GetJobsTest : BaseTest
             await _jobManager.CreateJobAsync(job);
         }
 
-        var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobs(
+        var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobsBasic(
             finishedBefore: new DateTime(2001, 1, 1)));
 
         query.Jobs.All(j => j.Name == "this").ShouldBeTrue();
@@ -202,7 +202,7 @@ public class GetJobsTest : BaseTest
             await _jobManager.CreateJobAsync(job);
         }
 
-        var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobs(
+        var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobsBasic(
             finishedAfter: new DateTime(2001, 1, 1)));
 
         query.Jobs.All(j => j.Name == "this").ShouldBeTrue();
@@ -250,7 +250,7 @@ public class GetJobsTest : BaseTest
 
         foreach (var sortDescending in new[] { false, true })
         {
-            var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobs(
+            var query = await _getJobsQueryHandler.HandleQueryAsync(new GetJobsBasic(
                 sort: order.ToString(),
                 sortDescending: sortDescending));
 
