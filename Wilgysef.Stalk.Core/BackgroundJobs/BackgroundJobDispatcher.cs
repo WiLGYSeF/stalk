@@ -49,23 +49,28 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher, ITransientDepen
                 Logger?.LogInformation("Background job {JobId} {JobArgsName} starting attempt {Attempts} / {MaxAttempts}.", job.Id, job.JobArgsName, job.Attempts, job.MaxAttempts);
             }
 
+            var jobStarted = false;
+
             try
             {
-                _backgroundJobCollectionService.AddActiveJob(job);
-                cancellationToken.ThrowIfCancellationRequested();
-
-                await ExecuteJobAsync(job, cancellationToken);
-
-                Logger?.LogInformation("Background job {JobId} finished.", job.Id);
-
-                if (!job.IsAbandoned)
+                if (_backgroundJobCollectionService.AddActiveJob(job))
                 {
-                    job.Success();
-                }
-                await backgroundJobManager.UpdateJobAsync(job, CancellationToken.None);
+                    jobStarted = true;
+                    cancellationToken.ThrowIfCancellationRequested();
 
-                // TODO: delete jobs?
-                //await backgroundJobManager.DeleteJobAsync(job, CancellationToken.None);
+                    await ExecuteJobAsync(job, cancellationToken);
+
+                    Logger?.LogInformation("Background job {JobId} finished.", job.Id);
+
+                    if (!job.IsAbandoned)
+                    {
+                        job.Success();
+                    }
+                    await backgroundJobManager.UpdateJobAsync(job, CancellationToken.None);
+
+                    // TODO: delete jobs?
+                    //await backgroundJobManager.DeleteJobAsync(job, CancellationToken.None);
+                }
             }
             catch (InvalidBackgroundJobException exception)
             {
@@ -103,7 +108,10 @@ public class BackgroundJobDispatcher : IBackgroundJobDispatcher, ITransientDepen
             }
             finally
             {
-                _backgroundJobCollectionService.RemoveActiveJob(job);
+                if (jobStarted)
+                {
+                    _backgroundJobCollectionService.RemoveActiveJob(job);
+                }
             }
         }
     }

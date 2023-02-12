@@ -9,9 +9,9 @@ public class BackgroundJobCollectionService : IBackgroundJobCollectionService, I
 
     private readonly ConcurrentDictionary<BackgroundJob, bool> _backgroundTasks = new();
 
-    public void AddActiveJob(BackgroundJob job)
+    public bool AddActiveJob(BackgroundJob job)
     {
-        _backgroundTasks[job] = true;
+        return _backgroundTasks.TryAdd(job, true);
     }
 
     public void RemoveActiveJob(BackgroundJob job)
