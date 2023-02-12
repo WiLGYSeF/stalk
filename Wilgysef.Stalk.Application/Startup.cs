@@ -13,6 +13,7 @@ namespace Wilgysef.Stalk.Application;
 public class Startup
 {
     public TimeSpan BackgroundJobInterval { get; set; } = TimeSpan.FromSeconds(10);
+
     public TimeSpan EnqueuePrioritizedJobsInterval { get; set; } = TimeSpan.FromMinutes(2);
 
     private readonly IRootLifetimeScopeService _rootLifetimeScope;
@@ -76,12 +77,12 @@ public class Startup
     {
         await StartScheduledJob<BackgroundJobDispatcherJob>(
             TriggerBuilder.Create()
-                .WithSimpleSchedule(b => b.WithIntervalInSeconds((int)BackgroundJobInterval.TotalSeconds).RepeatForever())
+                .WithSimpleSchedule(b => b.WithInterval(BackgroundJobInterval).RepeatForever())
                 .Build());
 
         await StartScheduledJob<EnqueueWorkPrioritizedJobsJob>(
             TriggerBuilder.Create()
-                .WithSimpleSchedule(b => b.WithIntervalInSeconds((int)EnqueuePrioritizedJobsInterval.TotalSeconds).RepeatForever())
+                .WithSimpleSchedule(b => b.WithInterval(EnqueuePrioritizedJobsInterval).RepeatForever())
                 .Build());
     }
 

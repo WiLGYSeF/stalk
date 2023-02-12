@@ -272,16 +272,16 @@ public class JobWorker : IJobWorker
             || Job!.Tasks.Count(t => t.State == JobTaskState.Failed) <= _jobConfig.MaxFailures.Value;
     }
 
-    private Task<Job> ReloadJobAsync()
+    private async Task<Job> ReloadJobAsync()
     {
         using var scope = _lifetimeScope.BeginLifetimeScope();
-        return ReloadJobAsync(scope);
+        return await ReloadJobAsync(scope);
     }
 
-    private Task<Job> ReloadJobAsync(IServiceLifetimeScope scope)
+    private async Task<Job> ReloadJobAsync(IServiceLifetimeScope scope)
     {
         var jobManager = scope.GetRequiredService<IJobManager>();
-        return ReloadJobAsync(jobManager);
+        return await ReloadJobAsync(jobManager);
     }
 
     private async Task<Job> ReloadJobAsync(IJobManager jobManager)
