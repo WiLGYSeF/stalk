@@ -76,11 +76,6 @@ internal class YouTubeMembershipExtractor : YouTubeExtractorBase
         }
     }
 
-    public static bool IsMembershipExtractType(Uri uri)
-    {
-        return Consts.MembershipRegex.IsMatch(uri.GetLeftPart(UriPartial.Path));
-    }
-
     private IEnumerable<ExtractResult> ExtractVideo(JToken video, IMetadataObject metadata)
     {
         var videoId = video.SelectToken("$.videoId")!.ToString();

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using System;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Web;
@@ -58,7 +59,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
     public bool CanExtract(Uri uri)
     {
-        return GetExtractType(uri) != null;
+        return YouTubeUri.TryGetUri(uri, out _);
     }
 
     public IAsyncEnumerable<ExtractResult> ExtractAsync(
@@ -71,61 +72,56 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
         var communityExtractor = CreateCommunityExtractor();
 
-        switch (GetExtractType(uri))
+        if (!YouTubeUri.TryGetUri(uri, out var youTubeUri))
         {
-            case ExtractType.Channel:
-                return ExtractChannelAsync(uri, metadata, cancellationToken);
-            case ExtractType.Videos:
-                return ExtractVideosAsync(uri, null, metadata, cancellationToken);
-            case ExtractType.Playlist:
-                return ExtractPlaylistAsync(uri, metadata, cancellationToken);
-            case ExtractType.Video:
-                return ExtractVideoAsync(uri, metadata, cancellationToken);
-            case ExtractType.Short:
-                return ExtractShortAsync(uri, metadata, cancellationToken);
-            case ExtractType.Community:
-                return communityExtractor.ExtractCommunityAsync(uri, metadata, cancellationToken);
-            case ExtractType.Membership:
+            throw new ArgumentException(null, nameof(uri));
+        }
+
+        switch (youTubeUri.Type)
+        {
+            case YouTubeUriType.Featured:
+                return ExtractChannelAsync(youTubeUri, metadata, cancellationToken);
+            case YouTubeUriType.Videos:
+                return ExtractVideosAsync(youTubeUri, metadata, cancellationToken);
+            case YouTubeUriType.Shorts:
+                // TODO
+                throw new ArgumentException(null, nameof(uri));
+            case YouTubeUriType.Livestreams:
+                // TODO
+                throw new ArgumentException(null, nameof(uri));
+            case YouTubeUriType.Playlist:
+                return ExtractPlaylistAsync(youTubeUri.Uri, metadata, cancellationToken);
+            case YouTubeUriType.Video:
+                return ExtractVideoAsync(youTubeUri.Uri, metadata, cancellationToken);
+            case YouTubeUriType.Short:
+                return ExtractShortAsync(youTubeUri, metadata, cancellationToken);
+            case YouTubeUriType.Community:
+            case YouTubeUriType.CommunityPost:
+                return communityExtractor.ExtractCommunityAsync(youTubeUri, metadata, cancellationToken);
+            case YouTubeUriType.Membership:
                 var membershipExtractor = CreateMembershipExtractor(communityExtractor);
-                return membershipExtractor.ExtractMembershipAsync(uri, metadata, cancellationToken);
+                return membershipExtractor.ExtractMembershipAsync(youTubeUri.Uri, metadata, cancellationToken);
             default:
-                throw new ArgumentOutOfRangeException(nameof(uri));
+                throw new ArgumentException(null, nameof(uri));
         }
     }
 
     public string? GetItemId(Uri uri)
     {
-        var leftUri = uri.GetLeftPart(UriPartial.Path);
-
-        if (Consts.VideoRegex.IsMatch(leftUri))
+        if (!YouTubeUri.TryGetUri(uri, out var youTubeUri))
         {
-            var query = HttpUtility.ParseQueryString(uri.Query);
-            if (query.TryGetValue("v", out var videoId))
-            {
-                return videoId;
-            }
+            return null;
         }
 
-        if (Consts.ShortRegex.TryMatch(leftUri, out var shortMatch))
+        switch (youTubeUri.Type)
         {
-            return shortMatch.Groups[Consts.ShortRegexShortGroup].Value;
+            case YouTubeUriType.Video:
+            case YouTubeUriType.Short:
+            case YouTubeUriType.CommunityPost:
+                return youTubeUri.ItemId;
+            default:
+                return null;
         }
-
-        if (Consts.CommunityRegex.IsMatch(leftUri))
-        {
-            var query = HttpUtility.ParseQueryString(uri.Query);
-            if (query.TryGetValue("lb", out var postId))
-            {
-                return postId;
-            }
-        }
-
-        var match = Consts.CommunityPostRegex.Match(leftUri);
-        if (match.Success)
-        {
-            return match.Groups[Consts.CommunityPostRegexPostGroup].Value;
-        }
-        return null;
     }
 
     public void Dispose()
@@ -134,19 +130,15 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
     }
 
     private async IAsyncEnumerable<ExtractResult> ExtractChannelAsync(
-        Uri uri,
+        YouTubeUri uri,
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var communityExtractor = CreateCommunityExtractor();
 
-        var channelNameOrId = GetChannel(uri, out var shortChannel);
-        var channelId = shortChannel
-            ? await GetChannelIdAsync(channelNameOrId, cancellationToken)
-            : channelNameOrId;
+        var channelId = await GetChannelIdAsync(uri, cancellationToken);
 
         await foreach (var result in ExtractVideosAsync(
-            GetVideosUri(channelNameOrId, shortChannel),
             channelId,
             metadata,
             cancellationToken))
@@ -163,7 +155,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         }
 
         await foreach (var result in communityExtractor.ExtractCommunityAsync(
-            GetCommunityUri(channelNameOrId, shortChannel),
+            GetCommunityUri(uri),
             metadata,
             cancellationToken))
         {
@@ -172,19 +164,25 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
     }
 
     private async IAsyncEnumerable<ExtractResult> ExtractVideosAsync(
-        Uri uri,
-        string? channelId,
+        YouTubeUri uri,
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        if (channelId == null)
+        var channelId = await GetChannelIdAsync(uri, cancellationToken);
+        await foreach (var result in ExtractPlaylistAsync(
+            GetVideosPlaylistUri(channelId),
+            metadata,
+            cancellationToken))
         {
-            var channelNameOrId = GetChannel(uri, out var shortChannel);
-            channelId = shortChannel
-                ? await GetChannelIdAsync(channelNameOrId, cancellationToken)
-                : channelNameOrId;
+            yield return result;
         }
+    }
 
+    private async IAsyncEnumerable<ExtractResult> ExtractVideosAsync(
+        string channelId,
+        IMetadataObject metadata,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
         await foreach (var result in ExtractPlaylistAsync(
             GetVideosPlaylistUri(channelId),
             metadata,
@@ -297,13 +295,12 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
     }
 
     private IAsyncEnumerable<ExtractResult> ExtractShortAsync(
-        Uri uri,
+        YouTubeUri uri,
         IMetadataObject metadata,
         CancellationToken cancellationToken)
     {
-        var match = Consts.ShortRegex.Match(uri.AbsoluteUri);
-        var shortId = match.Groups[Consts.ShortRegexShortGroup].Value;
-        metadata[MetadataObjectConsts.Origin.UriKeys] = uri.AbsoluteUri;
+        var shortId = uri.ItemId;
+        metadata[MetadataObjectConsts.Origin.UriKeys] = uri.Uri.AbsoluteUri;
         return ExtractVideoAsync(new Uri($"https://www.youtube.com/watch?v={shortId}"), metadata, cancellationToken);
     }
 
@@ -394,18 +391,33 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         return JObject.Load(reader);
     }
 
-    private async Task<string> GetChannelIdAsync(string channelName, CancellationToken cancellationToken)
+    private Task<string> GetChannelIdAsync(YouTubeUri uri, CancellationToken cancellationToken)
     {
-        // TODO: cache?
-        var request = ConfigureRequest(new HttpRequestMessage(HttpMethod.Get, GetChannelUriPrefix(channelName, true)));
-        var response = await HttpClient.SendAsync(request, cancellationToken);
-        response.EnsureSuccessStatusCode();
+        if (uri.HasChannelId)
+        {
+            if (uri.ChannelNameOrId == null)
+            {
+                throw new ArgumentException(null, nameof(uri));
+            }
 
-        var doc = new HtmlDocument();
-        doc.Load(response.Content.ReadAsStream(cancellationToken));
+            return Task.FromResult(uri.ChannelNameOrId);
+        }
 
-        var metaChannelId = doc.DocumentNode.SelectSingleNode("//meta[@itemprop=\"channelId\"]");
-        return metaChannelId.Attributes["content"].Value;
+        return GetAsync();
+
+        async Task<string> GetAsync()
+        {
+            // TODO: cache?
+            var request = ConfigureRequest(new HttpRequestMessage(HttpMethod.Get, uri.GetChannelUri()));
+            var response = await HttpClient.SendAsync(request, cancellationToken);
+            response.EnsureSuccessStatusCode();
+
+            var doc = new HtmlDocument();
+            doc.Load(response.Content.ReadAsStream(cancellationToken));
+
+            var metaChannelId = doc.DocumentNode.SelectSingleNode("//meta[@itemprop=\"channelId\"]");
+            return metaChannelId.Attributes["content"].Value;
+        }
     }
 
     private YouTubeCommunityExtractor CreateCommunityExtractor()
@@ -416,11 +428,6 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
     private YouTubeMembershipExtractor CreateMembershipExtractor(YouTubeCommunityExtractor communityExtractor)
     {
         return new YouTubeMembershipExtractor(HttpClient, communityExtractor, DateTimeProvider, ExtractorConfig);
-    }
-
-    private static Uri GetVideosUri(string channel, bool shortChannel = false)
-    {
-        return new Uri(GetChannelUriPrefix(channel, shortChannel) + "videos");
     }
 
     private static Uri GetVideosMembersOnlyUri(string channelId)
@@ -445,56 +452,9 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         return new Uri($"https://www.youtube.com/playlist?list={channelPlaylist}");
     }
 
-    private static Uri GetCommunityUri(string channel, bool shortChannel = false)
+    private static YouTubeUri GetCommunityUri(YouTubeUri uri)
     {
-        return new Uri(GetChannelUriPrefix(channel, shortChannel) + "community");
-    }
-
-    private static string GetChannelUriPrefix(string channel, bool shortChannel = false)
-    {
-        var channelPathSegment = shortChannel ? "c" : "channel";
-        return $"https://www.youtube.com/{channelPathSegment}/{channel}/";
-    }
-
-    private static string GetChannel(Uri uri, out bool shortChannel)
-    {
-        var match = Consts.ChannelRegex.Match(uri.GetLeftPart(UriPartial.Path));
-        shortChannel = match.Groups[Consts.ChannelRegexChannelSegmentGroup].Value == "c";
-        return match.Groups[Consts.ChannelRegexChannelGroup].Value;
-    }
-
-    private static ExtractType? GetExtractType(Uri uri)
-    {
-        var leftUri = uri.GetLeftPart(UriPartial.Path);
-        if (Consts.VideosRegex.IsMatch(leftUri))
-        {
-            return ExtractType.Videos;
-        }
-        if (YouTubeCommunityExtractor.IsCommunityExtractType(uri))
-        {
-            return ExtractType.Community;
-        }
-        if (YouTubeMembershipExtractor.IsMembershipExtractType(uri))
-        {
-            return ExtractType.Membership;
-        }
-        if (Consts.ChannelRegex.IsMatch(leftUri))
-        {
-            return ExtractType.Channel;
-        }
-        if (Consts.PlaylistRegex.IsMatch(leftUri))
-        {
-            return ExtractType.Playlist;
-        }
-        if (Consts.VideoRegex.IsMatch(leftUri))
-        {
-            return ExtractType.Video;
-        }
-        if (Consts.ShortRegex.IsMatch(leftUri))
-        {
-            return ExtractType.Short;
-        }
-        return null;
+        return new YouTubeUri(new Uri(uri.GetChannelUri() + "community"));
     }
 
     private static string? ConcatRuns(JToken? runs)
@@ -549,16 +509,5 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         return extension.Length > 0 && extension[0] == '.'
             ? extension[1..]
             : extension;
-    }
-
-    private enum ExtractType
-    {
-        Channel,
-        Videos,
-        Playlist,
-        Video,
-        Short,
-        Community,
-        Membership,
     }
 }

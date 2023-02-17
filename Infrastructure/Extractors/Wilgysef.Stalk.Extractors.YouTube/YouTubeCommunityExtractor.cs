@@ -32,7 +32,7 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
         : base(httpClient, dateTimeProvider, config) { }
 
     public async IAsyncEnumerable<ExtractResult> ExtractCommunityAsync(
-        Uri uri,
+        YouTubeUri uri,
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
@@ -45,11 +45,9 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
             yield break;
         }
 
-        var json = await GetCommunityJsonAsync(uri, cancellationToken);
+        var json = await GetCommunityJsonAsync(uri.Uri, cancellationToken);
         var channelId = json.SelectTokens("$..channelId").FirstOrDefault()?.ToString()
             ?? json.SelectToken("$..authorEndpoint.browseEndpoint.browseId")!.ToString();
-
-        var isSingle = uri.Query.Length > 0 && HttpUtility.ParseQueryString(uri.Query)["lb"] != null;
 
         while (true)
         {
@@ -70,7 +68,7 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
                 yield return result;
             }
 
-            if (isSingle && !communityPosts.Any())
+            if (uri.Type == YouTubeUriType.CommunityPost && !communityPosts.Any())
             {
                 break;
             }
@@ -93,19 +91,13 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
     }
 
     private async IAsyncEnumerable<ExtractResult> ExtractCommunityEmojisOnlyAsync(
-        Uri uri,
+        YouTubeUri ytUri,
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var match = Consts.CommunityPostRegex.Match(uri.GetLeftPart(UriPartial.Path));
-        if (!match.Success)
-        {
-            var isSingle = uri.Query.Length > 0 && HttpUtility.ParseQueryString(uri.Query)["lb"] != null;
-            if (!isSingle)
-            {
-                uri = await GetFirstCommunityPostUri(uri, cancellationToken);
-            }
-        }
+        var uri = ytUri.Type != YouTubeUriType.CommunityPost
+            ? await GetFirstCommunityPostUri(ytUri.Uri, cancellationToken)
+            : ytUri.Uri;
 
         var json = await GetCommunityJsonAsync(uri, cancellationToken);
         var channelId = json.SelectToken("$..channelId")?.ToString()
@@ -121,12 +113,6 @@ internal class YouTubeCommunityExtractor : YouTubeExtractorBase
         {
             yield return result;
         }
-    }
-
-    public static bool IsCommunityExtractType(Uri uri)
-    {
-        var leftUri = uri.GetLeftPart(UriPartial.Path);
-        return Consts.CommunityRegex.IsMatch(leftUri) || Consts.CommunityPostRegex.IsMatch(leftUri);
     }
 
     private async Task<Uri> GetFirstCommunityPostUri(Uri communityUri, CancellationToken cancellationToken)

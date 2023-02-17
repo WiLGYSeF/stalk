@@ -2,7 +2,7 @@
 using System.Collections.Specialized;
 using System.Web;
 
-namespace Wilgysef.Stalk.TestBase.Shared
+namespace Wilgysef.Stalk.Core.Shared.Extensions
 {
     public static class UriExtensions
     {
