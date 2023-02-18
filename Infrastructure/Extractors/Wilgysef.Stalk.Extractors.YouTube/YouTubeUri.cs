@@ -152,7 +152,68 @@ public class YouTubeUri
         }
     }
 
-    private static string GetChannel(Match match, out ChannelNameType type)
+    public static Uri GetChannelAllVideosPlaylistUri(string channelId)
+    {
+        return new Uri("https://www.youtube.com/playlist?list=UU" + GetChannelIdWithoutPrefix(channelId));
+    }
+
+    public static Uri GetChannelVideosPlaylistUri(string channelId)
+    {
+        return new Uri("https://www.youtube.com/playlist?list=UULF" + GetChannelIdWithoutPrefix(channelId));
+    }
+
+    public static Uri GetChannelPopularVideosPlaylistUri(string channelId)
+    {
+        return new Uri("https://www.youtube.com/playlist?list=UULP" + GetChannelIdWithoutPrefix(channelId));
+    }
+
+    public static Uri GetChannelLivestreamsPlaylistUri(string channelId)
+    {
+        return new Uri("https://www.youtube.com/playlist?list=UULV" + GetChannelIdWithoutPrefix(channelId));
+    }
+
+    public static Uri GetChannelMembershipVideosPlaylistUri(string channelId)
+    {
+        return new Uri("https://www.youtube.com/playlist?list=UUMF" + GetChannelIdWithoutPrefix(channelId));
+    }
+
+    public static Uri GetChannelMembershipAllVideosPlaylistUri(string channelId)
+    {
+        return new Uri("https://www.youtube.com/playlist?list=UUMO" + GetChannelIdWithoutPrefix(channelId));
+    }
+
+    /// <summary>
+    /// UNCONFIRMED.
+    /// </summary>
+    /// <param name="channelId"></param>
+    /// <returns></returns>
+    public static Uri GetChannelMembershipShortsPlaylistUri(string channelId)
+    {
+        // TODO: check if this is correct
+        return new Uri("https://www.youtube.com/playlist?list=UUMS" + GetChannelIdWithoutPrefix(channelId));
+    }
+
+    public static Uri GetChannelMembershipLivestreamsPlaylistUri(string channelId)
+    {
+        return new Uri("https://www.youtube.com/playlist?list=UUMV" + GetChannelIdWithoutPrefix(channelId));
+    }
+
+    public static Uri GetChannelPopularShortsPlaylistUri(string channelId)
+    {
+        return new Uri("https://www.youtube.com/playlist?list=UUPS" + GetChannelIdWithoutPrefix(channelId));
+    }
+
+    public static Uri GetChannelPopularLivestreamsPlaylistUri(string channelId)
+    {
+        return new Uri("https://www.youtube.com/playlist?list=UUPV" + GetChannelIdWithoutPrefix(channelId));
+    }
+
+    public static Uri GetChannelShortsPlaylistUri(string channelId)
+    {
+        return new Uri("https://www.youtube.com/playlist?list=UUSH" + GetChannelIdWithoutPrefix(channelId));
+    }
+
+    private static string? GetChannel(Match match, out ChannelNameType type)
     {
         if (match.Groups["channel"].Success)
         {
@@ -172,6 +233,13 @@ public class YouTubeUri
 
         type = ChannelNameType.None;
         return null;
+    }
+
+    private static string GetChannelIdWithoutPrefix(string channelId)
+    {
+        return channelId.StartsWith("UC")
+            ? channelId[2..]
+            : channelId;
     }
 }
 

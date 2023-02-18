@@ -147,7 +147,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         }
 
         await foreach (var result in ExtractPlaylistAsync(
-            GetVideosMembersOnlyUri(channelId),
+            YouTubeUri.GetChannelMembershipAllVideosPlaylistUri(channelId),
             metadata,
             cancellationToken))
         {
@@ -170,7 +170,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
     {
         var channelId = await GetChannelIdAsync(uri, cancellationToken);
         await foreach (var result in ExtractPlaylistAsync(
-            GetVideosPlaylistUri(channelId),
+            YouTubeUri.GetChannelAllVideosPlaylistUri(channelId),
             metadata,
             cancellationToken))
         {
@@ -184,7 +184,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         await foreach (var result in ExtractPlaylistAsync(
-            GetVideosPlaylistUri(channelId),
+            YouTubeUri.GetChannelAllVideosPlaylistUri(channelId),
             metadata,
             cancellationToken))
         {
@@ -428,28 +428,6 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
     private YouTubeMembershipExtractor CreateMembershipExtractor(YouTubeCommunityExtractor communityExtractor)
     {
         return new YouTubeMembershipExtractor(HttpClient, communityExtractor, DateTimeProvider, ExtractorConfig);
-    }
-
-    private static Uri GetVideosMembersOnlyUri(string channelId)
-    {
-        if (!channelId.StartsWith("UC") || channelId.Length < 20)
-        {
-            throw new ArgumentException("Invalid channel format.", nameof(channelId));
-        }
-
-        var channelPlaylist = "UUMO" + channelId[2..];
-        return new Uri($"https://www.youtube.com/playlist?list={channelPlaylist}");
-    }
-
-    private static Uri GetVideosPlaylistUri(string channelId)
-    {
-        if (!channelId.StartsWith("UC") || channelId.Length < 20)
-        {
-            throw new ArgumentException("Invalid channel format.", nameof(channelId));
-        }
-
-        var channelPlaylist = "UU" + channelId[2..];
-        return new Uri($"https://www.youtube.com/playlist?list={channelPlaylist}");
     }
 
     private static YouTubeUri GetCommunityUri(YouTubeUri uri)
