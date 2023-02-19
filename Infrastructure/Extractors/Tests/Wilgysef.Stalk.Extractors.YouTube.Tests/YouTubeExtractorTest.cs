@@ -138,6 +138,7 @@ public class YouTubeExtractorTest : BaseTest
     [InlineData("https://www.youtube.com/watch?v=_BSSJi-sHh8", true)]
     [InlineData("https://www.youtube.com/shorts/5p_ysxbwiAs", true)]
     [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community", true)]
+    [InlineData("https://www.youtube.com/@utoch.6000/community", true)]
     public void Can_Extract(string uri, bool expected)
     {
         _youTubeExtractor.CanExtract(new Uri(uri)).ShouldBe(expected);
@@ -178,9 +179,63 @@ public class YouTubeExtractorTest : BaseTest
             null,
             new MetadataObject()).ToListAsync();
 
-        results.Count.ShouldBe(130);
+        results.Count.ShouldBe(16);
         results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
         results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(results.Count);
+    }
+
+    [Fact]
+    public async Task Get_Shorts()
+    {
+        var results = await _youTubeExtractor.ExtractAsync(
+            new Uri("https://www.youtube.com/@alicemana3910/shorts"),
+            null,
+            new MetadataObject()).ToListAsync();
+
+        results.Count.ShouldBe(9);
+        results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
+        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(results.Count);
+    }
+
+    [Fact]
+    public async Task Get_Livestreams()
+    {
+        var results = await _youTubeExtractor.ExtractAsync(
+            new Uri("https://www.youtube.com/@utoch.6000/streams"),
+            null,
+            new MetadataObject()).ToListAsync();
+
+        results.Count.ShouldBe(117);
+        results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
+        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(results.Count);
+    }
+
+    [Fact]
+    public async Task Get_Community()
+    {
+        var results = await _youTubeExtractor.ExtractAsync(
+            new Uri("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community"),
+            null,
+            new MetadataObject()).ToListAsync();
+
+        results.Count.ShouldBe(6);
+        results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
+        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(results.Count);
+        results.All(r => r.Type == JobTaskType.Download).ShouldBeTrue();
+    }
+
+    [Fact]
+    public async Task Get_Membership()
+    {
+        var results = await _youTubeExtractor.ExtractAsync(
+            new Uri("https://www.youtube.com/channel/UCvaTdHTWBGv3MKj3KVqJVCw/membership"),
+            null,
+            new MetadataObject()).ToListAsync();
+
+        results.Count.ShouldBe(88);
+        // the URIs and item Ids are not unique because YouTube sometimes likes to return duplicates
+        results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(73);
+        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(74);
     }
 
     [Fact]
@@ -272,25 +327,11 @@ public class YouTubeExtractorTest : BaseTest
         videoResult.Type.ShouldBe(JobTaskType.Download);
     }
 
-    [Fact]
-    public async Task Get_Community()
-    {
-        var results = await _youTubeExtractor.ExtractAsync(
-            new Uri("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community"),
-            null,
-            new MetadataObject()).ToListAsync();
-
-        results.Count.ShouldBe(6);
-        results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(results.Count);
-        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(results.Count);
-        results.All(r => r.Type == JobTaskType.Download).ShouldBeTrue();
-    }
-
     [Theory]
     [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community?lb=UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")]
     [InlineData("https://www.youtube.com/@utoch.6000/community?lb=UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")]
     [InlineData("https://www.youtube.com/post/UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")]
-    public async Task Get_Community_Single(string uri)
+    public async Task Get_Community_Post(string uri)
     {
         _dateTimeProvider.SetDateTime(new DateTime(2022, 10, 4, 0, 0, 0, DateTimeKind.Utc));
         _dateTimeProvider.SetDateTimeOffset(new DateTimeOffset(2022, 10, 4, 0, 0, 0, TimeSpan.Zero));
@@ -354,20 +395,6 @@ public class YouTubeExtractorTest : BaseTest
 
         results.Count.ShouldBe(36);
         results.All(r => r.ItemId!.Contains("#emoji#")).ShouldBeTrue();
-    }
-
-    [Fact]
-    public async Task Get_Membership()
-    {
-        var results = await _youTubeExtractor.ExtractAsync(
-            new Uri("https://www.youtube.com/channel/UCvaTdHTWBGv3MKj3KVqJVCw/membership"),
-            null,
-            new MetadataObject()).ToListAsync();
-
-        results.Count.ShouldBe(88);
-        // the URIs and item Ids are not unique because YouTube sometimes likes to return duplicates
-        results.Select(r => r.Uri).ToHashSet().Count.ShouldBe(73);
-        results.Select(r => r.ItemId).ToHashSet().Count.ShouldBe(74);
     }
 
     [Fact]

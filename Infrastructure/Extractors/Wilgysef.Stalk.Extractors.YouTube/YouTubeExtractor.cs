@@ -70,39 +70,33 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
     {
         ExtractorConfig = new YouTubeExtractorConfig(Config);
 
+        var youTubeUri = new YouTubeUri(uri);
         var communityExtractor = CreateCommunityExtractor();
-
-        if (!YouTubeUri.TryGetUri(uri, out var youTubeUri))
-        {
-            throw new ArgumentException(null, nameof(uri));
-        }
 
         switch (youTubeUri.Type)
         {
             case YouTubeUriType.Featured:
                 return ExtractChannelAsync(youTubeUri, metadata, cancellationToken);
             case YouTubeUriType.Videos:
-                return ExtractVideosAsync(youTubeUri, metadata, cancellationToken);
+                return ExtractVideosAsync(youTubeUri, metadata, YouTubeUri.GetChannelVideosPlaylistUri, cancellationToken);
             case YouTubeUriType.Shorts:
-                // TODO
-                throw new ArgumentException(null, nameof(uri));
+                return ExtractVideosAsync(youTubeUri, metadata, YouTubeUri.GetChannelShortsPlaylistUri, cancellationToken);
             case YouTubeUriType.Livestreams:
-                // TODO
-                throw new ArgumentException(null, nameof(uri));
+                return ExtractVideosAsync(youTubeUri, metadata, YouTubeUri.GetChannelLivestreamsPlaylistUri, cancellationToken);
             case YouTubeUriType.Playlist:
                 return ExtractPlaylistAsync(youTubeUri.Uri, metadata, cancellationToken);
-            case YouTubeUriType.Video:
-                return ExtractVideoAsync(youTubeUri.Uri, metadata, cancellationToken);
-            case YouTubeUriType.Short:
-                return ExtractShortAsync(youTubeUri, metadata, cancellationToken);
             case YouTubeUriType.Community:
             case YouTubeUriType.CommunityPost:
                 return communityExtractor.ExtractCommunityAsync(youTubeUri, metadata, cancellationToken);
             case YouTubeUriType.Membership:
                 var membershipExtractor = CreateMembershipExtractor(communityExtractor);
                 return membershipExtractor.ExtractMembershipAsync(youTubeUri.Uri, metadata, cancellationToken);
+            case YouTubeUriType.Video:
+                return ExtractVideoAsync(youTubeUri.Uri, metadata, cancellationToken);
+            case YouTubeUriType.Short:
+                return ExtractShortAsync(youTubeUri, metadata, cancellationToken);
             default:
-                throw new ArgumentException(null, nameof(uri));
+                throw new ArgumentOutOfRangeException($"Unknown YouTube URI type: {youTubeUri.Type}");
         }
     }
 
@@ -166,11 +160,12 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
     private async IAsyncEnumerable<ExtractResult> ExtractVideosAsync(
         YouTubeUri uri,
         IMetadataObject metadata,
+        Func<string, Uri> uriFactory,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var channelId = await GetChannelIdAsync(uri, cancellationToken);
         await foreach (var result in ExtractPlaylistAsync(
-            YouTubeUri.GetChannelAllVideosPlaylistUri(channelId),
+            uriFactory(channelId),
             metadata,
             cancellationToken))
         {
