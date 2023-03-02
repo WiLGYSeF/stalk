@@ -55,6 +55,8 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
 
         public abstract string Name { get; }
 
+        public abstract string Version { get; }
+
         public virtual ILogger? Logger { get; set; }
 
         public virtual IDictionary<string, object?> Config { get; set; } = new Dictionary<string, object?>();

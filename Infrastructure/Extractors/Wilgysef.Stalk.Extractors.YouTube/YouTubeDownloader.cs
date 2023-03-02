@@ -12,6 +12,8 @@ public class YouTubeDownloader : YoutubeDlDownloaderBase
 {
     public override string Name => "YouTube";
 
+    public override string Version => "20230218";
+
     protected override Regex OutputOutputRegex { get; } = new($@"\[Merger\] Merging formats into \""(?<{YoutubeDlRunner.OutputOutputRegexGroup}>.*)\""$", RegexOptions.Compiled);
 
     public YouTubeDownloader(

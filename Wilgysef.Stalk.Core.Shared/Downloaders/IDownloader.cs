@@ -15,6 +15,11 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         string Name { get; }
 
         /// <summary>
+        /// Downloader version.
+        /// </summary>
+        string Version { get; }
+
+        /// <summary>
         /// Logger.
         /// </summary>
         ILogger? Logger { get; set; }

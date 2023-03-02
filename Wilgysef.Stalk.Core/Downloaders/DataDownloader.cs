@@ -11,6 +11,8 @@ public class DataDownloader : DownloaderBase
 {
     public override string Name => "Data";
 
+    public override string Version => "1";
+
     public DataDownloader(
         IFileSystem fileSystem,
         IStringFormatter stringFormatter,
