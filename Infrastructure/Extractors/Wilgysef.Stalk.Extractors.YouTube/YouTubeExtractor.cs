@@ -2,14 +2,11 @@
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using System;
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Web;
 using Wilgysef.Stalk.Core.Shared.CacheObjects;
 using Wilgysef.Stalk.Core.Shared.DateTimeProviders;
 using Wilgysef.Stalk.Core.Shared.Enums;
-using Wilgysef.Stalk.Core.Shared.Extensions;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 
@@ -21,6 +18,8 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
     // TODO: comments?
 
     public string Name => "YouTube";
+
+    public string Version => "20230218";
 
     public ILogger? Logger { get; set; }
 

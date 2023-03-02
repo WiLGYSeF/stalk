@@ -18,6 +18,8 @@ public class TwitchExtractor : IExtractor
 
     public string Name => "Twitch";
 
+    public string Version => "20221029";
+
     public ILogger? Logger { get; set; }
 
     public ICacheObject<string, object?>? Cache { get; set; }

@@ -16,6 +16,11 @@ namespace Wilgysef.Stalk.Core.Shared.Extractors
         string Name { get; }
 
         /// <summary>
+        /// Extractor version.
+        /// </summary>
+        string Version { get; }
+
+        /// <summary>
         /// Logger.
         /// </summary>
         ILogger? Logger { get; set; }

@@ -119,7 +119,7 @@ public class YouTubeUri
         }
         else
         {
-            throw new ArgumentException("Unknown YouTube URI", nameof(uri));
+            throw new ArgumentException($"Unknown YouTube URI: {uri.AbsoluteUri}", nameof(uri));
         }
     }
 

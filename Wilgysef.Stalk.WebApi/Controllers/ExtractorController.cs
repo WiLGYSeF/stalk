@@ -26,6 +26,7 @@ public class ExtractorController : ControllerBase
             Extractors = extractors.Select(e => new
             {
                 e.Name,
+                e.Version,
             }).ToList(),
         });
     }
