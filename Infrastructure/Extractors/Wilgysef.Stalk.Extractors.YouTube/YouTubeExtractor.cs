@@ -19,7 +19,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
     public string Name => "YouTube";
 
-    public string Version => "20230218";
+    public string Version => "2023.02.18";
 
     public ILogger? Logger { get; set; }
 

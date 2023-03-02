@@ -12,7 +12,7 @@ public class TwitchDownloader : YoutubeDlDownloaderBase
 {
     public override string Name => "Twitch";
 
-    public override string Version => "20221029";
+    public override string Version => "2022.10.29";
 
     protected override Regex OutputOutputRegex { get; } = new($@"\[download\] Destination: (?<{YoutubeDlRunner.OutputOutputRegexGroup}>.*\.mp4)$", RegexOptions.Compiled);
 

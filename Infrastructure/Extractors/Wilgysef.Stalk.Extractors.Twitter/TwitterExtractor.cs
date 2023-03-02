@@ -50,7 +50,7 @@ public class TwitterExtractor : IExtractor
 
     public string Name => "Twitter";
 
-    public string Version => "20221219";
+    public string Version => "2022.12.19";
 
     public ILogger? Logger { get; set; }
 
