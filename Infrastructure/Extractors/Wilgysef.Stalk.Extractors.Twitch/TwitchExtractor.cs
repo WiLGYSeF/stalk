@@ -18,7 +18,7 @@ public class TwitchExtractor : IExtractor
 
     public string Name => "Twitch";
 
-    public string Version => "2022.10.29";
+    public string Version => "2023.03.07";
 
     public ILogger? Logger { get; set; }
 
@@ -261,11 +261,11 @@ public class TwitchExtractor : IExtractor
         }
 
         var gameMetadata = video.SelectToken("$..game");
-        if (gameMetadata != null)
+        if (gameMetadata != null && gameMetadata.Type != JTokenType.Null)
         {
-            GetMetadata<string>(metadata, gameMetadata["id"], MetadataGameIdKeys);
-            GetMetadata<string>(metadata, gameMetadata["displayName"], MetadataGameNameKeys);
-            GetMetadata<string>(metadata, gameMetadata["boxArtURL"], MetadataGameBoxartUrlKeys);
+            GetMetadata<string>(metadata, gameMetadata.SelectToken("$.id"), MetadataGameIdKeys);
+            GetMetadata<string>(metadata, gameMetadata.SelectToken("$.displayName"), MetadataGameNameKeys);
+            GetMetadata<string>(metadata, gameMetadata.SelectToken("$.boxArtURL"), MetadataGameBoxartUrlKeys);
         }
 
         if (thumbnailUrl != null)

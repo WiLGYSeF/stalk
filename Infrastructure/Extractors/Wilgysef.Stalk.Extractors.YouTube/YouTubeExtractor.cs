@@ -19,7 +19,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
 
     public string Name => "YouTube";
 
-    public string Version => "2023.02.18";
+    public string Version => "2023.06.08";
 
     public ILogger? Logger { get; set; }
 
@@ -409,7 +409,7 @@ public class YouTubeExtractor : YouTubeExtractorBase, IExtractor
             var doc = new HtmlDocument();
             doc.Load(response.Content.ReadAsStream(cancellationToken));
 
-            var metaChannelId = doc.DocumentNode.SelectSingleNode("//meta[@itemprop=\"channelId\"]");
+            var metaChannelId = doc.DocumentNode.SelectSingleNode("//meta[@itemprop=\"identifier\"]");
             return metaChannelId.Attributes["content"].Value;
         }
     }

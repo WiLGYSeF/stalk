@@ -73,7 +73,7 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
 
             if (status.OutputFilename == null)
             {
-                throw new InvalidOperationException("Could not get output filename.");
+                throw new InvalidOperationException("Could not get output filename.\n" + youtubeDl.GetErrorOutput());
             }
 
             status.OutputFilename = GetFullPath(process, status.OutputFilename);
