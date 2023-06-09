@@ -10,6 +10,8 @@ public sealed class DefaultDownloader : DownloaderBase
 {
     public override string Name => "Default";
 
+    public override string Version => "1";
+
     public DefaultDownloader(
         IFileSystem fileSystem,
         IStringFormatter stringFormatter,

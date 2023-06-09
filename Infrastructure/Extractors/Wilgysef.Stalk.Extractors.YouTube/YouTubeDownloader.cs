@@ -12,6 +12,8 @@ public class YouTubeDownloader : YoutubeDlDownloaderBase
 {
     public override string Name => "YouTube";
 
+    public override string Version => "2023.02.18";
+
     protected override Regex OutputOutputRegex { get; } = new($@"\[Merger\] Merging formats into \""(?<{YoutubeDlRunner.OutputOutputRegexGroup}>.*)\""$", RegexOptions.Compiled);
 
     public YouTubeDownloader(
@@ -31,7 +33,12 @@ public class YouTubeDownloader : YoutubeDlDownloaderBase
 
     public override bool CanDownload(Uri uri)
     {
-        return Consts.VideoRegex.IsMatch(uri.GetLeftPart(UriPartial.Path));
+        if (YouTubeUri.TryGetUri(uri, out var youTubeUri))
+        {
+            return youTubeUri.Type == YouTubeUriType.Video;
+        }
+
+        return false;
     }
 
     protected override YoutubeDlConfig GetYoutubeDlConfig()

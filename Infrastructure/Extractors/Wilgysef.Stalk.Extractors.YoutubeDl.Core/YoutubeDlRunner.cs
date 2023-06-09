@@ -280,7 +280,7 @@ namespace Wilgysef.Stalk.Extractors.YoutubeDl.Core
                 return;
             }
 
-            Logger?.LogError("YouTube: error: {Error}", args.Data);
+            Logger?.LogError("YouTubeDl: error: {Error}", args.Data);
 
             int processId;
             try
