@@ -7,7 +7,6 @@ using Wilgysef.Stalk.Application.Tests.Utilities;
 using Wilgysef.Stalk.Core.JobTaskWorkers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Cqrs;
-using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.TestBase;

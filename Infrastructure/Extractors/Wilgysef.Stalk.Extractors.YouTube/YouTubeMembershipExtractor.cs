@@ -1,8 +1,5 @@
 ﻿using Newtonsoft.Json.Linq;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Web;
 using Wilgysef.Stalk.Core.Shared.DateTimeProviders;
 using Wilgysef.Stalk.Core.Shared.Enums;
 using Wilgysef.Stalk.Core.Shared.Extractors;

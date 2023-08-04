@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Wilgysef.Stalk.Core.Models.JobTasks;
+﻿using Wilgysef.Stalk.Core.Models.JobTasks;
 
 namespace Wilgysef.Stalk.EntityFrameworkCore.Repositories;
 

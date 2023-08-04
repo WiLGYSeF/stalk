@@ -13,7 +13,6 @@ using Wilgysef.Stalk.Application.AssemblyLoaders;
 using Wilgysef.Stalk.Application.HttpClientPolicies;
 using Wilgysef.Stalk.Application.IdGenerators;
 using Wilgysef.Stalk.Core.Shared;
-using Wilgysef.Stalk.Core.Shared.Cqrs;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Extractors;
@@ -120,11 +119,6 @@ public class ServiceRegistrar
             .InstancePerLifetimeScope();
         RegisterAssemblyTypes<ISingletonDependency>(builder, internalAssemblies)
             .SingleInstance();
-
-        RegisterAssemblyTypes(typeof(ICommandHandler<,>), builder, internalAssemblies)
-            .InstancePerDependency();
-        RegisterAssemblyTypes(typeof(IQueryHandler<,>), builder, internalAssemblies)
-            .InstancePerDependency();
 
         var options = internalAssemblies.SelectMany(a => a.GetTypes())
             .Where(t => t.IsClass && t.GetInterfaces().Contains(typeof(IOptionSection)));
