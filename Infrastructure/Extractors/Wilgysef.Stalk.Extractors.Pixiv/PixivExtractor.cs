@@ -1,6 +1,7 @@
 ﻿using HtmlAgilityPack;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using Wilgysef.Stalk.Core.Shared.CacheObjects;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
@@ -12,6 +13,8 @@ namespace Wilgysef.Stalk.Extractors.Pixiv;
 
 public class PixivExtractor : IExtractor
 {
+    // TODO: ugoira, tags, manga, novels
+
     private static readonly string[] MetadataArtworkIdKeys = new string[] { "artwork", "id" };
     private static readonly string[] MetadataArtworkTitleKeys = new string[] { "artwork", "title" };
     private static readonly string[] MetadataArtworkDescriptionKeys = new string[] { "artwork", "description" };
@@ -44,6 +47,8 @@ public class PixivExtractor : IExtractor
     public ICacheObject<string, object?>? Cache { get; set; }
     public IDictionary<string, object?> Config { get; set; } = new Dictionary<string, object?>();
 
+    private PixivExtractorConfig ExtractorConfig { get; set; }
+
     private HttpClient _httpClient;
 
     public PixivExtractor(HttpClient httpClient)
@@ -63,9 +68,13 @@ public class PixivExtractor : IExtractor
             throw new ArgumentException("Invalid URI", nameof(uri));
         }
 
+        ExtractorConfig = new PixivExtractorConfig(Config);
+
         return pixivUri.Type switch
         {
-            PixivUriType.Artwork => ExtractArtworkAsync(pixivUri.ArtworkId, itemData, metadata, cancellationToken),
+            PixivUriType.Artwork => ExtractArtworkAsync(pixivUri.ArtworkId!, itemData, metadata, cancellationToken),
+            PixivUriType.UserArtworks => ExtractUserAsync(pixivUri.UserId!, itemData, metadata, artworks: true, cancellationToken),
+            PixivUriType.User => ExtractUserAsync(pixivUri.UserId!, itemData, metadata, artworks: true, cancellationToken),
             _ => throw new ArgumentOutOfRangeException(nameof(uri)),
         };
     }
@@ -100,7 +109,9 @@ public class PixivExtractor : IExtractor
         IMetadataObject metadata,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        var pageResponse = await _httpClient.GetAsync($"https://www.pixiv.net/en/artworks/{artworkId}", cancellationToken);
+        var pageResponse = await _httpClient.SendAsync(
+            ConfigureRequest(new HttpRequestMessage(HttpMethod.Get, $"https://www.pixiv.net/en/artworks/{artworkId}")),
+            cancellationToken);
         pageResponse.EnsureSuccessStatusCode();
 
         var doc = new HtmlDocument();
@@ -141,17 +152,32 @@ public class PixivExtractor : IExtractor
         var pageCount = illust["pageCount"]?.Value<int>();
         var hasMultiple = !pageCount.HasValue || pageCount.Value > 1;
 
+        var originalUrl = illust["urls"]?["original"]?.ToString();
+
+        if (originalUrl == null)
+        {
+            throw new InvalidOperationException($"Cannot extract artwork {artworkId}");
+        }
+
+        var extension = GetExtension(new Uri(originalUrl));
+        if (extension != null)
+        {
+            meta[MetadataObjectConsts.File.ExtensionKeys] = extension;
+        }
+
         yield return GetExtractResult(
-            illust["urls"]!["original"]!.ToString(),
+            originalUrl,
             hasMultiple ? $"{artworkId}#1" : artworkId,
             meta);
 
         if (hasMultiple)
         {
-            var imagesResponse = await _httpClient.GetAsync($"https://www.pixiv.net/ajax/illust/{artworkId}/pages?lang=en&version=19921c54619a740796d32683244aad17e288a534", cancellationToken);
+            var imagesResponse = await _httpClient.SendAsync(
+                new HttpRequestMessage(HttpMethod.Get, $"https://www.pixiv.net/ajax/illust/{artworkId}/pages?lang=en&version=19921c54619a740796d32683244aad17e288a534"),
+                cancellationToken);
+            var json = JObject.Parse(await imagesResponse.Content.ReadAsStringAsync(cancellationToken));
             imagesResponse.EnsureSuccessStatusCode();
 
-            var json = JObject.Parse(await imagesResponse.Content.ReadAsStringAsync(cancellationToken));
             var urls = json["body"]!.ToList();
 
             // skip the first result since it was already extracted
@@ -163,8 +189,15 @@ public class PixivExtractor : IExtractor
                 meta[MetadataArtworkWidthKeys] = url["width"]?.Value<int>();
                 meta[MetadataArtworkHeightKeys] = url["height"]?.Value<int>();
 
+                originalUrl = url["urls"]!["original"]!.ToString();
+                extension = GetExtension(new Uri(originalUrl));
+                if (extension != null)
+                {
+                    meta[MetadataObjectConsts.File.ExtensionKeys] = extension;
+                }
+
                 yield return GetExtractResult(
-                    url["urls"]!["original"]!.ToString(),
+                    originalUrl,
                     $"{artworkId}#{i + 1}",
                     meta);
             }
@@ -230,5 +263,53 @@ public class PixivExtractor : IExtractor
 
             return results;
         }
+    }
+
+    private async IAsyncEnumerable<ExtractResult> ExtractUserAsync(
+        string userId,
+        string? itemData,
+        IMetadataObject metadata,
+        bool artworks,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var response = await _httpClient.SendAsync(
+            ConfigureRequest(new HttpRequestMessage(HttpMethod.Get, $"https://www.pixiv.net/ajax/user/{userId}/profile/all?lang=en&version=f17e4808608ed5d09cbde2491b8c9999df4f3962")),
+            cancellationToken);
+        response.EnsureSuccessStatusCode();
+
+        var profileResponse = JObject.Parse(await response.Content.ReadAsStringAsync(cancellationToken));
+
+        if (artworks)
+        {
+            var illusts = profileResponse["body"]!["illusts"]!;
+            foreach (var illust in illusts)
+            {
+                if (illust is JProperty prop)
+                {
+                    yield return new ExtractResult(
+                        new Uri($"https://www.pixiv.net/en/artworks/{prop.Name}"),
+                        prop.Name,
+                        JobTaskType.Extract);
+                }
+            }
+        }
+    }
+
+    private static string? GetExtension(Uri uri)
+    {
+        var extension = Path.GetExtension(uri.AbsolutePath);
+        return extension.Length > 0 && extension[0] == '.'
+            ? extension[1..]
+            : extension;
+    }
+
+    private HttpRequestMessage ConfigureRequest(HttpRequestMessage request)
+    {
+        if (ExtractorConfig.CookieString != null)
+        {
+            request.Headers.Add("Cookie", ExtractorConfig.CookieString);
+        }
+
+        return request;
     }
 }

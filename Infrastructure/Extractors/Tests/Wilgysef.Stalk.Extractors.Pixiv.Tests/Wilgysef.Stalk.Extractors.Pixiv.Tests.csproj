@@ -12,12 +12,14 @@
     <None Remove="MockedData\Artwork.86466485.html" />
     <None Remove="MockedData\Artwork.88581689.html" />
     <None Remove="MockedData\Artwork.88581689.json" />
+    <None Remove="MockedData\Profile.46503769.json" />
   </ItemGroup>
 
   <ItemGroup>
     <EmbeddedResource Include="MockedData\Artwork.86466485.html" />
     <EmbeddedResource Include="MockedData\Artwork.88581689.html" />
     <EmbeddedResource Include="MockedData\Artwork.88581689.json" />
+    <EmbeddedResource Include="MockedData\Profile.46503769.json" />
   </ItemGroup>
 
   <ItemGroup>

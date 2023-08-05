@@ -15,6 +15,7 @@ public class PixivExtractorTest : BaseTest
 
     private static readonly Regex ArtworkRegex = new(@"^(?:https?://)?(?:www\.)?pixiv\.net/(?<language>[A-Za-z]+)/artworks/(?<id>[0-9]+)(?:/|$)", RegexOptions.Compiled);
     private static readonly Regex IllustRegex = new(@"^https://www\.pixiv\.net/ajax/illust/(?<artworkId>[0-9]+)/pages", RegexOptions.Compiled);
+    private static readonly Regex ProfileRegex = new(@"^https://www\.pixiv\.net/ajax/user/(?<userId>[0-9]+)/profile/all", RegexOptions.Compiled);
 
     private readonly PixivExtractor _pixivExtractor;
 
@@ -34,33 +35,27 @@ public class PixivExtractorTest : BaseTest
             {
                 var match = IllustRegex.Match(request.RequestUri!.AbsoluteUri);
                 return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Artwork.{match.Groups["artworkId"].Value}.json");
+            })
+            .AddUri(ProfileRegex, request =>
+            {
+                var match = ProfileRegex.Match(request.RequestUri!.AbsoluteUri);
+                return HttpUtilities.GetResponseMessageFromManifestResource($"{MockedDataResourcePrefix}.Profile.{match.Groups["userId"].Value}.json");
             });
 
         _pixivExtractor = new(new HttpClient(_httpInterceptor));
     }
 
     [Theory]
-    [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g", true)]
-    [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/", true)]
-    [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/videos", true)]
-    [InlineData("https://www.youtube.com/playlist?list=UUdYR5Oyz8Q4g0ZmB4PkTD7g", true)]
-    [InlineData("https://www.youtube.com/watch?v=_BSSJi-sHh8", true)]
-    [InlineData("https://www.youtube.com/shorts/5p_ysxbwiAs", true)]
-    [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community", true)]
-    [InlineData("https://www.youtube.com/@utoch.6000/community", true)]
+    [InlineData("https://www.pixiv.net/en/artworks/86466485", true)]
+    [InlineData("https://www.pixiv.net/en/users/46503769/artworks", true)]
     public void Can_Extract(string uri, bool expected)
     {
         _pixivExtractor.CanExtract(new Uri(uri)).ShouldBe(expected);
     }
 
     [Theory]
-    [InlineData("https://www.youtube.com/watch?v=_BSSJi-sHh8", "_BSSJi-sHh8")]
-    [InlineData("https://www.youtube.com/shorts/5p_ysxbwiAs", "5p_ysxbwiAs")]
-    [InlineData("https://www.youtube.com/c/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community?lb=UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP", "UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")]
-    [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/community?lb=UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP", "UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")]
-    [InlineData("https://www.youtube.com/post/UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP", "UgkxNMROKyqsAjDir9C4JQHAl-96k6-x9SoP")]
-    [InlineData("https://www.youtube.com/watch", null)]
-    [InlineData("https://www.youtube.com/channel/UCdYR5Oyz8Q4g0ZmB4PkTD7g/videos", null)]
+    [InlineData("https://www.pixiv.net/en/artworks/86466485", "86466485")]
+    [InlineData("https://www.pixiv.net/en/users/46503769", null)]
     public void GetItemIds(string uri, string expected)
     {
         _pixivExtractor.GetItemId(new Uri(uri)).ShouldBe(expected);
@@ -110,6 +105,7 @@ public class PixivExtractorTest : BaseTest
         result.Metadata!["artwork", "aiType"].ShouldBe(0);
         result.Metadata!["artwork", "width"].ShouldBe(900);
         result.Metadata!["artwork", "height"].ShouldBe(1367);
+        result.Metadata!["file", "extension"].ShouldBe("png");
     }
 
     [Fact]
@@ -157,6 +153,7 @@ public class PixivExtractorTest : BaseTest
         first.Metadata!["artwork", "aiType"].ShouldBe(0);
         first.Metadata!["artwork", "width"].ShouldBe(1920);
         first.Metadata!["artwork", "height"].ShouldBe(1257);
+        first.Metadata!["file", "extension"].ShouldBe("jpg");
 
         var second = results[1];
         second.ItemId.ShouldBe("88581689#2");
@@ -194,5 +191,41 @@ public class PixivExtractorTest : BaseTest
         second.Metadata!["artwork", "aiType"].ShouldBe(0);
         second.Metadata!["artwork", "width"].ShouldBe(1920);
         second.Metadata!["artwork", "height"].ShouldBe(1257);
+        second.Metadata!["file", "extension"].ShouldBe("jpg");
+    }
+
+    [Fact]
+    public async Task Get_UserProfile_Artworks()
+    {
+        var results = await _pixivExtractor.ExtractAsync(
+            new Uri("https://www.pixiv.net/en/users/46503769/artworks"),
+            null,
+            new MetadataObject()).ToListAsync();
+
+        results.Count.ShouldBe(71);
+        results[0].ItemId.ShouldBe("109607213");
+        results[0].Uri.ToString().ShouldBe("https://www.pixiv.net/en/artworks/109607213");
+        results[0].Type.ShouldBe(JobTaskType.Extract);
+    }
+
+    [Fact]
+    public async Task Get_Artwork_Cookie()
+    {
+        _pixivExtractor.Config[PixivExtractorConfig.CookiesKey] = "testcookie";
+
+        HttpRequestMessage request = null!;
+        _httpInterceptor.RequestProcessed += RequestProcessedEventHandler;
+
+        var results = await _pixivExtractor.ExtractAsync(
+            new Uri("https://www.pixiv.net/en/artworks/86466485"),
+            null,
+            new MetadataObject()).ToListAsync();
+
+        request.Headers.GetValues("Cookie").Single().ShouldBe("testcookie");
+
+        void RequestProcessedEventHandler(object? sender, HttpRequestMessage e)
+        {
+            request = e;
+        }
     }
 }
