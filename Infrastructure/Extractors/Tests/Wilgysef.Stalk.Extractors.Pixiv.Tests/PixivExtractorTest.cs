@@ -54,7 +54,7 @@ public class PixivExtractorTest : BaseTest
     }
 
     [Theory]
-    [InlineData("https://www.pixiv.net/en/artworks/86466485", "86466485")]
+    [InlineData("https://www.pixiv.net/en/artworks/86466485", "artwork#86466485")]
     [InlineData("https://www.pixiv.net/en/users/46503769", null)]
     public void GetItemIds(string uri, string expected)
     {
@@ -71,7 +71,7 @@ public class PixivExtractorTest : BaseTest
 
         results.Count.ShouldBe(1);
         var result = results[0];
-        result.ItemId.ShouldBe("86466485");
+        result.ItemId.ShouldBe("artwork#86466485");
         result.Uri.ToString().ShouldBe("https://i.pximg.net/img-original/img/2020/12/23/01/21/07/86466485_p0.png");
         result.Type.ShouldBe(JobTaskType.Download);
         result.DownloadRequestData!.Headers!.Count.ShouldBe(1);
@@ -118,7 +118,7 @@ public class PixivExtractorTest : BaseTest
 
         results.Count.ShouldBe(2);
         var first = results[0];
-        first.ItemId.ShouldBe("88581689#1");
+        first.ItemId.ShouldBe("artwork#88581689#1");
         first.Uri.ToString().ShouldBe("https://i.pximg.net/img-original/img/2021/03/20/20/00/53/88581689_p0.jpg");
         first.Type.ShouldBe(JobTaskType.Download);
         first.DownloadRequestData!.Headers!.Count.ShouldBe(1);
@@ -156,7 +156,7 @@ public class PixivExtractorTest : BaseTest
         first.Metadata!["file", "extension"].ShouldBe("jpg");
 
         var second = results[1];
-        second.ItemId.ShouldBe("88581689#2");
+        second.ItemId.ShouldBe("artwork#88581689#2");
         second.Uri.ToString().ShouldBe("https://i.pximg.net/img-original/img/2021/03/20/20/00/53/88581689_p1.jpg");
         second.Type.ShouldBe(JobTaskType.Download);
         second.DownloadRequestData!.Headers!.Count.ShouldBe(1);

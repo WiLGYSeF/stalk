@@ -88,7 +88,7 @@ public class PixivExtractor : IExtractor
 
         return pixivUri.Type switch
         {
-            PixivUriType.Artwork => pixivUri.ArtworkId,
+            PixivUriType.Artwork => $"artwork#{pixivUri.ArtworkId}",
             _ => null,
         };
     }
@@ -167,15 +167,21 @@ public class PixivExtractor : IExtractor
 
         yield return GetExtractResult(
             originalUrl,
-            hasMultiple ? $"{artworkId}#1" : artworkId,
+            hasMultiple ? $"artwork#{artworkId}#1" : $"artwork#{artworkId}",
             meta);
 
         if (hasMultiple)
         {
             var imagesResponse = await _httpClient.SendAsync(
-                new HttpRequestMessage(HttpMethod.Get, $"https://www.pixiv.net/ajax/illust/{artworkId}/pages?lang=en&version=19921c54619a740796d32683244aad17e288a534"),
+                new HttpRequestMessage(HttpMethod.Get, $"https://www.pixiv.net/ajax/illust/{artworkId}/pages?lang=en&version=f17e4808608ed5d09cbde2491b8c9999df4f3962"),
                 cancellationToken);
             var json = JObject.Parse(await imagesResponse.Content.ReadAsStringAsync(cancellationToken));
+
+            if ((json["error"]?.Value<bool>()).GetValueOrDefault(false))
+            {
+                throw new InvalidOperationException($"Cannot extract artwork {artworkId}: {json["message"]}");
+            }
+
             imagesResponse.EnsureSuccessStatusCode();
 
             var urls = json["body"]!.ToList();
@@ -198,7 +204,7 @@ public class PixivExtractor : IExtractor
 
                 yield return GetExtractResult(
                     originalUrl,
-                    $"{artworkId}#{i + 1}",
+                    $"artwork#{artworkId}#{i + 1}",
                     meta);
             }
         }
