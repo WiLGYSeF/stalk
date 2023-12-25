@@ -1,5 +1,6 @@
 ﻿using Wilgysef.Stalk.Application.Contracts.Commands.Jobs;
 using Wilgysef.Stalk.Application.Contracts.Dtos;
+using Wilgysef.Stalk.Application.Services;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Cqrs;
@@ -17,21 +18,26 @@ public class JobCommandHandler : Command,
 {
     private readonly IJobManager _jobManager;
     private readonly IJobStateManager _jobStateManager;
+    private readonly IOutputPathService _outputPathService;
     private readonly IIdGenerator<long> _idGenerator;
 
     public JobCommandHandler(
         IJobManager jobManager,
         IJobStateManager jobStateManager,
+        IOutputPathService outputPathService,
         IIdGenerator<long> idGenerator)
     {
         _jobManager = jobManager;
         _jobStateManager = jobStateManager;
+        _outputPathService = outputPathService;
         _idGenerator = idGenerator;
     }
 
     public async Task<JobDto> HandleCommandAsync(CreateJob command)
     {
         var config = Mapper.Map<JobConfig>(command.Config);
+
+        SetConfigPathPrefix(config);
 
         var builder = new JobBuilder().WithId(_idGenerator.CreateId())
             .WithName(command.Name)
@@ -169,7 +175,32 @@ public class JobCommandHandler : Command,
             }
         }
 
+        SetConfigPathPrefix(jobConfig);
+
         job.ChangeConfig(jobConfig);
+    }
+
+    private void SetConfigPathPrefix(JobConfig? config)
+    {
+        if (config == null)
+        {
+            return;
+        }
+
+        if (config.DownloadFilenameTemplate != null)
+        {
+            config.DownloadFilenameTemplate = _outputPathService.GetOutputPath(config.DownloadFilenameTemplate);
+        }
+
+        if (config.MetadataFilenameTemplate != null)
+        {
+            config.MetadataFilenameTemplate = _outputPathService.GetOutputPath(config.MetadataFilenameTemplate);
+        }
+
+        if (config.ItemIdPath != null)
+        {
+            config.ItemIdPath = _outputPathService.GetOutputPath(config.ItemIdPath);
+        }
     }
 
     private static void SetIfNotNull<T>(Action<T> action, Func<T> valueFunc)
