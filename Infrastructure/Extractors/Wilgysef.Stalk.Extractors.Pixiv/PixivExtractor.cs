@@ -14,6 +14,7 @@ namespace Wilgysef.Stalk.Extractors.Pixiv;
 public class PixivExtractor : IExtractor
 {
     // TODO: ugoira, tags, manga, novels
+    // e.g. https://www.pixiv.net/en/artworks/110257572#1
 
     private static readonly string[] MetadataArtworkIdKeys = new string[] { "artwork", "id" };
     private static readonly string[] MetadataArtworkTitleKeys = new string[] { "artwork", "title" };
