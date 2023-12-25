@@ -33,7 +33,7 @@ public class YouTubeExtractorConfig
         TrySetValue(() => YouTubeClientVersion, config, YouTubeClientVersionKey);
     }
 
-    // TODO: move to shared
+    // TODO: move to shared or replace
     private static bool TrySetValue<T>(Expression<Func<T>> property, IDictionary<string, object?>? config, string key)
     {
         if (!(config?.TryGetValueAs<T, string, object?>(key, out var value) ?? false))

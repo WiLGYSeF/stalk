@@ -126,7 +126,7 @@ public abstract class YouTubeExtractorBase
         response.EnsureSuccessStatusCode();
 
         var doc = new HtmlDocument();
-        doc.Load(response.Content.ReadAsStream(cancellationToken));
+        doc.Load(await response.Content.ReadAsStreamAsync(cancellationToken));
         return doc;
     }
 

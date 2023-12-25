@@ -1,5 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Wilgysef.Stalk.Core.BackgroundJobs;
+﻿using Wilgysef.Stalk.Core.BackgroundJobs;
 
 namespace Wilgysef.Stalk.EntityFrameworkCore.Repositories;
 

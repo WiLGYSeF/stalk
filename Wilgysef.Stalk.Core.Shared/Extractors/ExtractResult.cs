@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Text;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;

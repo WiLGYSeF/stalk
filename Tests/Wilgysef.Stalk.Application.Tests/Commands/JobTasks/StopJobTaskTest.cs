@@ -1,6 +1,5 @@
 ﻿using Autofac;
 using AutoMapper;
-using Shouldly;
 using Wilgysef.Stalk.Application.Contracts.Commands.Jobs;
 using Wilgysef.Stalk.Application.Contracts.Commands.JobTasks;
 using Wilgysef.Stalk.Application.Contracts.Dtos;
