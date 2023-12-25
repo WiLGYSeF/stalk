@@ -11,6 +11,7 @@ using Wilgysef.Stalk.EntityFrameworkCore;
 using Wilgysef.Stalk.WebApi.Extensions;
 using Wilgysef.Stalk.WebApi.Middleware;
 using Wilgysef.Stalk.WebApi.Options;
+using Wilgysef.WebApi.Core.Middleware;
 
 var loggerFactory = new SerilogLoggerFactory(new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -54,6 +55,9 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     logger?.LogInformation("Initializing application...");
+
+    var context = scope.ServiceProvider.GetRequiredService<StalkDbContext>();
+    await context.Database.EnsureCreatedAsync();
 
     var appStartup = scope.ServiceProvider.GetRequiredService<Startup>();
 
@@ -136,7 +140,7 @@ void ConfigureSwagger()
 
 void ConfigureExceptionHandler()
 {
-    var exceptionHandler = new ExceptionHandler
+    var exceptionHandler = new ExceptionMiddleware
     {
         ExceptionsInResponse = appOptions.ExceptionsInResponse,
     };

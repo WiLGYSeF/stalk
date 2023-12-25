@@ -1,5 +1,6 @@
 ﻿using Moq;
 using Shouldly;
+using Wilgysef.Stalk.Core.Exceptions;
 using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared;
@@ -53,6 +54,6 @@ public class NoExtractorTest : BaseTest
 
         var jobTask = job.Tasks.Single();
         jobTask.Result.Success!.Value.ShouldBeFalse();
-        jobTask.Result.ErrorCode.ShouldBe(StalkErrorCodes.JobTaskWorkerNoExtractor);
+        jobTask.Result.ErrorCode.ShouldBe(JobTaskNoExtractorException.ErrorCode);
     }
 }

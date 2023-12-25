@@ -22,6 +22,7 @@
     <PackageReference Include="Serilog.Sinks.Debug" Version="2.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="5.0.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
+    <PackageReference Include="Wilgysef.WebApi.Core" Version="1.0.1" />
   </ItemGroup>
 
   <ItemGroup>

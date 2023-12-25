@@ -162,6 +162,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// <param name="uri">URI to download from.</param>
         /// <param name="filenameTemplate">Filename template to save downloaded file.</param>
         /// <param name="metadata">Metadata object.</param>
+        /// <param name="requestData">Optional download request data.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Download file result.</returns>
         protected virtual async IAsyncEnumerable<DownloadFileResult> SaveFileAsync(
@@ -200,6 +201,7 @@ namespace Wilgysef.Stalk.Core.Shared.Downloaders
         /// Gets the contents stream from the URI.
         /// </summary>
         /// <param name="uri">URI.</param>
+        /// <param name="requestData">Optional download request data.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Stream with download contents.</returns>
         protected virtual async Task<Stream> GetFileStreamAsync(

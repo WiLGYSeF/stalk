@@ -1,4 +1,4 @@
-﻿namespace Wilgysef.Stalk.Core.Shared.Exceptions
+﻿namespace Wilgysef.Stalk.Core.Exceptions
 {
     /// <summary>
     /// No download filename template given.
@@ -8,7 +8,8 @@
         /// <summary>
         /// No download filename template given.
         /// </summary>
-        public JobTaskNoDownloadFilenameTemplateException()
-            : base(StalkErrorCodes.JobTaskWorkerNoExtractor) { }
+        public JobTaskNoDownloadFilenameTemplateException() { }
+
+        public override string Code => "JobTaskWorkerNoExtractor";
     }
 }
