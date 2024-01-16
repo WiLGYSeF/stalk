@@ -1,5 +1,4 @@
-﻿using System;
-using Wilgysef.Core.Exceptions;
+﻿using Wilgysef.Core.Exceptions;
 
 namespace Wilgysef.Stalk.Core.Exceptions
 {
@@ -17,8 +16,6 @@ namespace Wilgysef.Stalk.Core.Exceptions
         /// Entity Id.
         /// </summary>
         public object EntityId { get; private set; }
-
-        public override string Code => "EntityNotFound";
 
         /// <summary>
         /// Entity was not found.
