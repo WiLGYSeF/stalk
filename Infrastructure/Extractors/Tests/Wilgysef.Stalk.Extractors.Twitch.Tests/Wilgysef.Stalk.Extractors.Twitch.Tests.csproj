@@ -30,7 +30,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Tests\Wilgysef.Stalk.TestBase.Shared\Wilgysef.Stalk.TestBase.Shared.csproj" />
     <ProjectReference Include="..\..\..\..\Wilgysef.Stalk.Core\Wilgysef.Stalk.Core.csproj" />
-    <ProjectReference Include="..\..\..\Wilgysef.HttpClientInterception\Wilgysef.HttpClientInterception.csproj" />
     <ProjectReference Include="..\..\Wilgysef.Stalk.Extractors.Twitch\Wilgysef.Stalk.Extractors.Twitch.csproj" />
     <ProjectReference Include="..\Wilgysef.Stalk.Extractors.TestBase\Wilgysef.Stalk.Extractors.TestBase.csproj" />
   </ItemGroup>

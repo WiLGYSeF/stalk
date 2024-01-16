@@ -1,3 +1,4 @@
+using System.Text;
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
 using Microsoft.EntityFrameworkCore;
@@ -5,12 +6,14 @@ using Serilog;
 using Serilog.Extensions.Logging;
 using Wilgysef.Stalk.Application;
 using Wilgysef.Stalk.Application.ServiceRegistrar;
+using Wilgysef.Stalk.Application.Services;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Options;
 using Wilgysef.Stalk.EntityFrameworkCore;
 using Wilgysef.Stalk.WebApi.Extensions;
 using Wilgysef.Stalk.WebApi.Middleware;
 using Wilgysef.Stalk.WebApi.Options;
+using Wilgysef.WebApi.Core.Middleware;
 
 var loggerFactory = new SerilogLoggerFactory(new LoggerConfiguration()
     .MinimumLevel.Debug()
@@ -21,12 +24,11 @@ var loggerFactory = new SerilogLoggerFactory(new LoggerConfiguration()
 var logger = loggerFactory.CreateLogger("default");
 
 var builder = WebApplication.CreateBuilder(args);
+var appOptions = GetOptions<AppOptions>(builder.Configuration);
 
 ConfigureConfiguration();
 ConfigureServices();
 ConfigureSwagger();
-
-var appOptions = GetOptions<AppOptions>(builder.Configuration);
 
 builder.WebHost.UseUrls(appOptions.Urls.ToArray());
 var app = builder.Build();
@@ -54,6 +56,9 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     logger?.LogInformation("Initializing application...");
+
+    var context = scope.ServiceProvider.GetRequiredService<StalkDbContext>();
+    await context.Database.EnsureCreatedAsync();
 
     var appStartup = scope.ServiceProvider.GetRequiredService<Startup>();
 
@@ -89,6 +94,16 @@ void ConfigureConfiguration()
         configuration.AddJsonFile($"appsettings.{aspNetCoreEnvironment}.json", optional: true, reloadOnChange: true);
         configuration.AddJsonFile("appsettings.secrets.json", optional: true, reloadOnChange: true);
         configuration.AddJsonFile($"appsettings.secrets.{aspNetCoreEnvironment}.json", optional: true, reloadOnChange: true);
+
+        if (Environment.GetEnvironmentVariable("APPSETTINGS_FILE") is string appSettingsFile)
+        {
+            configuration.AddJsonFile(appSettingsFile, optional: true, reloadOnChange: true);
+        }
+
+        if (Environment.GetEnvironmentVariable("APPSETTINGS") is string appSettings)
+        {
+            configuration.AddJsonStream(new MemoryStream(Encoding.UTF8.GetBytes(appSettings)));
+        }
     });
 }
 
@@ -125,6 +140,14 @@ void ConfigureServices()
             logger,
             extractorPaths,
             t => GetOptionsByType(t, builder.Configuration));
+
+        // TODO: yikes
+        containerBuilder.Register<IOutputPathService>(_ => new OutputPathService
+        {
+            PathPrefix = appOptions.OutputPath,
+        })
+            .PropertiesAutowired()
+            .SingleInstance();
     });
 }
 
@@ -136,7 +159,7 @@ void ConfigureSwagger()
 
 void ConfigureExceptionHandler()
 {
-    var exceptionHandler = new ExceptionHandler
+    var exceptionHandler = new ExceptionMiddleware
     {
         ExceptionsInResponse = appOptions.ExceptionsInResponse,
     };

@@ -4,9 +4,9 @@ using System.Linq.Expressions;
 using System.Text;
 using System.Text.Json;
 using Wilgysef.Stalk.Core.DomainEvents.Events;
+using Wilgysef.Stalk.Core.Exceptions;
 using Wilgysef.Stalk.Core.Models.JobTasks;
 using Wilgysef.Stalk.Core.Shared.Enums;
-using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.Core.Utilities;
 
 namespace Wilgysef.Stalk.Core.Models.Jobs;

@@ -92,8 +92,8 @@ public class JobConfig
     public Dictionary<string, object?> GetExtractorConfig(IExtractor extractor)
     {
         var config = new Dictionary<string, object?>();
-        GetConfig(ExtractorConfig.Where(c => c.Name == GlobalConfigGroupName), config);
-        GetConfig(ExtractorConfig.Where(c => c.Name == extractor.Name), config);
+        GetConfig(ExtractorConfig.Where(c => c.Name.Equals(GlobalConfigGroupName, StringComparison.OrdinalIgnoreCase)), config);
+        GetConfig(ExtractorConfig.Where(c => c.Name.Equals(extractor.Name, StringComparison.OrdinalIgnoreCase)), config);
         return config;
     }
 
@@ -109,8 +109,8 @@ public class JobConfig
             [DownloaderBase.ConfigKeys.SaveFilenameTemplatesMetadata] = SaveFilenameTemplatesMetadata
         };
 
-        GetConfig(DownloaderConfig.Where(c => c.Name == GlobalConfigGroupName), config);
-        GetConfig(DownloaderConfig.Where(c => c.Name == downloader.Name), config);
+        GetConfig(DownloaderConfig.Where(c => c.Name.Equals(GlobalConfigGroupName, StringComparison.OrdinalIgnoreCase)), config);
+        GetConfig(DownloaderConfig.Where(c => c.Name.Equals(downloader.Name, StringComparison.OrdinalIgnoreCase)), config);
         return config;
     }
 

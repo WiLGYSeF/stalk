@@ -1,7 +1,7 @@
-﻿using Wilgysef.Stalk.Core.JobTaskWorkerServices;
+﻿using Wilgysef.Stalk.Core.Exceptions;
+using Wilgysef.Stalk.Core.JobTaskWorkerServices;
 using Wilgysef.Stalk.Core.Shared.Dependencies;
 using Wilgysef.Stalk.Core.Shared.Enums;
-using Wilgysef.Stalk.Core.Shared.Exceptions;
 
 namespace Wilgysef.Stalk.Core.Models.JobTasks;
 

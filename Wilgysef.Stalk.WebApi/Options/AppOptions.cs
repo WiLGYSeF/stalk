@@ -8,6 +8,8 @@ public class AppOptions : IOptionSection
 
     public IList<string> Urls { get; set; } = null!;
 
+    public string OutputPath { get; set; } = null!;
+
     public bool ExceptionsInResponse { get; set; }
 
     public bool PauseJobsOnStart { get; set; }

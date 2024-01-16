@@ -1,11 +1,11 @@
-﻿using System;
+﻿using Wilgysef.Core.Exceptions;
 
-namespace Wilgysef.Stalk.Core.Shared.Exceptions
+namespace Wilgysef.Stalk.Core.Exceptions
 {
     /// <summary>
     /// Entity was not found.
     /// </summary>
-    public class EntityNotFoundException : Exception
+    public class EntityNotFoundException : NotFoundException
     {
         /// <summary>
         /// Name of entity type.
@@ -21,6 +21,7 @@ namespace Wilgysef.Stalk.Core.Shared.Exceptions
         /// Entity was not found.
         /// </summary>
         public EntityNotFoundException(string entityName, object entityId)
+            : base($"Could not find entity {entityName}", null)
         {
             EntityName = entityName;
             EntityId = entityId;

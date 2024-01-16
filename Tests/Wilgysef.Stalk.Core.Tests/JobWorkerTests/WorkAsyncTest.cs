@@ -1,12 +1,12 @@
 ﻿using Autofac;
 using Shouldly;
 using System.Net;
+using Wilgysef.Stalk.Core.Exceptions;
 using Wilgysef.Stalk.Core.JobTaskWorkers;
 using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.JobWorkerServices;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Enums;
-using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.Core.Shared.ServiceLocators;
 using Wilgysef.Stalk.Core.Tests.Utilities;
 using Wilgysef.Stalk.TestBase;

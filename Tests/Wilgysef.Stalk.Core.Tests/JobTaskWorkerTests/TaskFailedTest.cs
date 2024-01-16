@@ -2,11 +2,11 @@
 using Shouldly;
 using System.Runtime.CompilerServices;
 using Wilgysef.MoqExtensions;
+using Wilgysef.Stalk.Core.Exceptions;
 using Wilgysef.Stalk.Core.JobWorkers;
 using Wilgysef.Stalk.Core.Models.Jobs;
 using Wilgysef.Stalk.Core.Shared.Downloaders;
 using Wilgysef.Stalk.Core.Shared.Enums;
-using Wilgysef.Stalk.Core.Shared.Exceptions;
 using Wilgysef.Stalk.Core.Shared.Extractors;
 using Wilgysef.Stalk.Core.Shared.MetadataObjects;
 using Wilgysef.Stalk.Core.Tests.Utilities;

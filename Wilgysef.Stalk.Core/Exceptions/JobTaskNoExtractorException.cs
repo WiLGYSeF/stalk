@@ -1,12 +1,14 @@
 ﻿using System;
 
-namespace Wilgysef.Stalk.Core.Shared.Exceptions
+namespace Wilgysef.Stalk.Core.Exceptions
 {
     /// <summary>
     /// No extractor could be found to extract from the URI.
     /// </summary>
     public class JobTaskNoExtractorException : JobTaskWorkerException
     {
+        public static readonly string ErrorCode = "JobTaskWorkerNoExtractor";
+
         public Uri Uri { get; }
 
         /// <summary>
@@ -14,9 +16,10 @@ namespace Wilgysef.Stalk.Core.Shared.Exceptions
         /// </summary>
         /// <param name="uri">URI without extractor.</param>
         public JobTaskNoExtractorException(Uri uri)
-            : base(StalkErrorCodes.JobTaskWorkerNoExtractor)
         {
             Uri = uri;
         }
+
+        public override string Code => ErrorCode;
     }
 }

@@ -109,9 +109,9 @@ public class JobController : ControllerBase
     }
 
     [HttpPost("list")]
-    public async Task<JobListDto> GetJobsAsync(GetJobs query)
+    public async Task<JobListBasicDto> GetJobsAsync(GetJobsBasic query)
     {
-        return await _getJobsCommandHandler.HandleQueryAsync(query);
+        return await _getJobsBasicCommandHandler.HandleQueryAsync(query);
     }
 
     #endregion

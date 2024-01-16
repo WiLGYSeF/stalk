@@ -1,0 +1,26 @@
+version: '3.4'
+
+services:
+  wilgysef.stalk.webapi:
+    image: ${DOCKER_REGISTRY-}wilgysefstalkwebapi
+    build:
+      context: .
+      dockerfile: Wilgysef.Stalk.WebApi/Dockerfile
+    volumes:
+      - 'D:/projects/stalk/Wilgysef.Stalk/extractors:/var/lib/stalk/extractors'
+      - 'D:/Downloads/stalk:/var/lib/stalk/data'
+
+  db.sql:
+    image: mysql:8.0
+    restart: always
+    environment:
+      - MYSQL_DATABASE=stalk
+      - MYSQL_ROOT_PASSWORD=NlZbRHyeYXV6mIA
+    ports:
+      - '3307:3306'
+    volumes:
+      - db:/var/lib/mysql
+
+volumes:
+  db:
+    driver: local
